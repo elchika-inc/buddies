@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "/Users/nishikawa/.asdf/shims/uvx",
+      "args": ["mcp-server-git"],
+      "envFile": "~/.claude/.env.mcp",
+      "transportType": "stdio"
+    }
+  }
+}
