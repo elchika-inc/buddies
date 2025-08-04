@@ -70,7 +70,7 @@ export class ApiService {
       throw new Error('Failed to fetch animals')
     }
 
-    const animals = await response.json()
+    const animals = await response.json() as any[]
 
     // データベースの形式からフロントエンド用の形式に変換
     return animals.map((animal: any) => {
@@ -110,13 +110,15 @@ export class ApiService {
       } else {
         return {
           ...baseAnimal,
-          goodWithCats: animal.good_with_other_animals,
-          coatLength: animal.species_details.coatLength,
-          indoorOutdoor: animal.species_details.indoorOutdoor,
-          socialLevel: animal.species_details.socialLevel,
-          multiCatCompatible: animal.species_details.multiCatCompatible,
-          vocalization: animal.species_details.vocalization,
-          activityTime: animal.species_details.activityTime,
+          coatLength: animal.species_details.coatLength || '短毛',
+          indoorOutdoor: animal.species_details.indoorOutdoor || '完全室内',
+          socialLevel: animal.species_details.socialLevel || '普通',
+          goodWithMultipleCats: animal.species_details.multiCatCompatible || false,
+          groomingRequirements: animal.species_details.groomingRequirements || '低',
+          vocalizationLevel: animal.species_details.vocalization || '普通',
+          activityTime: animal.species_details.activityTime || 'どちらでも',
+          playfulness: animal.species_details.playfulness || '中',
+          isFIVFeLVTested: animal.species_details.isFIVFeLVTested || false,
         } as Cat
       }
     })

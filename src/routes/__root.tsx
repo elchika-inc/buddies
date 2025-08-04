@@ -1,5 +1,5 @@
 import { createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Home, Cat, Dog } from 'lucide-react'
 
 export const Route = createRootRoute({

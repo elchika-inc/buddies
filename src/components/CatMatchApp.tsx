@@ -1,14 +1,19 @@
 import { useCatSwipeState } from '@/hooks/useCatSwipeState'
-import { mockCats } from '@/data/cats'
+import { useCats } from '@/hooks/useAnimals'
+import { Cat } from '@/types/cat'
 import { AnimalMatchApp } from './AnimalMatchApp'
 import { CatCard } from './CatCard'
 
 export function CatMatchApp() {
-  const swipeState = useCatSwipeState(mockCats)
+  const { animals: cats, loading, error, refetch } = useCats()
+  const swipeState = useCatSwipeState(cats as Cat[])
 
   return (
     <AnimalMatchApp
-      animals={mockCats}
+      animals={cats as Cat[]}
+      loading={loading}
+      error={error}
+      refetch={refetch}
       swipeState={{
         current: swipeState.currentCat,
         next: swipeState.nextCat,

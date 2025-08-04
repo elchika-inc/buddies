@@ -35,7 +35,7 @@ export function useSwipeLogic<T extends BaseAnimal>(animals: T[]): UseSwipeLogic
     const historyEntry: SwipeHistory = {
       animalId: target.id,
       action,
-      timestamp: new Date()
+      timestamp: Date.now()
     }
 
     setState(prevState => {

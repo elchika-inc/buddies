@@ -2,20 +2,14 @@ import { Dog } from '@/types/dog'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, MapPin, Calendar, Info, Zap, Users, Home } from 'lucide-react'
-import { DOG_SIZE_COLORS, EXERCISE_LEVEL_COLORS, DEFAULT_VALUES, UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
+import { UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
+import { getDogSizeColor, getExerciseColor } from '@/lib/cardUtils'
 
 type DogCardProps = {
   dog: Dog
 }
 
 export function DogCard({ dog }: DogCardProps) {
-  const getSizeColor = (size: string) => {
-    return DOG_SIZE_COLORS[size as keyof typeof DOG_SIZE_COLORS] || DEFAULT_VALUES.DOG_SIZE_COLOR
-  }
-
-  const getExerciseColor = (level: string) => {
-    return EXERCISE_LEVEL_COLORS[level as keyof typeof EXERCISE_LEVEL_COLORS] || DEFAULT_VALUES.EXERCISE_LEVEL_COLOR
-  }
 
   return (
     <Card className={`w-full h-full overflow-hidden ${ANIMATION_CONSTANTS.CARD_SHADOW}`}>
@@ -26,7 +20,7 @@ export function DogCard({ dog }: DogCardProps) {
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4 flex gap-2">
-          <Badge className={getSizeColor(dog.size)}>
+          <Badge className={getDogSizeColor(dog.size)}>
             🐕 {dog.size}
           </Badge>
           <Badge variant="secondary" className="bg-white/90 text-black">

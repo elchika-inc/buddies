@@ -2,17 +2,17 @@ import { useState } from 'react'
 import { Animal, SwipeAction, SwipeHistory, SwipeStateResult, AppState } from '@/types/animal'
 
 export function useSwipeState(animals: Animal[]): SwipeStateResult {
-  const [state, setState] = useState<AppState>({
-    currentAnimalIndex: 0,
+  const [state, setState] = useState<AppState<Animal>>({
+    currentIndex: 0,
     swipeHistory: [],
-    likedAnimals: [],
-    passedAnimals: [],
-    superLikedAnimals: []
+    liked: [],
+    passed: [],
+    superLiked: []
   })
 
-  const currentAnimal = animals[state.currentAnimalIndex]
-  const nextAnimal = animals[state.currentAnimalIndex + 1]
-  const remainingCount = animals.length - state.currentAnimalIndex
+  const currentAnimal = animals[state.currentIndex]
+  const nextAnimal = animals[state.currentIndex + 1]
+  const remainingCount = animals.length - state.currentIndex
 
   const handleSwipe = (action: SwipeAction, specificAnimal?: Animal) => {
     const targetAnimal = specificAnimal || currentAnimal
@@ -24,13 +24,13 @@ export function useSwipeState(animals: Animal[]): SwipeStateResult {
       timestamp: Date.now()
     }
 
-    const newState: AppState = {
+    const newState: AppState<Animal> = {
       ...state,
-      currentAnimalIndex: specificAnimal ? state.currentAnimalIndex : state.currentAnimalIndex + 1,
+      currentIndex: specificAnimal ? state.currentIndex : state.currentIndex + 1,
       swipeHistory: [...state.swipeHistory, historyEntry],
-      likedAnimals: action === "like" ? [...state.likedAnimals, targetAnimal] : state.likedAnimals,
-      passedAnimals: action === "pass" ? [...state.passedAnimals, targetAnimal] : state.passedAnimals,
-      superLikedAnimals: action === "superlike" ? [...state.superLikedAnimals, targetAnimal] : state.superLikedAnimals
+      liked: action === "like" ? [...state.liked, targetAnimal] : state.liked,
+      passed: action === "pass" ? [...state.passed, targetAnimal] : state.passed,
+      superLiked: action === "superlike" ? [...state.superLiked, targetAnimal] : state.superLiked
     }
 
     setState(newState)
@@ -38,10 +38,10 @@ export function useSwipeState(animals: Animal[]): SwipeStateResult {
 
   const reset = () => {
     setState({
-      currentAnimalIndex: 0,
-      likedAnimals: [],
-      passedAnimals: [],
-      superLikedAnimals: [],
+      currentIndex: 0,
+      liked: [],
+      passed: [],
+      superLiked: [],
       swipeHistory: []
     })
   }
@@ -50,10 +50,10 @@ export function useSwipeState(animals: Animal[]): SwipeStateResult {
     currentAnimal,
     nextAnimal,
     remainingCount,
-    likedAnimalsCount: state.likedAnimals.length,
-    likedAnimals: state.likedAnimals,
-    passedAnimals: state.passedAnimals,
-    superLikedAnimals: state.superLikedAnimals,
+    likedAnimalsCount: state.liked.length,
+    likedAnimals: state.liked,
+    passedAnimals: state.passed,
+    superLikedAnimals: state.superLiked,
     swipeHistory: state.swipeHistory,
     handleSwipe,
     reset,

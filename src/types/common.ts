@@ -4,16 +4,10 @@ export type SwipeAction = "like" | "pass" | "superlike"
 export type SwipeHistory = {
   animalId: string
   action: SwipeAction
-  timestamp: Date
+  timestamp: number
 }
 
-export type SwipeStateResult = {
-  currentIndex: number
-  history: SwipeHistory[]
-  liked: unknown[]
-  passed: unknown[]
-  superLiked: unknown[]
-}
+// 注：SwipeStateResultは削除しました - useAnimalSwipeのAnimalSwipeResultを使用してください
 
 // アニマル共通インターフェース
 export interface BaseAnimal {
@@ -39,5 +33,5 @@ export type AppState<T extends BaseAnimal> = {
 export type SwipeResult<T extends BaseAnimal> = {
   action: SwipeAction
   animal: T
-  timestamp: Date
+  timestamp: number
 }

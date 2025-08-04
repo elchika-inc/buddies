@@ -251,7 +251,8 @@ async function getAnimals(env: Env, species: string | null, corsHeaders: Record<
  * スワイプアクションを記録
  */
 async function recordSwipeAction(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
-  const { userId, animalId, action } = await request.json()
+  const body = await request.json() as any
+  const { userId, animalId, action } = body
 
   if (!userId || !animalId || !action) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -314,7 +315,7 @@ async function getUserSwipes(userId: string, env: Env, corsHeaders: Record<strin
   }
 
   results.forEach((swipe: any) => {
-    const actionList = swipesByAction[swipe.action as keyof typeof swipesByAction]
+    const actionList = swipesByAction[swipe.action as keyof typeof swipesByAction] as any[]
     if (actionList) {
       actionList.push(swipe)
     }

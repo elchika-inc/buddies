@@ -2,22 +2,14 @@ import { Cat } from '@/types/cat'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, MapPin, Calendar, Info, Volume2, Users, Moon, Sun } from 'lucide-react'
-import { SOCIAL_LEVEL_COLORS, ACTIVITY_ICONS, DEFAULT_VALUES, UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
+import { ACTIVITY_ICONS, UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
+import { getCatCoatColor, getSocialColor } from '@/lib/cardUtils'
 
 type CatCardProps = {
   cat: Cat
 }
 
 export function CatCard({ cat }: CatCardProps) {
-  const getCoatColor = (length: string) => {
-    return length === '長毛' 
-      ? 'bg-purple-100 text-purple-800' 
-      : 'bg-blue-100 text-blue-800'
-  }
-
-  const getSocialColor = (level: string) => {
-    return SOCIAL_LEVEL_COLORS[level as keyof typeof SOCIAL_LEVEL_COLORS] || DEFAULT_VALUES.SOCIAL_LEVEL_COLOR
-  }
 
   const activityIconMap = {
     sun: <Sun className="w-3 h-3" />,
@@ -38,7 +30,7 @@ export function CatCard({ cat }: CatCardProps) {
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4 flex gap-2">
-          <Badge className={getCoatColor(cat.coatLength)}>
+          <Badge className={getCatCoatColor(cat.coatLength)}>
             🐱 {cat.coatLength}
           </Badge>
           <Badge variant="secondary" className="bg-white/90 text-black">

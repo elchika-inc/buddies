@@ -21,11 +21,10 @@ export interface Animal extends BaseAnimal {
 }
 
 // 共通型をインポート
-export type { SwipeAction, SwipeHistory, SwipeResult } from './common'
-import type { AppState } from './common'
+export type { SwipeAction, SwipeHistory, SwipeResult, AppState } from './common'
 
 // Animal専用のアプリケーション状態
-export type AnimalAppState = AppState<Animal>
+export type AnimalAppState = import('./common').AppState<Animal>
 
 export type SwipeStateResult = {
   currentAnimal: Animal | undefined

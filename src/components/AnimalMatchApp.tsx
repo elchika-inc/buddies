@@ -1,26 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Heart, RotateCcw, Sparkles, Loader2 } from 'lucide-react'
-import { SwipeScreen } from './SwipeScreen'
-import { AnimalList } from './AnimalList'
-import { type BaseAnimal, type SwipeAction } from '../types/common'
+import { GenericSwipeScreen } from './GenericSwipeScreen'
+import { GenericAnimalList } from './GenericAnimalList'
+import { type BaseAnimal } from '../types/common'
 import { applyTheme, type ThemeType } from '../config/theme'
 import { SCREEN_TYPES } from '../config/constants'
 
-// 汎用スワイプ状態の型
-export interface SwipeStateResult<T extends BaseAnimal> {
-  current: T | undefined
-  next: T | undefined
-  remainingCount: number
-  likedCount: number
-  liked: T[]
-  passed: T[]
-  superLiked: T[]
-  swipeHistory: any[]
-  handleSwipe: (action: SwipeAction, specific?: T) => void
-  reset: () => void
-  isComplete: boolean
-}
+// useAnimalSwipeから統一型をインポート
+import { AnimalSwipeResult } from '@/hooks/useAnimalSwipe'
 
 // アニマルマッチアプリのプロップス
 export interface AnimalMatchAppProps<T extends BaseAnimal> {
@@ -28,7 +16,7 @@ export interface AnimalMatchAppProps<T extends BaseAnimal> {
   loading?: boolean
   error?: string | null
   refetch?: () => void
-  swipeState: SwipeStateResult<T>
+  swipeState: AnimalSwipeResult<T>
   theme: ThemeType
   animalType: string // "犬" | "猫" など
   animalEmoji: string // "🐕" | "🐱" など
@@ -53,13 +41,9 @@ export function AnimalMatchApp<T extends BaseAnimal>({
   const [currentScreen, setCurrentScreen] = useState<Screen>('swipe')
 
   const {
-    current,
-    next,
-    remainingCount,
     likedCount,
     superLiked,
     liked,
-    handleSwipe,
     reset,
     isComplete
   } = swipeState
@@ -183,30 +167,27 @@ export function AnimalMatchApp<T extends BaseAnimal>({
       isComplete ? (
         <CompletionScreen />
       ) : (
-        <SwipeScreen
-          currentAnimal={current}
-          nextAnimal={next}
-          remainingCount={remainingCount}
-          handleSwipe={handleSwipe}
+        <GenericSwipeScreen
+          swipeState={swipeState}
+          onShowLiked={() => setCurrentScreen(SCREEN_TYPES.LIKED)}
+          onShowSuperLiked={() => setCurrentScreen(SCREEN_TYPES.SUPERLIKED)}
           renderCard={renderCard}
         />
       ),
     [SCREEN_TYPES.LIKED]: () => (
-      <AnimalList
+      <GenericAnimalList
         animals={liked}
         title={`気になる${animalType}`}
         emptyMessage={`まだ気になる${animalType}がいません`}
         onBack={() => setCurrentScreen(SCREEN_TYPES.SWIPE)}
-        renderCard={renderCard}
       />
     ),
     [SCREEN_TYPES.SUPERLIKED]: () => (
-      <AnimalList
+      <GenericAnimalList
         animals={superLiked}
         title={`特に気になる${animalType}`}
         emptyMessage={`まだ特に気になる${animalType}がいません`}
         onBack={() => setCurrentScreen(SCREEN_TYPES.SWIPE)}
-        renderCard={renderCard}
       />
     )
   } as const
