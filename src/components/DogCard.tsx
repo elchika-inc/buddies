@@ -2,6 +2,7 @@ import { Dog } from '@/types/dog'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, MapPin, Calendar, Info, Zap, Users, Home } from 'lucide-react'
+import { DOG_SIZE_COLORS, EXERCISE_LEVEL_COLORS, DEFAULT_VALUES, UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
 
 type DogCardProps = {
   dog: Dog
@@ -9,27 +10,16 @@ type DogCardProps = {
 
 export function DogCard({ dog }: DogCardProps) {
   const getSizeColor = (size: string) => {
-    switch (size) {
-      case '小型犬': return 'bg-green-100 text-green-800'
-      case '中型犬': return 'bg-blue-100 text-blue-800'
-      case '大型犬': return 'bg-orange-100 text-orange-800'
-      case '超大型犬': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    return DOG_SIZE_COLORS[size as keyof typeof DOG_SIZE_COLORS] || DEFAULT_VALUES.DOG_SIZE_COLOR
   }
 
   const getExerciseColor = (level: string) => {
-    switch (level) {
-      case '低': return 'bg-green-500'
-      case '中': return 'bg-yellow-500'
-      case '高': return 'bg-red-500'
-      default: return 'bg-gray-500'
-    }
+    return EXERCISE_LEVEL_COLORS[level as keyof typeof EXERCISE_LEVEL_COLORS] || DEFAULT_VALUES.EXERCISE_LEVEL_COLOR
   }
 
   return (
-    <Card className="w-full h-full overflow-hidden shadow-xl">
-      <div className="relative h-2/3">
+    <Card className={`w-full h-full overflow-hidden ${ANIMATION_CONSTANTS.CARD_SHADOW}`}>
+      <div className={`relative ${LAYOUT_CONSTANTS.CARD_HEIGHT_RATIO}`}>
         <img
           src={dog.imageUrl}
           alt={dog.name}
@@ -62,7 +52,7 @@ export function DogCard({ dog }: DogCardProps) {
         )}
       </div>
       
-      <CardContent className="p-4 h-1/3 flex flex-col justify-between">
+      <CardContent className={`${LAYOUT_CONSTANTS.PADDING_STANDARD} ${LAYOUT_CONSTANTS.CONTENT_HEIGHT_RATIO} flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-2xl font-bold">{dog.name}</h3>
@@ -82,7 +72,7 @@ export function DogCard({ dog }: DogCardProps) {
           </p>
           
           <div className="flex flex-wrap gap-1 mb-3">
-            {dog.personality.slice(0, 3).map((trait, index) => (
+            {dog.personality.slice(0, UI_CONSTANTS.MAX_PERSONALITY_TAGS).map((trait, index) => (
               <Badge key={index} variant="outline" className="text-xs">
                 {trait}
               </Badge>

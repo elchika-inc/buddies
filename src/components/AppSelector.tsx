@@ -1,12 +1,31 @@
 import { Button } from '@/components/ui/button'
+import { UI_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useNavigate } from '@tanstack/react-router'
 
 type AppSelectorProps = {
-  onSelectDog: () => void
-  onSelectCat: () => void
+  onSelectDogs?: () => void
+  onSelectCats?: () => void
 }
 
-export function AppSelector({ onSelectDog, onSelectCat }: AppSelectorProps) {
+export function AppSelector({ onSelectDogs, onSelectCats }: AppSelectorProps) {
+  const navigate = useNavigate()
+  
+  const handleSelectDogs = () => {
+    if (onSelectDogs) {
+      onSelectDogs()
+    } else {
+      navigate({ to: '/dogs' })
+    }
+  }
+  
+  const handleSelectCats = () => {
+    if (onSelectCats) {
+      onSelectCats()
+    } else {
+      navigate({ to: '/cats' })
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
@@ -24,9 +43,9 @@ export function AppSelector({ onSelectDog, onSelectCat }: AppSelectorProps) {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* 犬アプリ */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={onSelectDog}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={handleSelectDogs}>
             <CardHeader className="text-center">
-              <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🐕</div>
+              <div className={`text-${UI_CONSTANTS.EMOJI_SIZE} mb-4 ${ANIMATION_CONSTANTS.HOVER_TRANSFORM} transition-transform`}>🐕</div>
               <CardTitle className="text-2xl text-orange-600">DogMatch</CardTitle>
               <CardDescription className="text-base">
                 保護犬専門マッチングアプリ
@@ -49,9 +68,9 @@ export function AppSelector({ onSelectDog, onSelectCat }: AppSelectorProps) {
           </Card>
 
           {/* 猫アプリ */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={onSelectCat}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer group" onClick={handleSelectCats}>
             <CardHeader className="text-center">
-              <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">🐱</div>
+              <div className={`text-${UI_CONSTANTS.EMOJI_SIZE} mb-4 ${ANIMATION_CONSTANTS.HOVER_TRANSFORM} transition-transform`}>🐱</div>
               <CardTitle className="text-2xl text-purple-600">CatMatch</CardTitle>
               <CardDescription className="text-base">
                 保護猫専門マッチングアプリ

@@ -22,18 +22,58 @@ TinderライクなUIUXを持つ、保護犬・保護猫とユーザーをマッ�
 
 ### 前提条件
 - Node.js 18+ 
-- npm または yarn
+- bun または npm
+- Cloudflare Wrangler CLI (デプロイ用)
 
-### インストール・起動
+### ローカル開発
 
 ```bash
 # 依存関係をインストール
 npm install
+# または
+bun install
+
+# 環境変数ファイルをコピー
+cp .env.example .env.local
 
 # 開発サーバーを起動
 npm run dev
+# または
+bun dev
 
-# ブラウザで http://localhost:5173 を開く
+# ブラウザで http://localhost:3330 を開く
+```
+
+### D1データベースセットアップ
+
+```bash
+# D1データベースを作成・初期化
+npm run db:setup
+
+# マイグレーションを実行
+npm run db:migrate:local
+
+# サンプルデータを投入
+npm run db:seed:local
+
+# Workersサーバーを起動（D1データベース使用）
+npm run dev:worker
+```
+
+### Cloudflare Workers デプロイ
+
+```bash
+# Wrangler CLI をインストール
+npm install -g wrangler
+
+# Cloudflare にログイン
+wrangler login
+
+# プロダクション用ビルド
+npm run build:production
+
+# Cloudflare Workers にデプロイ
+npm run deploy
 ```
 
 ## ✨ 主な機能
@@ -80,14 +120,21 @@ npm run dev
 
 ### 技術スタック
 - **React 18**: 最新のReact Hooks使用
+- **TanStack Router**: 型安全なルーティング
 - **TypeScript 5**: 型安全な開発
 - **Vite**: 高速ビルド・開発サーバー
 - **TailwindCSS**: ユーティリティファーストのCSS
 - **Lucide React**: 軽量なアイコンライブラリ
+- **Cloudflare Workers**: 高速なサーバーレスプラットフォーム
 
 ### ディレクトリ構成
 ```
 src/
+├── routes/                  # TanStack Router ルート定義
+│   ├── __root.tsx         # ルートレイアウト
+│   ├── index.tsx          # ホームページ（アプリ選択）
+│   ├── dogs.tsx           # 犬マッチング画面
+│   └── cats.tsx           # 猫マッチング画面
 ├── components/              # UIコンポーネント
 │   ├── ui/                 # 基本UIコンポーネント
 │   ├── AppSelector.tsx     # アプリ選択画面
@@ -102,6 +149,8 @@ src/
 │   ├── useSwipeGesture.ts  # スワイプジェスチャー処理（共通）
 │   ├── useDogSwipeState.ts # 犬用スワイプ状態管理
 │   └── useCatSwipeState.ts # 猫用スワイプ状態管理
+├── config/                 # 設定ファイル
+│   └── environment.ts      # 環境別設定
 ├── types/                  # TypeScript型定義
 │   ├── dog.ts             # 犬関連の型定義
 │   └── cat.ts             # 猫関連の型定義
@@ -232,22 +281,63 @@ export const mockCats: Cat[] = [
 - 🏠 室内外適性（完全室内・室内外自由等）
 - 🔇 鳴き声レベル（静か・普通・よく鳴く）
 
+## 🌩️ Cloudflare 環境構築
+
+### 必要な設定
+
+1. **Cloudflare アカウント**: [Cloudflare](https://cloudflare.com) でアカウント作成
+2. **API トークン**: Cloudflare ダッシュボードで API トークンを生成
+3. **環境変数設定**: `.env.local` に設定
+
+```bash
+# Cloudflare設定
+CLOUDFLARE_API_TOKEN=your_api_token_here
+CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+```
+
+### デプロイ手順
+
+```bash
+# 1. プロジェクトビルド
+npm run build:production
+
+# 2. Workersデプロイ実行
+npm run deploy
+
+# 3. ステージング環境デプロイ
+npm run deploy:staging
+
+# 4. プロダクション環境デプロイ
+npm run deploy:production
+```
+
+### 自動デプロイ設定
+
+GitHub Actions を使用した自動デプロイも設定済みです：
+
+- `main` ブランチ → 本番環境
+- `develop` ブランチ → ステージング環境
+- プルリクエスト → プレビュー環境
+
 ## 🚧 今後の拡張予定
 
 ### 機能拡張
 - [ ] ローカルストレージでの状態永続化（アプリ別）
-- [ ] 犬・猫の詳細画面実装
+- [ ] 犬・猫の詳細画面実装（TanStack Router でページ追加）
 - [ ] 犬専用フィルタリング機能（運動量、住環境等）
 - [ ] 猫専用フィルタリング機能（社会性、活動時間等）
 - [ ] お気に入り動物の詳細管理・メモ機能
 - [ ] 保護団体との連絡機能
 - [ ] アプリ間のデータ比較・統計機能
+- [ ] Cloudflare Workers API との連携
 
 ### 技術改善
-- [ ] React Native版の開発
+- [ ] Cloudflare Workers D1 データベース連携
+- [ ] Cloudflare KV でキャッシュ機能
 - [ ] PWA対応
 - [ ] パフォーマンス最適化
 - [ ] アクセシビリティ向上
+- [ ] TypeScript 型安全性の向上
 
 ## 📄 ライセンス
 

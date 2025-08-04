@@ -1,0 +1,5 @@
+# SPA用のリダイレクト - すべてのルートをindex.htmlにリダイレクト
+/*    /index.html   200
+
+# API リダイレクト (将来的にWorkers APIを使用する場合)
+/api/*  https://animals.pawmatch.workers.dev/:splat  200

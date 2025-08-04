@@ -7,6 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // shadcn/ui の基本カラー
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -39,6 +40,19 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // テーマ対応カラー
+        theme: {
+          primary: "var(--theme-primary)",
+          secondary: "var(--theme-secondary)",
+          accent: "var(--theme-accent)",
+          background: "var(--theme-background)",
+          surface: "var(--theme-surface)",
+          text: "var(--theme-text)",
+          textSecondary: "var(--theme-text-secondary)",
+          like: "var(--theme-like)",
+          pass: "var(--theme-pass)",
+          superlike: "var(--theme-superlike)",
         },
       },
       borderRadius: {

@@ -169,3 +169,9 @@ build-storybook.log
 # Tailwind CSS
 # Uncomment if you're not committing the built CSS
 # dist/
+
+# Claude
+.claude/
+
+# MCP Server
+.serena/

@@ -1,17 +1,13 @@
-export type Dog = {
-  id: string
-  name: string
+import { BaseAnimal } from './common'
+
+export interface Dog extends BaseAnimal {
   breed: string
-  age: number
   gender: '男の子' | '女の子'
   size: '小型犬' | '中型犬' | '大型犬' | '超大型犬'
   color: string
-  location: string
-  description: string
   personality: string[]
   medicalInfo: string
   careRequirements: string[]
-  imageUrl: string
   shelterName: string
   shelterContact: string
   adoptionFee: number
@@ -27,21 +23,12 @@ export type Dog = {
   createdAt: string
 }
 
-export type SwipeAction = "like" | "pass" | "superlike"
+// 共通型をインポート
+export type { SwipeAction, SwipeHistory, SwipeResult } from './common'
+import type { AppState } from './common'
 
-export type SwipeHistory = {
-  dogId: string
-  action: SwipeAction
-  timestamp: number
-}
-
-export type AppState = {
-  currentDogIndex: number
-  swipeHistory: SwipeHistory[]
-  likedDogs: Dog[]
-  passedDogs: Dog[]
-  superLikedDogs: Dog[]
-}
+// Dog専用のアプリケーション状態
+export type DogAppState = AppState<Dog>
 
 export type SwipeStateResult = {
   currentDog: Dog | undefined
@@ -51,8 +38,8 @@ export type SwipeStateResult = {
   likedDogs: Dog[]
   passedDogs: Dog[]
   superLikedDogs: Dog[]
-  swipeHistory: SwipeHistory[]
-  handleSwipe: (action: SwipeAction, specificDog?: Dog) => void
+  swipeHistory: import('./common').SwipeHistory[]
+  handleSwipe: (action: import('./common').SwipeAction, specificDog?: Dog) => void
   reset: () => void
   isComplete: boolean
 }

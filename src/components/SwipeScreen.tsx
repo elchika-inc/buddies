@@ -2,7 +2,8 @@ import { SwipeCard } from "./SwipeCard"
 import { ActionButtons } from "./ActionButtons"
 import { SwipeStateResult } from "@/types/animal"
 import { Button } from "@/components/ui/button"
-import { RotateCcw, Heart, Star, List } from "lucide-react"
+import { RotateCcw, Heart, Star } from "lucide-react"
+import { UI_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
 
 type SwipeScreenProps = {
   onShowLiked: () => void
@@ -70,10 +71,10 @@ export function SwipeScreen({ onShowLiked, onShowSuperLiked, swipeState }: Swipe
 
       {/* カードエリア */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="relative w-full max-w-sm h-[650px]">
+        <div className={`relative w-full ${UI_CONSTANTS.MAX_CARD_WIDTH} h-[${UI_CONSTANTS.CARD_HEIGHT}px]`}>
           {/* 次のカード（背景） */}
           {nextAnimal && (
-            <div className="absolute inset-0 scale-95 opacity-50 pointer-events-none transform rotate-2">
+            <div className={`absolute inset-0 scale-95 opacity-${Math.round(UI_CONSTANTS.CARD_OPACITY_BACKGROUND * 100)} pointer-events-none transform ${ANIMATION_CONSTANTS.TRANSFORM_ROTATE}`}>
               <SwipeCard animal={nextAnimal} onSwipe={() => {}} />
             </div>
           )}

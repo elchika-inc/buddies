@@ -2,6 +2,7 @@ import { Cat } from '@/types/cat'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, MapPin, Calendar, Info, Volume2, Users, Moon, Sun } from 'lucide-react'
+import { SOCIAL_LEVEL_COLORS, ACTIVITY_ICONS, DEFAULT_VALUES, UI_CONSTANTS, LAYOUT_CONSTANTS, ANIMATION_CONSTANTS } from '@/config/constants'
 
 type CatCardProps = {
   cat: Cat
@@ -15,25 +16,22 @@ export function CatCard({ cat }: CatCardProps) {
   }
 
   const getSocialColor = (level: string) => {
-    switch (level) {
-      case '人懐っこい': return 'bg-green-500'
-      case 'シャイ': return 'bg-yellow-500'
-      case '警戒心強い': return 'bg-red-500'
-      default: return 'bg-gray-500'
-    }
+    return SOCIAL_LEVEL_COLORS[level as keyof typeof SOCIAL_LEVEL_COLORS] || DEFAULT_VALUES.SOCIAL_LEVEL_COLOR
+  }
+
+  const activityIconMap = {
+    sun: <Sun className="w-3 h-3" />,
+    moon: <Moon className="w-3 h-3" />
   }
 
   const getActivityIcon = (time: string) => {
-    switch (time) {
-      case '昼型': return <Sun className="w-3 h-3" />
-      case '夜型': return <Moon className="w-3 h-3" />
-      default: return <Sun className="w-3 h-3" />
-    }
+    const iconType = ACTIVITY_ICONS[time as keyof typeof ACTIVITY_ICONS] || 'sun'
+    return activityIconMap[iconType]
   }
 
   return (
-    <Card className="w-full h-full overflow-hidden shadow-xl">
-      <div className="relative h-2/3">
+    <Card className={`w-full h-full overflow-hidden ${ANIMATION_CONSTANTS.CARD_SHADOW}`}>
+      <div className={`relative ${LAYOUT_CONSTANTS.CARD_HEIGHT_RATIO}`}>
         <img
           src={cat.imageUrl}
           alt={cat.name}
@@ -66,7 +64,7 @@ export function CatCard({ cat }: CatCardProps) {
         )}
       </div>
       
-      <CardContent className="p-4 h-1/3 flex flex-col justify-between">
+      <CardContent className={`${LAYOUT_CONSTANTS.PADDING_STANDARD} ${LAYOUT_CONSTANTS.CONTENT_HEIGHT_RATIO} flex flex-col justify-between`}>
         <div>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-2xl font-bold">{cat.name}</h3>
@@ -86,7 +84,7 @@ export function CatCard({ cat }: CatCardProps) {
           </p>
           
           <div className="flex flex-wrap gap-1 mb-3">
-            {cat.personality.slice(0, 3).map((trait, index) => (
+            {cat.personality.slice(0, UI_CONSTANTS.MAX_PERSONALITY_TAGS).map((trait, index) => (
               <Badge key={index} variant="outline" className="text-xs">
                 {trait}
               </Badge>

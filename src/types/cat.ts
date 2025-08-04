@@ -1,17 +1,13 @@
-export type Cat = {
-  id: string
-  name: string
+import { BaseAnimal } from './common'
+
+export interface Cat extends BaseAnimal {
   breed: string
-  age: number
   gender: '男の子' | '女の子'
   coatLength: '短毛' | '長毛'
   color: string
-  location: string
-  description: string
   personality: string[]
   medicalInfo: string
   careRequirements: string[]
-  imageUrl: string
   shelterName: string
   shelterContact: string
   adoptionFee: number
@@ -28,21 +24,12 @@ export type Cat = {
   createdAt: string
 }
 
-export type SwipeAction = "like" | "pass" | "superlike"
+// 共通型をインポート
+export type { SwipeAction, SwipeHistory, SwipeResult } from './common'
+import type { AppState } from './common'
 
-export type SwipeHistory = {
-  catId: string
-  action: SwipeAction
-  timestamp: number
-}
-
-export type AppState = {
-  currentCatIndex: number
-  swipeHistory: SwipeHistory[]
-  likedCats: Cat[]
-  passedCats: Cat[]
-  superLikedCats: Cat[]
-}
+// Cat専用のアプリケーション状態
+export type CatAppState = AppState<Cat>
 
 export type SwipeStateResult = {
   currentCat: Cat | undefined
@@ -52,8 +39,8 @@ export type SwipeStateResult = {
   likedCats: Cat[]
   passedCats: Cat[]
   superLikedCats: Cat[]
-  swipeHistory: SwipeHistory[]
-  handleSwipe: (action: SwipeAction, specificCat?: Cat) => void
+  swipeHistory: import('./common').SwipeHistory[]
+  handleSwipe: (action: import('./common').SwipeAction, specificCat?: Cat) => void
   reset: () => void
   isComplete: boolean
 }

@@ -1,0 +1,49 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "pawmatch-frontend"
+main = "src/worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers Site設定で静的ファイルを配信
+[site]
+bucket = "./dist"
+
+# 環境変数
+[vars]
+ENVIRONMENT = "production"
+
+# D1データベース設定
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "pawmatch-local-db"
+
+# 本番環境
+[env.production]
+name = "pawmatch-frontend"
+[env.production.vars]
+ENVIRONMENT = "production"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db-prod"
+database_id = "pawmatch-prod-db"
+
+# ステージング環境
+[env.staging]
+name = "pawmatch-frontend-staging"
+[env.staging.vars]
+ENVIRONMENT = "staging"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db-staging"
+database_id = "pawmatch-staging-db"
+
+# 開発環境
+[env.development]
+name = "pawmatch-frontend-dev"
+[env.development.vars]
+ENVIRONMENT = "development"
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db-dev"
+database_id = "pawmatch-dev-db"

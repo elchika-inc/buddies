@@ -1,6 +1,6 @@
 import { Animal } from '@/types/animal'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, MapPin, Calendar, Heart, Star } from 'lucide-react'
+import { ArrowLeft, MapPin, Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 type AnimalListProps = {
