@@ -51,7 +51,7 @@ export function AnimalCard({ animal }: AnimalCardProps) {
           </p>
           
           <div className="flex flex-wrap gap-1 mb-3">
-            {animal.personality.slice(0, 3).map((trait, index) => (
+            {(animal.personality || []).slice(0, 3).map((trait, index) => (
               <Badge key={index} variant="outline" className="text-xs">
                 {trait}
               </Badge>
@@ -66,7 +66,7 @@ export function AnimalCard({ animal }: AnimalCardProps) {
           </span>
           <span className="flex items-center gap-1">
             <Info className="h-3 w-3" />
-            ¥{animal.adoptionFee.toLocaleString()}
+            ¥{(animal.adoptionFee || 0).toLocaleString()}
           </span>
         </div>
       </CardContent>

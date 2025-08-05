@@ -3,52 +3,52 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "workspaces": [
-    "packages/*"
+  "description": "保護犬・保護猫とユーザーをマッチングするWebアプリケーション",
+  "keywords": [
+    "react",
+    "typescript",
+    "graphql",
+    "apollo-client",
+    "pet-adoption",
+    "matching"
   ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:staging": "VITE_ENVIRONMENT=staging tsc && vite build",
-    "build:production": "VITE_ENVIRONMENT=production tsc && vite build",
+    "build:check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
     "preview": "vite preview",
-    "deploy": "wrangler deploy",
-    "dev:worker": "wrangler dev",
-    "deploy:staging": "wrangler deploy --env staging",
-    "deploy:production": "wrangler deploy --env production",
-    "db:setup": "chmod +x scripts/setup-d1.sh && ./scripts/setup-d1.sh",
-    "db:migrate:local": "wrangler d1 migrations apply pawmatch-db --local",
-    "db:migrate:staging": "wrangler d1 migrations apply pawmatch-db-staging --env staging",
-    "db:migrate:production": "wrangler d1 migrations apply pawmatch-db-prod --env production",
-    "db:seed:local": "wrangler d1 execute pawmatch-db --local --file migrations/002_seed_data.sql",
-    "db:seed:staging": "wrangler d1 execute pawmatch-db-staging --env staging --file migrations/002_seed_data.sql",
-    "db:seed:production": "wrangler d1 execute pawmatch-db-prod --env production --file migrations/002_seed_data.sql",
-    "crawler:install": "cd packages/crawler && npm install",
-    "crawler:build": "cd packages/crawler && npm run build",
-    "crawler:dogs": "cd packages/crawler && npm run crawl:dogs",
-    "crawler:cats": "cd packages/crawler && npm run crawl:cats",
-    "crawler:crawl": "cd packages/crawler && npm run crawl:pets",
-    "crawler:all": "cd packages/crawler && npm run crawl:all"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "crawl": "tsx src/scripts/crawl.ts",
+    "crawl:dogs": "tsx src/scripts/crawl.ts dogs",
+    "crawl:cats": "tsx src/scripts/crawl.ts cats",
+    "crawl:status": "tsx src/scripts/crawl.ts status",
+    "crawl:d1": "tsx src/scripts/crawl-d1.ts",
+    "crawl:d1:dogs": "tsx src/scripts/crawl-d1.ts dogs",
+    "crawl:d1:cats": "tsx src/scripts/crawl-d1.ts cats",
+    "crawl:d1:status": "tsx src/scripts/crawl-d1.ts status"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.9",
+    "@graphql-tools/schema": "^10.0.25",
+    "@tanstack/react-router": "^1.58.3",
+    "clsx": "^2.0.0",
+    "graphql": "^16.11.0",
+    "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "^0.263.1",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^1.14.0",
-    "@tanstack/react-router": "^1.58.3",
-    "@tanstack/react-router-devtools": "^1.58.3",
-    "@cloudflare/kv-asset-handler": "^0.3.4"
+    "tailwind-merge": "^1.14.0"
   },
   "devDependencies": {
+    "@tanstack/react-router-devtools": "^1.58.3",
+    "@tanstack/router-plugin": "^1.58.4",
+    "@types/node": "^24.2.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
-    "@cloudflare/workers-types": "^4.20241112.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.0.3",
-    "@tanstack/router-plugin": "^1.58.4",
     "autoprefixer": "^10.4.14",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -56,7 +56,15 @@
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.0",
     "typescript": "^5.0.2",
-    "vite": "^4.4.5",
-    "wrangler": "^3.78.12"
-  }
+    "vite": "^4.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

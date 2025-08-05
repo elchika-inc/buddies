@@ -39,6 +39,15 @@ export function AnimalMatchApp<T extends BaseAnimal>({
   renderCard
 }: AnimalMatchAppProps<T>) {
   const [currentScreen, setCurrentScreen] = useState<Screen>('swipe')
+  
+  // デバッグログ追加
+  console.log('🎪 AnimalMatchApp - 受信データ:', {
+    animalsCount: animals.length,
+    loading,
+    error,
+    animalType,
+    firstAnimal: animals[0] ? { id: animals[0].id, name: animals[0].name } : null
+  })
 
   const {
     likedCount,

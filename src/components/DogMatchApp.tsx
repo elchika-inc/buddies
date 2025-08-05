@@ -6,6 +6,15 @@ import { DogCard } from './DogCard'
 
 export function DogMatchApp() {
   const { animals: dogs, loading, error, refetch } = useDogs()
+  
+  // デバッグログ追加
+  console.log('🎯 DogMatchApp - データ状態:', {
+    dogsCount: dogs.length,
+    loading,
+    error,
+    firstDog: dogs[0] ? { id: dogs[0].id, name: dogs[0].name } : null
+  })
+  
   const swipeState = useDogSwipeState(dogs as Dog[])
 
   return (

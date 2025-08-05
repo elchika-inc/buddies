@@ -59,15 +59,15 @@ export const ACTIVITY_ICONS = {
 
 // スワイプアクション処理マッピング
 export const SWIPE_ACTION_HANDLERS = {
-  like: (state: any, target: any) => ({
+  like: <T>(state: { liked: T[]; passed: T[]; superLiked: T[] }, target: T) => ({
     ...state,
     liked: [...state.liked, target]
   }),
-  pass: (state: any, target: any) => ({
+  pass: <T>(state: { liked: T[]; passed: T[]; superLiked: T[] }, target: T) => ({
     ...state,
     passed: [...state.passed, target]
   }),
-  superlike: (state: any, target: any) => ({
+  superlike: <T>(state: { liked: T[]; passed: T[]; superLiked: T[] }, target: T) => ({
     ...state,
     superLiked: [...state.superLiked, target]
   })

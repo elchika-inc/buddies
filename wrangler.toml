@@ -1,49 +1,46 @@
-#:schema node_modules/wrangler/config-schema.json
-name = "pawmatch-frontend"
+# Cloudflare Wrangler Configuration for PawMatch
+
+name = "pawmatch"
 main = "src/worker.ts"
-compatibility_date = "2024-12-01"
+compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Workers Site設定で静的ファイルを配信
-[site]
-bucket = "./dist"
-
-# 環境変数
-[vars]
-ENVIRONMENT = "production"
-
-# D1データベース設定
+# D1 Database Configuration
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
-database_id = "pawmatch-local-db"
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
-# 本番環境
-[env.production]
-name = "pawmatch-frontend"
-[env.production.vars]
-ENVIRONMENT = "production"
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db-prod"
-database_id = "pawmatch-prod-db"
-
-# ステージング環境
-[env.staging]
-name = "pawmatch-frontend-staging"
-[env.staging.vars]
-ENVIRONMENT = "staging"
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db-staging"
-database_id = "pawmatch-staging-db"
-
-# 開発環境
-[env.development]
-name = "pawmatch-frontend-dev"
-[env.development.vars]
+# Environment Variables
+[vars]
 ENVIRONMENT = "development"
-[[env.development.d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db-dev"
-database_id = "pawmatch-dev-db"
+
+# Build Configuration (disabled for dev)
+# [build]
+# command = "npm run build:check"
+# cwd = "."
+# watch_dir = "src"
+
+# Routes for custom domains (optional)
+# routes = [
+#   { pattern = "pawmatch.your-domain.com/*", zone_name = "your-domain.com" }
+# ]
+
+# KV Namespaces (if needed for caching)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
+
+# Analytics Engine (optional)
+# [analytics_engine_datasets]
+# binding = "ANALYTICS"
+
+# Environment-specific configurations
+[env.production]
+name = "pawmatch-prod"
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+name = "pawmatch-staging"
+vars = { ENVIRONMENT = "staging" }

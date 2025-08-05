@@ -68,7 +68,7 @@ export function AnimalList({ animals, title, onBack, icon }: AnimalListProps) {
                           {animal.location}
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {animal.personality.slice(0, 2).map((trait, index) => (
+                          {(animal.personality || []).slice(0, 2).map((trait, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {trait}
                             </Badge>
@@ -76,7 +76,7 @@ export function AnimalList({ animals, title, onBack, icon }: AnimalListProps) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium">¥{animal.adoptionFee.toLocaleString()}</p>
+                        <p className="text-sm font-medium">¥{(animal.adoptionFee || 0).toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">{animal.shelterName}</p>
                       </div>
                     </div>

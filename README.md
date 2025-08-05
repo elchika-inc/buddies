@@ -22,58 +22,31 @@ TinderライクなUIUXを持つ、保護犬・保護猫とユーザーをマッ�
 
 ### 前提条件
 - Node.js 18+ 
-- bun または npm
-- Cloudflare Wrangler CLI (デプロイ用)
+- npm または yarn
 
 ### ローカル開発
 
 ```bash
 # 依存関係をインストール
 npm install
-# または
-bun install
-
-# 環境変数ファイルをコピー
-cp .env.example .env.local
 
 # 開発サーバーを起動
 npm run dev
-# または
-bun dev
 
-# ブラウザで http://localhost:3330 を開く
+# ブラウザで http://localhost:3331 を開く
 ```
 
-### D1データベースセットアップ
+### ビルド
 
 ```bash
-# D1データベースを作成・初期化
-npm run db:setup
-
-# マイグレーションを実行
-npm run db:migrate:local
-
-# サンプルデータを投入
-npm run db:seed:local
-
-# Workersサーバーを起動（D1データベース使用）
-npm run dev:worker
-```
-
-### Cloudflare Workers デプロイ
-
-```bash
-# Wrangler CLI をインストール
-npm install -g wrangler
-
-# Cloudflare にログイン
-wrangler login
+# TypeScript型チェック
+npm run build:check
 
 # プロダクション用ビルド
-npm run build:production
+npm run build
 
-# Cloudflare Workers にデプロイ
-npm run deploy
+# ビルド結果をプレビュー
+npm run preview
 ```
 
 ## ✨ 主な機能
@@ -120,12 +93,13 @@ npm run deploy
 
 ### 技術スタック
 - **React 18**: 最新のReact Hooks使用
+- **Apollo Client**: GraphQLクライアント・状態管理
+- **GraphQL**: 型安全で効率的なデータ取得
 - **TanStack Router**: 型安全なルーティング
 - **TypeScript 5**: 型安全な開発
 - **Vite**: 高速ビルド・開発サーバー
 - **TailwindCSS**: ユーティリティファーストのCSS
 - **Lucide React**: 軽量なアイコンライブラリ
-- **Cloudflare Workers**: 高速なサーバーレスプラットフォーム
 
 ### ディレクトリ構成
 ```
@@ -135,6 +109,11 @@ src/
 │   ├── index.tsx          # ホームページ（アプリ選択）
 │   ├── dogs.tsx           # 犬マッチング画面
 │   └── cats.tsx           # 猫マッチング画面
+├── graphql/                # GraphQL関連
+│   ├── schema.ts          # GraphQLスキーマ定義
+│   ├── resolvers.ts       # GraphQLリゾルバー
+│   ├── client.ts          # Apollo Client設定
+│   └── queries.ts         # クエリ・ミューテーション定義
 ├── components/              # UIコンポーネント
 │   ├── ui/                 # 基本UIコンポーネント
 │   ├── AppSelector.tsx     # アプリ選択画面
@@ -146,17 +125,23 @@ src/
 │   ├── CatSwipeCard.tsx    # 猫用スワイプカード
 │   └── ActionButtons.tsx   # 共通アクションボタン
 ├── hooks/                  # カスタムフック
-│   ├── useSwipeGesture.ts  # スワイプジェスチャー処理（共通）
+│   ├── useAnimals.ts       # 動物データ取得（GraphQL）
+│   ├── useAnimalSwipe.ts   # スワイプ処理（GraphQL統合）
+│   ├── useSwipeGesture.ts  # スワイプジェスチャー処理
 │   ├── useDogSwipeState.ts # 犬用スワイプ状態管理
 │   └── useCatSwipeState.ts # 猫用スワイプ状態管理
-├── config/                 # 設定ファイル
-│   └── environment.ts      # 環境別設定
 ├── types/                  # TypeScript型定義
 │   ├── dog.ts             # 犬関連の型定義
-│   └── cat.ts             # 猫関連の型定義
+│   ├── cat.ts             # 猫関連の型定義
+│   ├── animal.ts          # 動物共通型定義
+│   ├── common.ts          # 共通型定義
+│   └── graphql.ts         # GraphQL関連型定義
 ├── data/                   # モックデータ
 │   ├── dogs.ts            # サンプル犬データ
-│   └── cats.ts            # サンプル猫データ
+│   ├── cats.ts            # サンプル猫データ
+│   └── animals.ts         # 統合動物データ
+├── config/                 # 設定ファイル
+│   └── environment.ts      # 環境別設定
 └── lib/                    # ユーティリティ
     └── utils.ts            # 共通ユーティリティ関数
 ```
@@ -281,63 +266,75 @@ export const mockCats: Cat[] = [
 - 🏠 室内外適性（完全室内・室内外自由等）
 - 🔇 鳴き声レベル（静か・普通・よく鳴く）
 
-## 🌩️ Cloudflare 環境構築
+## 🚀 GraphQL データ設計
 
-### 必要な設定
+### スキーマ設計
 
-1. **Cloudflare アカウント**: [Cloudflare](https://cloudflare.com) でアカウント作成
-2. **API トークン**: Cloudflare ダッシュボードで API トークンを生成
-3. **環境変数設定**: `.env.local` に設定
+```graphql
+# 動物インターフェース
+interface Animal {
+  id: ID!
+  name: String!
+  species: Species!
+  breed: String!
+  age: Int!
+  gender: Gender!
+  # ... その他共通フィールド
+}
 
-```bash
-# Cloudflare設定
-CLOUDFLARE_API_TOKEN=your_api_token_here
-CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+# 犬型
+type Dog implements Animal {
+  # 共通フィールド + 犬固有フィールド
+  dogInfo: DogInfo!
+}
+
+# 猫型  
+type Cat implements Animal {
+  # 共通フィールド + 猫固有フィールド
+  catInfo: CatInfo!
+}
 ```
 
-### デプロイ手順
+### データ取得パターン
 
-```bash
-# 1. プロジェクトビルド
-npm run build:production
+```typescript
+// 犬データ取得
+const { data, loading, error } = useQuery(GET_DOGS, {
+  variables: { page: 1, limit: 50 }
+});
 
-# 2. Workersデプロイ実行
-npm run deploy
-
-# 3. ステージング環境デプロイ
-npm run deploy:staging
-
-# 4. プロダクション環境デプロイ
-npm run deploy:production
+// スワイプアクション記録
+const [recordSwipe] = useMutation(RECORD_SWIPE);
+await recordSwipe({
+  variables: { animalId: '123', action: 'like' }
+});
 ```
 
-### 自動デプロイ設定
+### Apollo Clientキャッシュ
 
-GitHub Actions を使用した自動デプロイも設定済みです：
-
-- `main` ブランチ → 本番環境
-- `develop` ブランチ → ステージング環境
-- プルリクエスト → プレビュー環境
+- **ページネーション対応**: 無限スクロール・増分ロード
+- **型安全性**: GraphQLスキーマから自動型生成
+- **効率的なクエリ**: 必要なデータのみ取得
 
 ## 🚧 今後の拡張予定
 
 ### 機能拡張
-- [ ] ローカルストレージでの状態永続化（アプリ別）
-- [ ] 犬・猫の詳細画面実装（TanStack Router でページ追加）
-- [ ] 犬専用フィルタリング機能（運動量、住環境等）
-- [ ] 猫専用フィルタリング機能（社会性、活動時間等）
+- [ ] GraphQLサーバーの本格実装
+- [ ] リアルタイムサブスクリプション機能
+- [ ] 詳細フィルタリング機能（GraphQLクエリ拡張）
 - [ ] お気に入り動物の詳細管理・メモ機能
 - [ ] 保護団体との連絡機能
-- [ ] アプリ間のデータ比較・統計機能
-- [ ] Cloudflare Workers API との連携
+- [ ] データ分析・統計機能
+- [ ] 通知機能
 
 ### 技術改善
-- [ ] Cloudflare Workers D1 データベース連携
-- [ ] Cloudflare KV でキャッシュ機能
+- [ ] 本格的なGraphQLサーバー構築
+- [ ] データベース連携（PostgreSQL/MySQL）
+- [ ] GraphQL Code Generator導入
 - [ ] PWA対応
 - [ ] パフォーマンス最適化
 - [ ] アクセシビリティ向上
-- [ ] TypeScript 型安全性の向上
+- [ ] テスト環境の充実
 
 ## 📄 ライセンス
 

@@ -175,3 +175,39 @@ build-storybook.log
 
 # MCP Server
 .serena/
+
+# Cloudflare Workers
+.wrangler/
+wrangler.toml.bak
+worker-configuration.d.ts
+
+# D1 Database
+*.db
+*.sqlite
+*.sqlite3
+.d1/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars
+
+# Build outputs specific to Workers
+_worker.js
+_worker.js.map
+
+# PawMatch data storage
+.pawmatch-data/
+
+# TSX temporary files
+.tsx-cache/
+
+# GraphQL generated files
+schema.generated.ts
+
+# Test coverage
+coverage/
+.nyc_output/
