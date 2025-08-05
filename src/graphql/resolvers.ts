@@ -1,7 +1,7 @@
 import { mockAnimals } from '../data/animals';
 import { mockDogs } from '../data/dogs';
 import { mockCats } from '../data/cats';
-import { dataStorage, DataStorageFactory } from '../services/dataStorage';
+import { DataStorageFactory, D1DataStorage } from '../services/dataStorage';
 import { D1Database } from '../services/d1Storage';
 import type { Dog } from '../types/dog';
 import type { Cat } from '../types/cat';
@@ -9,17 +9,17 @@ import type { BaseAnimal } from '../types/common';
 import type { AnimalFilter, AnimalConnection, PaginationInfo, GraphQLContext } from '../types/graphql';
 
 // データストレージインスタンス（環境に応じて切り替え）
-let storageInstance = dataStorage;
+let storageInstance: D1DataStorage | null = null;
 console.log('🔧 GraphQLリゾルバー初期化');
-console.log('📊 初期ストレージインスタンス:', storageInstance.constructor.name);
+console.log('📊 初期ストレージインスタンス:', storageInstance?.constructor.name || 'null');
 
 // D1データベースを使用するための設定関数
 export const configureDataStorage = (db?: D1Database) => {
   console.log('⚙️ configureDataStorage() 呼び出し');
   console.log('🗄️ D1Database パラメータ:', db ? 'あり' : 'なし');
   
-  storageInstance = DataStorageFactory.createStorageFromEnv({ DB: db });
-  console.log('✅ ストレージインスタンス更新:', storageInstance.constructor.name);
+  storageInstance = db ? DataStorageFactory.createD1(db) : null;
+  console.log('✅ ストレージインスタンス更新:', storageInstance?.constructor.name || 'null');
 };
 
 // データ変換ヘルパー関数

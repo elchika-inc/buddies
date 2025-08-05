@@ -22,7 +22,7 @@ export class CrawlerService {
   private storage: LocalDataStorage | D1DataStorage;
 
   constructor(db?: D1Database) {
-    this.storage = DataStorageFactory.createStorage(db);
+    this.storage = db ? DataStorageFactory.createD1(db) : new LocalDataStorage();
   }
 
   /**

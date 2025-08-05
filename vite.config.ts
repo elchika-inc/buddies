@@ -16,7 +16,22 @@ export default defineConfig({
   },
   server: {
     port: 3330,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8788',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.log('Proxy error (Pages Functions):', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('Proxy request to Pages Functions:', req.method, req.url);
+          });
+        }
+      }
+    }
   },
   build: {
     target: 'es2020'

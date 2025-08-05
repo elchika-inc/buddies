@@ -1,8 +1,6 @@
-import { useMutation } from '@apollo/client'
 import { type BaseAnimal } from '../types/common'
 import { useSwipeLogic } from './useSwipeLogic'
-import { RECORD_SWIPE } from '../graphql/queries'
-import type { RecordSwipeVariables } from '../types/graphql'
+import { recordSwipe, getSessionId } from '../services/swipeApi'
 
 // 統合されたアニマルスワイプフック
 export interface AnimalSwipeResult<T extends BaseAnimal> {
@@ -21,30 +19,72 @@ export interface AnimalSwipeResult<T extends BaseAnimal> {
 
 export function useAnimalSwipe<T extends BaseAnimal>(animals: T[]): AnimalSwipeResult<T> {
   const { state, current, next, remainingCount, isComplete, handleSwipe: originalHandleSwipe, reset } = useSwipeLogic(animals)
-  const [recordSwipe] = useMutation(RECORD_SWIPE)
 
   const handleSwipe = async (action: import('../types/common').SwipeAction, specific?: T) => {
     const animal = specific || current
+    const sessionId = getSessionId()
+    
+    console.log('🎯 [useAnimalSwipe] スワイプ処理開始:', {
+      action,
+      animalId: animal?.id,
+      animalName: animal?.name,
+      sessionId,
+      timestamp: new Date().toISOString()
+    })
+
     if (animal && animal.id) {
       try {
-        // GraphQLミューテーションでスワイプアクションを記録
-        await recordSwipe({
-          variables: {
-            animalId: animal.id,
-            action: action
-          } as RecordSwipeVariables
+        console.log('🔄 [useAnimalSwipe] API呼び出し開始:', {
+          animalId: animal.id,
+          action,
+          sessionId
         })
+
+        // REST APIでスワイプアクションを記録
+        const result = await recordSwipe({
+          animalId: animal.id,
+          action: action,
+          sessionId: sessionId
+        })
+
+        if (!result.success) {
+          console.error('❌ [useAnimalSwipe] スワイプ記録失敗:', {
+            error: result.error,
+            animalId: animal.id,
+            action
+          })
+        } else {
+          console.log('✅ [useAnimalSwipe] スワイプ記録成功:', {
+            message: result.message,
+            swipeId: result.swipeId,
+            animalId: animal.id,
+            action
+          })
+        }
       } catch (error) {
-        console.error('Failed to record swipe:', error)
-        console.error('Animal object:', animal)
-        console.error('Animal ID:', animal.id)
+        console.error('❌ [useAnimalSwipe] スワイプ記録例外エラー:', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          animal: {
+            id: animal.id,
+            name: animal.name
+          },
+          action
+        })
       }
     } else {
-      console.warn('Cannot record swipe: animal or animal.id is missing', { animal, current })
+      console.warn('⚠️ [useAnimalSwipe] スワイプ記録不可:', {
+        reason: 'animal または animal.id が不正です',
+        animal: animal ? { id: animal.id, name: animal.name } : null,
+        current: current ? { id: current.id, name: current.name } : null,
+        action
+      })
     }
     
+    console.log('🎲 [useAnimalSwipe] 元のスワイプ処理実行開始')
     // 元のスワイプ処理を実行
     originalHandleSwipe(action, specific)
+    console.log('✅ [useAnimalSwipe] 元のスワイプ処理完了')
   }
 
   return {
