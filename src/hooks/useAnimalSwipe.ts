@@ -25,7 +25,7 @@ export function useAnimalSwipe<T extends BaseAnimal>(animals: T[]): AnimalSwipeR
 
   const handleSwipe = async (action: import('../types/common').SwipeAction, specific?: T) => {
     const animal = specific || current
-    if (animal) {
+    if (animal && animal.id) {
       try {
         // GraphQLミューテーションでスワイプアクションを記録
         await recordSwipe({
@@ -36,7 +36,11 @@ export function useAnimalSwipe<T extends BaseAnimal>(animals: T[]): AnimalSwipeR
         })
       } catch (error) {
         console.error('Failed to record swipe:', error)
+        console.error('Animal object:', animal)
+        console.error('Animal ID:', animal.id)
       }
+    } else {
+      console.warn('Cannot record swipe: animal or animal.id is missing', { animal, current })
     }
     
     // 元のスワイプ処理を実行

@@ -1,4 +1,5 @@
 import { ActionButtons } from "./ActionButtons"
+import { SwipeableCard } from "./SwipeableCard"
 import { type BaseAnimal } from "../types/common"
 import { Button } from "@/components/ui/button"
 import { RotateCcw, Heart, Star } from "lucide-react"
@@ -77,10 +78,10 @@ export function GenericSwipeScreen<T extends BaseAnimal>({
 
       {/* カードエリア */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className={`relative w-full ${UI_CONSTANTS.MAX_CARD_WIDTH} h-[${UI_CONSTANTS.CARD_HEIGHT}px]`}>
+        <div className="relative w-full max-w-sm h-[650px]">
           {/* 次のカード（背景） */}
           {nextAnimal && (
-            <div className={`absolute inset-0 scale-95 opacity-${Math.round(UI_CONSTANTS.CARD_OPACITY_BACKGROUND * 100)} pointer-events-none transform ${ANIMATION_CONSTANTS.TRANSFORM_ROTATE}`}>
+            <div className="absolute inset-0 scale-95 opacity-50 pointer-events-none transform rotate-2">
               {renderCard(nextAnimal)}
             </div>
           )}
@@ -88,7 +89,9 @@ export function GenericSwipeScreen<T extends BaseAnimal>({
           {/* 現在のカード（前面） */}
           {currentAnimal && (
             <div className="absolute inset-0 z-10">
-              {renderCard(currentAnimal)}
+              <SwipeableCard animal={currentAnimal} onSwipe={handleSwipe}>
+                {renderCard(currentAnimal)}
+              </SwipeableCard>
             </div>
           )}
         </div>

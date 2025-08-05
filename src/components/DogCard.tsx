@@ -9,6 +9,17 @@ type DogCardProps = {
 }
 
 export function DogCard({ dog }: DogCardProps) {
+  // デバッグログ追加
+  console.log('🐕 DogCard - 犬データ:', {
+    id: dog.id,
+    name: dog.name,
+    size: dog.size,
+    breed: dog.breed,
+    imageUrl: dog.imageUrl,
+    location: dog.location,
+    description: dog.description
+  })
+
   // プライマリバッジ（左上）
   const primaryBadges = (
     <>

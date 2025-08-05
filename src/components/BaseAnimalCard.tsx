@@ -24,6 +24,19 @@ export function BaseAnimalCard<T extends BaseAnimal>({
   additionalInfo,
   additionalTags
 }: BaseAnimalCardProps<T>) {
+  // デバッグログ追加
+  console.log('🎴 BaseAnimalCard - 動物データ:', {
+    id: animal.id,
+    name: animal.name,
+    age: animal.age,
+    location: animal.location,
+    imageUrl: animal.imageUrl,
+    description: animal.description,
+    personality: animal.personality,
+    shelterName: animal.shelterName,
+    adoptionFee: animal.adoptionFee
+  })
+
   return (
     <Card className={`w-full h-full overflow-hidden ${ANIMATION_CONSTANTS.CARD_SHADOW}`}>
       <div className={`relative ${LAYOUT_CONSTANTS.CARD_HEIGHT_RATIO}`}>

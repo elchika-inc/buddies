@@ -18,6 +18,9 @@ export interface BaseAnimal {
   description: string
   imageUrl: string
   tags?: string[]
+  personality?: string[]
+  shelterName?: string
+  adoptionFee?: number
 }
 
 // 汎用アプリケーション状態
