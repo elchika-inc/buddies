@@ -1,68 +1,41 @@
 {
-  "name": "pawmatch",
+  "name": "pawmatch-monorepo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "保護犬・保護猫とユーザーをマッチングするWebアプリケーション",
+  "description": "保護犬・保護猫とユーザーをマッチングするWebアプリケーション（モノレポ）",
   "keywords": [
     "react",
     "typescript",
-    "graphql",
-    "apollo-client",
     "pet-adoption",
-    "matching"
+    "monorepo"
+  ],
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "dev": "vite",
-    "dev:pages": "wrangler pages dev dist --local --d1 DB=pawmatch-db",
-    "build": "vite build",
-    "build:check": "tsc --noEmit",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
-    "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "crawl": "tsx src/scripts/crawl.ts",
-    "crawl:dogs": "tsx src/scripts/crawl.ts dogs",
-    "crawl:cats": "tsx src/scripts/crawl.ts cats",
-    "crawl:status": "tsx src/scripts/crawl.ts status",
-    "crawl:d1": "tsx src/scripts/crawl-d1.ts",
-    "crawl:d1:dogs": "tsx src/scripts/crawl-d1.ts dogs",
-    "crawl:d1:cats": "tsx src/scripts/crawl-d1.ts cats",
-    "crawl:d1:status": "tsx src/scripts/crawl-d1.ts status"
-  },
-  "dependencies": {
-    "@apollo/client": "^3.13.9",
-    "@graphql-tools/schema": "^10.0.25",
-    "@tanstack/react-router": "^1.58.3",
-    "clsx": "^2.0.0",
-    "graphql": "^16.11.0",
-    "lucide-react": "^0.263.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind-merge": "^1.14.0"
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "dev:shared": "turbo run dev --filter=@pawmatch/shared",
+    "dev:dog": "turbo run dev --filter=@pawmatch/dog-app",
+    "dev:cat": "turbo run dev --filter=@pawmatch/cat-app",
+    "build:shared": "turbo run build --filter=@pawmatch/shared",
+    "build:dog": "turbo run build --filter=@pawmatch/dog-app",
+    "build:cat": "turbo run build --filter=@pawmatch/cat-app",
+    "install:all": "bun install"
   },
   "devDependencies": {
-    "@tanstack/react-router-devtools": "^1.58.3",
-    "@tanstack/router-plugin": "^1.58.4",
-    "@types/node": "^24.2.0",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.14",
-    "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
-    "postcss": "^8.4.27",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.0.2",
-    "vite": "^7.0.6"
+    "turbo": "^2.5.5",
+    "vite-plugin-pwa": "^1.0.2"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
   },
+  "packageManager": "bun@1.1.0",
   "browserslist": [
     "> 1%",
     "last 2 versions",

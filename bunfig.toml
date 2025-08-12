@@ -1,0 +1,19 @@
+[install]
+# Install packages from npm registry
+registry = "https://registry.npmjs.org"
+
+# Cache packages in the current directory
+cache = false
+
+# Enable or disable auto installing
+auto = "auto"
+
+# 並列でパッケージをインストール
+parallel = 10
+
+[run]
+# Bunのランタイムを使用してファイルを実行
+bun = true
+
+# 実行時に自動的に依存関係をインストール
+auto-install = true

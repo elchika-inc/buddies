@@ -60,7 +60,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       matches: 0
     };
 
-    swipeStats.results?.forEach((row: any) => {
+    swipeStats.results?.forEach((row: { action: string; count: number }) => {
       stats.totalSwipes += row.count;
       if (row.action === 'like') stats.likes = row.count;
       else if (row.action === 'pass') stats.passes = row.count;
