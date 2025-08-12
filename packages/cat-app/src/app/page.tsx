@@ -6,6 +6,7 @@ export default function Home() {
   const { animals, loading, error } = useAnimals('cat')
   const swipeState = useAnimalSwipe(animals)
 
+  // Test change for deployment
   return (
     <div className="min-h-screen">
       <AnimalMatchApp
