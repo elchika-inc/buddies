@@ -1,0 +1,29 @@
+export type Cat = {
+  id: string
+  name: string
+  breed: string
+  age: number
+  gender: string
+  coatLength: string
+  color: string
+  location: string
+  description: string
+  personality: string[]
+  medicalInfo: string
+  careRequirements: string[]
+  imageUrl: string
+  shelterName: string
+  shelterContact: string
+  adoptionFee: number
+  isNeutered: boolean
+  isVaccinated: boolean
+  isFIVFeLVTested: boolean
+  socialLevel: string
+  indoorOutdoor: string
+  goodWithMultipleCats: boolean
+  groomingRequirements: string
+  vocalizationLevel: string
+  activityTime: string
+  playfulness: string
+  createdAt: string
+}

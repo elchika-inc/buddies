@@ -1,0 +1,28 @@
+export type Dog = {
+  id: string
+  name: string
+  breed: string
+  age: number
+  gender: string
+  size: string
+  color: string
+  location: string
+  description: string
+  personality: string[]
+  medicalInfo: string
+  careRequirements: string[]
+  imageUrl: string
+  shelterName: string
+  shelterContact: string
+  adoptionFee: number
+  isNeutered: boolean
+  isVaccinated: boolean
+  goodWithKids: boolean
+  goodWithDogs: boolean
+  exerciseLevel: string
+  trainingLevel: string
+  walkFrequency: string
+  needsYard: boolean
+  apartmentFriendly: boolean
+  createdAt: string
+}

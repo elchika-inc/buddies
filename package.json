@@ -11,21 +11,13 @@
     "monorepo"
   ],
   "workspaces": [
-    "packages/*"
+    "packages/cat",
+    "packages/dog"
   ],
   "scripts": {
-    "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean",
-    "dev:shared": "turbo run dev --filter=@pawmatch/shared",
-    "dev:dog": "turbo run dev --filter=@pawmatch/dog-app",
-    "dev:cat": "turbo run dev --filter=@pawmatch/cat-app",
-    "build:shared": "turbo run build --filter=@pawmatch/shared",
-    "build:dog": "turbo run build --filter=@pawmatch/dog-app",
-    "build:cat": "turbo run build --filter=@pawmatch/cat-app",
-    "install:all": "bun install"
+    "deploy:dog": "(cd packages/dog; vercel --prod)",
+    "deploy:cat": "(cd packages/cat; vercel --prod)"
   },
   "devDependencies": {
     "turbo": "^2.5.5",

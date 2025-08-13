@@ -130,6 +130,9 @@ coverage/
 .claude/
 .serena/
 
+# Git internals (should not be tracked)
+.git/
+
 # Project specific
 .pawmatch-data/
 .tsx-cache/
