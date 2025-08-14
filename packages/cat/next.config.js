@@ -1,3 +1,5 @@
+import withPWA from 'next-pwa'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -5,4 +7,21 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'unsplash-images',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60, // 24時間
+        },
+      },
+    },
+  ],
+})(nextConfig)

@@ -6,9 +6,10 @@ type CatSwipeCardProps = {
   cat: Cat
   onSwipe: (direction: 'like' | 'pass' | 'super_like') => void
   isTopCard?: boolean
+  buttonSwipeDirection?: 'like' | 'pass' | null
 }
 
-export function CatSwipeCard({ cat, onSwipe, isTopCard = true }: CatSwipeCardProps) {
+export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirection }: CatSwipeCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [startPos, setStartPos] = useState({ x: 0, y: 0 })
@@ -81,7 +82,7 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true }: CatSwipeCardPro
     
     setTimeout(() => {
       onSwipe(direction)
-    }, 300)
+    }, 400)
   }
 
   useEffect(() => {
@@ -90,6 +91,23 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true }: CatSwipeCardPro
     setDragOffset({ x: 0, y: 0 })
     setIsDragging(false)
   }, [cat.id, isTopCard])
+
+  useEffect(() => {
+    return () => {
+      if (buttonSwipeDirection) {
+        setTimeout(() => {
+          setIsExiting(false)
+          setExitDirection(null)
+        }, 0)
+      }
+    }
+  }, [cat.id])
+
+  useEffect(() => {
+    if (buttonSwipeDirection && isTopCard) {
+      triggerExit(buttonSwipeDirection)
+    }
+  }, [buttonSwipeDirection, isTopCard])
 
   const rotation = isExiting 
     ? (exitDirection === 'like' ? 30 : exitDirection === 'pass' ? -30 : 0)
@@ -104,13 +122,13 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true }: CatSwipeCardPro
     : dragOffset.y
   
   const opacity = isExiting 
-    ? 0 
+    ? 1 
     : Math.max(0.3, 1 - Math.abs(dragOffset.x) / 200)
 
   const cardStyle = {
     transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
     opacity: opacity,
-    transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
+    transition: isDragging ? 'none' : isExiting ? 'transform 0.4s ease-out' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
     zIndex: isTopCard ? 10 : 1,
     position: 'absolute' as const,
     cursor: isTopCard ? 'grab' : 'default',
@@ -131,20 +149,25 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true }: CatSwipeCardPro
     >
       <CatCard cat={cat} />
       
-      {isTopCard && (Math.abs(dragOffset.x) > 50 || Math.abs(dragOffset.y) > 50) && (
+      {isTopCard && (Math.abs(dragOffset.x) > 50 || Math.abs(dragOffset.y) > 50 || isExiting) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className={`
               px-4 py-2 rounded-lg font-bold text-lg border-2 
-              ${Math.abs(dragOffset.y) > 50 && dragOffset.y < 0
+              ${isExiting && exitDirection === 'super_like'
                 ? 'bg-blue-500/20 border-blue-500 text-blue-500'
-                : dragOffset.x > 0 
+                : isExiting && exitDirection === 'like' || (Math.abs(dragOffset.y) > 50 && dragOffset.y < 0)
+                ? 'bg-blue-500/20 border-blue-500 text-blue-500'
+                : isExiting && exitDirection === 'like' || dragOffset.x > 0 
                 ? 'bg-green-500/20 border-green-500 text-green-500' 
                 : 'bg-red-500/20 border-red-500 text-red-500'
               }
             `}
           >
-            {Math.abs(dragOffset.y) > 50 && dragOffset.y < 0 
+            {isExiting && exitDirection === 'super_like' ? '⭐ スーパーライク'
+              : isExiting && exitDirection === 'like' ? '❤️ いいね'
+              : isExiting && exitDirection === 'pass' ? '❌ パス'
+              : Math.abs(dragOffset.y) > 50 && dragOffset.y < 0 
               ? '⭐ スーパーライク' 
               : dragOffset.x > 0 ? '❤️ いいね' : '❌ パス'
             }

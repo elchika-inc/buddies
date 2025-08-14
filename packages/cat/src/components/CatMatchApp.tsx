@@ -1,6 +1,8 @@
 import { useCatSwipeState } from '@/hooks/useCatSwipeState'
 import { mockCats } from '@/data/cats'
 import { CatSwipeCard } from './CatSwipeCard'
+import { SwipeFooter } from './SwipeFooter'
+import { MatchHeader } from './MatchHeader'
 
 export function CatMatchApp() {
   const swipeState = useCatSwipeState(mockCats)
@@ -27,7 +29,13 @@ export function CatMatchApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8">
+      <MatchHeader
+        likedCats={swipeState.likedCats}
+        superLikedCats={swipeState.superLikedCats}
+        onRemoveLike={swipeState.removeLikedCat}
+        onRemoveSuperLike={swipeState.removeSuperLikedCat}
+      />
+      <div className="container mx-auto px-4 py-8 pb-20">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">🐱 PawMatch for Cats</h1>
           <p className="text-gray-600">運命のネコちゃんを見つけよう</p>
@@ -51,24 +59,17 @@ export function CatMatchApp() {
               cat={swipeState.currentCat} 
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
+              buttonSwipeDirection={swipeState.buttonSwipeDirection}
             />
           )}
         </div>
-
-        <div className="flex justify-center gap-4 mt-8">
-          <button
-            onClick={() => swipeState.handleSwipe('pass')}
-            className="bg-gray-400 text-white px-6 py-3 rounded-full font-medium hover:bg-gray-500 transition-colors"
-          >
-            ❌ パス
-          </button>
-          <button
-            onClick={() => swipeState.handleSwipe('like')}
-            className="bg-pink-500 text-white px-6 py-3 rounded-full font-medium hover:bg-pink-600 transition-colors"
-          >
-            ❤️ いいね
-          </button>
-        </div>
+        
+        <SwipeFooter
+          onPass={() => swipeState.handleSwipe('pass', true)}
+          onLike={() => swipeState.handleSwipe('like', true)}
+          disabled={!swipeState.currentCat}
+          theme="cat"
+        />
       </div>
     </div>
   )

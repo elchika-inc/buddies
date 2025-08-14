@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "deploy:all": "bun run deploy:dog && bun run deploy:cat",
     "deploy:dog": "(cd packages/dog; vercel --prod)",
     "deploy:cat": "(cd packages/cat; vercel --prod)"
   },

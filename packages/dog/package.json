@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,14 +12,15 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "swipable-tinder-card": "^1.0.0",
     "@apollo/client": "^3.13.9",
     "clsx": "^2.0.0",
     "graphql": "^16.11.0",
     "lucide-react": "^0.263.1",
     "next": "^14.0.0",
+    "next-pwa": "^5.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "swipable-tinder-card": "^1.0.0",
     "tailwind-merge": "^1.14.0"
   },
   "devDependencies": {
