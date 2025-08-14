@@ -46,7 +46,7 @@ export function DogCard({ dog }: DogCardProps) {
         <img 
           src={dog.imageUrl} 
           alt={dog.name}
-          className="w-full h-40 sm:h-48 md:h-56 lg:h-64 object-cover"
+          className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
         />
         
         {/* 左上のバッジ */}

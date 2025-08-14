@@ -41,7 +41,7 @@ export function CatCard({ cat }: CatCardProps) {
         <img 
           src={cat.imageUrl} 
           alt={cat.name}
-          className="w-full h-40 sm:h-48 md:h-56 lg:h-64 object-cover"
+          className="w-full h-48 sm:h-56 md:h-64 lg:h-72 object-cover"
         />
         
         {/* 左上のバッジ */}
