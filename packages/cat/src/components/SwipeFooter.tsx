@@ -18,23 +18,23 @@ export function SwipeFooter({ onPass, onLike, disabled = false, theme = 'cat' }:
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
-      <div className="flex justify-center gap-4 max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 sm:p-4 shadow-lg">
+      <div className="flex justify-center gap-2 sm:gap-4 max-w-md mx-auto">
         <button
           onClick={onPass}
           disabled={disabled}
-          className={`${colors[theme].pass} text-white px-8 py-4 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+          className={`${colors[theme].pass} text-white px-4 py-2 sm:px-8 sm:py-4 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 text-sm sm:text-base`}
         >
-          <span className="text-xl">❌</span>
-          パス
+          <span className="text-lg sm:text-xl">❌</span>
+          <span className="hidden sm:inline">パス</span>
         </button>
         <button
           onClick={onLike}
           disabled={disabled}
-          className={`${colors[theme].like} text-white px-8 py-4 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+          className={`${colors[theme].like} text-white px-4 py-2 sm:px-8 sm:py-4 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 text-sm sm:text-base`}
         >
-          <span className="text-xl">❤️</span>
-          いいね
+          <span className="text-lg sm:text-xl">❤️</span>
+          <span className="hidden sm:inline">いいね</span>
         </button>
       </div>
     </div>

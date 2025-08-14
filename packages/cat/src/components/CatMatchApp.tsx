@@ -44,7 +44,7 @@ export function CatMatchApp() {
           </div>
         </div>
 
-        <div className="flex justify-center relative h-96">
+        <div className="flex justify-center relative" style={{ height: 'calc(100vh - 280px)', minHeight: '320px', maxHeight: '500px' }}>
           {swipeState.nextCat && (
             <CatSwipeCard 
               key={`next-${swipeState.nextCat.id}`}

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { CatCard } from './CatCard'
 import { Cat } from '@/types/cat'
 
@@ -75,7 +75,7 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
     }
   }
 
-  const triggerExit = (direction: 'like' | 'pass' | 'super_like') => {
+  const triggerExit = useCallback((direction: 'like' | 'pass' | 'super_like') => {
     setIsExiting(true)
     setExitDirection(direction)
     setIsDragging(false)
@@ -83,7 +83,7 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
     setTimeout(() => {
       onSwipe(direction)
     }, 400)
-  }
+  }, [onSwipe])
 
   useEffect(() => {
     setIsExiting(false)
@@ -101,13 +101,13 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
         }, 0)
       }
     }
-  }, [cat.id])
+  }, [cat.id, buttonSwipeDirection])
 
   useEffect(() => {
     if (buttonSwipeDirection && isTopCard) {
       triggerExit(buttonSwipeDirection)
     }
-  }, [buttonSwipeDirection, isTopCard])
+  }, [buttonSwipeDirection, isTopCard, triggerExit])
 
   const rotation = isExiting 
     ? (exitDirection === 'like' ? 30 : exitDirection === 'pass' ? -30 : 0)

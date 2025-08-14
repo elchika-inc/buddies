@@ -35,40 +35,40 @@ export function CatCard({ cat }: CatCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-sm mx-auto">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-sm mx-auto h-full flex flex-col">
       {/* 画像部分 */}
       <div className="relative">
         <img 
           src={cat.imageUrl} 
           alt={cat.name}
-          className="w-full h-64 object-cover"
+          className="w-full h-40 sm:h-48 md:h-56 lg:h-64 object-cover"
         />
         
         {/* 左上のバッジ */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-          <Badge className="bg-pink-100 text-pink-800">
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-col gap-1 sm:gap-2">
+          <Badge className="bg-pink-100 text-pink-800 text-xs">
             🐱 {cat.coatLength}
           </Badge>
-          <Badge variant="secondary" className="bg-white/90 text-black">
+          <Badge variant="secondary" className="bg-white/90 text-black text-xs sm:text-sm">
             {cat.breed}
           </Badge>
         </div>
 
         {/* 右上のバッジ */}
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
           <Badge 
             variant="secondary"
-            className={`${getSocialColor(cat.socialLevel)} text-white`}
+            className={`${getSocialColor(cat.socialLevel)} text-white text-xs`}
           >
             <Users className="w-3 h-3 mr-1" />
-            {cat.socialLevel}
+            <span className="hidden sm:inline">{cat.socialLevel}</span>
           </Badge>
         </div>
 
         {/* 左下のバッジ */}
         {cat.vocalizationLevel !== '静か' && (
-          <div className="absolute bottom-4 left-4">
-            <Badge variant="outline" className="bg-white/90">
+          <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 hidden sm:block">
+            <Badge variant="outline" className="bg-white/90 text-xs">
               <Volume2 className="w-3 h-3 mr-1" />
               {cat.vocalizationLevel}
             </Badge>
@@ -77,17 +77,17 @@ export function CatCard({ cat }: CatCardProps) {
       </div>
 
       {/* コンテンツ部分 */}
-      <div className="p-6">
-        <div className="mb-4">
-          <h3 className="text-xl font-bold text-gray-800">{cat.name}</h3>
-          <p className="text-gray-600">{cat.age}歳 • {cat.gender} • {cat.location}</p>
-          <p className="text-sm text-gray-500 mt-1">{cat.indoorOutdoor}</p>
+      <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+        <div className="mb-3 sm:mb-4">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">{cat.name}</h3>
+          <p className="text-sm sm:text-base text-gray-600">{cat.age}歳 • {cat.gender} • {cat.location}</p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">{cat.indoorOutdoor}</p>
         </div>
 
         <p className="text-gray-700 mb-4 text-sm">{cat.description}</p>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {cat.personality.slice(0, 3).map((trait, index) => (
+          {cat.personality.slice(0, window.innerHeight < 600 ? 2 : 3).map((trait, index) => (
             <Badge key={index} variant="outline" className="text-xs">
               {trait}
             </Badge>
