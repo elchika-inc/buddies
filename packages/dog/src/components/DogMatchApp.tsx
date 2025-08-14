@@ -45,7 +45,7 @@ export function DogMatchApp() {
           </div>
         </div>
 
-        <div className="flex justify-center relative" style={{ height: 'calc(100vh - 280px)', minHeight: '320px', maxHeight: '500px' }}>
+        <div className="flex justify-center relative" style={{ height: 'calc(100vh - 280px)', minHeight: '320px', maxHeight: '70vh' }}>
           {swipeState.nextDog && (
             <DogSwipeCard
               key={`next-${swipeState.nextDog.id}`}

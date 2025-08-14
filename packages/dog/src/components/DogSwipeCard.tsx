@@ -145,7 +145,7 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="select-none"
+      className="select-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
       <DogCard dog={dog} />
       
