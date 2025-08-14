@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Dog } from '@/types/dog'
+import { DogDetailModal } from './DogDetailModal'
 
 interface MatchHeaderProps {
   likedDogs: Dog[]
@@ -11,6 +12,7 @@ interface MatchHeaderProps {
 export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveSuperLike }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'like' | 'super_like'>('like')
+  const [selectedDog, setSelectedDog] = useState<Dog | null>(null)
 
   const currentList = activeTab === 'like' ? likedDogs : superLikedDogs
   const currentRemoveFunction = activeTab === 'like' ? onRemoveLike : onRemoveSuperLike
@@ -81,10 +83,14 @@ export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveS
                         alt={dog.name}
                         className="w-20 h-20 rounded-lg object-cover"
                       />
-                      <div className="flex-1">
+                      <div 
+                        className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
+                        onClick={() => setSelectedDog(dog)}
+                      >
                         <h3 className="font-bold text-lg text-gray-800">{dog.name}</h3>
                         <p className="text-gray-600">{dog.breed} • {dog.age}歳 • {dog.gender}</p>
                         <p className="text-gray-500 text-sm mt-1">{dog.location}</p>
+                        <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る 👁️</p>
                       </div>
                       <button
                         onClick={() => currentRemoveFunction(dog.id)}
@@ -100,6 +106,14 @@ export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveS
             </div>
           </div>
         </div>
+      )}
+
+      {selectedDog && (
+        <DogDetailModal
+          dog={selectedDog}
+          isOpen={!!selectedDog}
+          onClose={() => setSelectedDog(null)}
+        />
       )}
     </>
   )

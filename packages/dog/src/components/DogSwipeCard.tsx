@@ -121,9 +121,7 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
     ? (exitDirection === 'super_like' ? -window.innerHeight : dragOffset.y + 50)
     : dragOffset.y
   
-  const opacity = isExiting 
-    ? 1 
-    : Math.max(0.3, 1 - Math.abs(dragOffset.x) / 200)
+  const opacity = 1
 
   const cardStyle = {
     transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
@@ -153,14 +151,14 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className={`
-              px-4 py-2 rounded-lg font-bold text-lg border-2 
+              px-12 py-6 rounded-2xl font-bold text-4xl shadow-lg backdrop-blur-sm text-white
               ${isExiting && exitDirection === 'super_like'
-                ? 'bg-blue-500/20 border-blue-500 text-blue-500'
+                ? 'bg-blue-500/80'
                 : isExiting && exitDirection === 'like' || (Math.abs(dragOffset.y) > 50 && dragOffset.y < 0)
-                ? 'bg-blue-500/20 border-blue-500 text-blue-500'
+                ? 'bg-blue-500/80'
                 : isExiting && exitDirection === 'like' || dragOffset.x > 0 
-                ? 'bg-green-500/20 border-green-500 text-green-500' 
-                : 'bg-red-500/20 border-red-500 text-red-500'
+                ? 'bg-green-500/80' 
+                : 'bg-red-500/80'
               }
             `}
           >

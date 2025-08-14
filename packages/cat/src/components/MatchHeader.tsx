@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Cat } from '@/types/cat'
+import { CatDetailModal } from './CatDetailModal'
 
 interface MatchHeaderProps {
   likedCats: Cat[]
@@ -11,6 +12,7 @@ interface MatchHeaderProps {
 export function MatchHeader({ likedCats, superLikedCats, onRemoveLike, onRemoveSuperLike }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'like' | 'super_like'>('like')
+  const [selectedCat, setSelectedCat] = useState<Cat | null>(null)
 
   const currentList = activeTab === 'like' ? likedCats : superLikedCats
   const currentRemoveFunction = activeTab === 'like' ? onRemoveLike : onRemoveSuperLike
@@ -81,10 +83,14 @@ export function MatchHeader({ likedCats, superLikedCats, onRemoveLike, onRemoveS
                         alt={cat.name}
                         className="w-20 h-20 rounded-lg object-cover"
                       />
-                      <div className="flex-1">
+                      <div 
+                        className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
+                        onClick={() => setSelectedCat(cat)}
+                      >
                         <h3 className="font-bold text-lg text-gray-800">{cat.name}</h3>
                         <p className="text-gray-600">{cat.breed} • {cat.age}歳 • {cat.gender}</p>
                         <p className="text-gray-500 text-sm mt-1">{cat.location}</p>
+                        <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る 👁️</p>
                       </div>
                       <button
                         onClick={() => currentRemoveFunction(cat.id)}
@@ -100,6 +106,14 @@ export function MatchHeader({ likedCats, superLikedCats, onRemoveLike, onRemoveS
             </div>
           </div>
         </div>
+      )}
+
+      {selectedCat && (
+        <CatDetailModal
+          cat={selectedCat}
+          isOpen={!!selectedCat}
+          onClose={() => setSelectedCat(null)}
+        />
       )}
     </>
   )
