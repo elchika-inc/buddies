@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSwipeState, LocationModal, STORAGE_KEYS, UI_TEXT } from '@/shared'
 import { mockDogs } from '@/data/dogs'
 import { DogSwipeCard } from './DogSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
-import { Location } from '@/shared'
+import { LocationModal, Location } from './LocationModal'
 import { Dog } from '@/types/dog'
+import { useDogSwipeState } from '@/hooks/useDogSwipeState'
 
 export function DogMatchApp() {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
@@ -20,7 +20,7 @@ export function DogMatchApp() {
 
     return mockDogs.filter((dog) =>
       selectedLocations.some((location) => {
-        if (location.city === UI_TEXT.LOCATION_ALL) {
+        if (location.city === 'すべて') {
           return dog.location.includes(location.prefecture)
         }
         return dog.location.includes(location.prefecture) && dog.location.includes(location.city)
@@ -28,11 +28,11 @@ export function DogMatchApp() {
     )
   }, [selectedLocations])
 
-  const swipeState = useSwipeState(filteredDogs as any, {
+  const swipeState = useDogSwipeState(filteredDogs, {
     storageKeys: {
-      likes: STORAGE_KEYS.DOG_LIKES,
-      superLikes: STORAGE_KEYS.DOG_SUPER_LIKES,
-      passed: STORAGE_KEYS.DOG_PASSED,
+      likes: 'pawmatch_dog_likes',
+      superLikes: 'pawmatch_dog_super_likes',
+      passed: 'pawmatch_dog_passed',
     },
   })
 
@@ -43,7 +43,7 @@ export function DogMatchApp() {
           <div className="text-6xl mb-4">🐶</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">マッチング完了！</h2>
           <p className="text-gray-600 mb-6">
-            {swipeState.likedPets.length}匹のワンちゃんとマッチしました
+            {swipeState.likedDogs.length}匹のワンちゃんとマッチしました
           </p>
           <button
             onClick={swipeState.reset}
@@ -59,8 +59,8 @@ export function DogMatchApp() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-yellow-50">
       <MatchHeader
-        likedDogs={swipeState.likedPets as Dog[]}
-        superLikedDogs={swipeState.superLikedPets as Dog[]}
+        likedDogs={swipeState.likedDogs}
+        superLikedDogs={swipeState.superLikedDogs}
         onRemoveLike={swipeState.removeLike}
         onRemoveSuperLike={swipeState.removeSuperLike}
         onLocationClick={() => setShowLocationModal(true)}
@@ -75,18 +75,18 @@ export function DogMatchApp() {
             maxHeight: '70vh',
           }}
         >
-          {swipeState.nextPet && (
+          {swipeState.nextDog && (
             <DogSwipeCard
-              key={`next-${swipeState.nextPet.id}`}
-              dog={swipeState.nextPet as Dog}
+              key={`next-${swipeState.nextDog.id}`}
+              dog={swipeState.nextDog}
               onSwipe={() => {}}
               isTopCard={false}
             />
           )}
-          {swipeState.currentPet && (
+          {swipeState.currentDog && (
             <DogSwipeCard
-              key={`current-${swipeState.currentPet.id}`}
-              dog={swipeState.currentPet as Dog}
+              key={`current-${swipeState.currentDog.id}`}
+              dog={swipeState.currentDog}
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
               buttonSwipeDirection={swipeState.buttonSwipeDirection}
@@ -97,7 +97,7 @@ export function DogMatchApp() {
         <SwipeFooter
           onPass={() => swipeState.handleSwipe('pass', true)}
           onLike={() => swipeState.handleSwipe('like', true)}
-          disabled={!swipeState.currentPet}
+          disabled={!swipeState.currentDog}
           theme="dog"
         />
       </div>

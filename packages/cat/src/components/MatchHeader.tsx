@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Cat } from '@/types/cat'
 import { CatDetailModal } from './CatDetailModal'
-import { Location } from '@/shared'
+import { Location } from './LocationModal'
 
 interface MatchHeaderProps {
   likedCats: Cat[]

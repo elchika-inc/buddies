@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Dog } from '@/types/dog'
 import { DogDetailModal } from './DogDetailModal'
-import { Location } from '@/shared'
+import { Location } from './LocationModal'
 
 interface MatchHeaderProps {
   likedDogs: Dog[]

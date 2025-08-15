@@ -1,15 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSwipeState } from '@/shared'
-import { LocationModal } from '@/shared'
-import { STORAGE_KEYS, UI_TEXT } from '@/shared'
 import { mockCats } from '@/data/cats'
 import { CatSwipeCard } from './CatSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
-import { Location } from '@/shared'
+import { LocationModal, Location } from './LocationModal'
 import { Cat } from '@/types/cat'
+import { useCatSwipeState } from '@/hooks/useCatSwipeState'
 
 export function CatMatchApp() {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
@@ -22,7 +20,7 @@ export function CatMatchApp() {
 
     return mockCats.filter((cat) =>
       selectedLocations.some((location) => {
-        if (location.city === UI_TEXT.LOCATION_ALL) {
+        if (location.city === 'すべて') {
           return cat.location.includes(location.prefecture)
         }
         return cat.location.includes(location.prefecture) && cat.location.includes(location.city)
@@ -30,11 +28,11 @@ export function CatMatchApp() {
     )
   }, [selectedLocations])
 
-  const swipeState = useSwipeState(filteredCats as any, {
+  const swipeState = useCatSwipeState(filteredCats, {
     storageKeys: {
-      likes: STORAGE_KEYS.CAT_LIKES,
-      superLikes: STORAGE_KEYS.CAT_SUPER_LIKES,
-      passed: STORAGE_KEYS.CAT_PASSED,
+      likes: 'pawmatch_cat_likes',
+      superLikes: 'pawmatch_cat_super_likes',
+      passed: 'pawmatch_cat_passed',
     },
   })
 
@@ -45,7 +43,7 @@ export function CatMatchApp() {
           <div className="text-6xl mb-4">🐱</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">マッチング完了！</h2>
           <p className="text-gray-600 mb-6">
-            {swipeState.likedPets.length}匹のネコちゃんとマッチしました
+            {swipeState.likedCats.length}匹のネコちゃんとマッチしました
           </p>
           <button
             onClick={swipeState.reset}
@@ -61,8 +59,8 @@ export function CatMatchApp() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
       <MatchHeader
-        likedCats={swipeState.likedPets as Cat[]}
-        superLikedCats={swipeState.superLikedPets as Cat[]}
+        likedCats={swipeState.likedCats}
+        superLikedCats={swipeState.superLikedCats}
         onRemoveLike={swipeState.removeLike}
         onRemoveSuperLike={swipeState.removeSuperLike}
         onLocationClick={() => setShowLocationModal(true)}
@@ -77,18 +75,18 @@ export function CatMatchApp() {
             maxHeight: '70vh',
           }}
         >
-          {swipeState.nextPet && (
+          {swipeState.nextCat && (
             <CatSwipeCard
-              key={`next-${swipeState.nextPet.id}`}
-              cat={swipeState.nextPet as Cat}
+              key={`next-${swipeState.nextCat.id}`}
+              cat={swipeState.nextCat}
               onSwipe={() => {}}
               isTopCard={false}
             />
           )}
-          {swipeState.currentPet && (
+          {swipeState.currentCat && (
             <CatSwipeCard
-              key={`current-${swipeState.currentPet.id}`}
-              cat={swipeState.currentPet as Cat}
+              key={`current-${swipeState.currentCat.id}`}
+              cat={swipeState.currentCat}
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
               buttonSwipeDirection={swipeState.buttonSwipeDirection}
@@ -99,7 +97,7 @@ export function CatMatchApp() {
         <SwipeFooter
           onPass={() => swipeState.handleSwipe('pass', true)}
           onLike={() => swipeState.handleSwipe('like', true)}
-          disabled={!swipeState.currentPet}
+          disabled={!swipeState.currentCat}
           theme="cat"
         />
       </div>
