@@ -34,7 +34,8 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
     if (!isDragging || !isTopCard) return
     
     const threshold = 100
-    if (Math.abs(dragOffset.y) > threshold && dragOffset.y < 0) {
+    const superLikeThreshold = 100
+    if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
       triggerExit('super_like')
     } else if (Math.abs(dragOffset.x) > threshold) {
       const direction = dragOffset.x > 0 ? 'like' : 'pass'
@@ -64,7 +65,8 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
     if (!isDragging || !isTopCard) return
     
     const threshold = 100
-    if (Math.abs(dragOffset.y) > threshold && dragOffset.y < 0) {
+    const superLikeThreshold = 100
+    if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
       triggerExit('super_like')
     } else if (Math.abs(dragOffset.x) > threshold) {
       const direction = dragOffset.x > 0 ? 'like' : 'pass'
@@ -151,7 +153,7 @@ export function DogSwipeCard({ dog, onSwipe, isTopCard = true, buttonSwipeDirect
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className={`
-              px-12 py-6 rounded-2xl font-bold text-4xl shadow-lg backdrop-blur-sm text-white
+              px-6 py-3 sm:px-12 sm:py-6 rounded-2xl font-bold text-xl sm:text-4xl shadow-lg backdrop-blur-sm text-white
               ${isExiting && exitDirection === 'super_like'
                 ? 'bg-blue-500/80'
                 : isExiting && exitDirection === 'like' || (Math.abs(dragOffset.y) > 50 && dragOffset.y < 0)

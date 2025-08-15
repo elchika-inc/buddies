@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import { Dog } from '@/types/dog'
 import { DogDetailModal } from './DogDetailModal'
+import { Location } from '@/data/locations'
 
 interface MatchHeaderProps {
   likedDogs: Dog[]
   superLikedDogs: Dog[]
   onRemoveLike: (dogId: string) => void
   onRemoveSuperLike: (dogId: string) => void
+  onLocationClick: () => void
+  selectedLocations: Location[]
 }
 
-export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveSuperLike }: MatchHeaderProps) {
+export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveSuperLike, onLocationClick, selectedLocations }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'like' | 'super_like'>('like')
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null)
@@ -22,13 +25,22 @@ export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveS
       <header className="bg-white border-b border-gray-200 p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-800">🐶 PawMatch</h1>
-          <button
-            onClick={() => setIsOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2"
-          >
-            <span className="text-lg">❤️</span>
-            お気に入り ({likedDogs.length + superLikedDogs.length})
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onLocationClick}
+              className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-200 transition-colors flex items-center gap-2"
+            >
+              <span>📍</span>
+              <span>地域{selectedLocations.length > 0 && `(${selectedLocations.length})`}</span>
+            </button>
+            <button
+              onClick={() => setIsOpen(true)}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2"
+            >
+              <span>❤️</span>
+              <span>お気に入り ({likedDogs.length + superLikedDogs.length})</span>
+            </button>
+          </div>
         </div>
       </header>
 

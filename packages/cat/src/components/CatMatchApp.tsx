@@ -1,18 +1,47 @@
-import { useCatSwipeState } from '@/hooks/useCatSwipeState'
-import { mockCats } from '@/data/cats'
-import { CatSwipeCard } from './CatSwipeCard'
-import { SwipeFooter } from './SwipeFooter'
-import { MatchHeader } from './MatchHeader'
+import { useState, useMemo } from "react";
+import { useCatSwipeState } from "@/hooks/useCatSwipeState";
+import { mockCats } from "@/data/cats";
+import { CatSwipeCard } from "./CatSwipeCard";
+import { SwipeFooter } from "./SwipeFooter";
+import { MatchHeader } from "./MatchHeader";
+import { LocationModal } from "./LocationModal";
+import { Location } from "@/data/locations";
 
 export function CatMatchApp() {
-  const swipeState = useCatSwipeState(mockCats)
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  const filteredCats = useMemo(() => {
+    if (selectedLocations.length === 0) {
+      return mockCats;
+    }
+
+    return mockCats.filter((cat) => {
+      // いずれかの選択地域に該当するかチェック
+      return selectedLocations.some((location) => {
+        // 全域が選択された場合は都道府県のみで判定
+        if (location.city === '全域') {
+          return cat.location.includes(location.prefecture);
+        }
+        // 市区町村が選択された場合は両方で判定
+        return (
+          cat.location.includes(location.prefecture) &&
+          cat.location.includes(location.city)
+        );
+      });
+    });
+  }, [selectedLocations]);
+
+  const swipeState = useCatSwipeState(filteredCats);
 
   if (swipeState.isComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
           <div className="text-6xl mb-4">🐱</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">マッチング完了！</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            マッチング完了！
+          </h2>
           <p className="text-gray-600 mb-6">
             {swipeState.likedCatsCount}匹のネコちゃんとマッチしました
           </p>
@@ -24,7 +53,7 @@ export function CatMatchApp() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -34,43 +63,51 @@ export function CatMatchApp() {
         superLikedCats={swipeState.superLikedCats}
         onRemoveLike={swipeState.removeLikedCat}
         onRemoveSuperLike={swipeState.removeSuperLikedCat}
+        onLocationClick={() => setShowLocationModal(true)}
+        selectedLocations={selectedLocations}
       />
       <div className="container mx-auto px-4 py-8 pb-20">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🐱 PawMatch for Cats</h1>
-          <p className="text-gray-600">運命のネコちゃんを見つけよう</p>
-          <div className="mt-4 text-sm text-gray-500">
-            残り: {swipeState.remainingCount}匹 | いいね: {swipeState.likedCatsCount}匹
-          </div>
-        </div>
-
-        <div className="flex justify-center relative" style={{ height: 'calc(100vh - 280px)', minHeight: '320px', maxHeight: '70vh' }}>
+        <div
+          className="flex justify-center relative"
+          style={{
+            height: "calc(100vh - 280px)",
+            minHeight: "320px",
+            maxHeight: "70vh",
+          }}
+        >
           {swipeState.nextCat && (
-            <CatSwipeCard 
+            <CatSwipeCard
               key={`next-${swipeState.nextCat.id}`}
-              cat={swipeState.nextCat} 
-              onSwipe={() => {}} 
+              cat={swipeState.nextCat}
+              onSwipe={() => {}}
               isTopCard={false}
             />
           )}
           {swipeState.currentCat && (
-            <CatSwipeCard 
+            <CatSwipeCard
               key={`current-${swipeState.currentCat.id}`}
-              cat={swipeState.currentCat} 
+              cat={swipeState.currentCat}
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
               buttonSwipeDirection={swipeState.buttonSwipeDirection}
             />
           )}
         </div>
-        
+
         <SwipeFooter
-          onPass={() => swipeState.handleSwipe('pass', true)}
-          onLike={() => swipeState.handleSwipe('like', true)}
+          onPass={() => swipeState.handleSwipe("pass", true)}
+          onLike={() => swipeState.handleSwipe("like", true)}
           disabled={!swipeState.currentCat}
           theme="cat"
         />
       </div>
+
+      <LocationModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        selectedLocations={selectedLocations}
+        onLocationsChange={setSelectedLocations}
+      />
     </div>
-  )
+  );
 }
