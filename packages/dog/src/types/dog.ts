@@ -6,6 +6,7 @@ export type Dog = {
   gender: string
   size: string
   color: string
+  weight: number
   location: string
   description: string
   personality: string[]

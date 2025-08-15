@@ -6,6 +6,7 @@ export type Cat = {
   gender: string
   coatLength: string
   color: string
+  weight: number
   location: string
   description: string
   personality: string[]
