@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Dog } from '@/types/dog'
 
 interface DogDetailModalProps {
@@ -14,10 +15,13 @@ export function DogDetailModal({ dog, isOpen, onClose }: DogDetailModalProps) {
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="relative">
           <div className="relative h-64 sm:h-80">
-            <img
+            <Image
               src={dog.imageUrl}
               alt={dog.name}
-              className="w-full h-full object-cover rounded-t-2xl"
+              fill
+              className="object-cover rounded-t-2xl"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
             />
             <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg">
               <span className="text-2xl">🐶</span>

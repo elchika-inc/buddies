@@ -346,4 +346,4 @@ await recordSwipe({
 
 ---
 
-**参考プロジェクト**: [jobantenna-light](https://github.com/...) のTinderライクUI実装を参考に開発
+**参考プロジェクト**: [jobantenna-light](https://github.com/...) のTinderライクUI実装を参考に開発# Lefthook test

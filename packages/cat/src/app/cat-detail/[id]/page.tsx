@@ -1,5 +1,6 @@
 import { mockCats } from '@/data/cats'
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 
 type Props = {
   params: { id: string }
@@ -17,7 +18,14 @@ export default function CatDetailPage({ params }: Props) {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="relative h-96">
-            <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+            <Image
+              src={cat.imageUrl}
+              alt={cat.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
             <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg">
               <span className="text-2xl">🐱</span>
             </div>

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSwipeState, LocationModal, STORAGE_KEYS, UI_TEXT } from '@pawmatch/shared'
+import { useSwipeState } from '@/shared'
+import { LocationModal } from '@/shared'
+import { STORAGE_KEYS, UI_TEXT } from '@/shared'
 import { mockCats } from '@/data/cats'
 import { CatSwipeCard } from './CatSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
-import { Location } from '@pawmatch/shared'
+import { Location } from '@/shared'
 import { Cat } from '@/types/cat'
 
 export function CatMatchApp() {

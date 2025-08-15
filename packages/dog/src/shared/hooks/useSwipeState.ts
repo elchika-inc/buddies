@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Pet, SwipeDirection, SwipeState } from '../types/common'
+import { Pet, SwipeDirection, SwipeState } from '@/shared/types/common'
 import { useLocalStorage } from './useLocalStorage'
-import { ANIMATION } from '../utils/constants'
+import { ANIMATION } from '@/shared/utils/constants'
 
 interface UseSwipeStateOptions {
   storageKeys: {

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Pet, SwipeState, SwipeDirection } from '../types/common'
-import { Location } from '../data/locations'
-import { LAYOUT_CONSTANTS, THEME, UI_TEXT } from '../utils/constants'
+import { Pet, SwipeState, SwipeDirection } from '@/shared/types/common'
+import { Location } from '@/shared/data/locations'
+import { LAYOUT_CONSTANTS, THEME, UI_TEXT } from '@/shared/utils/constants'
 
 interface BaseMatchAppProps<T extends Pet> {
   // Data

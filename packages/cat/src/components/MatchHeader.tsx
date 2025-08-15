@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import { Cat } from '@/types/cat'
 import { CatDetailModal } from './CatDetailModal'
-import { Location } from '@/data/locations'
+import { Location } from '@/shared'
 
 interface MatchHeaderProps {
   likedCats: Cat[]
@@ -99,11 +100,15 @@ export function MatchHeader({
                 <div className="grid gap-4">
                   {currentList.map((cat) => (
                     <div key={cat.id} className="border border-gray-200 rounded-lg p-4 flex gap-4">
-                      <img
-                        src={cat.imageUrl}
-                        alt={cat.name}
-                        className="w-20 h-20 rounded-lg object-cover"
-                      />
+                      <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                        <Image
+                          src={cat.imageUrl}
+                          alt={cat.name}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                      </div>
                       <div
                         className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
                         onClick={() => setSelectedCat(cat)}

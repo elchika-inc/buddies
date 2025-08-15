@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSwipeState, LocationModal, STORAGE_KEYS, UI_TEXT } from '@pawmatch/shared'
+import { useSwipeState, LocationModal, STORAGE_KEYS, UI_TEXT } from '@/shared'
 import { mockDogs } from '@/data/dogs'
 import { DogSwipeCard } from './DogSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
-import { Location } from '@pawmatch/shared'
+import { Location } from '@/shared'
 import { Dog } from '@/types/dog'
 
 export function DogMatchApp() {

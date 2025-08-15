@@ -24,9 +24,12 @@
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
     "test": "turbo run test",
-    "deploy:all": "bun run deploy:dog && bun run deploy:cat",
-    "deploy:dog": "(cd packages/dog; vercel --prod)",
-    "deploy:cat": "(cd packages/cat; vercel --prod)"
+    "postinstall": "lefthook install",
+    "sync-shared": "./scripts/sync-shared.sh",
+    "predeploy": "npm run sync-shared",
+    "deploy:all": "npm run predeploy && bun run deploy:dog && bun run deploy:cat",
+    "deploy:dog": "npm run predeploy && (cd packages/dog; vercel --prod)",
+    "deploy:cat": "npm run predeploy && (cd packages/cat; vercel --prod)"
   },
   "dependencies": {
     "@apollo/client": "^3.13.9",
@@ -52,6 +55,7 @@
     "eslint-config-next": "^14.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "lefthook": "^1.12.3",
     "postcss": "^8.4.27",
     "prettier": "^3.6.2",
     "tailwindcss": "^3.3.0",

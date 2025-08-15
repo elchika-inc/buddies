@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { DogCard } from './DogCard'
 import { Dog } from '@/types/dog'
-import { SwipeDirection } from '@pawmatch/shared'
+import { SwipeDirection } from '@/shared'
 
 type DogSwipeCardProps = {
   dog: Dog
@@ -103,14 +103,12 @@ export function DogSwipeCard({
     setIsDragging(false)
   }, [dog.id, isTopCard])
 
-  useEffect(() => {
-    return () => {
-      if (buttonSwipeDirection) {
-        setTimeout(() => {
-          setIsExiting(false)
-          setExitDirection(null)
-        }, 0)
-      }
+  useEffect(() => () => {
+    if (buttonSwipeDirection) {
+      setTimeout(() => {
+        setIsExiting(false)
+        setExitDirection(null)
+      }, 0)
     }
   }, [dog.id, buttonSwipeDirection])
 
@@ -146,7 +144,7 @@ export function DogSwipeCard({
 
   const cardStyle = {
     transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
-    opacity: opacity,
+    opacity,
     transition: isDragging
       ? 'none'
       : isExiting

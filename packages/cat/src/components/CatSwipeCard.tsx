@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { CatCard } from './CatCard'
 import { Cat } from '@/types/cat'
-import { SwipeDirection } from '@pawmatch/shared'
+import { SwipeDirection } from '@/shared'
 
 type CatSwipeCardProps = {
   cat: Cat
