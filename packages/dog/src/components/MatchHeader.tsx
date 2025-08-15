@@ -12,7 +12,14 @@ interface MatchHeaderProps {
   selectedLocations: Location[]
 }
 
-export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveSuperLike, onLocationClick, selectedLocations }: MatchHeaderProps) {
+export function MatchHeader({
+  likedDogs,
+  superLikedDogs,
+  onRemoveLike,
+  onRemoveSuperLike,
+  onLocationClick,
+  selectedLocations,
+}: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'like' | 'super_like'>('like')
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null)
@@ -80,11 +87,13 @@ export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveS
                 </button>
               </div>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {currentList.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  {activeTab === 'like' ? 'いいねしたワンちゃんはまだいません' : 'スーパーいいねしたワンちゃんはまだいません'}
+                  {activeTab === 'like'
+                    ? 'いいねしたワンちゃんはまだいません'
+                    : 'スーパーいいねしたワンちゃんはまだいません'}
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -95,12 +104,14 @@ export function MatchHeader({ likedDogs, superLikedDogs, onRemoveLike, onRemoveS
                         alt={dog.name}
                         className="w-20 h-20 rounded-lg object-cover"
                       />
-                      <div 
+                      <div
                         className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
                         onClick={() => setSelectedDog(dog)}
                       >
                         <h3 className="font-bold text-lg text-gray-800">{dog.name}</h3>
-                        <p className="text-gray-600">{dog.breed} • {dog.age}歳 • {dog.gender}</p>
+                        <p className="text-gray-600">
+                          {dog.breed} • {dog.age}歳 • {dog.gender}
+                        </p>
                         <p className="text-gray-500 text-sm mt-1">{dog.location}</p>
                         <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る 👁️</p>
                       </div>

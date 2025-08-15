@@ -6,10 +6,13 @@ export async function GET(request: NextRequest) {
   const sessionId = searchParams.get('sessionId')
 
   if (!userId && !sessionId) {
-    return NextResponse.json({
-      success: false,
-      error: 'userId または sessionId が必要です'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'userId または sessionId が必要です',
+      },
+      { status: 400 }
+    )
   }
 
   try {
@@ -19,18 +22,21 @@ export async function GET(request: NextRequest) {
       likes: 18,
       passes: 20,
       superLikes: 4,
-      matches: 7
+      matches: 7,
     }
 
     return NextResponse.json({
       success: true,
-      stats
+      stats,
     })
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: '統計取得に失敗しました'
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: '統計取得に失敗しました',
+      },
+      { status: 500 }
+    )
   }
 }
 

@@ -6,8 +6,8 @@ type Props = {
 }
 
 export default function CatDetailPage({ params }: Props) {
-  const cat = mockCats.find(c => c.id === params.id)
-  
+  const cat = mockCats.find((c) => c.id === params.id)
+
   if (!cat) {
     notFound()
   }
@@ -17,16 +17,12 @@ export default function CatDetailPage({ params }: Props) {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="relative h-96">
-            <img
-              src={cat.imageUrl}
-              alt={cat.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
             <div className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg">
               <span className="text-2xl">🐱</span>
             </div>
           </div>
-          
+
           <div className="p-6">
             <div className="text-center mb-6">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">{cat.name}</h1>
@@ -77,7 +73,7 @@ export default function CatDetailPage({ params }: Props) {
             </div>
 
             <div className="text-center space-y-4">
-              <button 
+              <button
                 onClick={() => window.close()}
                 className="w-full bg-pink-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-pink-600 transition-colors"
               >

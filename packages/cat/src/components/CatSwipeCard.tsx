@@ -1,15 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { CatCard } from './CatCard'
 import { Cat } from '@/types/cat'
+import { SwipeDirection } from '@pawmatch/shared'
 
 type CatSwipeCardProps = {
   cat: Cat
-  onSwipe: (direction: 'like' | 'pass' | 'super_like') => void
+  onSwipe: (direction: SwipeDirection) => void
   isTopCard?: boolean
   buttonSwipeDirection?: 'like' | 'pass' | null
 }
 
-export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirection }: CatSwipeCardProps) {
+export function CatSwipeCard({
+  cat,
+  onSwipe,
+  isTopCard = true,
+  buttonSwipeDirection,
+}: CatSwipeCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [startPos, setStartPos] = useState({ x: 0, y: 0 })
@@ -32,7 +38,7 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
 
   const handleMouseUp = () => {
     if (!isDragging || !isTopCard) return
-    
+
     const threshold = 100
     const superLikeThreshold = 100
     if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
@@ -63,7 +69,7 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
 
   const handleTouchEnd = () => {
     if (!isDragging || !isTopCard) return
-    
+
     const threshold = 100
     const superLikeThreshold = 100
     if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
@@ -77,15 +83,18 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
     }
   }
 
-  const triggerExit = useCallback((direction: 'like' | 'pass' | 'super_like') => {
-    setIsExiting(true)
-    setExitDirection(direction)
-    setIsDragging(false)
-    
-    setTimeout(() => {
-      onSwipe(direction)
-    }, 400)
-  }, [onSwipe])
+  const triggerExit = useCallback(
+    (direction: 'like' | 'pass' | 'super_like') => {
+      setIsExiting(true)
+      setExitDirection(direction)
+      setIsDragging(false)
+
+      setTimeout(() => {
+        onSwipe(direction)
+      }, 400)
+    },
+    [onSwipe]
+  )
 
   useEffect(() => {
     setIsExiting(false)
@@ -94,14 +103,12 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
     setIsDragging(false)
   }, [cat.id, isTopCard])
 
-  useEffect(() => {
-    return () => {
-      if (buttonSwipeDirection) {
-        setTimeout(() => {
-          setIsExiting(false)
-          setExitDirection(null)
-        }, 0)
-      }
+  useEffect(() => () => {
+    if (buttonSwipeDirection) {
+      setTimeout(() => {
+        setIsExiting(false)
+        setExitDirection(null)
+      }, 0)
     }
   }, [cat.id, buttonSwipeDirection])
 
@@ -111,24 +118,38 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
     }
   }, [buttonSwipeDirection, isTopCard, triggerExit])
 
-  const rotation = isExiting 
-    ? (exitDirection === 'like' ? 30 : exitDirection === 'pass' ? -30 : 0)
+  const rotation = isExiting
+    ? exitDirection === 'like'
+      ? 30
+      : exitDirection === 'pass'
+        ? -30
+        : 0
     : dragOffset.x * 0.1
-  
-  const translateX = isExiting 
-    ? (exitDirection === 'like' ? window.innerWidth : exitDirection === 'pass' ? -window.innerWidth : dragOffset.x)
+
+  const translateX = isExiting
+    ? exitDirection === 'like'
+      ? window.innerWidth
+      : exitDirection === 'pass'
+        ? -window.innerWidth
+        : dragOffset.x
     : dragOffset.x
-  
-  const translateY = isExiting 
-    ? (exitDirection === 'super_like' ? -window.innerHeight : dragOffset.y + 50)
+
+  const translateY = isExiting
+    ? exitDirection === 'super_like'
+      ? -window.innerHeight
+      : dragOffset.y + 50
     : dragOffset.y
-  
+
   const opacity = 1
 
   const cardStyle = {
     transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
-    opacity: opacity,
-    transition: isDragging ? 'none' : isExiting ? 'transform 0.4s ease-out' : 'transform 0.3s ease-out, opacity 0.3s ease-out',
+    opacity,
+    transition: isDragging
+      ? 'none'
+      : isExiting
+        ? 'transform 0.4s ease-out'
+        : 'transform 0.3s ease-out, opacity 0.3s ease-out',
     zIndex: isTopCard ? 10 : 1,
     position: 'absolute' as const,
     cursor: isTopCard ? 'grab' : 'default',
@@ -148,29 +169,35 @@ export function CatSwipeCard({ cat, onSwipe, isTopCard = true, buttonSwipeDirect
       className="select-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
       <CatCard cat={cat} />
-      
+
       {isTopCard && (Math.abs(dragOffset.x) > 50 || Math.abs(dragOffset.y) > 50 || isExiting) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className={`
               px-6 py-3 sm:px-12 sm:py-6 rounded-2xl font-bold text-xl sm:text-4xl shadow-lg backdrop-blur-sm text-white
-              ${isExiting && exitDirection === 'super_like'
-                ? 'bg-blue-500/80'
-                : isExiting && exitDirection === 'like' || (Math.abs(dragOffset.y) > 50 && dragOffset.y < 0)
-                ? 'bg-blue-500/80'
-                : isExiting && exitDirection === 'like' || dragOffset.x > 0 
-                ? 'bg-green-500/80' 
-                : 'bg-red-500/80'
+              ${
+                isExiting && exitDirection === 'super_like'
+                  ? 'bg-blue-500/80'
+                  : (isExiting && exitDirection === 'like') ||
+                      (Math.abs(dragOffset.y) > 50 && dragOffset.y < 0)
+                    ? 'bg-blue-500/80'
+                    : (isExiting && exitDirection === 'like') || dragOffset.x > 0
+                      ? 'bg-green-500/80'
+                      : 'bg-red-500/80'
               }
             `}
           >
-            {isExiting && exitDirection === 'super_like' ? '⭐ スーパーライク'
-              : isExiting && exitDirection === 'like' ? '❤️ いいね'
-              : isExiting && exitDirection === 'pass' ? '❌ パス'
-              : Math.abs(dragOffset.y) > 50 && dragOffset.y < 0 
-              ? '⭐ スーパーライク' 
-              : dragOffset.x > 0 ? '❤️ いいね' : '❌ パス'
-            }
+            {isExiting && exitDirection === 'super_like'
+              ? '⭐ スーパーライク'
+              : isExiting && exitDirection === 'like'
+                ? '❤️ いいね'
+                : isExiting && exitDirection === 'pass'
+                  ? '❌ パス'
+                  : Math.abs(dragOffset.y) > 50 && dragOffset.y < 0
+                    ? '⭐ スーパーライク'
+                    : dragOffset.x > 0
+                      ? '❤️ いいね'
+                      : '❌ パス'}
           </div>
         </div>
       )}

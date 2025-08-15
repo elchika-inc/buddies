@@ -10,9 +10,9 @@ type SavedSwipeData = {
 export function useCatSwipeState(cats: Cat[]) {
   const [savedData, setSavedData] = useLocalStorage<SavedSwipeData>('pawmatch_cat_likes', {
     likedCats: [],
-    superLikedCats: []
+    superLikedCats: [],
   })
-  
+
   const [currentIndex, setCurrentIndex] = useState(0)
   const [likedCats, setLikedCats] = useState<Cat[]>(savedData.likedCats)
   const [passedCats, setPassedCats] = useState<Cat[]>([])
@@ -38,22 +38,22 @@ export function useCatSwipeState(cats: Cat[]) {
     if (direction === 'like') {
       const newLikedCats = [...likedCats, currentCat!]
       setLikedCats(newLikedCats)
-      setSavedData(prev => ({
+      setSavedData((prev) => ({
         ...prev,
-        likedCats: newLikedCats
+        likedCats: newLikedCats,
       }))
     } else if (direction === 'super_like') {
       const newSuperLikedCats = [...superLikedCats, currentCat!]
       setSuperLikedCats(newSuperLikedCats)
-      setSavedData(prev => ({
+      setSavedData((prev) => ({
         ...prev,
-        superLikedCats: newSuperLikedCats
+        superLikedCats: newSuperLikedCats,
       }))
     } else {
-      setPassedCats(prev => [...prev, currentCat!])
+      setPassedCats((prev) => [...prev, currentCat!])
     }
 
-    setCurrentIndex(prev => prev + 1)
+    setCurrentIndex((prev) => prev + 1)
     setButtonSwipeDirection(null)
   }
 
@@ -66,20 +66,20 @@ export function useCatSwipeState(cats: Cat[]) {
   }
 
   const removeLikedCat = (catId: string) => {
-    const newLikedCats = likedCats.filter(cat => cat.id !== catId)
+    const newLikedCats = likedCats.filter((cat) => cat.id !== catId)
     setLikedCats(newLikedCats)
-    setSavedData(prev => ({
+    setSavedData((prev) => ({
       ...prev,
-      likedCats: newLikedCats
+      likedCats: newLikedCats,
     }))
   }
 
   const removeSuperLikedCat = (catId: string) => {
-    const newSuperLikedCats = superLikedCats.filter(cat => cat.id !== catId)
+    const newSuperLikedCats = superLikedCats.filter((cat) => cat.id !== catId)
     setSuperLikedCats(newSuperLikedCats)
-    setSavedData(prev => ({
+    setSavedData((prev) => ({
       ...prev,
-      superLikedCats: newSuperLikedCats
+      superLikedCats: newSuperLikedCats,
     }))
   }
 
@@ -98,6 +98,6 @@ export function useCatSwipeState(cats: Cat[]) {
     removeLikedCat,
     removeSuperLikedCat,
     isComplete,
-    buttonSwipeDirection
+    buttonSwipeDirection,
   }
 }

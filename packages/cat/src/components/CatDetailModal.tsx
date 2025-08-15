@@ -29,7 +29,7 @@ export function CatDetailModal({ cat, isOpen, onClose }: CatDetailModalProps) {
               ✕
             </button>
           </div>
-          
+
           <div className="p-6">
             <div className="text-center mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">{cat.name}</h1>
@@ -43,7 +43,9 @@ export function CatDetailModal({ cat, isOpen, onClose }: CatDetailModalProps) {
                 <div className="text-gray-600 text-sm sm:text-base">{cat.age}歳</div>
               </div>
               <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
-                <div className="text-xl sm:text-2xl mb-2">{cat.gender === 'オス' ? '♂️' : '♀️'}</div>
+                <div className="text-xl sm:text-2xl mb-2">
+                  {cat.gender === 'オス' ? '♂️' : '♀️'}
+                </div>
                 <div className="font-semibold text-gray-800 text-sm sm:text-base">性別</div>
                 <div className="text-gray-600 text-sm sm:text-base">{cat.gender}</div>
               </div>
@@ -61,7 +63,9 @@ export function CatDetailModal({ cat, isOpen, onClose }: CatDetailModalProps) {
 
             <div className="mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">性格・特徴</h2>
-              <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{cat.description}</p>
+              <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+                {cat.description}
+              </p>
             </div>
 
             <div className="mb-6">
@@ -80,7 +84,7 @@ export function CatDetailModal({ cat, isOpen, onClose }: CatDetailModalProps) {
             </div>
 
             <div className="text-center space-y-4">
-              <button 
+              <button
                 onClick={onClose}
                 className="w-full bg-pink-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-pink-600 transition-colors"
               >

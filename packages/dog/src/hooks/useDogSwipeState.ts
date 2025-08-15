@@ -10,9 +10,9 @@ type SavedSwipeData = {
 export function useDogSwipeState(dogs: Dog[]) {
   const [savedData, setSavedData] = useLocalStorage<SavedSwipeData>('pawmatch_dog_likes', {
     likedDogs: [],
-    superLikedDogs: []
+    superLikedDogs: [],
   })
-  
+
   const [currentIndex, setCurrentIndex] = useState(0)
   const [likedDogs, setLikedDogs] = useState<Dog[]>(savedData.likedDogs)
   const [passedDogs, setPassedDogs] = useState<Dog[]>([])
@@ -38,22 +38,22 @@ export function useDogSwipeState(dogs: Dog[]) {
     if (direction === 'like') {
       const newLikedDogs = [...likedDogs, currentDog!]
       setLikedDogs(newLikedDogs)
-      setSavedData(prev => ({
+      setSavedData((prev) => ({
         ...prev,
-        likedDogs: newLikedDogs
+        likedDogs: newLikedDogs,
       }))
     } else if (direction === 'super_like') {
       const newSuperLikedDogs = [...superLikedDogs, currentDog!]
       setSuperLikedDogs(newSuperLikedDogs)
-      setSavedData(prev => ({
+      setSavedData((prev) => ({
         ...prev,
-        superLikedDogs: newSuperLikedDogs
+        superLikedDogs: newSuperLikedDogs,
       }))
     } else {
-      setPassedDogs(prev => [...prev, currentDog!])
+      setPassedDogs((prev) => [...prev, currentDog!])
     }
 
-    setCurrentIndex(prev => prev + 1)
+    setCurrentIndex((prev) => prev + 1)
     setButtonSwipeDirection(null)
   }
 
@@ -66,20 +66,20 @@ export function useDogSwipeState(dogs: Dog[]) {
   }
 
   const removeLikedDog = (dogId: string) => {
-    const newLikedDogs = likedDogs.filter(dog => dog.id !== dogId)
+    const newLikedDogs = likedDogs.filter((dog) => dog.id !== dogId)
     setLikedDogs(newLikedDogs)
-    setSavedData(prev => ({
+    setSavedData((prev) => ({
       ...prev,
-      likedDogs: newLikedDogs
+      likedDogs: newLikedDogs,
     }))
   }
 
   const removeSuperLikedDog = (dogId: string) => {
-    const newSuperLikedDogs = superLikedDogs.filter(dog => dog.id !== dogId)
+    const newSuperLikedDogs = superLikedDogs.filter((dog) => dog.id !== dogId)
     setSuperLikedDogs(newSuperLikedDogs)
-    setSavedData(prev => ({
+    setSavedData((prev) => ({
       ...prev,
-      superLikedDogs: newSuperLikedDogs
+      superLikedDogs: newSuperLikedDogs,
     }))
   }
 
@@ -98,6 +98,6 @@ export function useDogSwipeState(dogs: Dog[]) {
     removeLikedDog,
     removeSuperLikedDog,
     isComplete,
-    buttonSwipeDirection
+    buttonSwipeDirection,
   }
 }

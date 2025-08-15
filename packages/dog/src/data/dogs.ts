@@ -11,7 +11,8 @@ export const mockDogs: Dog[] = [
     color: '赤毛',
     weight: 10.5,
     location: '東京都',
-    description: '元気いっぱいの柴犬のポチです。散歩が大好きで、人懐っこい性格です。基本的なしつけは済んでおり、お留守番も上手にできます。',
+    description:
+      '元気いっぱいの柴犬のポチです。散歩が大好きで、人懐っこい性格です。基本的なしつけは済んでおり、お留守番も上手にできます。',
     personality: ['元気', '人懐っこい', '散歩好き', '忠実'],
     medicalInfo: '健康状態良好、定期検診済み、股関節に軽微な異常あるが生活に支障なし',
     careRequirements: ['毎日の散歩', '定期的なブラッシング', '柴犬の毛の手入れ'],
@@ -28,7 +29,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-01-15'
+    createdAt: '2024-01-15',
   },
   {
     id: '2',
@@ -40,7 +41,8 @@ export const mockDogs: Dog[] = [
     color: 'チョコレート',
     weight: 28.3,
     location: '埼玉県',
-    description: '落ち着いた性格のラブラドールです。子供たちとも仲良くでき、家族の一員として愛されます。泳ぐのも大好きです。',
+    description:
+      '落ち着いた性格のラブラドールです。子供たちとも仲良くでき、家族の一員として愛されます。泳ぐのも大好きです。',
     personality: ['落ち着いている', '子供好き', '忠実', '水好き'],
     medicalInfo: '健康状態良好、関節に注意が必要（大型犬特有）',
     careRequirements: ['十分な運動', '大型犬用の環境', '関節サプリメント'],
@@ -57,7 +59,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-01-10'
+    createdAt: '2024-01-10',
   },
   {
     id: '3',
@@ -69,7 +71,8 @@ export const mockDogs: Dog[] = [
     color: 'アプリコット',
     weight: 3.2,
     location: '東京都',
-    description: '賢くて人懐っこいトイプードルのハナちゃん。アパート暮らしに最適で、他の犬とも仲良くできます。',
+    description:
+      '賢くて人懐っこいトイプードルのハナちゃん。アパート暮らしに最適で、他の犬とも仲良くできます。',
     personality: ['賢い', '人懐っこい', '可愛らしい', '社交的'],
     medicalInfo: '健康状態良好、膝蓋骨脱臼の軽微な傾向',
     careRequirements: ['定期トリミング', '小型犬用の環境', '知的刺激'],
@@ -86,7 +89,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-01-12'
+    createdAt: '2024-01-12',
   },
   {
     id: '4',
@@ -98,7 +101,8 @@ export const mockDogs: Dog[] = [
     color: 'ゴールデン',
     weight: 25.8,
     location: '神奈川県',
-    description: '若くて元気なゴールデンレトリバーです。まだ子犬の面影があり、遊ぶことが大好きです。しつけトレーニング中です。',
+    description:
+      '若くて元気なゴールデンレトリバーです。まだ子犬の面影があり、遊ぶことが大好きです。しつけトレーニング中です。',
     personality: ['元気', 'フレンドリー', '遊び好き', '学習意欲旺盛'],
     medicalInfo: '健康状態良好、若齢のため特に注意点なし',
     careRequirements: ['十分な運動', '継続的なトレーニング', '社会化'],
@@ -115,7 +119,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-01-20'
+    createdAt: '2024-01-20',
   },
   {
     id: '5',
@@ -127,7 +131,8 @@ export const mockDogs: Dog[] = [
     color: 'レッド&ホワイト',
     weight: 12.7,
     location: '千葉県',
-    description: '人懐っこいコーギーのムギちゃん。牧羊犬の血を引く活発な性格ですが、シニアに近づき落ち着きも出てきました。',
+    description:
+      '人懐っこいコーギーのムギちゃん。牧羊犬の血を引く活発な性格ですが、シニアに近づき落ち着きも出てきました。',
     personality: ['人懐っこい', '活発', '頭が良い', '忠実'],
     medicalInfo: '健康状態良好、腰に注意が必要（コーギー特有）',
     careRequirements: ['適度な運動', '体重管理', '腰のケア'],
@@ -144,7 +149,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-01-08'
+    createdAt: '2024-01-08',
   },
   {
     id: '6',
@@ -156,7 +161,8 @@ export const mockDogs: Dog[] = [
     color: '白',
     weight: 35.2,
     location: '秋田県',
-    description: '美しい白毛の秋田犬です。落ち着いた性格で、家族に対してとても忠実です。日本犬特有の気品があります。',
+    description:
+      '美しい白毛の秋田犬です。落ち着いた性格で、家族に対してとても忠実です。日本犬特有の気品があります。',
     personality: ['忠実', '落ち着いている', '気品がある', '家族思い'],
     medicalInfo: '健康状態良好、股関節に注意が必要',
     careRequirements: ['十分な運動', '定期的なブラッシング', '日本犬の特性理解'],
@@ -173,7 +179,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-01-22'
+    createdAt: '2024-01-22',
   },
   {
     id: '7',
@@ -185,7 +191,8 @@ export const mockDogs: Dog[] = [
     color: 'トライカラー',
     weight: 13.8,
     location: '神奈川県',
-    description: '愛らしいビーグルのベリーちゃんです。好奇心旺盛で人懐っこく、散歩が大好きです。鼻がとても良く、匂いを嗅ぐのが趣味です。',
+    description:
+      '愛らしいビーグルのベリーちゃんです。好奇心旺盛で人懐っこく、散歩が大好きです。鼻がとても良く、匂いを嗅ぐのが趣味です。',
     personality: ['好奇心旺盛', '人懐っこい', '活発', '匂い嗅ぎ好き'],
     medicalInfo: '健康状態良好、体重管理に注意',
     careRequirements: ['毎日の散歩', '匂い嗅ぎ遊び', '体重管理'],
@@ -202,7 +209,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-01-25'
+    createdAt: '2024-01-25',
   },
   {
     id: '8',
@@ -214,7 +221,8 @@ export const mockDogs: Dog[] = [
     color: 'ブラック&タン',
     weight: 32.4,
     location: '東京都',
-    description: '立派なジャーマンシェパードです。とても賢く、しつけがよく入っています。運動量が多く必要で、アクティブな家族に最適です。',
+    description:
+      '立派なジャーマンシェパードです。とても賢く、しつけがよく入っています。運動量が多く必要で、アクティブな家族に最適です。',
     personality: ['賢い', '忠実', '保護本能強い', '運動好き'],
     medicalInfo: '健康状態良好、股関節と肘関節に注意が必要',
     careRequirements: ['十分な運動', '知的刺激', '継続的なトレーニング'],
@@ -231,7 +239,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-01-28'
+    createdAt: '2024-01-28',
   },
   {
     id: '9',
@@ -243,7 +251,8 @@ export const mockDogs: Dog[] = [
     color: 'ブレンハイム',
     weight: 7.2,
     location: '大阪府',
-    description: '優雅で美しいキャバリアです。とても穏やかで人懐っこく、子供たちとも仲良くできます。シニアに近づき落ち着いています。',
+    description:
+      '優雅で美しいキャバリアです。とても穏やかで人懐っこく、子供たちとも仲良くできます。シニアに近づき落ち着いています。',
     personality: ['穏やか', '優雅', '人懐っこい', '子供好き'],
     medicalInfo: '心臓に軽微な雑音あり（定期検診要）、その他良好',
     careRequirements: ['定期的な心臓検査', '適度な運動', '優しいケア'],
@@ -260,7 +269,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-02-01'
+    createdAt: '2024-02-01',
   },
   {
     id: '10',
@@ -272,7 +281,8 @@ export const mockDogs: Dog[] = [
     color: 'ブラック&ホワイト',
     weight: 18.5,
     location: '北海道',
-    description: '非常に賢いボーダーコリーです。エネルギッシュで運動量が豊富、頭脳ゲームが大好きです。アクティブな飼い主さんに最適です。',
+    description:
+      '非常に賢いボーダーコリーです。エネルギッシュで運動量が豊富、頭脳ゲームが大好きです。アクティブな飼い主さんに最適です。',
     personality: ['非常に賢い', 'エネルギッシュ', '運動好き', '学習意欲旺盛'],
     medicalInfo: '健康状態良好、若齢のため特に注意点なし',
     careRequirements: ['十分な運動', '知的刺激', '牧羊犬の本能を満たす活動'],
@@ -289,7 +299,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-02-04'
+    createdAt: '2024-02-04',
   },
   {
     id: '11',
@@ -301,7 +311,8 @@ export const mockDogs: Dog[] = [
     color: '白',
     weight: 2.8,
     location: '京都府',
-    description: 'シニア犬のマルチーズです。真っ白な美しい被毛を持ち、とても穏やかな性格です。静かな環境でのんびり過ごすのが好きです。',
+    description:
+      'シニア犬のマルチーズです。真っ白な美しい被毛を持ち、とても穏やかな性格です。静かな環境でのんびり過ごすのが好きです。',
     personality: ['穏やか', '静か', '優雅', '甘えん坊'],
     medicalInfo: '軽度の白内障、その他健康状態良好',
     careRequirements: ['定期トリミング', 'シニア用ケア', '静かな環境'],
@@ -318,7 +329,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-02-07'
+    createdAt: '2024-02-07',
   },
   {
     id: '12',
@@ -330,7 +341,8 @@ export const mockDogs: Dog[] = [
     color: 'ブリンドル',
     weight: 30.1,
     location: '愛知県',
-    description: '力強いピットブルテリアですが、とても愛情深い性格です。家族に対して非常に忠実で、適切なトレーニングを受けています。',
+    description:
+      '力強いピットブルテリアですが、とても愛情深い性格です。家族に対して非常に忠実で、適切なトレーニングを受けています。',
     personality: ['愛情深い', '忠実', '力強い', '家族思い'],
     medicalInfo: '健康状態良好、皮膚に注意が必要',
     careRequirements: ['継続的なトレーニング', '十分な運動', '社会化の維持'],
@@ -347,7 +359,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-02-10'
+    createdAt: '2024-02-10',
   },
   {
     id: '13',
@@ -359,7 +371,8 @@ export const mockDogs: Dog[] = [
     color: 'チョコレート',
     weight: 2.1,
     location: '福岡県',
-    description: '小さくて可愛いチワワのココアちゃんです。少し警戒心がありますが、慣れると甘えん坊になります。小さな体ですが勇敢です。',
+    description:
+      '小さくて可愛いチワワのココアちゃんです。少し警戒心がありますが、慣れると甘えん坊になります。小さな体ですが勇敢です。',
     personality: ['警戒心強い', '勇敢', '甘えん坊', '小さくて可愛い'],
     medicalInfo: '健康状態良好、膝蓋骨脱臼に注意',
     careRequirements: ['小型犬用の環境', '温度管理', 'ゆっくりとした慣らし'],
@@ -376,7 +389,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-02-13'
+    createdAt: '2024-02-13',
   },
   {
     id: '14',
@@ -388,7 +401,8 @@ export const mockDogs: Dog[] = [
     color: 'グレー&ホワイト',
     weight: 26.7,
     location: '宮城県',
-    description: '美しいハスキーのアルです。とてもエネルギッシュで、寒い気候を好みます。運動量が非常に多く必要で、アウトドア好きの家族に最適です。',
+    description:
+      '美しいハスキーのアルです。とてもエネルギッシュで、寒い気候を好みます。運動量が非常に多く必要で、アウトドア好きの家族に最適です。',
     personality: ['エネルギッシュ', '寒さに強い', '独立心旺盛', '冒険好き'],
     medicalInfo: '健康状態良好、眼の定期検査推奨',
     careRequirements: ['大量の運動', '寒い環境', '十分なスペース'],
@@ -405,7 +419,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-02-16'
+    createdAt: '2024-02-16',
   },
   {
     id: '15',
@@ -417,7 +431,8 @@ export const mockDogs: Dog[] = [
     color: 'スチールブルー&タン',
     weight: 2.7,
     location: '兵庫県',
-    description: '美しい被毛のヨークシャーテリアです。気品があり、少しプライドが高いですが、家族には甘えん坊です。定期的なトリミングが必要です。',
+    description:
+      '美しい被毛のヨークシャーテリアです。気品があり、少しプライドが高いですが、家族には甘えん坊です。定期的なトリミングが必要です。',
     personality: ['気品がある', 'プライド高い', '甘えん坊', '美しい'],
     medicalInfo: '健康状態良好、気管虚脱に注意',
     careRequirements: ['定期トリミング', '小型犬用ケア', '気管への配慮'],
@@ -434,7 +449,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-02-19'
+    createdAt: '2024-02-19',
   },
   {
     id: '16',
@@ -446,7 +461,8 @@ export const mockDogs: Dog[] = [
     color: 'ブルー',
     weight: 65.3,
     location: '静岡県',
-    description: '優しい巨人のグレートデーンです。大きな体に反して穏やかで優しい性格です。十分なスペースが必要ですが、家族に対してとても愛情深いです。',
+    description:
+      '優しい巨人のグレートデーンです。大きな体に反して穏やかで優しい性格です。十分なスペースが必要ですが、家族に対してとても愛情深いです。',
     personality: ['穏やか', '優しい', '巨大', '愛情深い'],
     medicalInfo: '健康状態良好、心臓と胃捻転に注意が必要',
     careRequirements: ['十分なスペース', '心臓の定期検査', '食事管理'],
@@ -463,7 +479,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-02-22'
+    createdAt: '2024-02-22',
   },
   {
     id: '17',
@@ -475,7 +491,8 @@ export const mockDogs: Dog[] = [
     color: 'ブラック&タン',
     weight: 42.8,
     location: '広島県',
-    description: '力強いロットワイラーです。家族に対して非常に忠実で保護本能が強いです。適切なトレーニングを受けており、頼りになるパートナーです。',
+    description:
+      '力強いロットワイラーです。家族に対して非常に忠実で保護本能が強いです。適切なトレーニングを受けており、頼りになるパートナーです。',
     personality: ['忠実', '保護本能強い', '力強い', '頼りになる'],
     medicalInfo: '健康状態良好、股関節に注意が必要',
     careRequirements: ['継続的なトレーニング', '社会化の維持', '十分な運動'],
@@ -492,7 +509,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-02-25'
+    createdAt: '2024-02-25',
   },
   {
     id: '18',
@@ -504,7 +521,8 @@ export const mockDogs: Dog[] = [
     color: 'ホワイト&セーブル',
     weight: 4.1,
     location: '新潟県',
-    description: '蝶のような耳が美しいパピヨンです。とても活発で賢く、アジリティなどのスポーツが得意です。家族との時間を大切にします。',
+    description:
+      '蝶のような耳が美しいパピヨンです。とても活発で賢く、アジリティなどのスポーツが得意です。家族との時間を大切にします。',
     personality: ['活発', '賢い', 'スポーツ得意', '美しい'],
     medicalInfo: '健康状態良好、膝蓋骨脱臼に軽微な傾向',
     careRequirements: ['知的刺激', '運動の機会', '定期的なグルーミング'],
@@ -521,7 +539,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-02-28'
+    createdAt: '2024-02-28',
   },
   {
     id: '19',
@@ -533,7 +551,8 @@ export const mockDogs: Dog[] = [
     color: 'フォーン',
     weight: 31.2,
     location: '岡山県',
-    description: 'エネルギッシュなボクサーです。遊び好きで家族思い、特に子供たちと遊ぶのが大好きです。運動量が多く必要で、アクティブな家庭に最適です。',
+    description:
+      'エネルギッシュなボクサーです。遊び好きで家族思い、特に子供たちと遊ぶのが大好きです。運動量が多く必要で、アクティブな家庭に最適です。',
     personality: ['エネルギッシュ', '遊び好き', '家族思い', '子供好き'],
     medicalInfo: '健康状態良好、心臓の定期検査推奨',
     careRequirements: ['十分な運動', '遊び時間の確保', '心臓の定期検査'],
@@ -550,7 +569,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-03-03'
+    createdAt: '2024-03-03',
   },
   {
     id: '20',
@@ -562,7 +581,8 @@ export const mockDogs: Dog[] = [
     color: 'トライカラー',
     weight: 22.4,
     location: '熊本県',
-    description: 'のんびり屋のバセットハウンドです。短い足と長い耳が特徴的で、とても穏やかな性格です。匂いを嗅ぐのが大好きで、マイペースです。',
+    description:
+      'のんびり屋のバセットハウンドです。短い足と長い耳が特徴的で、とても穏やかな性格です。匂いを嗅ぐのが大好きで、マイペースです。',
     personality: ['のんびり', '穏やか', 'マイペース', '匂い嗅ぎ好き'],
     medicalInfo: '健康状態良好、背骨と耳に注意が必要',
     careRequirements: ['適度な運動', '耳の定期清掃', '体重管理'],
@@ -579,7 +599,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-03-06'
+    createdAt: '2024-03-06',
   },
   {
     id: '21',
@@ -591,7 +611,8 @@ export const mockDogs: Dog[] = [
     color: 'ブラック&タン',
     weight: 38.6,
     location: '茨城県',
-    description: '凛々しいドーベルマンです。非常に賢く、家族に対して忠実で保護本能が強いです。適切なトレーニングを受けており、信頼できるパートナーです。',
+    description:
+      '凛々しいドーベルマンです。非常に賢く、家族に対して忠実で保護本能が強いです。適切なトレーニングを受けており、信頼できるパートナーです。',
     personality: ['賢い', '忠実', '保護本能強い', '凛々しい'],
     medicalInfo: '健康状態良好、心筋症の定期チェック推奨',
     careRequirements: ['継続的なトレーニング', '十分な運動', '心臓の定期検査'],
@@ -608,7 +629,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-03-09'
+    createdAt: '2024-03-09',
   },
   {
     id: '22',
@@ -620,7 +641,8 @@ export const mockDogs: Dog[] = [
     color: 'オレンジ',
     weight: 2.3,
     location: '沖縄県',
-    description: 'ふわふわの毛玉のようなポメラニアンです。とても活発で好奇心旺盛、小さな体に大きな個性があります。家族の注目を集めるのが得意です。',
+    description:
+      'ふわふわの毛玉のようなポメラニアンです。とても活発で好奇心旺盛、小さな体に大きな個性があります。家族の注目を集めるのが得意です。',
     personality: ['活発', '好奇心旺盛', '注目好き', 'ふわふわ'],
     medicalInfo: '健康状態良好、気管虚脱と膝蓋骨脱臼に注意',
     careRequirements: ['定期的なブラッシング', '小型犬用ケア', '気管への配慮'],
@@ -637,7 +659,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-03-12'
+    createdAt: '2024-03-12',
   },
   {
     id: '23',
@@ -649,7 +671,8 @@ export const mockDogs: Dog[] = [
     color: 'ブリンドル',
     weight: 29.8,
     location: '栃木県',
-    description: '優雅で速いグレイハウンドです。短距離では非常に速く走りますが、普段はとても穏やかで「45km/hのカウチポテト」と呼ばれることもあります。',
+    description:
+      '優雅で速いグレイハウンドです。短距離では非常に速く走りますが、普段はとても穏やかで「45km/hのカウチポテト」と呼ばれることもあります。',
     personality: ['優雅', '穏やか', '速い', 'のんびり'],
     medicalInfo: '健康状態良好、寒さに弱いため温度管理必要',
     careRequirements: ['温度管理', '短時間の高強度運動', '柔らかいベッド'],
@@ -666,7 +689,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-03-15'
+    createdAt: '2024-03-15',
   },
   {
     id: '24',
@@ -678,7 +701,8 @@ export const mockDogs: Dog[] = [
     color: 'ブリンドル&ホワイト',
     weight: 22.1,
     location: '群馬県',
-    description: 'のんびり屋のブルドッグです。穏やかで愛情深く、家族との時間をのんびり過ごすのが好きです。暑さに弱いので温度管理が重要です。',
+    description:
+      'のんびり屋のブルドッグです。穏やかで愛情深く、家族との時間をのんびり過ごすのが好きです。暑さに弱いので温度管理が重要です。',
     personality: ['のんびり', '穏やか', '愛情深い', '暑がり'],
     medicalInfo: '健康状態良好、呼吸器系に注意が必要',
     careRequirements: ['温度管理', '適度な運動', '呼吸器ケア'],
@@ -695,7 +719,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-03-18'
+    createdAt: '2024-03-18',
   },
   {
     id: '25',
@@ -707,7 +731,8 @@ export const mockDogs: Dog[] = [
     color: 'ゴールド&ホワイト',
     weight: 6.8,
     location: '山梨県',
-    description: 'ぬいぐるみのようなシーズーです。とても穏やかで人懐っこく、家族みんなと仲良くできます。定期的なトリミングで美しい被毛を保ちます。',
+    description:
+      'ぬいぐるみのようなシーズーです。とても穏やかで人懐っこく、家族みんなと仲良くできます。定期的なトリミングで美しい被毛を保ちます。',
     personality: ['穏やか', '人懐っこい', 'ぬいぐるみのような', '愛らしい'],
     medicalInfo: '健康状態良好、目と呼吸器に注意が必要',
     careRequirements: ['定期トリミング', '目の周りのケア', '呼吸器ケア'],
@@ -724,7 +749,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-03-21'
+    createdAt: '2024-03-21',
   },
   {
     id: '26',
@@ -736,7 +761,8 @@ export const mockDogs: Dog[] = [
     color: 'ブルーマール',
     weight: 20.3,
     location: '長野県',
-    description: '美しいブルーマールのオーストラリアンシェパードです。非常に賢く、牧羊犬として活動的です。アウトドアアクティビティが大好きです。',
+    description:
+      '美しいブルーマールのオーストラリアンシェパードです。非常に賢く、牧羊犬として活動的です。アウトドアアクティビティが大好きです。',
     personality: ['非常に賢い', '活動的', '牧羊犬', 'アウトドア好き'],
     medicalInfo: '健康状態良好、股関節の定期チェック推奨',
     careRequirements: ['十分な運動', '知的刺激', '牧羊本能を満たす活動'],
@@ -753,7 +779,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-03-24'
+    createdAt: '2024-03-24',
   },
   {
     id: '27',
@@ -765,7 +791,8 @@ export const mockDogs: Dog[] = [
     color: 'フォーン',
     weight: 13.6,
     location: '岐阜県',
-    description: '優雅で速いウィペットです。グレイハウンドの小型版で、短距離では非常に速く走りますが、家の中ではとても穏やかです。',
+    description:
+      '優雅で速いウィペットです。グレイハウンドの小型版で、短距離では非常に速く走りますが、家の中ではとても穏やかです。',
     personality: ['優雅', '速い', '穏やか', '上品'],
     medicalInfo: '健康状態良好、寒さに弱いため温度管理必要',
     careRequirements: ['温度管理', '短時間の高強度運動', '柔らかいベッド'],
@@ -782,7 +809,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: false,
     apartmentFriendly: true,
-    createdAt: '2024-03-27'
+    createdAt: '2024-03-27',
   },
   {
     id: '28',
@@ -794,7 +821,8 @@ export const mockDogs: Dog[] = [
     color: 'ホワイト&タン',
     weight: 6.4,
     location: '三重県',
-    description: 'エネルギッシュなジャックラッセルテリアです。とても活発で好奇心旺盛、小さな体に大きなエネルギーを秘めています。アクティブな家族に最適です。',
+    description:
+      'エネルギッシュなジャックラッセルテリアです。とても活発で好奇心旺盛、小さな体に大きなエネルギーを秘めています。アクティブな家族に最適です。',
     personality: ['エネルギッシュ', '活発', '好奇心旺盛', '勇敢'],
     medicalInfo: '健康状態良好、膝蓋骨脱臼に軽微な傾向',
     careRequirements: ['十分な運動', '知的刺激', 'アクティブな遊び'],
@@ -811,7 +839,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日3回以上',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-03-30'
+    createdAt: '2024-03-30',
   },
   {
     id: '29',
@@ -823,7 +851,8 @@ export const mockDogs: Dog[] = [
     color: 'トライカラー',
     weight: 48.7,
     location: '福島県',
-    description: '優しい巨人のバーニーズマウンテンドッグです。とても穏やかで家族思い、特に子供たちと過ごすのが大好きです。シニア期に入り落ち着いています。',
+    description:
+      '優しい巨人のバーニーズマウンテンドッグです。とても穏やかで家族思い、特に子供たちと過ごすのが大好きです。シニア期に入り落ち着いています。',
     personality: ['穏やか', '家族思い', '優しい', '子供好き'],
     medicalInfo: '健康状態良好、関節と心臓の定期チェック推奨',
     careRequirements: ['シニア用ケア', '関節サポート', '心臓の定期検査'],
@@ -840,7 +869,7 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-04-02'
+    createdAt: '2024-04-02',
   },
   {
     id: '30',
@@ -852,7 +881,8 @@ export const mockDogs: Dog[] = [
     color: 'レッド&ホワイト',
     weight: 75.2,
     location: '岩手県',
-    description: '温厚な巨人のセントバーナードです。とても優しく穏やかで、家族全員を守ろうとする優しい心を持っています。大きな体ですが心は子犬のようです。',
+    description:
+      '温厚な巨人のセントバーナードです。とても優しく穏やかで、家族全員を守ろうとする優しい心を持っています。大きな体ですが心は子犬のようです。',
     personality: ['温厚', '優しい', '穏やか', '守護的'],
     medicalInfo: '健康状態良好、心臓と関節の定期チェック必要',
     careRequirements: ['十分なスペース', '心臓の定期検査', '関節サポート'],
@@ -869,6 +899,6 @@ export const mockDogs: Dog[] = [
     walkFrequency: '1日2回',
     needsYard: true,
     apartmentFriendly: false,
-    createdAt: '2024-04-05'
-  }
+    createdAt: '2024-04-05',
+  },
 ]

@@ -1,49 +1,49 @@
-import { useState, useMemo } from "react";
-import { useCatSwipeState } from "@/hooks/useCatSwipeState";
-import { mockCats } from "@/data/cats";
-import { CatSwipeCard } from "./CatSwipeCard";
-import { SwipeFooter } from "./SwipeFooter";
-import { MatchHeader } from "./MatchHeader";
-import { LocationModal } from "./LocationModal";
-import { Location } from "@/data/locations";
+'use client'
+
+import { useState, useMemo } from 'react'
+import { useSwipeState, LocationModal, STORAGE_KEYS, UI_TEXT } from '@pawmatch/shared'
+import { mockCats } from '@/data/cats'
+import { CatSwipeCard } from './CatSwipeCard'
+import { SwipeFooter } from './SwipeFooter'
+import { MatchHeader } from './MatchHeader'
+import { Location } from '@pawmatch/shared'
+import { Cat } from '@/types/cat'
 
 export function CatMatchApp() {
-  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
+  const [showLocationModal, setShowLocationModal] = useState(false)
 
   const filteredCats = useMemo(() => {
     if (selectedLocations.length === 0) {
-      return mockCats;
+      return mockCats
     }
 
-    return mockCats.filter((cat) => {
-      // いずれかの選択地域に該当するかチェック
-      return selectedLocations.some((location) => {
-        // 全域が選択された場合は都道府県のみで判定
-        if (location.city === '全域') {
-          return cat.location.includes(location.prefecture);
+    return mockCats.filter((cat) =>
+      selectedLocations.some((location) => {
+        if (location.city === UI_TEXT.LOCATION_ALL) {
+          return cat.location.includes(location.prefecture)
         }
-        // 市区町村が選択された場合は両方で判定
-        return (
-          cat.location.includes(location.prefecture) &&
-          cat.location.includes(location.city)
-        );
-      });
-    });
-  }, [selectedLocations]);
+        return cat.location.includes(location.prefecture) && cat.location.includes(location.city)
+      })
+    )
+  }, [selectedLocations])
 
-  const swipeState = useCatSwipeState(filteredCats);
+  const swipeState = useSwipeState(filteredCats as any, {
+    storageKeys: {
+      likes: STORAGE_KEYS.CAT_LIKES,
+      superLikes: STORAGE_KEYS.CAT_SUPER_LIKES,
+      passed: STORAGE_KEYS.CAT_PASSED,
+    },
+  })
 
   if (swipeState.isComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
           <div className="text-6xl mb-4">🐱</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            マッチング完了！
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">マッチング完了！</h2>
           <p className="text-gray-600 mb-6">
-            {swipeState.likedCatsCount}匹のネコちゃんとマッチしました
+            {swipeState.likedPets.length}匹のネコちゃんとマッチしました
           </p>
           <button
             onClick={swipeState.reset}
@@ -53,16 +53,16 @@ export function CatMatchApp() {
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-purple-50">
       <MatchHeader
-        likedCats={swipeState.likedCats}
-        superLikedCats={swipeState.superLikedCats}
-        onRemoveLike={swipeState.removeLikedCat}
-        onRemoveSuperLike={swipeState.removeSuperLikedCat}
+        likedCats={swipeState.likedPets as Cat[]}
+        superLikedCats={swipeState.superLikedPets as Cat[]}
+        onRemoveLike={swipeState.removeLike}
+        onRemoveSuperLike={swipeState.removeSuperLike}
         onLocationClick={() => setShowLocationModal(true)}
         selectedLocations={selectedLocations}
       />
@@ -70,23 +70,23 @@ export function CatMatchApp() {
         <div
           className="flex justify-center relative"
           style={{
-            height: "calc(100vh - 280px)",
-            minHeight: "320px",
-            maxHeight: "70vh",
+            height: 'calc(100vh - 280px)',
+            minHeight: '320px',
+            maxHeight: '70vh',
           }}
         >
-          {swipeState.nextCat && (
+          {swipeState.nextPet && (
             <CatSwipeCard
-              key={`next-${swipeState.nextCat.id}`}
-              cat={swipeState.nextCat}
+              key={`next-${swipeState.nextPet.id}`}
+              cat={swipeState.nextPet as Cat}
               onSwipe={() => {}}
               isTopCard={false}
             />
           )}
-          {swipeState.currentCat && (
+          {swipeState.currentPet && (
             <CatSwipeCard
-              key={`current-${swipeState.currentCat.id}`}
-              cat={swipeState.currentCat}
+              key={`current-${swipeState.currentPet.id}`}
+              cat={swipeState.currentPet as Cat}
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
               buttonSwipeDirection={swipeState.buttonSwipeDirection}
@@ -95,9 +95,9 @@ export function CatMatchApp() {
         </div>
 
         <SwipeFooter
-          onPass={() => swipeState.handleSwipe("pass", true)}
-          onLike={() => swipeState.handleSwipe("like", true)}
-          disabled={!swipeState.currentCat}
+          onPass={() => swipeState.handleSwipe('pass', true)}
+          onLike={() => swipeState.handleSwipe('like', true)}
+          disabled={!swipeState.currentPet}
           theme="cat"
         />
       </div>
@@ -109,5 +109,5 @@ export function CatMatchApp() {
         onLocationsChange={setSelectedLocations}
       />
     </div>
-  );
+  )
 }

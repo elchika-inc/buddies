@@ -9,12 +9,12 @@ export function SwipeFooter({ onPass, onLike, disabled = false, theme = 'dog' }:
   const colors = {
     cat: {
       like: 'bg-pink-500 hover:bg-pink-600',
-      pass: 'bg-gray-400 hover:bg-gray-500'
+      pass: 'bg-gray-400 hover:bg-gray-500',
     },
     dog: {
-      like: 'bg-blue-500 hover:bg-blue-600', 
-      pass: 'bg-gray-400 hover:bg-gray-500'
-    }
+      like: 'bg-blue-500 hover:bg-blue-600',
+      pass: 'bg-gray-400 hover:bg-gray-500',
+    },
   }
 
   return (
