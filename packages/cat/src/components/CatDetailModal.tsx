@@ -11,10 +11,10 @@ export function CatDetailModal({ cat, isOpen, onClose }: CatDetailModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center sm:p-4">
+      <div className="bg-white sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
         <div className="relative">
-          <div className="relative h-64 sm:h-80">
+          <div className="relative h-72 sm:h-80">
             <Image
               src={cat.imageUrl}
               alt={cat.name}

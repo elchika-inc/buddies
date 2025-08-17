@@ -188,16 +188,16 @@ export function CatSwipeCard({
             `}
           >
             {isExiting && exitDirection === 'superLike'
-              ? '⭐ スーパーライク'
+              ? 'めっちゃいいね'
               : isExiting && exitDirection === 'like'
-                ? '❤️ いいね'
+                ? 'いいね'
                 : isExiting && exitDirection === 'pass'
-                  ? '❌ パス'
+                  ? 'パス'
                   : Math.abs(dragOffset.y) > 50 && dragOffset.y < 0
-                    ? '⭐ スーパーライク'
+                    ? 'めっちゃいいね'
                     : dragOffset.x > 0
-                      ? '❤️ いいね'
-                      : '❌ パス'}
+                      ? 'いいね'
+                      : 'パス'}
           </div>
         </div>
       )}

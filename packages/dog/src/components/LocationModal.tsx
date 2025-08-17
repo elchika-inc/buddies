@@ -24,9 +24,9 @@ export function LocationModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+      <div className="relative bg-white sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[80vh] overflow-hidden">
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">地域を選択</h2>
           <button
@@ -36,7 +36,7 @@ export function LocationModal({
             ×
           </button>
         </div>
-        <div className="p-4 overflow-y-auto max-h-[calc(80vh-120px)]">
+        <div className="p-4 overflow-y-auto h-[calc(100vh-128px)] sm:h-auto sm:max-h-[calc(80vh-120px)]">
           <LocationSelector
             selectedLocations={selectedLocations}
             onLocationsChange={onLocationsChange}

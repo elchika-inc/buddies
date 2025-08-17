@@ -36,26 +36,6 @@ export function DogMatchApp() {
     },
   })
 
-  if (swipeState.isComplete) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-yellow-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
-          <div className="text-6xl mb-4">🐶</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">マッチング完了！</h2>
-          <p className="text-gray-600 mb-6">
-            {swipeState.likedDogs.length}匹のワンちゃんとマッチしました
-          </p>
-          <button
-            onClick={swipeState.reset}
-            className="bg-orange-500 text-white px-6 py-3 rounded-full font-medium hover:bg-orange-600 transition-colors"
-          >
-            もう一度始める
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-yellow-50">
       <MatchHeader
