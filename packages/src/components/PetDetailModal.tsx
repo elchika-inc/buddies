@@ -16,9 +16,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center sm:p-4">
-      <div className="bg-white sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto">
-        <div className="relative">
-          <div className="relative h-72 sm:h-80">
+      <div className="bg-white sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col">
+        <div className="relative flex-1 overflow-y-auto">
+          <div className="relative h-60 sm:h-80">
             <Image
               src={pet.imageUrl}
               alt={pet.name}
@@ -38,42 +38,42 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
             </button>
           </div>
 
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">{pet.name}</h1>
-              <p className="text-lg sm:text-xl text-gray-600">{pet.breed}</p>
+          <div className="p-4 sm:p-6">
+            <div className="text-center mb-4 sm:mb-6">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">{pet.name}</h1>
+              <p className="text-base sm:text-xl text-gray-600">{pet.breed}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-              <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
-                <div className="text-xl sm:text-2xl mb-2">🎂</div>
-                <div className="font-semibold text-gray-800 text-sm sm:text-base">年齢</div>
-                <div className="text-gray-600 text-sm sm:text-base">{pet.age}歳</div>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+              <div className="text-center p-2 sm:p-4 bg-blue-50 rounded-lg">
+                <div className="text-lg sm:text-2xl mb-1 sm:mb-2">🎂</div>
+                <div className="font-semibold text-gray-800 text-xs sm:text-base">年齢</div>
+                <div className="text-gray-600 text-xs sm:text-base">{pet.age}歳</div>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
-                <div className="text-xl sm:text-2xl mb-2">
+              <div className="text-center p-2 sm:p-4 bg-green-50 rounded-lg">
+                <div className="text-lg sm:text-2xl mb-1 sm:mb-2">
                   {pet.gender === 'オス' ? '♂️' : '♀️'}
                 </div>
-                <div className="font-semibold text-gray-800 text-sm sm:text-base">性別</div>
-                <div className="text-gray-600 text-sm sm:text-base">{pet.gender}</div>
+                <div className="font-semibold text-gray-800 text-xs sm:text-base">性別</div>
+                <div className="text-gray-600 text-xs sm:text-base">{pet.gender}</div>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-yellow-50 rounded-lg">
-                <div className="text-xl sm:text-2xl mb-2">📍</div>
-                <div className="font-semibold text-gray-800 text-sm sm:text-base">場所</div>
-                <div className="text-gray-600 text-sm sm:text-base">{pet.location}</div>
+              <div className="text-center p-2 sm:p-4 bg-yellow-50 rounded-lg">
+                <div className="text-lg sm:text-2xl mb-1 sm:mb-2">📍</div>
+                <div className="font-semibold text-gray-800 text-xs sm:text-base">場所</div>
+                <div className="text-gray-600 text-xs sm:text-base">{pet.location}</div>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
-                <div className="text-xl sm:text-2xl mb-2">⚖️</div>
-                <div className="font-semibold text-gray-800 text-sm sm:text-base">体重</div>
-                <div className="text-gray-600 text-sm sm:text-base">{pet.weight}kg</div>
+              <div className="text-center p-2 sm:p-4 bg-purple-50 rounded-lg">
+                <div className="text-lg sm:text-2xl mb-1 sm:mb-2">⚖️</div>
+                <div className="font-semibold text-gray-800 text-xs sm:text-base">体重</div>
+                <div className="text-gray-600 text-xs sm:text-base">{pet.weight}kg</div>
               </div>
             </div>
 
             {/* 犬固有の情報 */}
             {isDog(pet) && (
-              <div className="mb-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">犬の特性</h2>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">犬の特性</h2>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="text-sm sm:text-base">
                     <span className="font-semibold">サイズ:</span> {pet.size}
                   </div>
@@ -92,9 +92,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
 
             {/* 猫固有の情報 */}
             {isCat(pet) && (
-              <div className="mb-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">猫の特性</h2>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">猫の特性</h2>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="text-sm sm:text-base">
                     <span className="font-semibold">毛の長さ:</span> {pet.coatLength}
                   </div>
@@ -111,15 +111,15 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
               </div>
             )}
 
-            <div className="mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">性格・特徴</h2>
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">性格・特徴</h2>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
                 {pet.description}
               </p>
             </div>
 
-            <div className="mb-6">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">健康状態</h2>
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">健康状態</h2>
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm">
                   ワクチン接種済み

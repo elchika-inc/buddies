@@ -11,12 +11,10 @@
     "monorepo"
   ],
   "workspaces": [
-    "packages/app",
-    "packages/cat",
-    "packages/dog"
+    "packages"
   ],
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "cd packages && npm run dev",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",
@@ -25,15 +23,9 @@
     "clean": "turbo run clean",
     "test": "turbo run test",
     "postinstall": "lefthook install",
-    "sync-shared": "./scripts/sync-shared.sh",
-    "predeploy": "npm run sync-shared",
-    "deploy:all": "npm run predeploy && bun run deploy:dog && bun run deploy:cat",
-    "deploy:dog": "npm run predeploy && (cd packages/dog; vercel --prod)",
-    "deploy:cat": "npm run predeploy && (cd packages/cat; vercel --prod)",
-    "deploy:app": "npm run predeploy && (cd packages/app; vercel --prod)",
-    "dev:app": "cd packages/app && npm run dev",
-    "dev:app:dog": "cd packages/app && npm run dev:dog",
-    "dev:app:cat": "cd packages/app && npm run dev:cat"
+    "deploy": "cd packages && vercel --prod",
+    "dev:dog": "cd packages && npm run dev:dog",
+    "dev:cat": "cd packages && npm run dev:cat"
   },
   "dependencies": {
     "@apollo/client": "^3.13.9",
