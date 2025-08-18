@@ -2,144 +2,125 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## プロジェクト概要
+## Project Overview
 
-PawMatchは、保護犬・保護猫とユーザーをマッチングするTinderライクなUIのWebアプリケーションです。Turboを使用したモノレポ構成で、犬用（DogMatch）と猫用（CatMatch）の2つの独立したNext.jsアプリケーションを提供します。
+PawMatch is a Tinder-style pet adoption platform with two specialized apps: DogMatch and CatMatch. The application uses Next.js 14 with App Router, TypeScript, and TailwindCSS. The project follows a monorepo structure with the main application code in the `packages/` directory.
 
-## アーキテクチャ
+## Common Development Commands
 
-### モノレポ構成
-- **packages/dog**: 保護犬専門アプリ（ポート3002）
-- **packages/cat**: 保護猫専門アプリ（ポート3003）
-- **functions/api**: 共通APIエンドポイント（Vercel Functions）
-
-### 技術スタック
-- **フレームワーク**: Next.js 14（App Router）
-- **パッケージマネージャー**: Bun
-- **ビルドツール**: Turbo
-- **スタイリング**: TailwindCSS
-- **デプロイ**: Vercel
-- **型安全性**: TypeScript 5
-
-## 開発コマンド
-
-### 基本コマンド
+### Development Server
 ```bash
-# 全アプリ同時起動（推奨）
+# Run development server (both apps)
 npm run dev
 
-# 個別アプリ起動
-cd packages/dog && npm run dev  # DogMatch（ポート3002）
-cd packages/cat && npm run dev  # CatMatch（ポート3003）
+# Run DogMatch app only
+npm run dev:dog
 
-# ビルド
+# Run CatMatch app only
+npm run dev:cat
+```
+
+### Build and Production
+```bash
+# Build for production
 npm run build
 
-# 型チェック
-npm run type-check
+# Build DogMatch specifically
+npm run build:dog
 
-# リンター実行
+# Build CatMatch specifically
+npm run build:cat
+
+# Start production server
+npm run start
+```
+
+### Code Quality
+```bash
+# Run linter
 npm run lint
+
+# Fix linting issues
 npm run lint:fix
 
-# クリーンアップ
+# Type checking
+npm run type-check
+
+# Clean build cache
 npm run clean
-
-# デプロイ
-npm run deploy:dog  # DogMatchのみ
-npm run deploy:cat  # CatMatchのみ
-npm run deploy:all  # 両方デプロイ
 ```
 
-## ディレクトリ構造と責務
-
-### packages/dog・packages/cat共通構成
-```
-src/
-├── app/                     # Next.js App Router
-│   ├── api/                # APIルート
-│   ├── layout.tsx          # ルートレイアウト
-│   └── page.tsx            # メインページ
-├── components/
-│   ├── {Dog|Cat}Card.tsx       # 動物情報カード表示
-│   ├── {Dog|Cat}SwipeCard.tsx  # スワイプ可能カード
-│   ├── {Dog|Cat}MatchApp.tsx   # アプリメインコンポーネント
-│   ├── {Dog|Cat}DetailModal.tsx # 詳細モーダル
-│   ├── LocationSelector.tsx     # 地域選択
-│   ├── LocationModal.tsx        # 地域選択モーダル
-│   ├── MatchHeader.tsx          # ヘッダー
-│   └── SwipeFooter.tsx          # フッター
-├── hooks/
-│   ├── use{Dog|Cat}SwipeState.ts # スワイプ状態管理
-│   └── useLocalStorage.ts        # ローカルストレージ
-├── data/
-│   ├── {dogs|cats}.ts      # モックデータ
-│   └── locations.ts        # 地域データ
-└── types/
-    └── {dog|cat}.ts        # 型定義
+### Deployment
+```bash
+# Deploy to Vercel
+npm run deploy
 ```
 
-## 重要な実装パターン
+## Architecture
 
-### スワイプ機能の実装
-- **swipable-tinder-card**ライブラリを使用
-- 右スワイプ: 気になる
-- 左スワイプ: パス
-- 上スワイプ: 特に気になる
-- ローカルストレージでスワイプ履歴を永続化
+### App Switching Mechanism
+The application switches between DogMatch and CatMatch using the `NEXT_PUBLIC_PET_TYPE` environment variable:
+- Set to `'dog'` for DogMatch
+- Set to `'cat'` for CatMatch
 
-### 状態管理
-- カスタムフック（`use{Dog|Cat}SwipeState`）で独立管理
-- ローカルストレージと同期（`useLocalStorage`フック）
-- 犬と猫のデータは完全に分離
+This affects:
+- Data loading in `src/data/petDataLoader.ts`
+- Configuration in `src/config/petConfig.ts`
+- Type definitions (`src/types/dog.ts` vs `src/types/cat.ts`)
 
-### コンポーネント設計
-- 動物種別ごとに専用コンポーネント（DogCard/CatCard等）
-- 共通UIコンポーネント（MatchHeader、SwipeFooter）は両アプリで共有
-- 各アプリは独自のカラーテーマ（犬: オレンジ系、猫: パープル系）
+### State Management
+- Uses React hooks for local state management
+- `useLocalStorage` hook for persistent storage
+- `usePetSwipeState` hook for managing swipe interactions
+- No external state management library
 
-## コーディング規約
+### Data Flow
+1. Mock data is loaded from `src/data/dog/` or `src/data/cat/` based on pet type
+2. `petDataLoader.ts` dynamically imports the correct dataset
+3. Components receive typed data (Dog or Cat types)
+4. User interactions are saved to localStorage
 
-### TypeScript
-- 厳密な型定義を使用
-- `any`型の使用禁止
-- インターフェースは`types/`ディレクトリに集約
+### Component Architecture
+- `PetMatchApp` is the main container component
+- `PetSwipeCard` handles the swipeable card interface
+- `PetDetailModal` shows detailed pet information
+- `LocationModal` manages location selection
+- All components are TypeScript functional components
 
-### React/Next.js
-- 関数コンポーネントとHooksを使用
-- Server ComponentsとClient Componentsを適切に使い分け
-- `"use client"`ディレクティブは必要最小限に
+### PWA Configuration
+- Service Worker at `public/sw.js` for offline functionality
+- Manifest at `public/manifest.json` for app metadata
+- Uses `next-pwa` for PWA generation
 
-### スタイリング
-- TailwindCSSのユーティリティクラスを使用
-- カスタムCSSは避ける
-- レスポンシブデザインを考慮（mobile-first）
+### Type System
+- Base `Pet` interface in `src/types/pet.ts`
+- Extended by `Dog` and `Cat` types with specific attributes
+- Strict TypeScript configuration with no implicit any
 
-## デプロイ設定
+## Key Implementation Details
 
-### Vercel設定
-- **packages/dog/vercel.json**: DogMatchのデプロイ設定
-- **packages/cat/vercel.json**: CatMatchのデプロイ設定
-- ビルドコマンド: `npm run build`
-- 出力ディレクトリ: `.next`
+### Pet Type Switching
+The pet type is determined at build time or runtime through environment variables. Components and data loading adapt dynamically based on this configuration.
 
-### ビルド無視設定
-- `scripts/ignore-build-{dog|cat}.sh`: 変更検出スクリプト
-- 該当パッケージに変更がない場合はビルドをスキップ
+### Location System
+- Hierarchical structure: Region → Prefecture → City
+- Data stored in `locations.ts` and `regions.ts` files
+- Separate location data for dogs and cats
 
-## 注意事項
+### Swipe Functionality
+- Uses framer-motion for animations
+- Tracks swipe history in localStorage
+- Implements like/pass actions with visual feedback
 
-### パフォーマンス
-- 画像は適切なサイズに最適化
-- スワイプアニメーションは60fps維持
-- 初回ロード時のデータは最小限に
+### Responsive Design
+- Mobile-first approach using TailwindCSS
+- Breakpoints: mobile (<768px), tablet (768px-1024px), desktop (>1024px)
+- Touch-optimized interactions
 
-### アクセシビリティ
-- タッチターゲットは44px以上
-- キーボードナビゲーション対応
-- スクリーンリーダー対応のaria-label
+## Important Notes
 
-### セキュリティ
-- APIキーや認証情報をコードに含めない
-- ユーザー入力は適切にサニタイズ
-- CSRFトークンの実装（本番環境）
+- Always work within the `packages/` directory for application code
+- The project uses Bun as the package manager (see `bunfig.toml`)
+- Path alias `@/*` maps to `./src/*` in the packages directory
+- Development server runs on port 3004 by default
+- The app is designed to work as a PWA with offline capabilities
