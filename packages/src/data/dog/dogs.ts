@@ -1,6 +1,7 @@
 import { Dog } from '@/types/dog'
+import { migrateAllDogData } from '@/utils/dataMigration'
 
-export const mockDogs: Dog[] = [
+const rawMockDogs: Dog[] = [
   {
     id: '1',
     name: 'ポチ',
@@ -30,6 +31,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-01-15',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '2',
@@ -60,6 +62,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-01-10',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '3',
@@ -90,6 +93,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-01-12',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '4',
@@ -120,6 +124,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-01-20',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '5',
@@ -150,6 +155,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-01-08',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '6',
@@ -180,6 +186,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-01-22',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '7',
@@ -210,6 +217,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-01-25',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '8',
@@ -240,6 +248,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-01-28',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '9',
@@ -270,6 +279,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-02-01',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '10',
@@ -300,6 +310,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-02-04',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '11',
@@ -330,6 +341,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-02-07',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '12',
@@ -360,6 +372,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-02-10',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '13',
@@ -390,6 +403,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-02-13',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '14',
@@ -420,6 +434,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-02-16',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '15',
@@ -450,6 +465,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-02-19',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '16',
@@ -480,6 +496,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-02-22',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '17',
@@ -510,6 +527,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-02-25',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '18',
@@ -540,6 +558,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-02-28',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '19',
@@ -570,6 +589,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-03-03',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '20',
@@ -600,6 +620,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-03-06',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '21',
@@ -630,6 +651,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-03-09',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '22',
@@ -660,6 +682,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-03-12',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '23',
@@ -690,6 +713,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-03-15',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '24',
@@ -720,6 +744,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-03-18',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '25',
@@ -750,6 +775,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-03-21',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '26',
@@ -780,6 +806,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-03-24',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '27',
@@ -810,6 +837,7 @@ export const mockDogs: Dog[] = [
     needsYard: false,
     apartmentFriendly: true,
     createdAt: '2024-03-27',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '28',
@@ -840,6 +868,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-03-30',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '29',
@@ -870,6 +899,7 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-04-02',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
   {
     id: '30',
@@ -900,5 +930,9 @@ export const mockDogs: Dog[] = [
     needsYard: true,
     apartmentFriendly: false,
     createdAt: '2024-04-05',
+    sourceUrl: 'https://www.pet-home.jp/dogs/',
   },
 ]
+
+// 移行済みデータをエクスポート
+export const mockDogs = migrateAllDogData(rawMockDogs)

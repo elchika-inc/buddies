@@ -1,6 +1,7 @@
 import { Cat } from '@/types/cat'
+import { migrateAllCatData } from '@/utils/dataMigration'
 
-export const mockCats: Cat[] = [
+const rawMockCats: Cat[] = [
   {
     id: '1',
     name: 'ミケ',
@@ -31,6 +32,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-01-20',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '2',
@@ -62,6 +64,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-01-25',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '3',
@@ -93,6 +96,7 @@ export const mockCats: Cat[] = [
     activityTime: '夜型',
     playfulness: '中',
     createdAt: '2024-01-15',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '4',
@@ -124,6 +128,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-01-12',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '5',
@@ -155,6 +160,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-01-08',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '6',
@@ -186,6 +192,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-01-28',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '7',
@@ -217,6 +224,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '中',
     createdAt: '2024-01-30',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '8',
@@ -248,6 +256,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-02-01',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '9',
@@ -279,6 +288,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-02-03',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '10',
@@ -310,6 +320,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '中',
     createdAt: '2024-02-05',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '11',
@@ -341,6 +352,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '中',
     createdAt: '2024-02-07',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '12',
@@ -372,6 +384,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-02-09',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '13',
@@ -403,6 +416,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '中',
     createdAt: '2024-02-11',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '14',
@@ -434,6 +448,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-02-13',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '15',
@@ -465,6 +480,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-02-15',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '16',
@@ -496,6 +512,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '中',
     createdAt: '2024-02-17',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '17',
@@ -527,6 +544,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-02-19',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '18',
@@ -558,6 +576,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-02-21',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '19',
@@ -589,6 +608,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-02-23',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '20',
@@ -620,6 +640,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-02-25',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '21',
@@ -651,6 +672,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-02-27',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '22',
@@ -682,6 +704,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-03-01',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '23',
@@ -713,6 +736,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-03-03',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '24',
@@ -744,6 +768,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '中',
     createdAt: '2024-03-05',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '25',
@@ -775,6 +800,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-03-07',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '26',
@@ -806,6 +832,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '中',
     createdAt: '2024-03-09',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '27',
@@ -837,6 +864,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '高',
     createdAt: '2024-03-11',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '28',
@@ -868,6 +896,7 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '低',
     createdAt: '2024-03-13',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '29',
@@ -899,6 +928,7 @@ export const mockCats: Cat[] = [
     activityTime: 'どちらでも',
     playfulness: '中',
     createdAt: '2024-03-15',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
   {
     id: '30',
@@ -930,5 +960,9 @@ export const mockCats: Cat[] = [
     activityTime: '昼型',
     playfulness: '中',
     createdAt: '2024-03-17',
+    sourceUrl: 'https://www.pet-home.jp/cats/',
   },
 ]
+
+// 移行済みデータをエクスポート
+export const mockCats = migrateAllCatData(rawMockCats)

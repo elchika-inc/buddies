@@ -1,13 +1,22 @@
+import { Gender, Prefecture } from './location'
+
 // 共通のペット情報
 export interface BasePet {
   id: string
   name: string
   breed: string
   age: number
-  gender: string
+  gender: Gender
   color: string
   weight: number
+  
+  // 既存の地域フィールド（後方互換性のため）
   location: string
+  
+  // 新しい地域フィールド
+  prefecture?: Prefecture
+  city?: string
+  
   description: string
   personality: string[]
   medicalInfo: string
@@ -19,6 +28,7 @@ export interface BasePet {
   isNeutered: boolean
   isVaccinated: boolean
   createdAt: string
+  sourceUrl?: string  // 元サイトのURL
 }
 
 // 犬固有の情報

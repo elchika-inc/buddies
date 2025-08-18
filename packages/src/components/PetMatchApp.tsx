@@ -36,6 +36,14 @@ export function PetMatchApp() {
 
     return allPets.filter((pet) =>
       selectedLocations.some((location) => {
+        // 新しい型定義での地域フィルタリング
+        if (pet.prefecture && location.city === 'すべて') {
+          return pet.prefecture === location.prefecture
+        }
+        if (pet.prefecture && pet.city) {
+          return pet.prefecture === location.prefecture && pet.city === location.city
+        }
+        // フォールバック: 従来のlocationフィールドを使用
         if (location.city === 'すべて') {
           return pet.location.includes(location.prefecture)
         }
