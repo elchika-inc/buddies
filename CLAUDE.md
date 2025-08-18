@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PawMatch is a Tinder-style pet adoption platform with two specialized apps: DogMatch and CatMatch. The application uses Next.js 14 with App Router, TypeScript, and TailwindCSS. The project follows a monorepo structure with the main application code in the `packages/` directory.
+PawMatch is a Tinder-style pet adoption platform with two specialized apps: DogMatch and CatMatch. The application uses Next.js 14 with App Router, TypeScript, and TailwindCSS. The project follows a monorepo structure with the main application code in the `app/` directory.
 
 ## Common Development Commands
 
@@ -119,8 +119,8 @@ The pet type is determined at build time or runtime through environment variable
 
 ## Important Notes
 
-- Always work within the `packages/` directory for application code
+- Always work within the `app/` directory for application code
 - The project uses Bun as the package manager (see `bunfig.toml`)
-- Path alias `@/*` maps to `./src/*` in the packages directory
+- Path alias `@/*` maps to `./src/*` in the app directory
 - Development server runs on port 3004 by default
 - The app is designed to work as a PWA with offline capabilities

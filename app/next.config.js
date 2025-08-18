@@ -3,7 +3,7 @@ import withPWA from 'next-pwa'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com'],
+    domains: ['images.unsplash.com', 'via.placeholder.com', 'www.pet-home.jp'],
   },
 }
 

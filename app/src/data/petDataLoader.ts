@@ -9,8 +9,8 @@ export const loadPetData = async (): Promise<Pet[]> => {
     const { mockDogs } = await import('./dog/dogs')
     return mockDogs
   } else {
-    const { mockCats } = await import('./cat/cats')
-    return mockCats
+    const { cats } = await import('./cat/cats')
+    return cats
   }
 }
 

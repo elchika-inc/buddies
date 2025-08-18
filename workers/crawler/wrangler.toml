@@ -1,0 +1,27 @@
+name = "pawmatch-crawler"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# 環境変数
+[vars]
+ALLOWED_ORIGIN = "https://pawmatch.app"
+PET_HOME_BASE_URL = "https://www.pet-home.jp"
+
+# R2バケット設定
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "pawmatch-images"
+
+# D1データベース設定
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "YOUR_DATABASE_ID" # wrangler d1 create実行後に置き換え
+
+# Cron Trigger設定（6時間ごとに実行）
+[triggers]
+crons = ["0 */6 * * *"]
+
+# 開発環境設定
+[env.development]
+vars = { ALLOWED_ORIGIN = "http://localhost:3004" }

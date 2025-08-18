@@ -17,7 +17,8 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center sm:p-4">
       <div className="bg-white sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col">
-        <div className="relative flex-1 overflow-y-auto pb-20">
+        {/* モバイルでは下部パディング、PCではパディングなし */}
+        <div className="relative flex-1 overflow-y-auto pb-20 sm:pb-0">
           <div className="relative h-80 sm:h-96">
             <Image
               src={pet.imageUrl}
@@ -115,10 +116,31 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
               </div>
             </div>
 
+            {/* PC表示時のボタン（カード内） */}
+            <div className="hidden sm:block mt-6 space-y-3">
+              {pet.sourceUrl && (
+                <a
+                  href={pet.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-green-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-600 transition-colors text-center"
+                >
+                  元サイトで詳細を見る
+                </a>
+              )}
+              <button
+                onClick={onClose}
+                className="w-full bg-gray-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+
           </div>
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4 space-y-3">
+        {/* モバイル表示時のボタン（下部固定） */}
+        <div className="sm:hidden absolute bottom-0 left-0 right-0 bg-white border-t p-4 space-y-3">
           {pet.sourceUrl && (
             <a
               href={pet.sourceUrl}
