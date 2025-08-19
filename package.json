@@ -20,12 +20,19 @@
     "deploy": "cd app && vercel --prod",
     "dev:dog": "cd app && npm run dev:dog",
     "dev:cat": "cd app && npm run dev:cat",
+    "api:install": "cd api && npm install",
+    "api:dev": "cd api && npm run dev",
+    "api:build": "cd api && npm run build",
+    "api:deploy": "cd api && npm run deploy",
+    "api:db:init": "cd api && npm run db:init",
+    "api:db:migrate": "cd api && npm run db:migrate",
     "crawler:install": "cd crawler && npm install",
     "crawler:build": "cd crawler && npm run build",
     "crawler:test": "cd crawler && npm test",
     "crawler:cats": "cd crawler && npm run crawl:cats",
     "crawler:dogs": "cd crawler && npm run crawl:dogs",
-    "crawler:dev": "cd crawler && npm run dev"
+    "crawler:dev": "cd crawler && npm run dev",
+    "dev:all": "npm run api:dev & npm run dev"
   },
   "dependencies": {},
   "devDependencies": {

@@ -4,6 +4,14 @@ import withPWA from 'next-pwa'
 const nextConfig = {
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com', 'www.pet-home.jp'],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '8787',
+        pathname: '/images/**',
+      },
+    ],
   },
 }
 

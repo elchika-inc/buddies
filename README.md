@@ -99,6 +99,55 @@ A: PawMatch works on any modern web browser (mobile or desktop).
 - Website: https://pawmatch.jp
 - Twitter: @PawMatchJP
 
+## 🛠️ Development
+
+### Quick Setup
+
+新しい開発者は以下のコマンドで環境を構築できます：
+
+```bash
+git clone <repository-url>
+cd pawmatch
+./scripts/setup-dev.sh
+```
+
+### Manual Setup
+
+1. **依存関係のインストール**
+```bash
+npm install
+cd app && npm install && cd ..
+cd api && npm install && cd ..
+cd workers/crawler && npm install && cd ../..
+```
+
+2. **開発サーバーの起動**
+```bash
+npm run dev          # すべてのサービスを並行起動
+# または個別起動
+npm run dev:api      # APIサーバー (localhost:8787)
+npm run dev:app      # Appサーバー (localhost:3005)
+```
+
+### Project Structure
+
+```
+pawmatch/
+├── app/                    # Next.js フロントエンド
+├── api/                    # Cloudflare Workers API
+├── workers/crawler/        # データクローラー
+├── scripts/               # 開発環境セットアップスクリプト
+└── CLAUDE.md              # プロジェクト開発ガイド
+```
+
+### Tech Stack
+
+- **Frontend**: Next.js 14, TypeScript, TailwindCSS
+- **Backend**: Cloudflare Workers, Hono
+- **Database**: Cloudflare D1
+- **Storage**: Cloudflare R2
+- **State**: React Hooks, localStorage
+
 ## 🤝 For Shelters
 
 Interested in listing your rescue animals on PawMatch? Contact us at shelters@pawmatch.jp to learn about our free shelter partnership program.
