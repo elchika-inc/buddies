@@ -78,7 +78,7 @@ export function MatchHeader({
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center sm:p-4">
-          <div className="bg-white sm:rounded-lg max-w-2xl w-full h-full sm:h-auto sm:max-h-[80vh] flex flex-col">
+          <div className="bg-white sm:rounded-lg max-w-2xl w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col">
             <div className="p-4 border-b border-gray-200">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">お気に入りリスト</h2>

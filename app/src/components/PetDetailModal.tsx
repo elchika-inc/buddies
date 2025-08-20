@@ -24,7 +24,7 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
               src={pet.imageUrl}
               alt={pet.name}
               fill
-              className="object-cover"
+              className="object-cover sm:rounded-t-2xl"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
             />
