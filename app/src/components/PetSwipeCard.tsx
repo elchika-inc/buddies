@@ -77,7 +77,7 @@ export function PetSwipeCard({
       ref={cardRef}
       style={cardStyle}
       {...dragHandlers}
-      className="select-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
+      className="select-none touch-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
       <PetCard pet={pet} />
 

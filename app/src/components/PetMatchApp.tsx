@@ -52,7 +52,7 @@ export function PetMatchApp() {
       
       <div className="container mx-auto px-4 py-8 pb-20">
         <div
-          className="flex justify-center relative"
+          className="flex justify-center relative touch-none"
           style={{
             height: 'calc(100vh - 320px)',
             minHeight: '320px',
