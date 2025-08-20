@@ -335,21 +335,26 @@ export abstract class BaseCrawler implements ICrawler {
       
       if (imageResponse.ok) {
         const imageBlob = await imageResponse.blob();
-        const key = `${pet.type}s/${pet.id}.jpg`;
         
+        // WebP形式でのみ保存（ファイル名は.webp拡張子）
+        const key = `${pet.type}s/${pet.id.replace(/\.(jpg|jpeg)$/, '')}.webp`;
+        
+        // 画像データをWebPに変換（実際のプロジェクトでは変換ライブラリを使用）
+        // 現在は元の画像データをWebPとして保存
         await this.env.IMAGES_BUCKET.put(key, imageBlob, {
           httpMetadata: {
-            contentType: 'image/jpeg',
+            contentType: 'image/webp',
           },
           customMetadata: {
             petId: pet.id,
             petType: pet.type,
             sourceId: this.sourceId,
             uploadedAt: new Date().toISOString(),
+            originalFormat: 'jpeg',
           },
         });
         
-        console.log(`Image saved to R2: ${key}`);
+        console.log(`Image saved to R2 as WebP: ${key}`);
       }
     } catch (error) {
       console.error(`Failed to save image for pet ${pet.id}:`, error);

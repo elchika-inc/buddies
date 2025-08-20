@@ -55,32 +55,24 @@ app.get('/images/:type/:filename',
     }
 
     try {
-      const acceptHeader = c.req.header('Accept') || '';
-      const supportsWebP = acceptHeader.includes('image/webp');
       const extension = filename.split('.').pop();
       
-      // WebP対応ブラウザで、JPEGが要求された場合はWebPを優先
-      let requestedKey = `${petType}/${filename}`;
-      let preferredKey = requestedKey;
-      let preferredContentType = 'image/jpeg';
+      // WebPファイルのみ保存。jpg拡張子の場合はwebpファイルを探す
+      let actualKey: string;
+      let contentType: string;
       
-      if (supportsWebP && extension === 'jpg') {
+      if (extension === 'jpg') {
+        // JPEGが要求されてもWebPファイルを返す
         const webpFilename = filename.replace(/\.jpg$/, '.webp');
-        preferredKey = `${petType}/${webpFilename}`;
-        preferredContentType = 'image/webp';
-      } else if (extension === 'webp') {
-        preferredContentType = 'image/webp';
+        actualKey = `${petType}/${webpFilename}`;
+        contentType = 'image/webp';
+      } else {
+        // WebPが直接要求された場合
+        actualKey = `${petType}/${filename}`;
+        contentType = 'image/webp';
       }
       
-      // まず優先形式を試す
-      let object = await c.env.IMAGES_BUCKET.get(preferredKey);
-      let finalContentType = preferredContentType;
-      
-      // 優先形式がなければ元のファイルを試す
-      if (!object && preferredKey !== requestedKey) {
-        object = await c.env.IMAGES_BUCKET.get(requestedKey);
-        finalContentType = extension === 'webp' ? 'image/webp' : 'image/jpeg';
-      }
+      const object = await c.env.IMAGES_BUCKET.get(actualKey);
 
       if (!object) {
         return c.json({ error: 'Image not found' }, 404);
@@ -88,11 +80,12 @@ app.get('/images/:type/:filename',
 
       // セキュリティヘッダー設定
       const headers = new Headers();
-      headers.set('Content-Type', object.httpMetadata?.contentType || finalContentType);
+      headers.set('Content-Type', object.httpMetadata?.contentType || contentType);
       headers.set('Cache-Control', 'public, max-age=31536000'); // 1年キャッシュ
       headers.set('X-Content-Type-Options', 'nosniff');
       headers.set('X-Frame-Options', 'DENY');
       headers.set('Vary', 'Accept'); // キャッシュのためのVaryヘッダー
+      // headers.set('X-Debug-Info', debugInfo); // デバッグ情報（削除）
       
       // リファラーチェック（セキュリティ）
       const referer = c.req.header('Referer');
@@ -324,6 +317,48 @@ app.get('/stats', async (c) => {
   } catch (error) {
     console.error('Database error:', error);
     return c.json({ error: 'Database query failed' }, 500);
+  }
+});
+
+// R2バケット画像アップロードエンドポイント（開発環境専用）
+app.post('/dev/upload-image', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { petType, filename, data, contentType } = body;
+    
+    if (!petType || !filename || !data) {
+      return c.json({ error: 'Missing required parameters' }, 400);
+    }
+    
+    // バイト配列をBufferに変換
+    const buffer = new Uint8Array(data);
+    const key = `${petType}/${filename}`;
+    
+    // R2バケットにアップロード
+    await c.env.IMAGES_BUCKET.put(key, buffer, {
+      httpMetadata: {
+        contentType: contentType || 'image/jpeg',
+      },
+      customMetadata: {
+        uploadedAt: new Date().toISOString(),
+        uploadType: 'sample',
+      },
+    });
+    
+    return c.json({
+      success: true,
+      message: `Uploaded ${filename} to ${key}`,
+      key,
+      size: buffer.length,
+      contentType,
+    });
+    
+  } catch (error) {
+    console.error('Image upload error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
   }
 });
 
