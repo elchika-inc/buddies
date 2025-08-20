@@ -26,12 +26,30 @@ export function MatchHeader({
   petType,
 }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'like' | 'super_like'>('like')
+  const [activeTab, setActiveTab] = useState<'all' | 'like' | 'super_like'>('all')
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null)
 
   const safeLikedPets = Array.isArray(likedPets) ? likedPets : []
   const safeSuperLikedPets = Array.isArray(superLikedPets) ? superLikedPets : []
-  const currentList = activeTab === 'like' ? safeLikedPets : safeSuperLikedPets
+  
+  // 重複を排除
+  const uniqueLikedPets = safeLikedPets.filter((pet, index, arr) => 
+    arr.findIndex(p => p.id === pet.id) === index
+  )
+  const uniqueSuperLikedPets = safeSuperLikedPets.filter((pet, index, arr) => 
+    arr.findIndex(p => p.id === pet.id) === index
+  )
+  
+  // すべてのお気に入りを合わせたリスト（重複排除）
+  const allFavorites = [...uniqueLikedPets, ...uniqueSuperLikedPets]
+    .filter((pet, index, arr) => arr.findIndex(p => p.id === pet.id) === index)
+    .sort((a, b) => b.name.localeCompare(a.name)) // 名前でソート
+  
+  const currentList = activeTab === 'all' 
+    ? allFavorites 
+    : activeTab === 'like' 
+      ? uniqueLikedPets 
+      : uniqueSuperLikedPets
   const currentRemoveFunction = activeTab === 'like' ? onRemoveLike : onRemoveSuperLike
   const petEmoji = petType === 'dog' ? '🐶' : '🐱'
   const title = petType === 'dog' ? 'DogMatch' : 'CatMatch'
@@ -73,10 +91,20 @@ export function MatchHeader({
               </div>
               <div className="flex gap-2">
                 <button
+                  onClick={() => setActiveTab('all')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === 'all'
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  すべて
+                </button>
+                <button
                   onClick={() => setActiveTab('like')}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === 'like'
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-green-500 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -86,7 +114,7 @@ export function MatchHeader({
                   onClick={() => setActiveTab('super_like')}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === 'super_like'
-                      ? 'bg-yellow-500 text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -98,14 +126,16 @@ export function MatchHeader({
             <div className="flex-1 overflow-y-auto p-4">
               {!currentList || currentList.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  {activeTab === 'like'
-                    ? `いいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`
-                    : `めっちゃいいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`}
+                  {activeTab === 'all'
+                    ? `お気に入りした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`
+                    : activeTab === 'like'
+                      ? `いいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`
+                      : `めっちゃいいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`}
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {Array.isArray(currentList) && currentList.map((pet) => (
-                    <div key={pet.id} className="border border-gray-200 rounded-lg p-4 flex gap-4">
+                  {Array.isArray(currentList) && currentList.map((pet, index) => (
+                    <div key={`${activeTab}-${pet.id}-${index}`} className="border border-gray-200 rounded-lg p-4 flex gap-4">
                       <div className="relative w-20 h-20 rounded-lg overflow-hidden">
                         <Image
                           src={pet.imageUrl}
@@ -127,7 +157,19 @@ export function MatchHeader({
                         <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る</p>
                       </div>
                       <button
-                        onClick={() => currentRemoveFunction(pet.id)}
+                        onClick={() => {
+                          if (activeTab === 'all') {
+                            // すべてタブの場合、どちらのリストに含まれているかを判定
+                            if (uniqueLikedPets.some(p => p.id === pet.id)) {
+                              onRemoveLike(pet.id)
+                            }
+                            if (uniqueSuperLikedPets.some(p => p.id === pet.id)) {
+                              onRemoveSuperLike(pet.id)
+                            }
+                          } else {
+                            currentRemoveFunction(pet.id)
+                          }
+                        }}
                         className="text-red-500 hover:text-red-700 px-2"
                         title="お気に入りから削除"
                       >

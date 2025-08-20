@@ -165,16 +165,25 @@ export function usePetSwipeStateWithPagination() {
 
         switch (direction) {
           case 'like':
-            newState.likedPets = [...prev.likedPets, prev.currentPet]
-            newState.stats = { ...prev.stats, likes: prev.stats.likes + 1 }
+            // 重複チェック
+            if (!prev.likedPets.some(p => p.id === prev.currentPet!.id)) {
+              newState.likedPets = [...prev.likedPets, prev.currentPet]
+              newState.stats = { ...prev.stats, likes: prev.stats.likes + 1 }
+            }
             break
           case 'pass':
-            newState.passedPets = [...prev.passedPets, prev.currentPet]
-            newState.stats = { ...prev.stats, passes: prev.stats.passes + 1 }
+            // 重複チェック
+            if (!prev.passedPets.some(p => p.id === prev.currentPet!.id)) {
+              newState.passedPets = [...prev.passedPets, prev.currentPet]
+              newState.stats = { ...prev.stats, passes: prev.stats.passes + 1 }
+            }
             break
           case 'superLike':
-            newState.superLikedPets = [...prev.superLikedPets, prev.currentPet]
-            newState.stats = { ...prev.stats, superLikes: prev.stats.superLikes + 1 }
+            // 重複チェック
+            if (!prev.superLikedPets.some(p => p.id === prev.currentPet!.id)) {
+              newState.superLikedPets = [...prev.superLikedPets, prev.currentPet]
+              newState.stats = { ...prev.stats, superLikes: prev.stats.superLikes + 1 }
+            }
             break
         }
 
