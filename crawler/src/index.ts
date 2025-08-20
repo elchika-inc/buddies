@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { Env } from './types';
 import { CrawlerFactory } from './CrawlerFactory';
 import { CrawlOptions } from './interfaces/ICrawler';
+import { DatabaseInitializer } from './utils/DatabaseInitializer';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -23,6 +24,26 @@ app.get('/', (c) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
   });
+});
+
+// データベース初期化エンドポイント（開発環境専用）
+app.post('/dev/init-db', async (c) => {
+  try {
+    const dbInit = new DatabaseInitializer(c.env);
+    await dbInit.ensureTablesExist();
+    
+    return c.json({
+      success: true,
+      message: 'Database initialized successfully',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    }, 500);
+  }
 });
 
 // 手動クロール実行エンドポイント

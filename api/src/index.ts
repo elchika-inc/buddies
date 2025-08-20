@@ -302,6 +302,143 @@ app.get('/stats', async (c) => {
   }
 });
 
+// データベース初期化エンドポイント（開発環境専用）
+app.post('/dev/init-db', async (c) => {
+  try {
+    // テーブル存在確認
+    const tables = await c.env.DB
+      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+      .all();
+    
+    const tableNames = tables.results?.map((t: any) => t.name) || [];
+    
+    if (!tableNames.includes('pets')) {
+      // petsテーブル作成
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS pets (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          breed TEXT,
+          age TEXT,
+          gender TEXT,
+          prefecture TEXT,
+          city TEXT,
+          location TEXT,
+          description TEXT,
+          personality TEXT,
+          medical_info TEXT,
+          care_requirements TEXT,
+          image_url TEXT,
+          shelter_name TEXT,
+          shelter_contact TEXT,
+          source_url TEXT,
+          adoption_fee INTEGER DEFAULT 0,
+          metadata TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      console.log('Created pets table');
+    }
+    
+    return c.json({
+      success: true,
+      message: 'API database initialized successfully',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    }, 500);
+  }
+});
+
+// クローラーからのデータ受信エンドポイント（開発環境専用）
+app.post('/dev/seed-data', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { pets } = body;
+    
+    if (!Array.isArray(pets)) {
+      return c.json({ error: 'pets must be an array' }, 400);
+    }
+    
+    let insertedCount = 0;
+    let updatedCount = 0;
+    
+    for (const pet of pets) {
+      // データ検証
+      if (!pet.id || !pet.type || !pet.name) {
+        continue;
+      }
+      
+      // 既存データ確認
+      const existing = await c.env.DB
+        .prepare('SELECT id FROM pets WHERE id = ?')
+        .bind(pet.id)
+        .first();
+      
+      if (existing) {
+        // 更新
+        await c.env.DB.prepare(`
+          UPDATE pets SET
+            name = ?, breed = ?, age = ?, gender = ?, prefecture = ?,
+            city = ?, location = ?, description = ?, personality = ?,
+            medical_info = ?, care_requirements = ?, image_url = ?,
+            shelter_name = ?, shelter_contact = ?, source_url = ?,
+            adoption_fee = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(
+          pet.name, pet.breed, pet.age, pet.gender, pet.prefecture,
+          pet.city, pet.location, pet.description,
+          JSON.stringify(pet.personality || []),
+          pet.medical_info, JSON.stringify(pet.care_requirements || []),
+          pet.image_url, pet.shelter_name, pet.shelter_contact,
+          pet.source_url, pet.adoption_fee || 0,
+          JSON.stringify(pet.metadata || {}), pet.id
+        ).run();
+        updatedCount++;
+      } else {
+        // 新規挿入
+        await c.env.DB.prepare(`
+          INSERT INTO pets (
+            id, type, name, breed, age, gender, prefecture, city, location,
+            description, personality, medical_info, care_requirements,
+            image_url, shelter_name, shelter_contact, source_url,
+            adoption_fee, metadata
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          pet.id, pet.type, pet.name, pet.breed, pet.age, pet.gender,
+          pet.prefecture, pet.city, pet.location, pet.description,
+          JSON.stringify(pet.personality || []), pet.medical_info,
+          JSON.stringify(pet.care_requirements || []), pet.image_url,
+          pet.shelter_name, pet.shelter_contact, pet.source_url,
+          pet.adoption_fee || 0, JSON.stringify(pet.metadata || {})
+        ).run();
+        insertedCount++;
+      }
+    }
+    
+    return c.json({
+      success: true,
+      inserted: insertedCount,
+      updated: updatedCount,
+      total: pets.length,
+      timestamp: new Date().toISOString(),
+    });
+    
+  } catch (error) {
+    console.error('Data seeding error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 500);
+  }
+});
+
 // 404ハンドリング
 app.notFound((c) => {
   return c.json({ error: 'Not found' }, 404);

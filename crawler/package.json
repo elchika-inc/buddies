@@ -4,8 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "deploy": "wrangler deploy", 
+    "tail": "wrangler tail",
+    "db:init": "node scripts/dev/init-db.js",
+    "db:reset": "./scripts/dev/reset-dev-db.sh",
+    "test": "./scripts/dev/test-crawlers.sh",
+    "seed:api": "node scripts/dev/seed-api-data.js",
+    "seed:sample": "node scripts/dev/create-sample-data.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",

@@ -31,7 +31,7 @@ detect_port() {
     echo $port
 }
 
-PORT=$(detect_port)
+PORT="65348"  # 現在起動中の実際のポート
 BASE_URL="http://localhost:$PORT"
 
 echo -e "${BLUE}🧪 PawMatch Crawler テストを開始します${NC}"
