@@ -3,7 +3,7 @@ import { Env, Pet, CrawlResult } from './types';
 export class PetHomeCrawler {
   constructor(private env: Env) {}
 
-  async crawlPets(petType: 'dog' | 'cat' = 'cat'): Promise<CrawlResult> {
+  async crawlPets(petType: 'dog' | 'cat' = 'cat', limit: number = 10, isDifferentialMode: boolean = true): Promise<CrawlResult> {
     const result: CrawlResult = {
       success: false,
       totalPets: 0,
@@ -13,7 +13,11 @@ export class PetHomeCrawler {
     };
 
     try {
-      console.log(`Starting ${petType} crawling...`);
+      console.log(`Starting ${petType} crawling (differential: ${isDifferentialMode})...`);
+      
+      // 前回のクロール状態を取得
+      const lastState = isDifferentialMode ? await this.getLastCrawlState(petType) : null;
+      console.log('Last crawl state:', lastState);
       
       // ペットホームのAPIエンドポイント（実際のエンドポイントに合わせて調整）
       const baseUrl = petType === 'dog' 
@@ -21,10 +25,13 @@ export class PetHomeCrawler {
         : `${this.env.PET_HOME_BASE_URL}/cats/tokyo/`;
 
       // HTMLページをクロール（実際の実装ではHTMLParserを使用）
-      const pets = await this.scrapePageData(baseUrl, petType);
+      const pets = await this.scrapePageData(baseUrl, petType, limit, lastState);
       
       result.totalPets = pets.length;
 
+      // 処理したペットIDを記録
+      const processedPetIds: string[] = [];
+      
       for (const pet of pets) {
         try {
           // 既存データチェック
@@ -43,6 +50,10 @@ export class PetHomeCrawler {
             result.newPets++;
           }
 
+          // 処理済みペットIDを記録
+          await this.recordProcessedPetId(pet.id, petType);
+          processedPetIds.push(pet.id);
+
           // 画像をR2に保存
           await this.saveImageToR2(pet);
 
@@ -50,6 +61,11 @@ export class PetHomeCrawler {
           result.errors.push(`Failed to process pet ${pet.id}: ${error}`);
           console.error(`Error processing pet ${pet.id}:`, error);
         }
+      }
+      
+      // クロール状態を更新
+      if (processedPetIds.length > 0 && isDifferentialMode) {
+        await this.updateLastCrawlState(petType, processedPetIds);
       }
 
       result.success = result.errors.length === 0;
@@ -64,12 +80,80 @@ export class PetHomeCrawler {
     }
   }
 
-  private async scrapePageData(baseUrl: string, petType: 'dog' | 'cat'): Promise<Pet[]> {
+  private async getLastCrawlState(petType: 'dog' | 'cat'): Promise<any> {
+    try {
+      const state = await this.env.DB
+        .prepare('SELECT * FROM last_crawl_state WHERE pet_type = ?')
+        .bind(petType)
+        .first();
+      return state;
+    } catch (error) {
+      console.error('Failed to get last crawl state:', error);
+      return null;
+    }
+  }
+
+  private async updateLastCrawlState(petType: 'dog' | 'cat', processedPetIds: string[]): Promise<void> {
+    try {
+      const maxPetId = processedPetIds.sort((a, b) => parseInt(b) - parseInt(a))[0];
+      const now = new Date().toISOString();
+      
+      // UPSERT操作
+      await this.env.DB
+        .prepare(`
+          INSERT INTO last_crawl_state (pet_type, last_max_pet_id, last_pet_ids, last_crawl_at, total_processed, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(pet_type) DO UPDATE SET
+            last_max_pet_id = excluded.last_max_pet_id,
+            last_pet_ids = excluded.last_pet_ids,
+            last_crawl_at = excluded.last_crawl_at,
+            total_processed = total_processed + excluded.total_processed,
+            updated_at = excluded.updated_at
+        `)
+        .bind(
+          petType,
+          maxPetId,
+          JSON.stringify(processedPetIds.slice(0, 100)), // 最近の100件を保存
+          now,
+          processedPetIds.length,
+          now
+        )
+        .run();
+    } catch (error) {
+      console.error('Failed to update last crawl state:', error);
+    }
+  }
+
+  private async recordProcessedPetId(petId: string, petType: 'dog' | 'cat'): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      await this.env.DB
+        .prepare(`
+          INSERT INTO processed_pet_ids (pet_id, pet_type, first_seen_at, last_seen_at, is_active)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(pet_id) DO UPDATE SET
+            last_seen_at = excluded.last_seen_at,
+            is_active = TRUE
+        `)
+        .bind(petId, petType, now, now, true)
+        .run();
+    } catch (error) {
+      console.error('Failed to record processed pet ID:', error);
+    }
+  }
+
+  private async scrapePageData(baseUrl: string, petType: 'dog' | 'cat', limit: number, lastState: any = null): Promise<Pet[]> {
     const pets: Pet[] = [];
+    const lastMaxPetId = lastState?.last_max_pet_id ? parseInt(lastState.last_max_pet_id) : 0;
+    const existingPetIds = lastState?.last_pet_ids ? JSON.parse(lastState.last_pet_ids) : [];
     
     try {
-      // ページ数を取得（最大5ページ）
-      for (let page = 1; page <= 5; page++) {
+      // ページ数を取得（必要な件数に応じて調整）
+      const petsPerPage = 20; // 一般的に1ページあたり20件
+      const maxPages = Math.ceil(limit / petsPerPage);
+      let newPetsFound = 0;
+      
+      for (let page = 1; page <= Math.min(maxPages, 10); page++) {
         const url = `${baseUrl}?page=${page}`;
         const response = await fetch(url, {
           headers: {
@@ -84,17 +168,44 @@ export class PetHomeCrawler {
 
         const html = await response.text();
         const pagePets = this.parseHTMLContent(html, petType);
-        pets.push(...pagePets);
+        
+        // 差分モード：新規ペットのみを追加
+        if (lastState) {
+          for (const pet of pagePets) {
+            const petIdNum = parseInt(pet.id);
+            
+            // すでに処理済みのペットはスキップ
+            if (petIdNum <= lastMaxPetId || existingPetIds.includes(pet.id)) {
+              console.log(`Skipping already processed pet: ${pet.id}`);
+              continue;
+            }
+            
+            pets.push(pet);
+            newPetsFound++;
+            
+            if (pets.length >= limit) break;
+          }
+        } else {
+          // 通常モード：全てのペットを追加
+          pets.push(...pagePets);
+        }
 
-        // ページに結果がない場合は終了
-        if (pagePets.length === 0) break;
+        // 必要な件数に達した場合、または結果がない場合は終了
+        if (pets.length >= limit || pagePets.length === 0) break;
+        
+        // 差分モードで新規ペットが見つからなくなったら終了
+        if (lastState && newPetsFound === 0 && page > 1) {
+          console.log('No new pets found, stopping crawl');
+          break;
+        }
       }
 
     } catch (error) {
       console.error('Scraping error:', error);
     }
 
-    return pets;
+    // 指定された件数に制限
+    return pets.slice(0, limit);
   }
 
   private parseHTMLContent(html: string, petType: 'dog' | 'cat'): Pet[] {
