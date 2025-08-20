@@ -68,7 +68,7 @@ export function usePetSwipeState(pets: Pet[] = []) {
         }
       })
     }
-  }, [pets]) // petsの参照が変わった時のみ実行
+  }, [pets, setState]) // petsの参照が変わった時のみ実行
 
   const handleSwipe = useCallback(
     (direction: SwipeDirection) => {
@@ -109,7 +109,7 @@ export function usePetSwipeState(pets: Pet[] = []) {
 
       setButtonSwipeDirection(null)
     },
-    []
+    [setState]
   )
 
   const reset = useCallback(() => {
@@ -119,7 +119,7 @@ export function usePetSwipeState(pets: Pet[] = []) {
       currentPet: pets[0] || null,
       isLoading: false,
     })
-  }, [pets])
+  }, [pets, setState])
 
   const handleUndo = useCallback(() => {
     setState((prev) => {
@@ -163,7 +163,7 @@ export function usePetSwipeState(pets: Pet[] = []) {
 
       return newState
     })
-  }, [])
+  }, [setState])
 
   const filterByLocation = useCallback(
     (location: string | null) => {
@@ -178,7 +178,7 @@ export function usePetSwipeState(pets: Pet[] = []) {
           : pets[0] || null,
       }))
     },
-    [pets]
+    [pets, setState]
   )
 
   const triggerButtonSwipe = useCallback((direction: SwipeDirection) => {

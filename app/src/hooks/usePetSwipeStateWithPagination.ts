@@ -64,13 +64,6 @@ export function usePetSwipeStateWithPagination() {
   const offsetRef = useRef(0)
   const loadingRef = useRef(false)
 
-  // 初回データ取得
-  useEffect(() => {
-    if (state.remainingPets.length === 0 && !loadingRef.current) {
-      loadMorePets()
-    }
-  }, [])
-
   // ペットデータを追加で取得
   const loadMorePets = useCallback(async () => {
     if (loadingRef.current || !state.hasMore) return
@@ -102,7 +95,46 @@ export function usePetSwipeStateWithPagination() {
     } finally {
       loadingRef.current = false
     }
-  }, [state.hasMore])
+  }, [state.hasMore, setState])
+
+  // 初回データ取得
+  useEffect(() => {
+    if (state.remainingPets.length === 0 && !loadingRef.current) {
+      // 非同期で初回データ取得
+      const initPets = async () => {
+        if (loadingRef.current || !state.hasMore) return
+        
+        loadingRef.current = true
+        setState(prev => ({ ...prev, isLoadingMore: true }))
+        
+        try {
+          const result = await loadPetDataIncremental(offsetRef.current, BATCH_SIZE)
+          
+          offsetRef.current += result.pets.length
+          
+          setState(prev => ({
+            ...prev,
+            remainingPets: [...prev.remainingPets, ...result.pets],
+            currentPet: prev.currentPet || result.pets[0] || null,
+            hasMore: result.hasMore,
+            totalPets: result.total,
+            isLoading: false,
+            isLoadingMore: false,
+          }))
+        } catch (error) {
+          console.error('Failed to load initial pets:', error)
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            isLoadingMore: false,
+          }))
+        } finally {
+          loadingRef.current = false
+        }
+      }
+      initPets()
+    }
+  }, [state.remainingPets.length, state.hasMore, setState])
 
   // 残り枚数をチェックして必要なら次のバッチを取得
   useEffect(() => {
@@ -155,7 +187,7 @@ export function usePetSwipeStateWithPagination() {
 
       setButtonSwipeDirection(null)
     },
-    []
+    [setState]
   )
 
   const reset = useCallback(() => {
@@ -166,7 +198,7 @@ export function usePetSwipeStateWithPagination() {
     })
     // リセット後に最初のバッチを取得
     setTimeout(() => loadMorePets(), 0)
-  }, [loadMorePets])
+  }, [loadMorePets, setState])
 
   const handleUndo = useCallback(() => {
     setState((prev) => {
@@ -210,7 +242,7 @@ export function usePetSwipeStateWithPagination() {
 
       return newState
     })
-  }, [])
+  }, [setState])
 
   const triggerButtonSwipe = useCallback((direction: SwipeDirection) => {
     setButtonSwipeDirection(direction)

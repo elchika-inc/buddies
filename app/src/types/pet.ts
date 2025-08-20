@@ -22,6 +22,7 @@ export interface BasePet {
   medicalInfo: string
   careRequirements: string[]
   imageUrl: string
+  localImagePath?: string  // ローカル開発用画像パス
   shelterName: string
   shelterContact: string
   adoptionFee: number

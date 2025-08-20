@@ -421,3 +421,6 @@ const rawRealCats: Cat[] = [
 
 // データマイグレーションを適用
 export const realCats = migrateAllCatData(rawRealCats)
+
+// 既存コードとの互換性のため
+export const cats = realCats

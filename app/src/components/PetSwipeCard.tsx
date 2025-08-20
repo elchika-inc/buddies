@@ -3,6 +3,11 @@ import { PetCard } from './PetCard'
 import { Pet } from '@/types/pet'
 import { SwipeDirection } from '@/hooks/usePetSwipeState'
 
+// スワイプ判定の定数
+const SWIPE_THRESHOLD = 100
+const SUPER_LIKE_THRESHOLD = 100
+const CARD_EXIT_ANIMATION_DURATION = 400
+
 type PetSwipeCardProps = {
   pet: Pet
   onSwipe: (direction: SwipeDirection) => void
@@ -39,11 +44,9 @@ export function PetSwipeCard({
   const handleMouseUp = () => {
     if (!isDragging || !isTopCard) return
 
-    const threshold = 100
-    const superLikeThreshold = 100
-    if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
+    if (Math.abs(dragOffset.y) > SUPER_LIKE_THRESHOLD && dragOffset.y < 0) {
       triggerExit('superLike')
-    } else if (Math.abs(dragOffset.x) > threshold) {
+    } else if (Math.abs(dragOffset.x) > SWIPE_THRESHOLD) {
       const direction = dragOffset.x > 0 ? 'like' : 'pass'
       triggerExit(direction)
     } else {
@@ -70,11 +73,9 @@ export function PetSwipeCard({
   const handleTouchEnd = () => {
     if (!isDragging || !isTopCard) return
 
-    const threshold = 100
-    const superLikeThreshold = 100
-    if (Math.abs(dragOffset.y) > superLikeThreshold && dragOffset.y < 0) {
+    if (Math.abs(dragOffset.y) > SUPER_LIKE_THRESHOLD && dragOffset.y < 0) {
       triggerExit('superLike')
-    } else if (Math.abs(dragOffset.x) > threshold) {
+    } else if (Math.abs(dragOffset.x) > SWIPE_THRESHOLD) {
       const direction = dragOffset.x > 0 ? 'like' : 'pass'
       triggerExit(direction)
     } else {
@@ -91,7 +92,7 @@ export function PetSwipeCard({
 
       setTimeout(() => {
         onSwipe(direction)
-      }, 400)
+      }, CARD_EXIT_ANIMATION_DURATION)
     },
     [onSwipe]
   )
