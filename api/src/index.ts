@@ -50,13 +50,37 @@ app.get('/images/:type/:filename',
       return c.json({ error: 'Invalid pet type' }, 400);
     }
 
-    if (!filename.match(/^(dog|cat)-\d+\.jpg$/)) {
+    if (!filename.match(/^(dog|cat)-\d+\.(jpg|webp)$/)) {
       return c.json({ error: 'Invalid filename format' }, 400);
     }
 
     try {
-      const key = `${petType}/${filename}`;
-      const object = await c.env.IMAGES_BUCKET.get(key);
+      const acceptHeader = c.req.header('Accept') || '';
+      const supportsWebP = acceptHeader.includes('image/webp');
+      const extension = filename.split('.').pop();
+      
+      // WebP対応ブラウザで、JPEGが要求された場合はWebPを優先
+      let requestedKey = `${petType}/${filename}`;
+      let preferredKey = requestedKey;
+      let preferredContentType = 'image/jpeg';
+      
+      if (supportsWebP && extension === 'jpg') {
+        const webpFilename = filename.replace(/\.jpg$/, '.webp');
+        preferredKey = `${petType}/${webpFilename}`;
+        preferredContentType = 'image/webp';
+      } else if (extension === 'webp') {
+        preferredContentType = 'image/webp';
+      }
+      
+      // まず優先形式を試す
+      let object = await c.env.IMAGES_BUCKET.get(preferredKey);
+      let finalContentType = preferredContentType;
+      
+      // 優先形式がなければ元のファイルを試す
+      if (!object && preferredKey !== requestedKey) {
+        object = await c.env.IMAGES_BUCKET.get(requestedKey);
+        finalContentType = extension === 'webp' ? 'image/webp' : 'image/jpeg';
+      }
 
       if (!object) {
         return c.json({ error: 'Image not found' }, 404);
@@ -64,10 +88,11 @@ app.get('/images/:type/:filename',
 
       // セキュリティヘッダー設定
       const headers = new Headers();
-      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg');
+      headers.set('Content-Type', object.httpMetadata?.contentType || finalContentType);
       headers.set('Cache-Control', 'public, max-age=31536000'); // 1年キャッシュ
       headers.set('X-Content-Type-Options', 'nosniff');
       headers.set('X-Frame-Options', 'DENY');
+      headers.set('Vary', 'Accept'); // キャッシュのためのVaryヘッダー
       
       // リファラーチェック（セキュリティ）
       const referer = c.req.header('Referer');
@@ -355,6 +380,7 @@ app.post('/dev/init-db', async (c) => {
     }, 500);
   }
 });
+
 
 // クローラーからのデータ受信エンドポイント（開発環境専用）
 app.post('/dev/seed-data', async (c) => {
