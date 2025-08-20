@@ -51,16 +51,6 @@ export function PetMatchApp() {
       />
       
       <div className="container mx-auto px-4 py-8 pb-20">
-        {/* ステータス表示 */}
-        <div className="text-center mb-4 text-sm text-gray-600">
-          {swipeState.totalPets > 0 && (
-            <div>
-              残り: {swipeState.remainingPets.length}枚 / 全体: {swipeState.totalPets}枚
-              {swipeState.isLoadingMore && ' (追加読み込み中...)'}
-            </div>
-          )}
-        </div>
-        
         <div
           className="flex justify-center relative"
           style={{

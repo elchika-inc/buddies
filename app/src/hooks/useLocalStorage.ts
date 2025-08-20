@@ -11,7 +11,6 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       // if (typeof window !== 'undefined') {
       //   window.localStorage.setItem(key, JSON.stringify(valueToStore))
       // }
-      console.log(`Debug: Would save to localStorage[${key}]:`, valueToStore)
       return valueToStore
     })
   }, [key])

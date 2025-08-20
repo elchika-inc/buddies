@@ -50,7 +50,12 @@ fi
 # 3. D1データベースの初期化
 echo "🗄️ D1データベースを初期化中..."
 cd api
+echo "  - スキーマを作成中..."
 npx wrangler d1 execute pawmatch-db --local --file=./migrations/0001_initial_schema.sql || echo "  (スキーマは既に作成済みの可能性があります)"
+echo "  - shelter_urlカラムを追加中..."
+npx wrangler d1 execute pawmatch-db --local --file=./migrations/0002_add_shelter_url.sql || echo "  (カラムは既に追加済みの可能性があります)"
+echo "  - サンプルデータを投入中..."
+node ../scripts/seed-database.js
 cd ..
 
 # 4. R2画像のセットアップ
