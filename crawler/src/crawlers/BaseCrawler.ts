@@ -1,5 +1,6 @@
 import { Env, Pet, CrawlResult } from '../types';
 import { ICrawler, CrawlOptions, CrawlCheckpoint, CrawlerState } from '../interfaces/ICrawler';
+import { RetryHandler } from '../utils/RetryHandler';
 
 /**
  * ベースクローラークラス
@@ -52,10 +53,10 @@ export abstract class BaseCrawler implements ICrawler {
           pet.id = uniqueId;
           
           // 既存データチェック
-          const existingPet = await this.env.DB
-            .prepare('SELECT id FROM pets WHERE id = ?')
-            .bind(uniqueId)
-            .first();
+          const existingPet = await RetryHandler.execute(async () => {
+            const stmt = this.env.DB.prepare('SELECT id FROM pets WHERE id = ?');
+            return await stmt.bind(uniqueId).first();
+          }, RetryHandler.getDatabaseRetryConfig());
           
           if (existingPet) {
             await this.updatePetData(pet);
@@ -67,8 +68,11 @@ export abstract class BaseCrawler implements ICrawler {
           
           processedIds.push(pet.id);
           
-          // 画像保存
-          await this.saveImageToR2(pet);
+          // 画像保存（リトライ付き）
+          await RetryHandler.execute(
+            () => this.saveImageToR2(pet),
+            RetryHandler.getHttpRetryConfig()
+          );
           
         } catch (error) {
           result.errors.push(`Failed to process pet ${pet.id}: ${error}`);
@@ -106,7 +110,9 @@ export abstract class BaseCrawler implements ICrawler {
    * ユニークIDを生成
    */
   protected generateUniqueId(petId: string): string {
-    return `${this.sourceId}_${petId}`;
+    // IDのサニタイゼーション
+    const sanitizedPetId = petId.replace(/[^a-zA-Z0-9_-]/g, '');
+    return `${this.sourceId}_${sanitizedPetId}`;
   }
   
   /**
@@ -114,16 +120,17 @@ export abstract class BaseCrawler implements ICrawler {
    */
   protected async getLastCheckpoint(petType: 'dog' | 'cat'): Promise<CrawlCheckpoint | null> {
     try {
-      const state = await this.env.DB
-        .prepare(`
+      return await RetryHandler.execute(async () => {
+        const stmt = this.env.DB.prepare(`
           SELECT checkpoint 
           FROM crawler_states 
           WHERE source_id = ? AND pet_type = ?
-        `)
-        .bind(this.sourceId, petType)
-        .first<{ checkpoint: string }>();
-      
-      return state ? JSON.parse(state.checkpoint) : null;
+        `);
+        
+        const state = await stmt.bind(this.sourceId, petType).first<{ checkpoint: string }>();
+        
+        return state ? JSON.parse(state.checkpoint) : null;
+      }, RetryHandler.getDatabaseRetryConfig());
     } catch (error) {
       console.error('Failed to get checkpoint:', error);
       return null;
@@ -138,33 +145,34 @@ export abstract class BaseCrawler implements ICrawler {
     processedIds: string[]
   ): Promise<void> {
     try {
-      const now = new Date().toISOString();
-      const checkpoint: CrawlCheckpoint = {
-        lastItemId: processedIds[0], // 最新のID
-        lastCrawlAt: now,
-        metadata: {
-          processedCount: processedIds.length,
-          processedIds: processedIds.slice(0, 20) // 最新20件を保存
-        }
-      };
-      
-      await this.env.DB
-        .prepare(`
+      await RetryHandler.execute(async () => {
+        const now = new Date().toISOString();
+        const checkpoint: CrawlCheckpoint = {
+          lastItemId: processedIds[0], // 最新のID
+          lastCrawlAt: now,
+          metadata: {
+            processedCount: processedIds.length,
+            processedIds: processedIds.slice(0, 20) // 最新20件を保存
+          }
+        };
+        
+        const stmt = this.env.DB.prepare(`
           INSERT INTO crawler_states (source_id, pet_type, checkpoint, total_processed, updated_at)
           VALUES (?, ?, ?, ?, ?)
           ON CONFLICT(source_id, pet_type) DO UPDATE SET
             checkpoint = excluded.checkpoint,
             total_processed = total_processed + excluded.total_processed,
             updated_at = excluded.updated_at
-        `)
-        .bind(
+        `);
+        
+        await stmt.bind(
           this.sourceId,
           petType,
           JSON.stringify(checkpoint),
           processedIds.length,
           now
-        )
-        .run();
+        ).run();
+      }, RetryHandler.getDatabaseRetryConfig());
     } catch (error) {
       console.error('Failed to update checkpoint:', error);
     }
@@ -174,75 +182,137 @@ export abstract class BaseCrawler implements ICrawler {
    * ペットデータを作成
    */
   protected async createPetData(pet: Pet): Promise<void> {
-    await this.env.DB
-      .prepare(`
+    // 入力値のサニタイゼーション
+    const sanitizedPet = this.sanitizePetData(pet);
+    
+    await RetryHandler.execute(async () => {
+      const stmt = this.env.DB.prepare(`
         INSERT INTO pets (
           id, type, name, breed, age, gender, prefecture, city, location,
           description, personality, medical_info, care_requirements,
           image_url, shelter_name, shelter_contact, source_url, 
           adoption_fee, metadata, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-      .bind(
-        pet.id,
-        pet.type,
-        pet.name,
-        pet.breed,
-        pet.age,
-        pet.gender,
-        pet.prefecture,
-        pet.city,
-        pet.location,
-        pet.description,
-        JSON.stringify(pet.personality),
-        pet.medicalInfo,
-        JSON.stringify(pet.careRequirements),
-        pet.imageUrl,
-        pet.shelterName,
-        pet.shelterContact,
-        pet.sourceUrl,
+      `);
+      
+      await stmt.bind(
+        sanitizedPet.id,
+        sanitizedPet.type,
+        sanitizedPet.name,
+        sanitizedPet.breed,
+        sanitizedPet.age,
+        sanitizedPet.gender,
+        sanitizedPet.prefecture,
+        sanitizedPet.city,
+        sanitizedPet.location,
+        sanitizedPet.description,
+        JSON.stringify(sanitizedPet.personality),
+        sanitizedPet.medicalInfo,
+        JSON.stringify(sanitizedPet.careRequirements),
+        sanitizedPet.imageUrl,
+        sanitizedPet.shelterName,
+        sanitizedPet.shelterContact,
+        sanitizedPet.sourceUrl,
         0, // adoption_fee (デフォルト値)
-        JSON.stringify({ ...pet, sourceId: this.sourceId }), // metadataにsourceIdを含める
-        pet.createdAt
-      )
-      .run();
+        JSON.stringify({ ...sanitizedPet, sourceId: this.sourceId }),
+        sanitizedPet.createdAt
+      ).run();
+    }, RetryHandler.getDatabaseRetryConfig());
   }
   
   /**
    * ペットデータを更新
    */
   protected async updatePetData(pet: Pet): Promise<void> {
-    await this.env.DB
-      .prepare(`
+    // 入力値のサニタイゼーション
+    const sanitizedPet = this.sanitizePetData(pet);
+    
+    await RetryHandler.execute(async () => {
+      const stmt = this.env.DB.prepare(`
         UPDATE pets SET
           name = ?, breed = ?, age = ?, gender = ?, prefecture = ?, city = ?,
           location = ?, description = ?, personality = ?, medical_info = ?,
           care_requirements = ?, image_url = ?, shelter_name = ?, shelter_contact = ?,
           source_url = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `)
-      .bind(
-        pet.name,
-        pet.breed,
-        pet.age,
-        pet.gender,
-        pet.prefecture,
-        pet.city,
-        pet.location,
-        pet.description,
-        JSON.stringify(pet.personality),
-        pet.medicalInfo,
-        JSON.stringify(pet.careRequirements),
-        pet.imageUrl,
-        pet.shelterName,
-        pet.shelterContact,
-        pet.sourceUrl,
-        JSON.stringify({ ...pet, sourceId: this.sourceId }),
-        pet.id
-      )
-      .run();
+      `);
+      
+      await stmt.bind(
+        sanitizedPet.name,
+        sanitizedPet.breed,
+        sanitizedPet.age,
+        sanitizedPet.gender,
+        sanitizedPet.prefecture,
+        sanitizedPet.city,
+        sanitizedPet.location,
+        sanitizedPet.description,
+        JSON.stringify(sanitizedPet.personality),
+        sanitizedPet.medicalInfo,
+        JSON.stringify(sanitizedPet.careRequirements),
+        sanitizedPet.imageUrl,
+        sanitizedPet.shelterName,
+        sanitizedPet.shelterContact,
+        sanitizedPet.sourceUrl,
+        JSON.stringify({ ...sanitizedPet, sourceId: this.sourceId }),
+        sanitizedPet.id
+      ).run();
+    }, RetryHandler.getDatabaseRetryConfig());
   }
   
+  /**
+   * 入力データのサニタイゼーション
+   */
+  protected sanitizePetData(pet: Pet): Pet {
+    return {
+      ...pet,
+      id: this.sanitizeString(pet.id, 100),
+      name: this.sanitizeString(pet.name, 255),
+      breed: this.sanitizeString(pet.breed, 100),
+      age: this.sanitizeString(pet.age, 20),
+      gender: this.sanitizeString(pet.gender, 10),
+      prefecture: this.sanitizeString(pet.prefecture, 50),
+      city: this.sanitizeString(pet.city, 100),
+      location: this.sanitizeString(pet.location, 255),
+      description: this.sanitizeString(pet.description, 2000),
+      medicalInfo: this.sanitizeString(pet.medicalInfo, 1000),
+      shelterName: this.sanitizeString(pet.shelterName, 255),
+      shelterContact: this.sanitizeString(pet.shelterContact, 255),
+      sourceUrl: this.sanitizeUrl(pet.sourceUrl),
+      imageUrl: this.sanitizeUrl(pet.imageUrl),
+    };
+  }
+
+  /**
+   * 文字列のサニタイゼーション
+   */
+  protected sanitizeString(value: string, maxLength: number): string {
+    if (!value || typeof value !== 'string') return '';
+    
+    return value
+      .trim()
+      .slice(0, maxLength)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 制御文字除去
+      .replace(/'/g, "''"); // SQLエスケープ
+  }
+
+  /**
+   * URLのサニタイゼーション
+   */
+  protected sanitizeUrl(url: string): string {
+    if (!url || typeof url !== 'string') return '';
+    
+    try {
+      const parsedUrl = new URL(url);
+      // HTTPSまたはHTTPのみ許可
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return '';
+      }
+      return url.slice(0, 500); // 長さ制限
+    } catch {
+      return '';
+    }
+  }
+
   /**
    * 画像をR2に保存
    */
@@ -254,11 +324,14 @@ export abstract class BaseCrawler implements ICrawler {
         return;
       }
       
-      const imageResponse = await fetch(imageUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)',
-        },
-      });
+      const imageResponse = await RetryHandler.execute(async () => {
+        return await fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)',
+          },
+          signal: AbortSignal.timeout(10000), // 10秒タイムアウト
+        });
+      }, RetryHandler.getHttpRetryConfig());
       
       if (imageResponse.ok) {
         const imageBlob = await imageResponse.blob();
