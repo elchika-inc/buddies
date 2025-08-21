@@ -52,8 +52,14 @@ npm run clean
 
 ### Deployment
 ```bash
-# Deploy to Vercel
+# Deploy to Cloudflare Pages
 npm run deploy
+
+# Deploy DogMatch specifically
+npm run deploy:dog
+
+# Deploy CatMatch specifically
+npm run deploy:cat
 ```
 
 ## Architecture

@@ -15,7 +15,7 @@ export const petConfig = {
     description: '保護犬と新しい家族をマッチング',
     primaryColor: 'orange',
     primaryColorHex: '#FFA500',
-    storageKey: 'dogSwipeState_v4',
+    storageKey: 'dogSwipeState',
     detailRoute: 'dog-detail'
   },
   cat: {
@@ -23,7 +23,7 @@ export const petConfig = {
     description: '保護猫と新しい家族をマッチング',
     primaryColor: 'purple',
     primaryColorHex: '#9333EA',
-    storageKey: 'catSwipeState_v4',
+    storageKey: 'catSwipeState',
     detailRoute: 'cat-detail'
   }
 }

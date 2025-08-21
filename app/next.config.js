@@ -2,6 +2,7 @@ import withPWA from 'next-pwa'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: process.env.CF_PAGES ? 'export' : undefined,
   images: {
     remotePatterns: [
       {
