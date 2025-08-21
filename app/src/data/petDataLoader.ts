@@ -2,6 +2,23 @@ import { getPetType } from '@/config/petConfig'
 import { Pet } from '@/types/pet'
 import petApi from '@/services/api'
 
+// APIレスポンスをPet型に変換
+function transformApiPet(apiPet: any): Pet {
+  return {
+    ...apiPet,
+    imageUrl: apiPet.image_url || apiPet.imageUrl || '',
+    medicalInfo: apiPet.medical_info || apiPet.medicalInfo || '',
+    careRequirements: apiPet.care_requirements || apiPet.careRequirements || [],
+    shelterName: apiPet.shelter_name || apiPet.shelterName || '',
+    shelterContact: apiPet.shelter_contact || apiPet.shelterContact || '',
+    adoptionFee: apiPet.adoption_fee || apiPet.adoptionFee || 0,
+    isNeutered: apiPet.is_neutered || apiPet.isNeutered || false,
+    isVaccinated: apiPet.is_vaccinated || apiPet.isVaccinated || false,
+    createdAt: apiPet.created_at || apiPet.createdAt || '',
+    sourceUrl: apiPet.source_url || apiPet.sourceUrl
+  }
+}
+
 // API経由またはローカルデータでペットデータを読み込む
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true' || process.env.NODE_ENV === 'development'
 
@@ -18,15 +35,17 @@ export const loadPetDataIncremental = async (offset: number = 0, limit: number =
     try {
       if (petType === 'cat') {
         const response = await petApi.getCats({ limit, offset })
+        const pets = (response.pets || response.cats || []).map(transformApiPet)
         return {
-          pets: response.cats || [],
+          pets,
           hasMore: response.pagination?.hasMore || false,
           total: response.pagination?.total || 0
         }
       } else {
         const response = await petApi.getDogs({ limit, offset })
+        const pets = (response.pets || response.dogs || []).map(transformApiPet)
         return {
-          pets: response.dogs || [],
+          pets,
           hasMore: response.pagination?.hasMore || false,
           total: response.pagination?.total || 0
         }

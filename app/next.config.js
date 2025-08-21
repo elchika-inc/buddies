@@ -3,8 +3,24 @@ import withPWA from 'next-pwa'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com', 'www.pet-home.jp'],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.pet-home.jp',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image.pet-home.jp',
+        pathname: '/user_file/**',
+      },
       {
         protocol: 'http',
         hostname: 'localhost',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PetSwipeCard } from './PetSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
@@ -14,6 +14,18 @@ export function PetMatchApp() {
   
   const config = getCurrentPetConfig()
   const petType = getPetType()
+
+  // 一時的にlocalStorageをクリア（キャッシュ問題解決のため）
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.includes('pets') || key.includes('pet-') || key.includes('swipe')) {
+          localStorage.removeItem(key)
+        }
+      })
+    }
+  }, [])
 
   // ページネーション対応のスワイプステートを使用
   const swipeState = usePetSwipeStateWithPagination()

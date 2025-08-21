@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { cache } from 'hono/cache';
 import { generateCats, generateDogs } from './sample-data/generate-data';
+import { SimpleSyncService } from './services/simple-sync-service';
 
 // サンプルデータを生成
 const sampleCats = generateCats(100);
@@ -11,6 +12,7 @@ interface Env {
   IMAGES_BUCKET: R2Bucket;
   DB: D1Database;
   ALLOWED_ORIGIN: string;
+  IMAGE_WORKER: Fetcher;  // 画像変換Worker
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -35,7 +37,7 @@ app.get('/', (c) => {
   });
 });
 
-// 画像配信エンドポイント（キャッシュ有効）
+// 画像配信エンドポイント - 画像変換Workerへプロキシ
 app.get('/images/:type/:filename',
   cache({
     cacheName: 'pawmatch-images',
@@ -44,65 +46,50 @@ app.get('/images/:type/:filename',
   async (c) => {
     const petType = c.req.param('type');
     const filename = c.req.param('filename');
+    const format = c.req.query('format') || 'auto';
 
     // パラメータ検証
     if (petType !== 'dogs' && petType !== 'cats') {
       return c.json({ error: 'Invalid pet type' }, 400);
     }
 
-    if (!filename.match(/^(dog|cat)-\d+\.(jpg|webp)$/)) {
+    // ファイル名からペットIDを抽出
+    const fileMatch = filename.match(/^(pethome_\d+|\d+)(?:\.(jpg|jpeg|png|webp))?$/);
+    if (!fileMatch) {
       return c.json({ error: 'Invalid filename format' }, 400);
     }
 
+    const petId = fileMatch[1].startsWith('pethome_') ? fileMatch[1] : `pethome_${fileMatch[1]}`;
+    const requestedFormat = fileMatch[2] || format;
+
     try {
-      const extension = filename.split('.').pop();
+      // 画像変換Workerへリクエストをプロキシ
+      const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}/${petId}/${requestedFormat}`;
       
-      // WebPファイルのみ保存。jpg拡張子の場合はwebpファイルを探す
-      let actualKey: string;
-      let contentType: string;
-      
-      if (extension === 'jpg') {
-        // JPEGが要求されてもWebPファイルを返す
-        const webpFilename = filename.replace(/\.jpg$/, '.webp');
-        actualKey = `${petType}/${webpFilename}`;
-        contentType = 'image/webp';
-      } else {
-        // WebPが直接要求された場合
-        actualKey = `${petType}/${filename}`;
-        contentType = 'image/webp';
-      }
-      
-      const object = await c.env.IMAGES_BUCKET.get(actualKey);
+      // Service Bindingを使用して内部通信
+      const imageResponse = await c.env.IMAGE_WORKER.fetch(
+        new Request(imageWorkerUrl, {
+          headers: {
+            'Accept': c.req.header('Accept') || '',
+            'X-Forwarded-For': c.req.header('X-Forwarded-For') || c.req.header('CF-Connecting-IP') || '',
+          }
+        })
+      );
 
-      if (!object) {
-        return c.json({ error: 'Image not found' }, 404);
-      }
-
-      // セキュリティヘッダー設定
-      const headers = new Headers();
-      headers.set('Content-Type', object.httpMetadata?.contentType || contentType);
-      headers.set('Cache-Control', 'public, max-age=31536000'); // 1年キャッシュ
-      headers.set('X-Content-Type-Options', 'nosniff');
-      headers.set('X-Frame-Options', 'DENY');
-      headers.set('Vary', 'Accept'); // キャッシュのためのVaryヘッダー
-      // headers.set('X-Debug-Info', debugInfo); // デバッグ情報（削除）
-      
-      // リファラーチェック（セキュリティ）
-      const referer = c.req.header('Referer');
-      const allowedDomains = [c.env.ALLOWED_ORIGIN, 'http://localhost:3004'];
-      
-      if (referer && !allowedDomains.some(domain => referer.startsWith(domain))) {
-        return c.json({ error: 'Access denied' }, 403);
-      }
-
-      return new Response(object.body, { headers });
+      // レスポンスをそのまま返す
+      return new Response(imageResponse.body, {
+        status: imageResponse.status,
+        headers: imageResponse.headers
+      });
 
     } catch (error) {
-      console.error('Image fetch error:', error);
-      return c.json({ error: 'Internal server error' }, 500);
+      console.error('Image proxy error:', error);
+      return c.json({ error: 'Image service unavailable' }, 503);
     }
   }
 );
+
+// 画像配信はNext.jsの静的ファイル配信を使用（/api/images/ は削除）
 
 // ペット一覧API
 app.get('/pets/:type?', async (c) => {
@@ -135,12 +122,31 @@ app.get('/pets/:type?', async (c) => {
   try {
     const result = await c.env.DB.prepare(query).bind(...params).all();
     
-    // JSONフィールドをパース
-    const pets = (result.results || []).map((pet: any) => ({
-      ...pet,
-      personality: pet.personality ? JSON.parse(pet.personality) : [],
-      care_requirements: pet.care_requirements ? JSON.parse(pet.care_requirements) : [],
-    }));
+    // JSONフィールドをパース（エラーハンドリング付き）
+    const pets = (result.results || []).map((pet: any) => {
+      let personality = [];
+      let care_requirements = [];
+      
+      try {
+        personality = pet.personality ? JSON.parse(pet.personality) : [];
+      } catch (e) {
+        // JSONパースに失敗した場合はデフォルト値を使用
+        personality = ['friendly', 'energetic'];
+      }
+      
+      try {
+        care_requirements = pet.care_requirements ? JSON.parse(pet.care_requirements) : [];
+      } catch (e) {
+        // JSONパースに失敗した場合はデフォルト値を使用
+        care_requirements = ['indoor', 'love'];
+      }
+      
+      return {
+        ...pet,
+        personality,
+        care_requirements,
+      };
+    });
 
     return c.json({
       pets,
@@ -175,12 +181,34 @@ app.get('/pets/:type/:id', async (c) => {
       return c.json({ error: 'Pet not found' }, 404);
     }
 
-    // JSONフィールドをパース
+    // JSONフィールドをパース（エラーハンドリング付き）
+    let personality = [];
+    let care_requirements = [];
+    let metadata = {};
+    
+    try {
+      personality = result.personality ? JSON.parse(result.personality as string) : [];
+    } catch (e) {
+      personality = ['friendly', 'energetic'];
+    }
+    
+    try {
+      care_requirements = result.care_requirements ? JSON.parse(result.care_requirements as string) : [];
+    } catch (e) {
+      care_requirements = ['indoor', 'love'];
+    }
+    
+    try {
+      metadata = result.metadata ? JSON.parse(result.metadata as string) : {};
+    } catch (e) {
+      metadata = {};
+    }
+    
     const pet = {
       ...result,
-      personality: result.personality ? JSON.parse(result.personality as string) : [],
-      care_requirements: result.care_requirements ? JSON.parse(result.care_requirements as string) : [],
-      metadata: result.metadata ? JSON.parse(result.metadata as string) : {},
+      personality,
+      care_requirements,
+      metadata,
     };
 
     return c.json({ pet });
@@ -297,6 +325,32 @@ app.get('/api/sample/stats', (c) => {
     dogs: sampleDogs.length,
     last_updated: new Date().toISOString()
   });
+});
+
+// データ準備状態確認エンドポイント
+app.get('/data-status', async (c) => {
+  try {
+    const syncService = new SimpleSyncService(c.env.DB, c.env.IMAGES_BUCKET);
+    const status = await syncService.getDataReadiness();
+    
+    return c.json(status);
+  } catch (error) {
+    console.error('Status check error:', error);
+    return c.json({ error: 'Status check failed' }, 500);
+  }
+});
+
+// 詳細統計情報取得
+app.get('/data-status/detailed', async (c) => {
+  try {
+    const syncService = new SimpleSyncService(c.env.DB, c.env.IMAGES_BUCKET);
+    const stats = await syncService.getDetailedStats();
+    
+    return c.json(stats);
+  } catch (error) {
+    console.error('Detailed stats error:', error);
+    return c.json({ error: 'Failed to get detailed stats' }, 500);
+  }
 });
 
 // 統計情報取得
@@ -419,6 +473,8 @@ app.post('/dev/init-db', async (c) => {
 
 // クローラーからのデータ受信エンドポイント（開発環境専用）
 app.post('/dev/seed-data', async (c) => {
+  const syncService = new SimpleSyncService(c.env.DB, c.env.IMAGES_BUCKET);
+  
   try {
     const body = await c.req.json();
     const { pets } = body;
@@ -429,6 +485,7 @@ app.post('/dev/seed-data', async (c) => {
     
     let insertedCount = 0;
     let updatedCount = 0;
+    const imageStats = { total: 0, withJpeg: 0, withWebp: 0, missing: 0 };
     
     for (const pet of pets) {
       // データ検証
@@ -481,22 +538,100 @@ app.post('/dev/seed-data', async (c) => {
         ).run();
         insertedCount++;
       }
+      
+      // 画像の存在確認と状態更新
+      const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
+      const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`;
+      
+      const [jpegExists, webpExists] = await Promise.all([
+        c.env.IMAGES_BUCKET.head(jpegKey),
+        c.env.IMAGES_BUCKET.head(webpKey)
+      ]);
+      
+      imageStats.total++;
+      if (jpegExists) imageStats.withJpeg++;
+      if (webpExists) imageStats.withWebp++;
+      if (!jpegExists) imageStats.missing++;
+      
+      await syncService.updatePetImageStatus(
+        pet.id,
+        !!jpegExists,
+        !!webpExists
+      );
     }
+    
+    // 全体統計を更新して準備状態を確認
+    const { isReady } = await syncService.updateSyncMetadata();
+    const readiness = await syncService.getDataReadiness();
     
     return c.json({
       success: true,
       inserted: insertedCount,
       updated: updatedCount,
       total: pets.length,
+      dataReady: isReady,
+      readinessMessage: readiness.message,
       timestamp: new Date().toISOString(),
     });
     
   } catch (error) {
     console.error('Data seeding error:', error);
+    // エラー情報をログに記録
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     }, 500);
+  }
+});
+
+// ペット画像ステータス更新エンドポイント（GitHub Actions用）
+app.post('/dev/update-image-status', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { petId, hasJpeg, hasWebp } = body;
+    
+    if (!petId) {
+      return c.json({ error: 'petId is required' }, 400);
+    }
+    
+    const syncService = new SimpleSyncService(c.env.DB, c.env.IMAGES_BUCKET);
+    await syncService.updatePetImageStatus(petId, !!hasJpeg, !!hasWebp);
+    
+    // スクリーンショット完了も記録
+    if (hasJpeg) {
+      await c.env.DB.prepare(`
+        UPDATE pets SET 
+          screenshot_completed_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(petId).run();
+    }
+    
+    return c.json({
+      success: true,
+      petId,
+      hasJpeg: !!hasJpeg,
+      hasWebp: !!hasWebp,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Image status update error:', error);
+    return c.json({ error: 'Failed to update image status' }, 500);
+  }
+});
+
+// データ整合性チェックエンドポイント（開発環境専用）
+app.post('/dev/integrity-check', async (c) => {
+  try {
+    const syncService = new SimpleSyncService(c.env.DB, c.env.IMAGES_BUCKET);
+    const result = await syncService.runIntegrityCheck();
+    
+    return c.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('Integrity check error:', error);
+    return c.json({ error: 'Integrity check failed' }, 500);
   }
 });
 

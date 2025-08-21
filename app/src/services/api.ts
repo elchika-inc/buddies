@@ -1,6 +1,6 @@
 // API service for fetching pet data
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
-const USE_SAMPLE_DATA = process.env.NEXT_PUBLIC_USE_SAMPLE_DATA === 'true' || process.env.NODE_ENV === 'development';
+const USE_SAMPLE_DATA = process.env.NEXT_PUBLIC_USE_SAMPLE_DATA === 'true';
 
 interface PaginationParams {
   limit?: number;
@@ -9,6 +9,7 @@ interface PaginationParams {
 }
 
 interface ApiResponse<T> {
+  pets?: T[];
   cats?: T[];
   cat?: T;
   dogs?: T[];

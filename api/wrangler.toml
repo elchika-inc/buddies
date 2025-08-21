@@ -1,6 +1,7 @@
 name = "pawmatch-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # 環境変数
 [vars]
@@ -17,6 +18,12 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "local-pawmatch-db" # ローカル開発用ID
 migrations_dir = "migrations"
+
+# Service Binding - 画像変換Worker
+[[services]]
+binding = "IMAGE_WORKER"
+service = "pawmatch-image-worker"
+environment = "production"
 
 # カスタムドメイン設定
 [env.production]

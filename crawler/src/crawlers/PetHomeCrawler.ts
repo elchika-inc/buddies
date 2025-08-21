@@ -3,6 +3,7 @@ import { CrawlCheckpoint } from '../interfaces/ICrawler';
 import { BaseCrawler } from './BaseCrawler';
 import { HtmlParser } from '../utils/HtmlParser';
 import { RetryHandler } from '../utils/RetryHandler';
+import { ImageDownloader } from '../utils/ImageDownloader';
 
 /**
  * ペットホーム専用クローラー
@@ -26,12 +27,14 @@ export class PetHomeCrawler extends BaseCrawler {
     
     try {
       const baseUrl = petType === 'dog'
-        ? `${this.env.PET_HOME_BASE_URL}/dogs/tokyo/`
-        : `${this.env.PET_HOME_BASE_URL}/cats/tokyo/`;
+        ? `${this.env.PET_HOME_BASE_URL}/dogs/`
+        : `${this.env.PET_HOME_BASE_URL}/cats/`;
       
       const petsPerPage = 20;
       const maxPages = Math.ceil(limit / petsPerPage);
       let newPetsFound = 0;
+      
+      console.log(`Fetching ${limit} ${petType}s from Pet-Home...`);
       
       for (let page = 1; page <= Math.min(maxPages, 10); page++) {
         const url = `${baseUrl}?page=${page}`;
@@ -49,7 +52,7 @@ export class PetHomeCrawler extends BaseCrawler {
           }
           
           const html = await response.text();
-          return this.parseHTMLContent(html, petType, url);
+          return await this.parseHTMLContent(html, petType, url);
         }, RetryHandler.getHttpRetryConfig());
         
         // 差分チェック
@@ -108,9 +111,57 @@ export class PetHomeCrawler extends BaseCrawler {
   }
   
   /**
+   * 詳細ページから実際の画像URLを取得
+   */
+  private async fetchImageFromDetailPage(detailUrl: string, petId: string): Promise<string> {
+    try {
+      const response = await RetryHandler.execute(async () => {
+        const res = await fetch(detailUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)',
+          },
+          signal: AbortSignal.timeout(10000),
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        return res;
+      });
+      
+      const html = await response.text();
+      
+      // Pet-Homeの画像URLパターンを検索
+      const imageMatch = html.match(/<img[^>]+src="(https:\/\/image\.pet-home\.jp\/user_file\/[^"]+?)(?:_th\d+)?\.jpe?g"[^>]*alt="[^"]*"[^>]*\/>/i);
+      
+      if (imageMatch && imageMatch[1]) {
+        // サムネイルサイズを除去してフルサイズ画像URLを取得
+        const fullImageUrl = imageMatch[1].replace(/_th\d+$/, '') + '.jpg';
+        console.log(`  ✓ Found image URL: ${fullImageUrl}`);
+        return fullImageUrl;
+      }
+      
+      // 代替パターン：任意のimage.pet-home.jp画像
+      const fallbackMatch = html.match(/https:\/\/image\.pet-home\.jp\/user_file\/[\d\/]+\/\d+\.jpe?g/i);
+      if (fallbackMatch) {
+        console.log(`  ✓ Found fallback image URL: ${fallbackMatch[0]}`);
+        return fallbackMatch[0];
+      }
+      
+      console.log(`  ⚠ No image URL found for pet ${petId}`);
+      return `https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop`;
+      
+    } catch (error) {
+      console.log(`  ⚠ Failed to fetch image for pet ${petId}:`, error);
+      return `https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop`;
+    }
+  }
+
+  /**
    * HTMLコンテンツをパース
    */
-  private parseHTMLContent(html: string, petType: 'dog' | 'cat', baseUrl: string): Pet[] {
+  private async parseHTMLContent(html: string, petType: 'dog' | 'cat', baseUrl: string): Promise<Pet[]> {
     const pets: Pet[] = [];
     
     try {
@@ -127,7 +178,7 @@ export class PetHomeCrawler extends BaseCrawler {
       
       for (const element of petElements) {
         try {
-          const pet = this.parsePetElement(element, petType, baseUrl);
+          const pet = await this.parsePetElement(element, petType, baseUrl);
           if (pet) pets.push(pet);
         } catch (error) {
           console.warn('Failed to parse pet element:', error);
@@ -145,7 +196,7 @@ export class PetHomeCrawler extends BaseCrawler {
   /**
    * ペット要素を解析してPetオブジェクトを作成
    */
-  private parsePetElement(element: Element, petType: 'dog' | 'cat', baseUrl: string): Pet | null {
+  private async parsePetElement(element: Element, petType: 'dog' | 'cat', baseUrl: string): Promise<Pet | null> {
     try {
       // ID取得（data属性またはURLから）
       const idAttr = element.getAttribute('data-pet-id') || 
@@ -179,17 +230,30 @@ export class PetHomeCrawler extends BaseCrawler {
       const locationText = this.extractPetInfo(element, ['location', '場所', '地域']) || '東京都';
       const [prefecture, city] = this.parseLocation(locationText);
       
-      // 画像URL取得
-      const imgElement = element.querySelector('img');
-      const imageUrl = imgElement ? 
-        new URL(imgElement.getAttribute('src') || '', baseUrl).href :
-        `https://www.pet-home.jp/images/${petType}-${id}.jpg`;
-      
       // 詳細ページURL取得
       const linkElement = element.querySelector('a[href]');
       const sourceUrl = linkElement ?
         new URL(linkElement.getAttribute('href') || '', baseUrl).href :
         `https://www.pet-home.jp/${petType}s/tokyo/pn${id}/`;
+      
+      // 画像URL取得（詳細ページから取得）
+      const imageUrl = await this.fetchImageFromDetailPage(sourceUrl, id);
+      
+      // 画像をダウンロードして保存
+      let finalImageUrl = imageUrl;
+      if (imageUrl && !imageUrl.includes('unsplash.com')) {
+        const downloadResult = await ImageDownloader.downloadAndSave(
+          imageUrl,
+          id,
+          petType,
+          '/Users/nishikawa/projects/elchika/pawmatch/data/images'
+        );
+        
+        if (downloadResult) {
+          // ローカル画像パスを使用
+          finalImageUrl = ImageDownloader.getLocalImagePath(id, petType, 'original');
+        }
+      }
       
       // 説明文取得
       const descElement = element.querySelector('.description, .pet-desc, p');
@@ -210,7 +274,7 @@ export class PetHomeCrawler extends BaseCrawler {
         personality: ['人懐っこい', '甘えん坊'],
         medicalInfo: 'ワクチン接種済み、健康チェック済み',
         careRequirements: ['完全室内飼い', '定期健診', '愛情たっぷり'],
-        imageUrl,
+        imageUrl: finalImageUrl,
         shelterName: '動物保護センター',
         shelterContact: 'contact@pet-home.jp',
         sourceUrl,

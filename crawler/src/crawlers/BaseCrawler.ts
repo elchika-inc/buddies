@@ -1,6 +1,7 @@
 import { Env, Pet, CrawlResult } from '../types';
 import { ICrawler, CrawlOptions, CrawlCheckpoint, CrawlerState } from '../interfaces/ICrawler';
 import { RetryHandler } from '../utils/RetryHandler';
+import { ImageProcessor } from '../utils/ImageProcessor';
 
 /**
  * ベースクローラークラス
@@ -314,11 +315,10 @@ export abstract class BaseCrawler implements ICrawler {
   }
 
   /**
-   * 画像をR2に保存
+   * 画像をR2に保存（オリジナルとWebPの両方）
    */
   protected async saveImageToR2(pet: Pet): Promise<void> {
     try {
-      // デフォルト実装：継承先でオーバーライド可能
       const imageUrl = pet.imageUrl;
       if (!imageUrl || !imageUrl.startsWith('http')) {
         return;
@@ -333,29 +333,80 @@ export abstract class BaseCrawler implements ICrawler {
         });
       }, RetryHandler.getHttpRetryConfig());
       
-      if (imageResponse.ok) {
-        const imageBlob = await imageResponse.blob();
-        
-        // WebP形式でのみ保存（ファイル名は.webp拡張子）
-        const key = `${pet.type}s/${pet.id.replace(/\.(jpg|jpeg)$/, '')}.webp`;
-        
-        // 画像データをWebPに変換（実際のプロジェクトでは変換ライブラリを使用）
-        // 現在は元の画像データをWebPとして保存
-        await this.env.IMAGES_BUCKET.put(key, imageBlob, {
-          httpMetadata: {
-            contentType: 'image/webp',
-          },
-          customMetadata: {
-            petId: pet.id,
-            petType: pet.type,
-            sourceId: this.sourceId,
-            uploadedAt: new Date().toISOString(),
-            originalFormat: 'jpeg',
-          },
-        });
-        
-        console.log(`Image saved to R2 as WebP: ${key}`);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.status}`);
       }
+      
+      // 画像データを取得
+      const imageArrayBuffer = await imageResponse.arrayBuffer();
+      const imageSize = imageArrayBuffer.byteLength;
+      
+      // サイズ検証（最大10MB）
+      if (!ImageProcessor.validateImageSize(imageSize)) {
+        console.warn(`Image too large for pet ${pet.id}: ${imageSize} bytes`);
+        return;
+      }
+      
+      // コンテンツタイプを検出
+      const contentType = ImageProcessor.getContentType(imageArrayBuffer);
+      const originalExtension = ImageProcessor.getExtension(contentType);
+      
+      // メタデータの生成
+      const metadata = ImageProcessor.generateMetadata(
+        pet.id,
+        pet.type,
+        this.sourceId,
+        originalExtension
+      );
+      
+      // 1. オリジナル画像を保存
+      const originalKey = ImageProcessor.generateR2Key(
+        pet.type,
+        pet.id,
+        'original',
+        originalExtension
+      );
+      
+      await this.env.IMAGES_BUCKET.put(originalKey, imageArrayBuffer, {
+        httpMetadata: {
+          contentType,
+          cacheControl: 'public, max-age=31536000', // 1年間キャッシュ
+        },
+        customMetadata: {
+          ...metadata,
+          format: 'original',
+        },
+      });
+      
+      console.log(`Original image saved: ${originalKey} (${(imageSize / 1024).toFixed(2)}KB)`);
+      
+      // 2. WebP形式で保存
+      // 注: 実際の変換はCloudflare Image Resizing APIやWorkers内で
+      // sharp等のライブラリが使えないため、ここでは同じデータを保存
+      // 本番環境では外部APIやImage Resizing APIを使用する必要があります
+      const webpKey = ImageProcessor.generateR2Key(
+        pet.type,
+        pet.id,
+        'webp'
+      );
+      
+      // WebP変換（簡易実装）
+      const webpData = await ImageProcessor.convertToWebP(imageArrayBuffer, 85);
+      
+      await this.env.IMAGES_BUCKET.put(webpKey, webpData, {
+        httpMetadata: {
+          contentType: 'image/webp',
+          cacheControl: 'public, max-age=31536000', // 1年間キャッシュ
+        },
+        customMetadata: {
+          ...metadata,
+          format: 'webp',
+          quality: '85',
+        },
+      });
+      
+      console.log(`WebP image saved: ${webpKey}`);
+      
     } catch (error) {
       console.error(`Failed to save image for pet ${pet.id}:`, error);
     }

@@ -46,11 +46,13 @@ async function captureScreenshot(page, pet) {
     // ページが安定するまで待機
     await page.waitForTimeout(2000);
     
-    // メイン画像を探す
+    // メイン画像を探す（Pet-Homeの実際の構造に合わせて更新）
     const selectors = [
-      '.photo_area img',           // Pet-Home標準
-      '.pet_photo img',            // 代替セレクタ
-      '#main_photo img',           // 代替セレクタ
+      '.pet_photo img',              // メインの画像
+      '.photo_area img',             // 代替セレクタ
+      '#main_photo img',             // 代替セレクタ
+      '.carousel img',               // カルーセル画像
+      'img[src*="pet-home.jp"]',    // Pet-Home画像
       'img[alt*="' + pet.name + '"]' // 名前で検索
     ];
     
@@ -64,13 +66,39 @@ async function captureScreenshot(page, pet) {
     }
     
     if (!imageElement) {
-      // 画像が見つからない場合は、画像エリア全体をキャプチャ
-      console.log('  ⚠ No specific image found, capturing photo area');
-      imageElement = await page.$('.photo_area') || await page.$('main');
+      // 画像が見つからない場合は、より幅広いセレクタを試す
+      console.log('  ⚠ No specific image found, trying broader selectors');
+      
+      // 任意の画像要素を探す（ただしヘッダーやフッターは除く）
+      const allImages = await page.$$('main img, article img, .content img, img');
+      if (allImages.length > 0) {
+        // 最初の画像を使用
+        imageElement = allImages[0];
+        console.log(`  ✓ Found ${allImages.length} images, using the first one`);
+      }
     }
     
     if (!imageElement) {
-      throw new Error('No image element found');
+      // それでも見つからない場合は、ページ全体のスクリーンショット
+      console.log('  ⚠ No images found, capturing full page');
+      const screenshotBuffer = await page.screenshot({
+        type: 'png',
+        fullPage: false,
+        clip: { x: 0, y: 200, width: 800, height: 600 }
+      });
+      
+      // 直接処理に進む
+      const uploadResult = await processAndUploadImage(pet, screenshotBuffer);
+      const duration = Date.now() - startTime;
+      console.log(`  ✅ Completed with full page capture in ${duration}ms`);
+      
+      return {
+        petId: pet.id,
+        success: true,
+        duration,
+        fallbackCapture: true,
+        ...uploadResult
+      };
     }
     
     // スクリーンショットを撮影
