@@ -153,11 +153,10 @@ async function processAndUploadImage(pet, screenshotBuffer) {
       Body: jpegBuffer,
       ContentType: 'image/jpeg',
       Metadata: {
-        petId: pet.id,
-        petName: pet.name,
-        petType: pet.type,
-        sourceUrl: pet.sourceUrl,
-        capturedAt: new Date().toISOString()
+        'pet-id': pet.id,
+        'pet-type': pet.type,
+        'captured-at': new Date().toISOString()
+        // 日本語文字はヘッダーに含めないようにする
       }
     }));
     results.jpegUrl = `https://${process.env.R2_BUCKET_NAME}.r2.dev/${jpegKey}`;
