@@ -48,20 +48,26 @@ async function captureScreenshot(page, pet) {
     
     // メイン画像を探す（Pet-Homeの実際の構造に合わせて更新）
     const selectors = [
-      '.pet_photo img',              // メインの画像
-      '.photo_area img',             // 代替セレクタ
-      '#main_photo img',             // 代替セレクタ
-      '.carousel img',               // カルーセル画像
-      'img[src*="pet-home.jp"]',    // Pet-Home画像
-      'img[alt*="' + pet.name + '"]' // 名前で検索
+      '.main_thumb.img_container img[src*="image.pet-home.jp"]',  // メインサムネイル内の実際の画像
+      '.main_thumb img[alt]',                                      // altタグ付きのメイン画像
+      '.img_container img[src*="user_file"]',                      // ユーザーファイル画像
+      '.photo_area img[src*="image.pet-home.jp"]',               // 写真エリアの画像
+      'img[src*="_th320.jpg"]',                                    // 320pxサムネイル
+      'img[src*="_th320.jpeg"]'                                    // 320pxサムネイル(jpeg)
     ];
     
     let imageElement = null;
     for (const selector of selectors) {
-      imageElement = await page.$(selector);
-      if (imageElement) {
-        console.log(`  ✓ Found image with selector: ${selector}`);
-        break;
+      const element = await page.$(selector);
+      if (element) {
+        // ui_img.pngなどのUIバッジを除外
+        const src = await element.getAttribute('src');
+        if (src && !src.includes('ui_img.png') && !src.includes('global_images')) {
+          imageElement = element;
+          console.log(`  ✓ Found pet image with selector: ${selector}`);
+          console.log(`    Image URL: ${src}`);
+          break;
+        }
       }
     }
     
