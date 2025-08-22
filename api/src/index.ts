@@ -1,4 +1,4 @@
-import { Hono, Context } from 'hono';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { cache } from 'hono/cache';
 import { PetController, ImageController, HealthController } from './controllers';
@@ -12,7 +12,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', async (c, next) => {
   const origin = c.env?.['ALLOWED_ORIGIN'] || '*';
   const corsMiddleware = cors({
-    origin: [origin, 'http://localhost:3004', 'http://localhost:3005'] as string[],
+    origin: [origin, 'http://localhost:3004', 'http://localhost:3005', 'http://localhost:3006'] as string[],
     allowMethods: ['GET', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: false,
@@ -20,105 +20,62 @@ app.use('*', async (c, next) => {
   return corsMiddleware(c, next);
 });
 
-// APIバージョンごとのルーター
-const v1 = new Hono<{ Bindings: Env }>();
-
 // ========================================
-// Health & Status Endpoints (No versioning)
+// Health & Status Endpoints
 // ========================================
-app.get('/', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
+app.get('/', withEnv(async (c) => {
+  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
   return healthController.getHealthStatus(c);
 }));
 
-app.get('/health', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
+app.get('/health', withEnv(async (c) => {
+  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
   return healthController.getHealthStatus(c);
 }));
 
-app.get('/health/ready', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
+app.get('/health/ready', withEnv(async (c) => {
+  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
   return healthController.getReadinessStatus(c);
 }));
 
 // ========================================
-// API v1 Endpoints
+// API Endpoints
 // ========================================
 
 // Statistics endpoint
-v1.get('/stats', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
+app.get('/api/stats', withEnv(async (c) => {
+  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
   return healthController.getStats(c);
 }));
 
 // Pet endpoints
-v1.get('/pets', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
+app.get('/api/pets', withEnv(async (c) => {
+  const petController = new PetController(c.env.DB);
   return petController.getPets(c);
 }));
 
-v1.get('/pets/:type', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
+app.get('/api/pets/:type', withEnv(async (c) => {
+  const petController = new PetController(c.env.DB);
   return petController.getPets(c);
 }));
 
-v1.get('/pets/:type/random', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
+app.get('/api/pets/:type/random', withEnv(async (c) => {
+  const petController = new PetController(c.env.DB);
   return petController.getRandomPets(c);
 }));
 
-v1.get('/pets/:type/:id', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
+app.get('/api/pets/:type/:id', withEnv(async (c) => {
+  const petController = new PetController(c.env.DB);
   return petController.getPetById(c);
 }));
 
 // Image endpoints
-v1.get('/images/:type/:filename',
+app.get('/api/images/:type/:filename',
   cache({
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
-  withEnv(async (c: Context<{ Bindings: Env }>) => {
-    const imageController = new ImageController();
-    return imageController.proxyToImageWorker(c);
-  })
-);
-
-// Mount v1 routes
-app.route('/api/v1', v1);
-
-// Legacy support (deprecated - will be removed in future versions)
-app.get('/ready', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
-  return healthController.getReadinessStatus(c);
-}));
-
-app.get('/stats', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
-  return healthController.getStats(c);
-}));
-
-app.get('/pets/:type?', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
-  return petController.getPets(c);
-}));
-
-app.get('/pets/:type/random', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
-  return petController.getRandomPets(c);
-}));
-
-app.get('/pets/:type/:id', withEnv(async (c: Context<{ Bindings: Env }>) => {
-  const petController = new PetController(c.env!.DB);
-  return petController.getPetById(c);
-}));
-
-app.get('/images/:type/:filename',
-  cache({
-    cacheName: CONFIG.CACHE_NAME,
-    cacheControl: CONFIG.CACHE_CONTROL,
-  }),
-  withEnv(async (c: Context<{ Bindings: Env }>) => {
+  withEnv(async (c) => {
     const imageController = new ImageController();
     return imageController.proxyToImageWorker(c);
   })

@@ -5,10 +5,15 @@
  * @description 統合サービスクラスを一元的にエクスポート
  */
 
-// 統合サービス
+// 統合サービス（ファサード）
 export { DataService } from './data-service';
 export { ImageManagementService } from './image-management-service';
 export { SyncService } from './sync-service';
+
+// 分割されたコアサービス
+export { ReadinessService } from './readiness-service';
+export { StatisticsService } from './statistics-service';
+export { HealthCheckService } from './health-check-service';
 
 // 共通サービス
 export { MetadataService } from './metadata-service';
@@ -19,5 +24,4 @@ export { ImageService } from './image-service';
 export { ImageStatusService } from './image-status-service';
 export { IntegrityCheckService } from './integrity-check-service';
 export { SimpleSyncService } from './simple-sync-service';
-export { StatisticsService } from './statistics-service';
 export { SyncStatusService } from './sync-status-service';

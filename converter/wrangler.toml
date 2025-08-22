@@ -1,0 +1,22 @@
+name = "pawmatch-image-converter"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# R2バケット設定（画像保存用）
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "pawmatch-images"
+
+# D1データベース設定（メタデータ更新用）
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "local-pawmatch-db"
+
+# カスタムドメイン設定
+[env.production]
+route = { pattern = "images.pawmatch.app/*", zone_name = "pawmatch.app" }
+
+# 開発環境設定
+[env.development]

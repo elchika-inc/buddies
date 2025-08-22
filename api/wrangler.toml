@@ -22,7 +22,7 @@ migrations_dir = "migrations"
 # Service Binding - 画像変換Worker
 [[services]]
 binding = "IMAGE_WORKER"
-service = "pawmatch-image-worker"
+service = "pawmatch-image-converter"
 environment = "production"
 
 # カスタムドメイン設定

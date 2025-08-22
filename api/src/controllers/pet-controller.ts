@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { validatePetType, parseJsonField } from '../utils/validation';
 import { handleError, NotFoundError } from '../utils/error-handler';
 import { successResponse, paginationMeta } from '../utils/response-formatter';
+import { RawPetRecord, isCountResult } from '../types/database';
 
 /**
  * ペットコントローラー
@@ -13,51 +14,23 @@ export class PetController {
   constructor(private db: D1Database) {}
 
   /**
-   * ペット一覧を取得
+   * ペット一覧を取得（簡素化版）
    * 
    * @param {Context} c - Honoコンテキスト
    * @returns {Promise<Response>} ペット一覧のレスポンス
-   * @query {string} type - ペットタイプ（dog/cat）
-   * @query {string} prefecture - 都道府県でフィルタリング
-   * @query {number} limit - 取得件数（デフォルト: 20）
-   * @query {number} offset - オフセット
    */
   async getPets(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
       const page = parseInt(c.req.query('page') || '1');
-      const limit = parseInt(c.req.query('limit') || '20');
+      const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
       const offset = (page - 1) * limit;
       const prefecture = c.req.query('prefecture');
 
-      // ペットタイプが指定されていない場合は猫と犬の両方を返す
-      if (!petType) {
-        const [dogsResult, catsResult] = await Promise.all([
-          this.fetchPets('dog', limit, offset, prefecture),
-          this.fetchPets('cat', limit, offset, prefecture)
-        ]);
-
-        return c.json(successResponse(
-          {
-            dogs: dogsResult.pets,
-            cats: catsResult.pets
-          },
-          {
-            page,
-            limit,
-            total: dogsResult.total + catsResult.total
-          }
-        ));
-      }
-
-      // 特定のペットタイプを返す
-      const result = await this.fetchPets(petType, limit, offset, prefecture);
+      const result = await this.fetchPetsSimple(petType ?? null, limit, offset, prefecture);
       
       return c.json(successResponse(
-        {
-          pets: result.pets,
-          type: petType
-        },
+        result.data,
         paginationMeta(page, limit, result.total)
       ));
 
@@ -90,7 +63,7 @@ export class PetController {
         .first();
 
       if (pet) {
-        return c.json(successResponse(this.formatPet(pet)));
+        return c.json(successResponse(this.formatPet(pet as RawPetRecord)));
       }
 
       // ペットが見つからない場合
@@ -125,7 +98,7 @@ export class PetController {
 
       if (dbPets.results && dbPets.results.length > 0) {
         return c.json(successResponse({
-          pets: dbPets.results.map(pet => this.formatPet(pet)),
+          pets: dbPets.results.map(pet => this.formatPet(pet as RawPetRecord)),
           type: petType,
           count: dbPets.results.length
         }));
@@ -139,47 +112,75 @@ export class PetController {
     }
   }
 
-  private async fetchPets(type: string, limit: number, offset: number, prefecture?: string) {
-    // まずデータベースから取得を試みる
-    let query = 'SELECT * FROM pets WHERE type = ?';
-    const params: (string | number)[] = [type];
-
+  /**
+   * ペットデータ取得（簡素化版）
+   * 
+   * @description 単一のクエリでペットタイプに関わらずデータを取得
+   */
+  private async fetchPetsSimple(
+    type: string | null, 
+    limit: number, 
+    offset: number, 
+    prefecture?: string
+  ): Promise<{ data: any; total: number }> {
+    // WHERE条件を動的に構築
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+    
+    if (type) {
+      conditions.push('type = ?');
+      params.push(type);
+    }
+    
     if (prefecture) {
-      query += ' AND prefecture = ?';
+      conditions.push('prefecture = ?');
       params.push(prefecture);
     }
-
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
-
-    const countQuery = prefecture
-      ? 'SELECT COUNT(*) as total FROM pets WHERE type = ? AND prefecture = ?'
-      : 'SELECT COUNT(*) as total FROM pets WHERE type = ?';
-    const countParams = prefecture ? [type, prefecture] : [type];
-
+    
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
+    // ペットデータとカウントを同時取得
     const [petsResult, countResult] = await Promise.all([
-      this.db.prepare(query).bind(...params).all(),
-      this.db.prepare(countQuery).bind(...countParams).first()
+      this.db.prepare(
+        `SELECT * FROM pets ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+      ).bind(...params, limit, offset).all(),
+      
+      this.db.prepare(
+        `SELECT COUNT(*) as total FROM pets ${whereClause}`
+      ).bind(...params).first()
     ]);
 
-    if (petsResult.results && petsResult.results.length > 0) {
+    if (!petsResult.results) {
+      throw new Error('Database query failed');
+    }
+
+    const total = isCountResult(countResult) ? countResult.total : 0;
+    const pets = petsResult.results
+      .map(pet => this.formatPet(pet as RawPetRecord));
+
+    // タイプが指定されていない場合は犬猫を分離して返す
+    if (!type) {
+      const dogs = pets.filter(p => p.type === 'dog');
+      const cats = pets.filter(p => p.type === 'cat');
       return {
-        pets: petsResult.results.map(pet => this.formatPet(pet)),
-        total: (countResult as { total: number })?.total || 0
+        data: { dogs, cats },
+        total
       };
     }
 
-    // データベースが利用できない場合はエラーを返す
-    throw new Error('Database not available');
+    return {
+      data: { pets, type },
+      total
+    };
   }
 
-  private formatPet(pet: Record<string, unknown>) {
+  private formatPet(pet: RawPetRecord) {
     return {
       ...pet,
-      personality: parseJsonField(pet['personality'] as string | null, ['friendly']),
-      care_requirements: parseJsonField(pet['care_requirements'] as string | null, ['indoor']),
-      good_with: parseJsonField(pet['good_with'] as string | null, []),
-      health_notes: parseJsonField(pet['health_notes'] as string | null, [])
+      personality: parseJsonField(pet.personality ?? null, ['friendly']),
+      care_requirements: parseJsonField(pet.care_requirements ?? null, ['indoor']),
+      good_with: parseJsonField(pet.good_with ?? null, []),
+      health_notes: parseJsonField(pet.health_notes ?? null, [])
     };
   }
 }

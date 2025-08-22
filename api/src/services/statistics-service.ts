@@ -1,34 +1,33 @@
 /**
- * 統計情報サービス
+ * 統計情報管理サービス
  * 
- * ペットデータの統計情報の計算と管理に特化
+ * @description ペットデータの統計情報を提供する専門サービス
  */
 
 import type { D1Database } from '@cloudflare/workers-types';
+import { MetadataService } from './metadata-service';
+import type { PetStatistics } from '../types/services';
+import type { DetailedStatistics } from '../types/statistics';
 
-interface PetStatistics {
-  totalPets: number;
-  totalDogs: number;
-  totalCats: number;
-  petsWithJpeg: number;
-  petsWithWebp: number;
-}
-
-interface DataReadiness {
-  isReady: boolean;
-  totalPets: number;
-  totalDogs: number;
-  totalCats: number;
-  petsWithJpeg: number;
-  imageCoverage: number;
-  message: string;
-}
-
+/**
+ * 統計情報管理サービス
+ * 
+ * @class StatisticsService
+ * @description 単一責任: ペット統計情報の取得と管理
+ */
 export class StatisticsService {
-  constructor(private readonly db: D1Database) {}
+  private metadataService: MetadataService;
+
+  constructor(private readonly db: D1Database) {
+    this.metadataService = new MetadataService(db);
+  }
 
   /**
-   * ペットの統計情報を取得
+   * ペット統計情報を取得
+   * 
+   * @returns {Promise<PetStatistics>} ペットの統計情報
+   * @description 犬・猫の総数、画像保有率などの詳細統計を取得
+   * @caches 結果はメタデータにキャッシュされる
    */
   async getPetStatistics(): Promise<PetStatistics> {
     const stats = await this.db.prepare(`
@@ -37,96 +36,132 @@ export class StatisticsService {
         SUM(CASE WHEN type = 'dog' THEN 1 ELSE 0 END) as total_dogs,
         SUM(CASE WHEN type = 'cat' THEN 1 ELSE 0 END) as total_cats,
         SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as pets_with_jpeg,
-        SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as pets_with_webp
+        SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as pets_with_webp,
+        SUM(CASE WHEN type = 'dog' AND has_jpeg = 1 THEN 1 ELSE 0 END) as dogs_with_jpeg,
+        SUM(CASE WHEN type = 'dog' AND has_webp = 1 THEN 1 ELSE 0 END) as dogs_with_webp,
+        SUM(CASE WHEN type = 'cat' AND has_jpeg = 1 THEN 1 ELSE 0 END) as cats_with_jpeg,
+        SUM(CASE WHEN type = 'cat' AND has_webp = 1 THEN 1 ELSE 0 END) as cats_with_webp
       FROM pets
-    `).first<{
-      total_pets: number;
-      total_dogs: number;
-      total_cats: number;
-      pets_with_jpeg: number;
-      pets_with_webp: number;
-    }>();
+    `).first();
 
-    if (!stats) {
-      throw new Error('Failed to get pet statistics');
-    }
-
-    return {
-      totalPets: stats.total_pets,
-      totalDogs: stats.total_dogs,
-      totalCats: stats.total_cats,
-      petsWithJpeg: stats.pets_with_jpeg,
-      petsWithWebp: stats.pets_with_webp
+    const result: PetStatistics = {
+      totalPets: stats?.total_pets || 0,
+      totalDogs: stats?.total_dogs || 0,
+      totalCats: stats?.total_cats || 0,
+      petsWithJpeg: stats?.pets_with_jpeg || 0,
+      petsWithWebp: stats?.pets_with_webp || 0,
+      dogsWithJpeg: stats?.dogs_with_jpeg || 0,
+      dogsWithWebp: stats?.dogs_with_webp || 0,
+      catsWithJpeg: stats?.cats_with_jpeg || 0,
+      catsWithWebp: stats?.cats_with_webp || 0
     };
+
+    // 統計をキャッシュ
+    await this.metadataService.setMetadata('pet_statistics', JSON.stringify(result));
+    await this.metadataService.setMetadata('pet_statistics_updated_at', new Date().toISOString());
+
+    return result;
   }
 
   /**
-   * 画像カバレッジを計算
+   * 詳細統計を取得
+   * 
+   * @returns {Promise<DetailedStatistics>} 詳細な統計情報
+   * @description 地域別、年齢別、最近のペット、カバレッジトレンドなどの詳細統計
    */
-  async calculateImageCoverage(): Promise<number> {
-    const stats = await this.getPetStatistics();
-    return stats.totalPets > 0 
-      ? stats.petsWithJpeg / stats.totalPets 
-      : 0;
-  }
-
-  /**
-   * 最近追加されたペットを取得
-   */
-  async getRecentPets(limit: number = 10): Promise<any[]> {
-    const recentPets = await this.db.prepare(`
-      SELECT id, type, name, has_jpeg, has_webp, created_at
-      FROM pets
-      ORDER BY created_at DESC
-      LIMIT ?
-    `).bind(limit).all();
-
-    return recentPets.results || [];
-  }
-
-  /**
-   * ペットタイプ別の統計を取得
-   */
-  async getStatsByType(type: 'dog' | 'cat'): Promise<{
-    total: number;
-    withImages: number;
-    withoutImages: number;
-  }> {
-    const stats = await this.db.prepare(`
+  async getDetailedStatistics(): Promise<DetailedStatistics> {
+    // 地域別統計
+    const prefectureStats = await this.db.prepare(`
       SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as with_images,
-        SUM(CASE WHEN has_jpeg = 0 OR has_jpeg IS NULL THEN 1 ELSE 0 END) as without_images
-      FROM pets
-      WHERE type = ?
-    `).bind(type).first<{
-      total: number;
-      with_images: number;
-      without_images: number;
-    }>();
-
-    return {
-      total: stats?.total || 0,
-      withImages: stats?.with_images || 0,
-      withoutImages: stats?.without_images || 0
-    };
-  }
-
-  /**
-   * 都道府県別の統計を取得
-   */
-  async getStatsByPrefecture(): Promise<Record<string, number>> {
-    const results = await this.db.prepare(`
-      SELECT prefecture, COUNT(*) as count
+        prefecture,
+        COUNT(*) as count,
+        SUM(CASE WHEN type = 'dog' THEN 1 ELSE 0 END) as dogs,
+        SUM(CASE WHEN type = 'cat' THEN 1 ELSE 0 END) as cats
       FROM pets
       GROUP BY prefecture
       ORDER BY count DESC
-    `).all<{ prefecture: string; count: number }>();
+      LIMIT 10
+    `).all();
 
-    const stats: Record<string, number> = {};
-    for (const row of results.results || []) {
-      stats[row.prefecture] = row.count;
-    }
-    return stats;
+    // 年齢分布
+    const ageDistribution = await this.db.prepare(`
+      SELECT 
+        age,
+        COUNT(*) as count
+      FROM pets
+      WHERE age IS NOT NULL
+      GROUP BY age
+      ORDER BY age
+    `).all();
+
+    // 最近追加されたペット
+    const recentPets = await this.db.prepare(`
+      SELECT 
+        id,
+        type,
+        name,
+        created_at
+      FROM pets
+      ORDER BY created_at DESC
+      LIMIT 10
+    `).all();
+
+    // 画像カバレッジの推移（日別）
+    const coverageTrend = await this.db.prepare(`
+      SELECT 
+        DATE(image_checked_at) as date,
+        COUNT(*) as checked,
+        SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as with_images
+      FROM pets
+      WHERE image_checked_at IS NOT NULL
+      GROUP BY DATE(image_checked_at)
+      ORDER BY date DESC
+      LIMIT 7
+    `).all();
+
+    return {
+      prefectureDistribution: (prefectureStats.results || []).map(stat => ({
+        prefecture: stat['prefecture'] as string,
+        count: stat['count'] as number,
+        dogs: stat['dogs'] as number,
+        cats: stat['cats'] as number
+      })),
+      ageDistribution: (ageDistribution.results || []).map(stat => ({
+        age: stat['age'] as number,
+        count: stat['count'] as number
+      })),
+      recentPets: (recentPets.results || []).map(pet => ({
+        id: pet['id'] as string,
+        type: pet['type'] as 'dog' | 'cat',
+        name: pet['name'] as string,
+        created_at: pet['created_at'] as string
+      })),
+      coverageTrend: (coverageTrend.results || []).map(trend => ({
+        date: trend['date'] as string,
+        checked: trend['checked'] as number,
+        with_images: trend['with_images'] as number
+      })),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * ストレージ使用量を推定
+   * 
+   * @returns {Promise<{ used: number; estimated: number }>} ストレージ使用量（バイト）
+   */
+  async estimateStorageUsage(): Promise<{ used: number; estimated: number }> {
+    const stats = await this.getPetStatistics();
+    
+    // 平均ファイルサイズ（設定可能にする）
+    const avgJpegSize = 150 * 1024; // 150KB
+    const avgWebpSize = 100 * 1024; // 100KB
+    
+    const storageUsed = (stats.petsWithJpeg * avgJpegSize) + (stats.petsWithWebp * avgWebpSize);
+    
+    return {
+      used: storageUsed,
+      estimated: storageUsed * 1.2 // 20%のマージン
+    };
   }
 }

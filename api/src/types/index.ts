@@ -8,6 +8,9 @@ export * from './models';
 // サービス層の型
 export * from './services';
 
+// 統計情報の型
+export * from './statistics';
+
 // 共通型
 export * from './common';
 

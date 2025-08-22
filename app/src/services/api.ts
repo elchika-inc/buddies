@@ -131,7 +131,7 @@ class PetApiService {
         limit: limit.toString(),
         ...(prefecture && { prefecture })
       });
-      const endpoint = `/pets/cat?${queryParams}`;
+      const endpoint = `/api/pets/cat?${queryParams}`;
       return this.fetchApi<LegacyApiResponse<any>>(endpoint, true);
     }
   }
@@ -140,7 +140,7 @@ class PetApiService {
   async getCatById(id: string) {
     const endpoint = USE_SAMPLE_DATA
       ? `/api/sample/cats/${id}`
-      : `/pets/cat/${id}`;
+      : `/api/pets/cat/${id}`;
       
     return this.fetchApi<{ cat: any }>(endpoint);
   }
@@ -149,7 +149,7 @@ class PetApiService {
   async getPrefectures() {
     const endpoint = USE_SAMPLE_DATA
       ? '/api/sample/prefectures'
-      : '/prefectures';
+      : '/api/prefectures';
       
     return this.fetchApi<{ prefectures: string[] }>(endpoint);
   }
@@ -158,7 +158,7 @@ class PetApiService {
   async getStats() {
     const endpoint = USE_SAMPLE_DATA
       ? '/api/sample/stats'
-      : '/stats';
+      : '/api/stats';
       
     return this.fetchApi<{
       total: number;
@@ -188,7 +188,7 @@ class PetApiService {
         limit: limit.toString(),
         ...(prefecture && { prefecture })
       });
-      const endpoint = `/pets/dog?${queryParams}`;
+      const endpoint = `/api/pets/dog?${queryParams}`;
       return this.fetchApi<LegacyApiResponse<any>>(endpoint, true);
     }
   }
@@ -197,7 +197,7 @@ class PetApiService {
   async getDogById(id: string) {
     const endpoint = USE_SAMPLE_DATA
       ? `/api/sample/dogs/${id}`
-      : `/pets/dog/${id}`;
+      : `/api/pets/dog/${id}`;
       
     return this.fetchApi<{ dog: any }>(endpoint);
   }
