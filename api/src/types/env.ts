@@ -28,6 +28,6 @@ export interface Env {
   // Environment
   ENVIRONMENT?: 'development' | 'staging' | 'production';
   
-  // Other potential environment variables
-  [key: string]: any;
+  // CORS設定
+  ALLOWED_ORIGIN?: string;
 }

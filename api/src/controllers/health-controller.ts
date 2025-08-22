@@ -1,18 +1,17 @@
 import { Context } from 'hono';
-import { DataReadinessService } from '../services/data-readiness-service';
-import { StatisticsService } from '../services/statistics-service';
-import { ImageStatusService } from '../services/image-status-service';
+import { DataService } from '../services/data-service';
+import { ImageManagementService } from '../services/image-management-service';
 import { successResponse, errorResponse } from '../utils/response-formatter';
+import type { DataReadiness } from '../types/services';
+import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
 export class HealthController {
-  private dataReadinessService: DataReadinessService;
-  private statisticsService: StatisticsService;
-  private imageStatusService: ImageStatusService;
+  private dataService: DataService;
+  private imageService: ImageManagementService;
 
   constructor(private db: D1Database, private r2: R2Bucket) {
-    this.dataReadinessService = new DataReadinessService(db);
-    this.statisticsService = new StatisticsService(db);
-    this.imageStatusService = new ImageStatusService(db);
+    this.dataService = new DataService(db, r2);
+    this.imageService = new ImageManagementService(db, r2);
   }
 
   async getHealthStatus(c: Context) {
@@ -25,13 +24,13 @@ export class HealthController {
 
   async getReadinessStatus(c: Context) {
     try {
-      const readiness = await this.dataReadinessService.getDataReadiness();
+      const readiness = await this.dataService.getDataReadiness();
 
       if (!readiness.isReady) {
         return c.json(errorResponse(
           readiness.message,
           'SERVICE_NOT_READY',
-          { readiness }
+          undefined
         ), 503);
       }
 
@@ -52,20 +51,19 @@ export class HealthController {
 
   async getStats(c: Context) {
     try {
-      const [stats, imageStats, recentPets, missingImages] = await Promise.all([
-        this.statisticsService.getPetStatistics(),
-        this.imageStatusService.getImageStatistics(),
-        this.statisticsService.getRecentPets(10),
-        this.imageStatusService.getPetsWithMissingImages(10)
+      const [stats, imageStats, detailedStats] = await Promise.all([
+        this.dataService.getPetStatistics(),
+        this.imageService.getImageStatistics(),
+        this.dataService.getDetailedStatistics()
       ]);
 
-      const prefectureStats = await this.statisticsService.getStatsByPrefecture();
+      const missingImages = await this.imageService.getPetsWithMissingImages(10);
 
       return c.json(successResponse({
         pets: stats,
         images: imageStats,
-        byPrefecture: prefectureStats,
-        recentPets,
+        byPrefecture: detailedStats.prefectureDistribution,
+        recentPets: detailedStats.recentPets,
         missingImages
       }));
 

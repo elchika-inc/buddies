@@ -7,17 +7,7 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { MetadataService } from './metadata-service';
 import { StatisticsService } from './statistics-service';
-
-interface DataReadiness {
-  isReady: boolean;
-  totalPets: number;
-  totalDogs: number;
-  totalCats: number;
-  petsWithJpeg: number;
-  imageCoverage: number;
-  lastSyncAt: string | null;
-  message: string;
-}
+import type { DataReadiness } from '../types/services';
 
 export class DataReadinessService {
   private metadataService: MetadataService;

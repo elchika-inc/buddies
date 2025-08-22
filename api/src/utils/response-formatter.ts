@@ -4,6 +4,8 @@
  * 統一されたAPI規約に基づいてレスポンスを整形
  */
 
+import type { JsonValue, JsonObject } from '../types/common';
+
 /**
  * snake_caseをcamelCaseに変換
  */
@@ -14,27 +16,28 @@ export function snakeToCamel(str: string): string {
 /**
  * オブジェクトのキーをsnake_caseからcamelCaseに変換
  */
-export function convertKeysToCamelCase(obj: any): any {
+export function convertKeysToCamelCase<T = JsonValue>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => convertKeysToCamelCase(item));
+    return obj.map(item => convertKeysToCamelCase(item)) as T;
   }
 
   if (typeof obj !== 'object') {
     return obj;
   }
 
-  const converted: any = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+  const converted: JsonObject = {};
+  const source = obj as JsonObject;
+  for (const key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
       const camelKey = snakeToCamel(key);
-      converted[camelKey] = convertKeysToCamelCase(obj[key]);
+      converted[camelKey] = convertKeysToCamelCase(source[key]);
     }
   }
-  return converted;
+  return converted as T;
 }
 
 /**
@@ -68,7 +71,7 @@ export function successResponse<T>(
 export function errorResponse(
   message: string,
   code?: string,
-  details?: any
+  details?: JsonValue
 ): ApiErrorResponse {
   return {
     success: false,
@@ -124,7 +127,7 @@ export interface ApiErrorResponse {
   error: {
     message: string;
     code: string;
-    details?: any;
+    details?: JsonValue;
   };
   timestamp: string;
 }

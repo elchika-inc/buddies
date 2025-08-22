@@ -5,6 +5,7 @@ import { PetController } from './controllers/pet-controller';
 import { ImageController } from './controllers/image-controller';
 import { HealthController } from './controllers/health-controller';
 import { CONFIG } from './utils/constants';
+import { withEnv } from './middleware/env-middleware';
 import type { Env } from './types/env';
 
 type HonoApp = Hono<{ Bindings: Env }>;
@@ -15,7 +16,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', async (c, next) => {
   const origin = c.env?.ALLOWED_ORIGIN || '*';
   const corsMiddleware = cors({
-    origin: [origin, 'http://localhost:3004', 'http://localhost:3005'],
+    origin: [origin, 'http://localhost:3004', 'http://localhost:3005'] as string[],
     allowMethods: ['GET', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: false,
@@ -29,59 +30,51 @@ const v1 = new Hono<{ Bindings: Env }>();
 // ========================================
 // Health & Status Endpoints (No versioning)
 // ========================================
-app.get('/', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+app.get('/', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getHealthStatus(c);
-});
+}));
 
-app.get('/health', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+app.get('/health', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getHealthStatus(c);
-});
+}));
 
-app.get('/health/ready', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+app.get('/health/ready', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getReadinessStatus(c);
-});
+}));
 
 // ========================================
 // API v1 Endpoints
 // ========================================
 
 // Statistics endpoint
-v1.get('/stats', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+v1.get('/stats', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getStats(c);
-});
+}));
 
 // Pet endpoints
-v1.get('/pets', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+v1.get('/pets', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getPets(c);
-});
+}));
 
-v1.get('/pets/:type', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+v1.get('/pets/:type', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getPets(c);
-});
+}));
 
-v1.get('/pets/:type/random', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+v1.get('/pets/:type/random', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getRandomPets(c);
-});
+}));
 
-v1.get('/pets/:type/:id', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+v1.get('/pets/:type/:id', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getPetById(c);
-});
+}));
 
 // Image endpoints
 v1.get('/images/:type/:filename',
@@ -89,57 +82,50 @@ v1.get('/images/:type/:filename',
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
-  async (c: Context<{ Bindings: Env }>) => {
-    if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
+  withEnv(async (c: Context<{ Bindings: Env }>) => {
     const imageController = new ImageController();
     return imageController.proxyToImageWorker(c);
-  }
+  })
 );
 
 // Mount v1 routes
 app.route('/api/v1', v1);
 
 // Legacy support (deprecated - will be removed in future versions)
-app.get('/ready', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+app.get('/ready', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getReadinessStatus(c);
-});
+}));
 
-app.get('/stats', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
+app.get('/stats', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const healthController = new HealthController(c.env!.DB, c.env!.IMAGES_BUCKET);
   return healthController.getStats(c);
-});
+}));
 
-app.get('/pets/:type?', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+app.get('/pets/:type?', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getPets(c);
-});
+}));
 
-app.get('/pets/:type/random', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+app.get('/pets/:type/random', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getRandomPets(c);
-});
+}));
 
-app.get('/pets/:type/:id', async (c: Context<{ Bindings: Env }>) => {
-  if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
-  const petController = new PetController(c.env.DB);
+app.get('/pets/:type/:id', withEnv(async (c: Context<{ Bindings: Env }>) => {
+  const petController = new PetController(c.env!.DB);
   return petController.getPetById(c);
-});
+}));
 
 app.get('/images/:type/:filename',
   cache({
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
-  async (c: Context<{ Bindings: Env }>) => {
-    if (!c.env) return c.json({ error: 'Environment not configured' }, 500);
+  withEnv(async (c: Context<{ Bindings: Env }>) => {
     const imageController = new ImageController();
     return imageController.proxyToImageWorker(c);
-  }
+  })
 );
 
 // 404 handler

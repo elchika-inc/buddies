@@ -12,7 +12,7 @@ export class ImageController {
       const format = c.req.query('format') || 'auto';
 
       // バリデーション
-      if (petType !== 'dogs' && petType !== 'cats') {
+      if (petType !== 'dog' && petType !== 'cat') {
         throw new Error('Invalid pet type');
       }
       
@@ -21,7 +21,7 @@ export class ImageController {
       const requestedFormat = fileMatch ? fileMatch[1] : format;
 
       // 画像変換Workerへリクエストをプロキシ
-      const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}/${petId}/${requestedFormat}`;
+      const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}s/${petId}/${requestedFormat}`;
       
       // Service Bindingを使用して内部通信
       if (!c.env?.IMAGE_WORKER) {
