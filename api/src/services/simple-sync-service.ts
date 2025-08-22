@@ -4,29 +4,84 @@
  * petsテーブルのカラムとsync_metadataテーブルのみを使用
  */
 
+import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+
+interface PetStats {
+  total_pets: number;
+  total_dogs: number;
+  total_cats: number;
+  pets_with_jpeg: number;
+  pets_with_webp: number;
+}
+
+interface DataReadiness {
+  isReady: boolean;
+  totalPets: number;
+  totalDogs: number;
+  totalCats: number;
+  petsWithJpeg: number;
+  imageCoverage: number;
+  lastSyncAt: string | null;
+  message: string;
+}
+
+interface PetUpdate {
+  petId: string;
+  hasJpeg: boolean;
+  hasWebp: boolean;
+}
+
+interface PetWithMissingImage {
+  id: string;
+  type: string;
+  name: string;
+  source_url: string;
+  screenshot_requested_at: string | null;
+}
+
+interface DetailedStats {
+  readiness: DataReadiness;
+  missingImages: {
+    count: number;
+    samples: PetWithMissingImage[];
+  };
+  pendingScreenshots: {
+    count: number;
+    samples: PetWithMissingImage[];
+  };
+  recentPets: any[];
+  timestamp: string;
+}
+
+interface IntegrityCheckResult {
+  checkedCount: number;
+  updatedCount: number;
+  timestamp: string;
+}
+
 export class SimpleSyncService {
-  constructor(db, r2) {
-    this.db = db;
-    this.r2 = r2;
-  }
+  constructor(
+    private readonly db: D1Database,
+    private readonly r2: R2Bucket
+  ) {}
 
   /**
    * ペットの画像状態を更新
    */
-  async updatePetImageStatus(petId, hasJpeg, hasWebp) {
+  async updatePetImageStatus(petId: string, hasJpeg: boolean, hasWebp: boolean): Promise<void> {
     await this.db.prepare(`
       UPDATE pets SET 
         has_jpeg = ?,
         has_webp = ?,
         image_checked_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).bind(hasJpeg, hasWebp, petId).run();
+    `).bind(hasJpeg ? 1 : 0, hasWebp ? 1 : 0, petId).run();
   }
 
   /**
    * スクリーンショット要求を記録
    */
-  async markScreenshotRequested(petId) {
+  async markScreenshotRequested(petId: string): Promise<void> {
     await this.db.prepare(`
       UPDATE pets SET 
         screenshot_requested_at = CURRENT_TIMESTAMP
@@ -37,11 +92,11 @@ export class SimpleSyncService {
   /**
    * スクリーンショット完了を記録
    */
-  async markScreenshotCompleted(petId) {
+  async markScreenshotCompleted(petId: string): Promise<void> {
     await this.db.prepare(`
       UPDATE pets SET 
         screenshot_completed_at = CURRENT_TIMESTAMP,
-        has_jpeg = TRUE,
+        has_jpeg = 1,
         image_checked_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(petId).run();
@@ -50,7 +105,7 @@ export class SimpleSyncService {
   /**
    * 全体の同期状態を更新
    */
-  async updateSyncMetadata() {
+  async updateSyncMetadata(): Promise<{ isReady: boolean; stats: PetStats; imageCoverage: number }> {
     // 基本統計を取得
     const stats = await this.db.prepare(`
       SELECT 
@@ -60,10 +115,14 @@ export class SimpleSyncService {
         SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as pets_with_jpeg,
         SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as pets_with_webp
       FROM pets
-    `).first();
+    `).first<PetStats>();
+
+    if (!stats) {
+      throw new Error('Failed to get pet statistics');
+    }
 
     // メタデータを一括更新
-    const updates = [
+    const updates: [string, string][] = [
       ['total_pets', stats.total_pets.toString()],
       ['total_dogs', stats.total_dogs.toString()],
       ['total_cats', stats.total_cats.toString()],
@@ -83,9 +142,9 @@ export class SimpleSyncService {
     }
 
     // データ準備完了判定
-    const minDogs = parseInt(await this.getMetadata('min_required_dogs', '30'));
-    const minCats = parseInt(await this.getMetadata('min_required_cats', '30'));
-    const minCoverage = parseFloat(await this.getMetadata('min_image_coverage', '0.8'));
+    const minDogs = parseInt(await this.getMetadata('min_required_dogs', '30') || '30');
+    const minCats = parseInt(await this.getMetadata('min_required_cats', '30') || '30');
+    const minCoverage = parseFloat(await this.getMetadata('min_image_coverage', '0.8') || '0.8');
     
     const imageCoverage = stats.total_pets > 0 
       ? stats.pets_with_jpeg / stats.total_pets 
@@ -103,11 +162,11 @@ export class SimpleSyncService {
   /**
    * メタデータ値を取得
    */
-  async getMetadata(key, defaultValue = null) {
+  async getMetadata(key: string, defaultValue: string | null = null): Promise<string | null> {
     const result = await this.db
       .prepare('SELECT value FROM sync_metadata WHERE key = ?')
       .bind(key)
-      .first();
+      .first<{ value: string }>();
     
     return result?.value || defaultValue;
   }
@@ -115,7 +174,7 @@ export class SimpleSyncService {
   /**
    * メタデータ値を設定
    */
-  async setMetadata(key, value) {
+  async setMetadata(key: string, value: string): Promise<void> {
     await this.db.prepare(`
       INSERT INTO sync_metadata (key, value, updated_at) 
       VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -128,20 +187,20 @@ export class SimpleSyncService {
   /**
    * データ準備状態を取得
    */
-  async getDataReadiness() {
+  async getDataReadiness(): Promise<DataReadiness> {
     const isReady = await this.getMetadata('data_ready', 'false') === 'true';
-    const totalPets = parseInt(await this.getMetadata('total_pets', '0'));
-    const totalDogs = parseInt(await this.getMetadata('total_dogs', '0'));
-    const totalCats = parseInt(await this.getMetadata('total_cats', '0'));
-    const petsWithJpeg = parseInt(await this.getMetadata('pets_with_jpeg', '0'));
+    const totalPets = parseInt(await this.getMetadata('total_pets', '0') || '0');
+    const totalDogs = parseInt(await this.getMetadata('total_dogs', '0') || '0');
+    const totalCats = parseInt(await this.getMetadata('total_cats', '0') || '0');
+    const petsWithJpeg = parseInt(await this.getMetadata('pets_with_jpeg', '0') || '0');
     const lastSyncAt = await this.getMetadata('last_sync_at');
 
-    const minDogs = parseInt(await this.getMetadata('min_required_dogs', '30'));
-    const minCats = parseInt(await this.getMetadata('min_required_cats', '30'));
+    const minDogs = parseInt(await this.getMetadata('min_required_dogs', '30') || '30');
+    const minCats = parseInt(await this.getMetadata('min_required_cats', '30') || '30');
 
     const imageCoverage = totalPets > 0 ? petsWithJpeg / totalPets : 0;
 
-    let message;
+    let message: string;
     if (isReady) {
       message = 'Data is ready for use';
     } else {
@@ -165,14 +224,14 @@ export class SimpleSyncService {
   /**
    * 画像が不足しているペットを取得
    */
-  async getPetsWithMissingImages(limit = 50) {
+  async getPetsWithMissingImages(limit: number = 50): Promise<PetWithMissingImage[]> {
     const pets = await this.db.prepare(`
       SELECT id, type, name, source_url, screenshot_requested_at
       FROM pets 
-      WHERE has_jpeg = FALSE OR has_jpeg IS NULL
+      WHERE has_jpeg = 0 OR has_jpeg IS NULL
       ORDER BY created_at DESC
       LIMIT ?
-    `).bind(limit).all();
+    `).bind(limit).all<PetWithMissingImage>();
 
     return pets.results || [];
   }
@@ -180,7 +239,7 @@ export class SimpleSyncService {
   /**
    * スクリーンショット待ちのペットを取得
    */
-  async getPendingScreenshots(limit = 20) {
+  async getPendingScreenshots(limit: number = 20): Promise<PetWithMissingImage[]> {
     const pets = await this.db.prepare(`
       SELECT id, type, name, source_url, screenshot_requested_at
       FROM pets 
@@ -188,7 +247,7 @@ export class SimpleSyncService {
         AND screenshot_completed_at IS NULL
       ORDER BY screenshot_requested_at ASC
       LIMIT ?
-    `).bind(limit).all();
+    `).bind(limit).all<PetWithMissingImage>();
 
     return pets.results || [];
   }
@@ -196,7 +255,7 @@ export class SimpleSyncService {
   /**
    * バッチでペットの画像状態を更新
    */
-  async updateMultiplePetImageStatus(petUpdates) {
+  async updateMultiplePetImageStatus(petUpdates: PetUpdate[]): Promise<{ isReady: boolean; stats: PetStats; imageCoverage: number }> {
     // petUpdates = [{ petId, hasJpeg, hasWebp }, ...]
     for (const update of petUpdates) {
       await this.updatePetImageStatus(update.petId, update.hasJpeg, update.hasWebp);
@@ -209,7 +268,7 @@ export class SimpleSyncService {
   /**
    * 詳細統計を取得
    */
-  async getDetailedStats() {
+  async getDetailedStats(): Promise<DetailedStats> {
     const [readiness, missingImages, pendingScreenshots] = await Promise.all([
       this.getDataReadiness(),
       this.getPetsWithMissingImages(10),
@@ -242,16 +301,16 @@ export class SimpleSyncService {
   /**
    * データ完全性チェック
    */
-  async runIntegrityCheck() {
+  async runIntegrityCheck(): Promise<IntegrityCheckResult> {
     console.log('Running data integrity check...');
     
     // データベース内の全ペットをチェック
     const pets = await this.db.prepare(`
       SELECT id, type, has_jpeg, has_webp, image_checked_at
       FROM pets
-    `).all();
+    `).all<{ id: string; type: string; has_jpeg: number; has_webp: number; image_checked_at: string | null }>();
 
-    const updates = [];
+    const updates: PetUpdate[] = [];
     let checkedCount = 0;
 
     for (const pet of pets.results || []) {
@@ -267,7 +326,7 @@ export class SimpleSyncService {
       const actualHasWebp = !!webpExists;
 
       // データベースと実際の状態が違う場合のみ更新
-      if (pet.has_jpeg !== actualHasJpeg || pet.has_webp !== actualHasWebp) {
+      if ((pet.has_jpeg === 1) !== actualHasJpeg || (pet.has_webp === 1) !== actualHasWebp) {
         updates.push({
           petId: pet.id,
           hasJpeg: actualHasJpeg,

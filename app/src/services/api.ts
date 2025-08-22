@@ -8,7 +8,27 @@ interface PaginationParams {
   prefecture?: string;
 }
 
-interface ApiResponse<T> {
+// 新しい統一されたAPI形式
+interface UnifiedApiResponse<T> {
+  success: boolean;
+  data: T;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+    hasMore?: boolean;
+  };
+  timestamp: string;
+  error?: {
+    message: string;
+    code: string;
+    details?: any;
+  };
+}
+
+// レガシー形式（後方互換性のため）
+interface LegacyApiResponse<T> {
   pets?: T[];
   cats?: T[];
   cat?: T;
@@ -31,7 +51,7 @@ class PetApiService {
     this.baseUrl = API_BASE_URL;
   }
   
-  private async fetchApi<T>(endpoint: string): Promise<T> {
+  private async fetchApi<T>(endpoint: string, useUnified: boolean = true): Promise<T> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
       const response = await fetch(url, {
@@ -46,27 +66,74 @@ class PetApiService {
         throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      
+      // 新しい統一形式の場合、dataプロパティを展開
+      if (useUnified && data.success !== undefined) {
+        const unifiedResponse = data as UnifiedApiResponse<any>;
+        if (!unifiedResponse.success) {
+          throw new Error(unifiedResponse.error?.message || 'API request failed');
+        }
+        // レガシー形式に変換して返す（後方互換性のため）
+        return this.convertToLegacyFormat(unifiedResponse) as T;
+      }
+      
+      return data;
     } catch (error) {
       console.error('API fetch error:', error);
       throw error;
     }
   }
+
+  private convertToLegacyFormat(unifiedResponse: UnifiedApiResponse<any>): LegacyApiResponse<any> {
+    const { data, meta } = unifiedResponse;
+    
+    // ペットデータの場合
+    if (data.pets) {
+      return {
+        pets: data.pets,
+        pagination: meta ? {
+          limit: meta.limit || 20,
+          offset: ((meta.page || 1) - 1) * (meta.limit || 20),
+          total: meta.total || 0,
+          hasMore: meta.hasMore || false
+        } : undefined
+      };
+    }
+    
+    // 単一ペットデータの場合
+    if (data.type) {
+      const key = data.type === 'dog' ? 'dog' : 'cat';
+      return { [key]: data };
+    }
+    
+    // その他のデータ
+    return data;
+  }
   
   // 猫データ取得
   async getCats(params: PaginationParams = {}) {
     const { limit = 10, offset = 0, prefecture } = params;
-    const queryParams = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-      ...(prefecture && { prefecture })
-    });
     
-    const endpoint = USE_SAMPLE_DATA 
-      ? `/api/sample/cats?${queryParams}`
-      : `/pets/cat?${queryParams}`;
-      
-    return this.fetchApi<ApiResponse<any>>(endpoint);
+    if (USE_SAMPLE_DATA) {
+      const queryParams = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+        ...(prefecture && { prefecture })
+      });
+      const endpoint = `/api/sample/cats?${queryParams}`;
+      return this.fetchApi<LegacyApiResponse<any>>(endpoint, false);
+    } else {
+      // 新しいAPI形式：offsetをpageに変換
+      const page = Math.floor(offset / limit) + 1;
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(prefecture && { prefecture })
+      });
+      const endpoint = `/pets/cat?${queryParams}`;
+      return this.fetchApi<LegacyApiResponse<any>>(endpoint, true);
+    }
   }
   
   // 特定の猫データ取得
@@ -104,17 +171,26 @@ class PetApiService {
   // 犬データ取得
   async getDogs(params: PaginationParams = {}) {
     const { limit = 10, offset = 0, prefecture } = params;
-    const queryParams = new URLSearchParams({
-      limit: limit.toString(),
-      offset: offset.toString(),
-      ...(prefecture && { prefecture })
-    });
     
-    const endpoint = USE_SAMPLE_DATA 
-      ? `/api/sample/dogs?${queryParams}`
-      : `/pets/dog?${queryParams}`;
-      
-    return this.fetchApi<ApiResponse<any>>(endpoint);
+    if (USE_SAMPLE_DATA) {
+      const queryParams = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+        ...(prefecture && { prefecture })
+      });
+      const endpoint = `/api/sample/dogs?${queryParams}`;
+      return this.fetchApi<LegacyApiResponse<any>>(endpoint, false);
+    } else {
+      // 新しいAPI形式：offsetをpageに変換
+      const page = Math.floor(offset / limit) + 1;
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(prefecture && { prefecture })
+      });
+      const endpoint = `/pets/dog?${queryParams}`;
+      return this.fetchApi<LegacyApiResponse<any>>(endpoint, true);
+    }
   }
   
   // 特定の犬データ取得

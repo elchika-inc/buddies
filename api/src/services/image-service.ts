@@ -5,8 +5,63 @@
  * データベースとの整合性チェックも実施
  */
 
+import type { D1Database, R2Bucket, R2Object } from '@cloudflare/workers-types';
+
+interface ImageEnv {
+  R2_BUCKET: R2Bucket;
+  DB: D1Database;
+  GITHUB_OWNER?: string;
+  GITHUB_REPO?: string;
+  GITHUB_TOKEN?: string;
+}
+
+interface Pet {
+  id: string;
+  type: string;
+  name: string;
+  source_url: string;
+}
+
+interface ImageResult {
+  success: boolean;
+  body?: ArrayBuffer | ReadableStream;
+  contentType?: string;
+  headers?: Record<string, string>;
+  error?: string;
+  status?: number;
+}
+
+interface ImageCheckResult {
+  petId: string;
+  hasData: boolean;
+  hasImage: boolean;
+  imageSize?: number;
+  imageUpdated?: string | null;
+}
+
+interface ImageStatusDetail {
+  id: string;
+  name: string;
+  hasJpeg: boolean;
+  hasWebp: boolean;
+  jpegSize: number;
+  webpSize: number;
+}
+
+interface ImageStatus {
+  totalPets: number;
+  withImages: number;
+  withoutImages: number;
+  withWebP: number;
+  details: ImageStatusDetail[];
+}
+
 export class ImageService {
-  constructor(env) {
+  private readonly r2: R2Bucket;
+  private readonly db: D1Database;
+  private readonly env: ImageEnv;
+
+  constructor(env: ImageEnv) {
     this.env = env;
     this.r2 = env.R2_BUCKET;
     this.db = env.DB;
@@ -15,13 +70,13 @@ export class ImageService {
   /**
    * 画像を取得・変換して配信
    */
-  async getImage(petId, format = 'webp') {
+  async getImage(petId: string, format: string = 'webp'): Promise<ImageResult> {
     try {
       // データベースでペット情報を確認
       const pet = await this.db
         .prepare('SELECT * FROM pets WHERE id = ?')
         .bind(petId)
-        .first();
+        .first<Pet>();
       
       if (!pet) {
         return {
@@ -57,8 +112,8 @@ export class ImageService {
           contentType: 'image/jpeg',
           headers: {
             'Cache-Control': 'public, max-age=86400', // 1日キャッシュ
-            'ETag': originalObject.etag,
-            'Last-Modified': originalObject.uploaded
+            'ETag': originalObject.etag || '',
+            'Last-Modified': originalObject.uploaded?.toISOString() || new Date().toISOString()
           }
         };
       } else if (format === 'webp') {
@@ -85,10 +140,15 @@ export class ImageService {
             }
           });
           
-          webpObject = {
+          return {
+            success: true,
             body: webpBuffer,
-            etag: `"${Date.now()}"`,
-            uploaded: new Date().toISOString()
+            contentType: 'image/webp',
+            headers: {
+              'Cache-Control': 'public, max-age=604800', // 7日キャッシュ
+              'ETag': `"${Date.now()}"`,
+              'Last-Modified': new Date().toISOString()
+            }
           };
         }
         
@@ -98,8 +158,8 @@ export class ImageService {
           contentType: 'image/webp',
           headers: {
             'Cache-Control': 'public, max-age=604800', // 7日キャッシュ
-            'ETag': webpObject.etag,
-            'Last-Modified': webpObject.uploaded
+            'ETag': webpObject.etag || '',
+            'Last-Modified': webpObject.uploaded?.toISOString() || new Date().toISOString()
           }
         };
       } else {
@@ -114,7 +174,7 @@ export class ImageService {
       console.error(`Error processing image for ${petId}:`, error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         status: 500
       };
     }
@@ -123,7 +183,7 @@ export class ImageService {
   /**
    * JPEGからWebPへ変換（Workers内で実行）
    */
-  async convertToWebP(jpegBuffer) {
+  async convertToWebP(jpegBuffer: ArrayBuffer): Promise<ArrayBuffer> {
     // Cloudflare Image Resizing APIを使用
     const response = await fetch(`https://imagedelivery.net/transform`, {
       method: 'POST',
@@ -146,7 +206,7 @@ export class ImageService {
   /**
    * スクリーンショット取得をトリガー
    */
-  async triggerScreenshotCapture(pet) {
+  async triggerScreenshotCapture(pet: Pet): Promise<void> {
     try {
       // GitHub Actionsをトリガー
       const response = await fetch(
@@ -188,14 +248,14 @@ export class ImageService {
   /**
    * 画像の存在確認（ヘルスチェック用）
    */
-  async checkImageAvailability(petIds) {
-    const results = [];
+  async checkImageAvailability(petIds: string[]): Promise<ImageCheckResult[]> {
+    const results: ImageCheckResult[] = [];
     
     for (const petId of petIds) {
       const pet = await this.db
         .prepare('SELECT id, type, name FROM pets WHERE id = ?')
         .bind(petId)
-        .first();
+        .first<Pet>();
       
       if (!pet) {
         results.push({
@@ -214,7 +274,7 @@ export class ImageService {
         hasData: true,
         hasImage: !!imageObject,
         imageSize: imageObject?.size || 0,
-        imageUpdated: imageObject?.uploaded || null
+        imageUpdated: imageObject?.uploaded?.toISOString() || null
       });
     }
     
@@ -224,22 +284,22 @@ export class ImageService {
   /**
    * バッチで画像ステータスを確認
    */
-  async getImageStatus() {
+  async getImageStatus(): Promise<ImageStatus> {
     try {
       // データベースから全ペットを取得
       const pets = await this.db
         .prepare('SELECT id, type, name FROM pets WHERE id LIKE "pethome_%" LIMIT 100')
-        .all();
+        .all<Pet>();
       
-      const stats = {
-        totalPets: pets.results.length,
+      const stats: ImageStatus = {
+        totalPets: pets.results?.length || 0,
         withImages: 0,
         withoutImages: 0,
         withWebP: 0,
         details: []
       };
       
-      for (const pet of pets.results) {
+      for (const pet of pets.results || []) {
         const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
         const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`;
         
@@ -257,7 +317,7 @@ export class ImageService {
           id: pet.id,
           name: pet.name,
           hasJpeg: !!jpegExists,
-          hasWebP: !!webpExists,
+          hasWebp: !!webpExists,
           jpegSize: jpegExists?.size || 0,
           webpSize: webpExists?.size || 0
         });
