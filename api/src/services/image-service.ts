@@ -6,6 +6,7 @@
  */
 
 import type { D1Database, R2Bucket, R2Object } from '@cloudflare/workers-types';
+import type { Pet, ImageResult } from '../types';
 
 interface ImageEnv {
   R2_BUCKET: R2Bucket;
@@ -13,21 +14,6 @@ interface ImageEnv {
   GITHUB_OWNER?: string;
   GITHUB_REPO?: string;
   GITHUB_TOKEN?: string;
-}
-
-interface Pet {
-  id: string;
-  type: string;
-  name: string;
-  source_url: string;
-}
-
-interface ImageResult {
-  success: boolean;
-  body?: ArrayBuffer | ReadableStream;
-  contentType?: string;
-  headers?: Record<string, string>;
-  error?: string;
   status?: number;
 }
 

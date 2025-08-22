@@ -2,14 +2,13 @@ import { Context } from 'hono';
 import { DataService } from '../services/data-service';
 import { ImageManagementService } from '../services/image-management-service';
 import { successResponse, errorResponse } from '../utils/response-formatter';
-import type { DataReadiness } from '../types/services';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
 export class HealthController {
   private dataService: DataService;
   private imageService: ImageManagementService;
 
-  constructor(private db: D1Database, private r2: R2Bucket) {
+  constructor(db: D1Database, r2: R2Bucket) {
     this.dataService = new DataService(db, r2);
     this.imageService = new ImageManagementService(db, r2);
   }

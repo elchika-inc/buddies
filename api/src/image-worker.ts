@@ -5,6 +5,7 @@
  */
 
 import type { D1Database, R2Bucket, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types';
+import type { PetForImage as Pet, ImageRequest } from './types';
 
 interface ImageEnv {
   DB: D1Database;
@@ -13,21 +14,6 @@ interface ImageEnv {
   GITHUB_TOKEN?: string;
   GITHUB_OWNER?: string;
   GITHUB_REPO?: string;
-}
-
-interface Pet {
-  id: string;
-  type: string;
-  name: string;
-  has_jpeg: number;
-  has_webp: number;
-  source_url: string;
-}
-
-interface ImageRequest {
-  petType: 'dog' | 'cat';
-  petId: string;
-  format: 'jpeg' | 'jpg' | 'webp' | 'auto';
 }
 
 interface ImageWorker {

@@ -1,7 +1,6 @@
 import { Context } from 'hono';
-import { validatePetType, validateImageFormat, extractPetIdFromFilename } from '../utils/validation';
+import { extractPetIdFromFilename } from '../utils/validation';
 import { handleError, ServiceUnavailableError } from '../utils/error-handler';
-import { CONFIG } from '../utils/constants';
 import type { Env } from '../types/env';
 
 export class ImageController {
