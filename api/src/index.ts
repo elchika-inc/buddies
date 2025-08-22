@@ -1,20 +1,16 @@
 import { Hono, Context } from 'hono';
 import { cors } from 'hono/cors';
 import { cache } from 'hono/cache';
-import { PetController } from './controllers/pet-controller';
-import { ImageController } from './controllers/image-controller';
-import { HealthController } from './controllers/health-controller';
-import { CONFIG } from './utils/constants';
+import { PetController, ImageController, HealthController } from './controllers';
+import { CONFIG } from './utils';
 import { withEnv } from './middleware/env-middleware';
-import type { Env } from './types/env';
-
-type HonoApp = Hono<{ Bindings: Env }>;
+import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // CORS設定
 app.use('*', async (c, next) => {
-  const origin = c.env?.ALLOWED_ORIGIN || '*';
+  const origin = c.env?.['ALLOWED_ORIGIN'] || '*';
   const corsMiddleware = cors({
     origin: [origin, 'http://localhost:3004', 'http://localhost:3005'] as string[],
     allowMethods: ['GET', 'OPTIONS'],

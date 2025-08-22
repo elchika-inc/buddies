@@ -8,6 +8,11 @@ import type { JsonValue, JsonObject } from '../types/common';
 
 /**
  * snake_caseをcamelCaseに変換
+ * 
+ * @param {string} str - 変換元の文字列
+ * @returns {string} camelCaseに変換された文字列
+ * @example
+ * snakeToCamel('hello_world') // 'helloWorld'
  */
 export function snakeToCamel(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -15,6 +20,11 @@ export function snakeToCamel(str: string): string {
 
 /**
  * オブジェクトのキーをsnake_caseからcamelCaseに変換
+ * 
+ * @param {T} obj - 変換対象のオブジェクト
+ * @returns {T} キーがcamelCaseに変換されたオブジェクト
+ * @template T - オブジェクトの型
+ * @description ネストされたオブジェクトや配列にも対応
  */
 export function convertKeysToCamelCase<T = JsonValue>(obj: T): T {
   if (obj === null || obj === undefined) {
@@ -42,6 +52,12 @@ export function convertKeysToCamelCase<T = JsonValue>(obj: T): T {
 
 /**
  * 成功レスポンスを生成
+ * 
+ * @param {T} data - レスポンスデータ
+ * @param {object} meta - メタデータ（ページネーション情報など）
+ * @returns {ApiResponse<T>} APIレスポンス
+ * @template T - データの型
+ * @description 統一されたAPIレスポンス形式で成功レスポンスを生成
  */
 export function successResponse<T>(
   data: T,
@@ -67,6 +83,12 @@ export function successResponse<T>(
 
 /**
  * エラーレスポンスを生成
+ * 
+ * @param {string} message - エラーメッセージ
+ * @param {string} code - エラーコード
+ * @param {JsonValue} details - エラーの詳細情報
+ * @returns {ApiErrorResponse} エラーレスポンス
+ * @description 統一されたエラーレスポンス形式を生成
  */
 export function errorResponse(
   message: string,

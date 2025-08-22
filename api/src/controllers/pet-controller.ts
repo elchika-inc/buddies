@@ -1,11 +1,27 @@
 import { Context } from 'hono';
-import { validatePetType, validatePagination, parseJsonField } from '../utils/validation';
+import { validatePetType, parseJsonField } from '../utils/validation';
 import { handleError, NotFoundError } from '../utils/error-handler';
-import { successResponse, paginationMeta, errorResponse } from '../utils/response-formatter';
+import { successResponse, paginationMeta } from '../utils/response-formatter';
 
+/**
+ * ペットコントローラー
+ * 
+ * @class PetController
+ * @description ペット情報のCRUD操作を提供するコントローラー
+ */
 export class PetController {
   constructor(private db: D1Database) {}
 
+  /**
+   * ペット一覧を取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ペット一覧のレスポンス
+   * @query {string} type - ペットタイプ（dog/cat）
+   * @query {string} prefecture - 都道府県でフィルタリング
+   * @query {number} limit - 取得件数（デフォルト: 20）
+   * @query {number} offset - オフセット
+   */
   async getPets(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
@@ -50,6 +66,14 @@ export class PetController {
     }
   }
 
+  /**
+   * IDでペットを取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ペット詳細情報
+   * @param {string} id - ペットID
+   * @throws {404} ペットが見つからない場合
+   */
   async getPetById(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
@@ -77,6 +101,13 @@ export class PetController {
     }
   }
 
+  /**
+   * ランダムなペットを取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ランダムに選ばれたペット一覧
+   * @description スワイプ機能用にランダムなペットを返す
+   */
   async getRandomPets(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
@@ -145,10 +176,10 @@ export class PetController {
   private formatPet(pet: Record<string, unknown>) {
     return {
       ...pet,
-      personality: parseJsonField(pet.personality as string | null, ['friendly']),
-      care_requirements: parseJsonField(pet.care_requirements as string | null, ['indoor']),
-      good_with: parseJsonField(pet.good_with as string | null, []),
-      health_notes: parseJsonField(pet.health_notes as string | null, [])
+      personality: parseJsonField(pet['personality'] as string | null, ['friendly']),
+      care_requirements: parseJsonField(pet['care_requirements'] as string | null, ['indoor']),
+      good_with: parseJsonField(pet['good_with'] as string | null, []),
+      health_notes: parseJsonField(pet['health_notes'] as string | null, [])
     };
   }
 }

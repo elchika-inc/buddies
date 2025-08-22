@@ -30,6 +30,12 @@ interface SystemMetrics {
   };
 }
 
+/**
+ * 統合データサービス
+ * 
+ * @class DataService
+ * @description データ準備状態、統計情報、メタデータ管理を統合的に提供
+ */
 export class DataService {
   private metadataService: MetadataService;
 
@@ -42,6 +48,15 @@ export class DataService {
 
   /**
    * データ準備状態を取得
+   * 
+   * @returns {Promise<DataReadiness>} データ準備状態
+   * @description ペットデータの充実度と画像カバレッジを評価し、
+   * サービスが利用可能かどうかを判定する
+   * @example
+   * const readiness = await dataService.getDataReadiness();
+   * if (!readiness.isReady) {
+   *   throw new Error(readiness.message);
+   * }
    */
   async getDataReadiness(): Promise<DataReadiness> {
     const stats = await this.getPetStatistics();
@@ -101,6 +116,10 @@ export class DataService {
 
   /**
    * ペット統計情報を取得
+   * 
+   * @returns {Promise<PetStatistics>} ペットの統計情報
+   * @description 犬・猫の総数、画像保有率などの詳細統計を取得
+   * @caches 結果はメタデータにキャッシュされる
    */
   async getPetStatistics(): Promise<PetStatistics> {
     const stats = await this.db.prepare(`
@@ -138,6 +157,10 @@ export class DataService {
 
   /**
    * サービスヘルスチェック
+   * 
+   * @returns {Promise<ServiceHealth[]>} 各サービスのヘルス状態
+   * @description Database、R2 Storage、Data Readinessの状態を確認
+   * @performance 各サービスのレスポンスタイムも計測
    */
   async checkServiceHealth(): Promise<ServiceHealth[]> {
     const health: ServiceHealth[] = [];

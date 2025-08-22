@@ -1,9 +1,14 @@
 import { Context } from 'hono';
-import { DataService } from '../services/data-service';
-import { ImageManagementService } from '../services/image-management-service';
-import { successResponse, errorResponse } from '../utils/response-formatter';
+import { DataService, ImageManagementService } from '../services';
+import { successResponse, errorResponse } from '../utils';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
+/**
+ * ヘルスチェックコントローラー
+ * 
+ * @class HealthController
+ * @description APIのヘルス状態、準備状態、統計情報を提供するコントローラー
+ */
 export class HealthController {
   private dataService: DataService;
   private imageService: ImageManagementService;
@@ -13,6 +18,15 @@ export class HealthController {
     this.imageService = new ImageManagementService(db, r2);
   }
 
+  /**
+   * ヘルスステータスを取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ヘルスステータスのレスポンス
+   * @example
+   * GET /health
+   * Response: { success: true, data: { service: "PawMatch API", status: "healthy", version: "1.0.0" } }
+   */
   async getHealthStatus(c: Context) {
     return c.json(successResponse({
       service: 'PawMatch API',
@@ -21,6 +35,14 @@ export class HealthController {
     }));
   }
 
+  /**
+   * 準備状態を取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} 準備状態のレスポンス（503 if not ready）
+   * @description データベースとR2ストレージの準備状態を確認し、
+   * サービスが利用可能かどうかを判定する
+   */
   async getReadinessStatus(c: Context) {
     try {
       const readiness = await this.dataService.getDataReadiness();
@@ -48,6 +70,13 @@ export class HealthController {
     }
   }
 
+  /**
+   * 統計情報を取得
+   * 
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ペットと画像の統計情報
+   * @description ペット数、画像カバレッジ、地域分布などの詳細統計を返す
+   */
   async getStats(c: Context) {
     try {
       const [stats, imageStats, detailedStats] = await Promise.all([

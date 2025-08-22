@@ -330,7 +330,7 @@ class ImageProcessor {
  * メインのWorker実装
  */
 const imageWorker: ImageWorker = {
-  async fetch(request: Request, env: ImageEnv, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: ImageEnv, _ctx: ExecutionContext): Promise<Response> {
     const processor = new ImageProcessor(env);
     const url = new URL(request.url);
     
@@ -372,7 +372,7 @@ const imageWorker: ImageWorker = {
   /**
    * 画像ステータス確認用のScheduledイベントハンドラー
    */
-  async scheduled(event: ScheduledEvent, env: ImageEnv, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: ImageEnv, _ctx: ExecutionContext): Promise<void> {
     console.log('Running DB-based image status check...');
     
     try {
