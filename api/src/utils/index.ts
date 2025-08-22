@@ -10,7 +10,7 @@ export { CONFIG } from './constants';
 
 // エラーハンドリング
 export {
-  ApplicationError,
+  PawMatchError,
   ValidationError,
   NotFoundError,
   ServiceUnavailableError,
@@ -35,3 +35,48 @@ export {
   validatePagination,
   extractPetIdFromFilename
 } from './validation';
+
+// データ変換
+export {
+  transformToCamelCase,
+  transformToSnakeCase,
+  dbToApi,
+  apiToDb,
+  transformPetRecord,
+  type ApiPetRecord
+} from './data-transformer';
+
+// 型ガード
+export {
+  // 基本型チェック
+  isString,
+  isNumber,
+  isBoolean,
+  isObject,
+  isArray,
+  isNullOrUndefined,
+  isDefined,
+  // 特定型チェック
+  isPetType,
+  isGender,
+  isServiceStatus,
+  isSyncStatus,
+  // モデル型ガード
+  isRawPetRecord,
+  isCountResult,
+  isDataReadiness,
+  isPetStatistics,
+  isServiceHealth,
+  isServiceHealthArray,
+  isPrefectureStats,
+  isAgeStats,
+  isRecentPet,
+  isCoverageTrend,
+  isDetailedStatistics,
+  // ユーティリティ
+  isQueryResult,
+  safeCast,
+  combineGuards,
+  ensureArray,
+  safeGet
+} from './type-guards';

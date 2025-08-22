@@ -8,6 +8,17 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { MetadataService } from './metadata-service';
 import type { PetStatistics } from '../types/services';
 import type { DetailedStatistics } from '../types/statistics';
+import { CONFIG } from '../utils/constants';
+import { 
+  isPrefectureStats, 
+  isAgeStats, 
+  isRecentPet, 
+  isCoverageTrend,
+  ensureArray,
+  safeGet,
+  isNumber,
+  isString
+} from '../utils/type-guards';
 
 /**
  * 統計情報管理サービス
@@ -80,7 +91,7 @@ export class StatisticsService {
       FROM pets
       GROUP BY prefecture
       ORDER BY count DESC
-      LIMIT 10
+      LIMIT ${CONFIG.STATISTICS.TOP_PREFECTURES_LIMIT}
     `).all();
 
     // 年齢分布
@@ -103,7 +114,7 @@ export class StatisticsService {
         created_at
       FROM pets
       ORDER BY created_at DESC
-      LIMIT 10
+      LIMIT ${CONFIG.STATISTICS.RECENT_PETS_LIMIT}
     `).all();
 
     // 画像カバレッジの推移（日別）
@@ -116,31 +127,54 @@ export class StatisticsService {
       WHERE image_checked_at IS NOT NULL
       GROUP BY DATE(image_checked_at)
       ORDER BY date DESC
-      LIMIT 7
+      LIMIT ${CONFIG.STATISTICS.COVERAGE_TREND_DAYS}
     `).all();
 
+    // 型ガードを使用して安全にデータを変換
+    const validPrefectureStats = ensureArray(prefectureStats.results, (item): item is any => {
+      return (
+        safeGet(item, 'prefecture', isString, '') !== '' &&
+        safeGet(item, 'count', isNumber, 0) >= 0
+      );
+    }).map(stat => ({
+      prefecture: safeGet(stat, 'prefecture', isString, 'unknown'),
+      count: safeGet(stat, 'count', isNumber, 0),
+      dogs: safeGet(stat, 'dogs', isNumber, 0),
+      cats: safeGet(stat, 'cats', isNumber, 0)
+    }));
+
+    const validAgeDistribution = ensureArray(ageDistribution.results, (item): item is any => {
+      return safeGet(item, 'age', isNumber, -1) >= 0;
+    }).map(stat => ({
+      age: safeGet(stat, 'age', isNumber, 0),
+      count: safeGet(stat, 'count', isNumber, 0)
+    }));
+
+    const validRecentPets = ensureArray(recentPets.results, (item): item is any => {
+      return (
+        safeGet(item, 'id', isString, '') !== '' &&
+        safeGet(item, 'name', isString, '') !== ''
+      );
+    }).map(pet => ({
+      id: safeGet(pet, 'id', isString, ''),
+      type: (safeGet(pet, 'type', isString, 'dog') === 'cat' ? 'cat' : 'dog') as 'dog' | 'cat',
+      name: safeGet(pet, 'name', isString, 'Unknown'),
+      created_at: safeGet(pet, 'created_at', isString, new Date().toISOString())
+    }));
+
+    const validCoverageTrend = ensureArray(coverageTrend.results, (item): item is any => {
+      return safeGet(item, 'date', isString, '') !== '';
+    }).map(trend => ({
+      date: safeGet(trend, 'date', isString, ''),
+      checked: safeGet(trend, 'checked', isNumber, 0),
+      with_images: safeGet(trend, 'with_images', isNumber, 0)
+    }));
+
     return {
-      prefectureDistribution: (prefectureStats.results || []).map(stat => ({
-        prefecture: stat['prefecture'] as string,
-        count: stat['count'] as number,
-        dogs: stat['dogs'] as number,
-        cats: stat['cats'] as number
-      })),
-      ageDistribution: (ageDistribution.results || []).map(stat => ({
-        age: stat['age'] as number,
-        count: stat['count'] as number
-      })),
-      recentPets: (recentPets.results || []).map(pet => ({
-        id: pet['id'] as string,
-        type: pet['type'] as 'dog' | 'cat',
-        name: pet['name'] as string,
-        created_at: pet['created_at'] as string
-      })),
-      coverageTrend: (coverageTrend.results || []).map(trend => ({
-        date: trend['date'] as string,
-        checked: trend['checked'] as number,
-        with_images: trend['with_images'] as number
-      })),
+      prefectureDistribution: validPrefectureStats,
+      ageDistribution: validAgeDistribution,
+      recentPets: validRecentPets,
+      coverageTrend: validCoverageTrend,
       timestamp: new Date().toISOString()
     };
   }
@@ -153,15 +187,15 @@ export class StatisticsService {
   async estimateStorageUsage(): Promise<{ used: number; estimated: number }> {
     const stats = await this.getPetStatistics();
     
-    // 平均ファイルサイズ（設定可能にする）
-    const avgJpegSize = 150 * 1024; // 150KB
-    const avgWebpSize = 100 * 1024; // 100KB
+    // 平均ファイルサイズ
+    const avgJpegSize = CONFIG.STORAGE.AVG_JPEG_SIZE;
+    const avgWebpSize = CONFIG.STORAGE.AVG_WEBP_SIZE;
     
     const storageUsed = (stats.petsWithJpeg * avgJpegSize) + (stats.petsWithWebp * avgWebpSize);
     
     return {
       used: storageUsed,
-      estimated: storageUsed * 1.2 // 20%のマージン
+      estimated: storageUsed * CONFIG.STORAGE.STORAGE_MARGIN
     };
   }
 }

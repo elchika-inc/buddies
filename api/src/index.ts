@@ -4,9 +4,13 @@ import { cache } from 'hono/cache';
 import { PetController, ImageController, HealthController } from './controllers';
 import { CONFIG } from './utils';
 import { withEnv } from './middleware/env-middleware';
+import { errorHandlerMiddleware, notFoundHandler } from './middleware/error-handler-middleware';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// グローバルエラーハンドリング
+app.use('*', errorHandlerMiddleware);
 
 // CORS設定
 app.use('*', async (c, next) => {

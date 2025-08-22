@@ -28,29 +28,6 @@ export interface CountResult {
   total: number;
 }
 
-// 型ガード関数
-export function isRawPetRecord(value: unknown): value is RawPetRecord {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  
-  const record = value as Record<string, unknown>;
-  return (
-    typeof record['id'] === 'string' &&
-    (record['type'] === 'dog' || record['type'] === 'cat') &&
-    typeof record['name'] === 'string' &&
-    typeof record['prefecture'] === 'string' &&
-    typeof record['source_url'] === 'string' &&
-    typeof record['has_jpeg'] === 'number' &&
-    typeof record['has_webp'] === 'number'
-  );
-}
-
-export function isCountResult(value: unknown): value is CountResult {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  
-  const result = value as Record<string, unknown>;
-  return typeof result['total'] === 'number';
-}
+// 型ガード関数は utils/type-guards.ts に移動
+// 互換性のため再エクスポート
+export { isRawPetRecord, isCountResult } from '../utils/type-guards';

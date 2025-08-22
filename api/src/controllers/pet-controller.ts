@@ -1,8 +1,10 @@
 import { Context } from 'hono';
-import { validatePetType, parseJsonField } from '../utils/validation';
-import { handleError, NotFoundError } from '../utils/error-handler';
+import { validatePetType } from '../utils/validation';
+import { NotFoundError, ServiceUnavailableError } from '../utils/error-handler';
 import { successResponse, paginationMeta } from '../utils/response-formatter';
-import { RawPetRecord, isCountResult } from '../types/database';
+import { transformPetRecord } from '../utils/data-transformer';
+import { CONFIG } from '../utils/constants';
+import { isRawPetRecord, isCountResult, ensureArray } from '../utils/type-guards';
 
 /**
  * ペットコントローラー
@@ -22,8 +24,11 @@ export class PetController {
   async getPets(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
-      const page = parseInt(c.req.query('page') || '1');
-      const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100);
+      const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE));
+      const limit = Math.min(
+        parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)), 
+        CONFIG.LIMITS.MAX_PETS_PER_REQUEST
+      );
       const offset = (page - 1) * limit;
       const prefecture = c.req.query('prefecture');
 
@@ -35,7 +40,7 @@ export class PetController {
       ));
 
     } catch (error) {
-      return handleError(c, error);
+      throw error; // エラーはグローバルミドルウェアで処理
     }
   }
 
@@ -62,15 +67,19 @@ export class PetController {
         .bind(petType, petId)
         .first();
 
-      if (pet) {
-        return c.json(successResponse(this.formatPet(pet as RawPetRecord)));
+      if (!pet) {
+        throw new NotFoundError(`Pet not found: ${petId}`);
       }
 
-      // ペットが見つからない場合
-      throw new NotFoundError(`Pet not found: ${petId}`);
+      // 型ガードでデータの正当性を確認
+      if (!isRawPetRecord(pet)) {
+        throw new ServiceUnavailableError('Invalid pet data format');
+      }
+
+      return c.json(successResponse(transformPetRecord(pet)));
 
     } catch (error) {
-      return handleError(c, error);
+      throw error; // エラーはグローバルミドルウェアで処理
     }
   }
 
@@ -84,7 +93,10 @@ export class PetController {
   async getRandomPets(c: Context) {
     try {
       const petType = validatePetType(c.req.param('type'));
-      const count = Math.min(parseInt(c.req.query('count') || '5'), 20);
+      const count = Math.min(
+        parseInt(c.req.query('count') || String(CONFIG.LIMITS.DEFAULT_RANDOM_PETS)), 
+        CONFIG.LIMITS.MAX_RANDOM_PETS
+      );
 
       if (!petType) {
         throw new NotFoundError('Pet type is required');
@@ -96,19 +108,25 @@ export class PetController {
         .bind(petType, count)
         .all();
 
-      if (dbPets.results && dbPets.results.length > 0) {
-        return c.json(successResponse({
-          pets: dbPets.results.map(pet => this.formatPet(pet as RawPetRecord)),
-          type: petType,
-          count: dbPets.results.length
-        }));
+      if (!dbPets.results || dbPets.results.length === 0) {
+        throw new ServiceUnavailableError('No pets available');
       }
 
-      // データベースが利用できない場合はエラーを返す
-      throw new Error('Database not available');
+      // 型ガードで有効なペットデータのみフィルタリング
+      const validPets = ensureArray(dbPets.results, isRawPetRecord);
+      
+      if (validPets.length === 0) {
+        throw new ServiceUnavailableError('Invalid pet data format');
+      }
+
+      return c.json(successResponse({
+        pets: validPets.map(pet => transformPetRecord(pet)),
+        type: petType,
+        count: validPets.length
+      }));
 
     } catch (error) {
-      return handleError(c, error);
+      throw error; // エラーはグローバルミドルウェアで処理
     }
   }
 
@@ -155,8 +173,10 @@ export class PetController {
     }
 
     const total = isCountResult(countResult) ? countResult.total : 0;
-    const pets = petsResult.results
-      .map(pet => this.formatPet(pet as RawPetRecord));
+    
+    // 型ガードで有効なペットデータのみ取得
+    const validPets = ensureArray(petsResult.results, isRawPetRecord);
+    const pets = validPets.map(pet => transformPetRecord(pet));
 
     // タイプが指定されていない場合は犬猫を分離して返す
     if (!type) {
@@ -174,13 +194,4 @@ export class PetController {
     };
   }
 
-  private formatPet(pet: RawPetRecord) {
-    return {
-      ...pet,
-      personality: parseJsonField(pet.personality ?? null, ['friendly']),
-      care_requirements: parseJsonField(pet.care_requirements ?? null, ['indoor']),
-      good_with: parseJsonField(pet.good_with ?? null, []),
-      health_notes: parseJsonField(pet.health_notes ?? null, [])
-    };
-  }
 }
