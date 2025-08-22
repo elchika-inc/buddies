@@ -1,5 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { SwipeDirection } from './usePetSwipeState'
+import { 
+  ANIMATION_DURATIONS, 
+  ANIMATION_EASINGS,
+  DEFAULT_VIEWPORT_DIMENSIONS,
+  ANIMATION_COEFFICIENTS,
+  Z_INDEX_VALUES 
+} from '@/constants/animation'
 
 export interface CardAnimationState {
   isExiting: boolean
@@ -13,8 +20,34 @@ export interface CardAnimationResult {
   resetAnimation: () => void
 }
 
-// アニメーション定数
-const CARD_EXIT_ANIMATION_DURATION = 400
+// ビューポートサイズのキャッシュ化
+let cachedViewportWidth: number | null = null
+let cachedViewportHeight: number | null = null
+
+function getViewportDimensions() {
+  if (typeof window === 'undefined') {
+    return {
+      width: DEFAULT_VIEWPORT_DIMENSIONS.WIDTH,
+      height: DEFAULT_VIEWPORT_DIMENSIONS.HEIGHT
+    }
+  }
+  
+  // キャッシュがある場合は再利用
+  if (cachedViewportWidth !== null && cachedViewportHeight !== null) {
+    return {
+      width: cachedViewportWidth,
+      height: cachedViewportHeight
+    }
+  }
+  
+  cachedViewportWidth = window.innerWidth
+  cachedViewportHeight = window.innerHeight
+  
+  return {
+    width: cachedViewportWidth,
+    height: cachedViewportHeight
+  }
+}
 
 export function useCardAnimation(
   dragOffset: { x: number; y: number },
@@ -38,54 +71,69 @@ export function useCardAnimation(
         if (onComplete) {
           onComplete()
         }
-      }, CARD_EXIT_ANIMATION_DURATION)
+      }, ANIMATION_DURATIONS.CARD_EXIT)
     },
     []
   )
 
-  // 回転角度の計算
-  const rotation = isExiting
-    ? exitDirection === 'like'
-      ? 30
-      : exitDirection === 'pass'
-        ? -30
-        : 0
-    : dragOffset.x * 0.1
+  // 計算結果のmemo化でパフォーマンス最適化
+  const transformValues = useMemo(() => {
+    const viewport = getViewportDimensions()
+    
+    // 回転角度の計算
+    const rotation = isExiting
+      ? exitDirection === 'like'
+        ? ANIMATION_COEFFICIENTS.EXIT_ROTATION_LIKE
+        : exitDirection === 'pass'
+          ? ANIMATION_COEFFICIENTS.EXIT_ROTATION_PASS
+          : 0
+      : dragOffset.x * ANIMATION_COEFFICIENTS.ROTATION_FACTOR
 
-  // X軸の移動量計算
-  const translateX = isExiting
-    ? exitDirection === 'like'
-      ? typeof window !== 'undefined' ? window.innerWidth : 1000
-      : exitDirection === 'pass'
-        ? typeof window !== 'undefined' ? -window.innerWidth : -1000
-        : dragOffset.x
-    : dragOffset.x
+    // X軸の移動量計算
+    const translateX = isExiting
+      ? exitDirection === 'like'
+        ? viewport.width
+        : exitDirection === 'pass'
+          ? -viewport.width
+          : dragOffset.x
+      : dragOffset.x
 
-  // Y軸の移動量計算
-  const translateY = isExiting
-    ? exitDirection === 'superLike'
-      ? typeof window !== 'undefined' ? -window.innerHeight : -1000
-      : dragOffset.y + 50
-    : dragOffset.y
+    // Y軸の移動量計算
+    const translateY = isExiting
+      ? exitDirection === 'superLike'
+        ? -viewport.height
+        : dragOffset.y + ANIMATION_COEFFICIENTS.EXIT_Y_OFFSET
+      : dragOffset.y
+      
+    return { rotation, translateX, translateY }
+  }, [isExiting, exitDirection, dragOffset.x, dragOffset.y])
 
-  const cardStyle: React.CSSProperties = {
-    transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
-    opacity: 1,
-    transition: isDragging
-      ? 'none'
-      : isExiting
-        ? 'transform 0.4s ease-out'
-        : 'transform 0.3s ease-out, opacity 0.3s ease-out',
-    zIndex: isTopCard ? 10 : 1,
-    position: 'absolute',
-    cursor: isTopCard ? 'grab' : 'default',
-  }
+  // カードスタイルのmemo化
+  const cardStyle: React.CSSProperties = useMemo(() => {
+    const { rotation, translateX, translateY } = transformValues
+    
+    return {
+      transform: `translate(${translateX}px, ${translateY}px) rotate(${rotation}deg)`,
+      opacity: 1,
+      transition: isDragging
+        ? 'none'
+        : isExiting
+          ? `transform ${ANIMATION_DURATIONS.CARD_EXIT}ms ${ANIMATION_EASINGS.EASE_OUT}`
+          : `transform ${ANIMATION_DURATIONS.CARD_TRANSITION}ms ${ANIMATION_EASINGS.EASE_OUT}, opacity ${ANIMATION_DURATIONS.FADE_TRANSITION}ms ${ANIMATION_EASINGS.EASE_OUT}`,
+      zIndex: isTopCard ? Z_INDEX_VALUES.TOP_CARD : Z_INDEX_VALUES.BACKGROUND_CARD,
+      position: 'absolute',
+      cursor: isTopCard ? 'grab' : 'default',
+    }
+  }, [transformValues, isDragging, isExiting, isTopCard])
+
+  // 返り値のmemo化
+  const animationState = useMemo(() => ({
+    isExiting,
+    exitDirection,
+  }), [isExiting, exitDirection])
 
   return {
-    animationState: {
-      isExiting,
-      exitDirection,
-    },
+    animationState,
     cardStyle,
     triggerExit,
     resetAnimation,
