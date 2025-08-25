@@ -5,9 +5,10 @@ import { getPetType } from '@/config/petConfig'
 
 type PetCardProps = {
   pet: Pet
+  onTap?: (() => void) | undefined
 }
 
-export function PetCard({ pet }: PetCardProps) {
+export function PetCard({ pet, onTap }: PetCardProps) {
   const [imageError, setImageError] = useState(false)
   const petType = getPetType()
   
@@ -17,16 +18,35 @@ export function PetCard({ pet }: PetCardProps) {
     : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
   
   // 画像URL決定：エラーが発生した場合はフォールバック画像を使用
+  // キャッシュバスティング：ペットの更新日時を使用
+  const addCacheBuster = (url: string) => {
+    if (!url || url.includes('unsplash.com')) return url
+    const separator = url.includes('?') ? '&' : '?'
+    // ペットの作成時刻をバージョンとして使用
+    const version = pet.createdAt || Date.now()
+    const timestamp = new Date(version).getTime()
+    return `${url}${separator}v=${timestamp}`
+  }
+  
   const imageUrl = imageError 
     ? fallbackImage 
-    : (pet.imageUrl || fallbackImage)
+    : addCacheBuster(pet.imageUrl || fallbackImage)
   
   const handleImageError = () => {
     setImageError(true)
   }
   
+  const handleClick = () => {
+    if (onTap) {
+      onTap()
+    }
+  }
+  
   return (
-    <div className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white">
+    <div 
+      className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer"
+      onClick={handleClick}
+    >
       {/* ぼかし背景画像 */}
       {imageUrl && (
         <Image

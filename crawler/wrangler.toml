@@ -23,6 +23,10 @@ database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 [triggers]
 crons = ["0 */4 * * *"]
 
+# 本番環境でのGitHub Actions設定
+[env.production]
+vars = { GITHUB_ACTIONS = "true" }
+
 # 開発環境設定
-[env.development]
+[env.development]  
 vars = { ALLOWED_ORIGIN = "http://localhost:3004" }

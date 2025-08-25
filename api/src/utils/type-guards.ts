@@ -88,40 +88,14 @@ export function isRawPetRecord(value: unknown): value is RawPetRecord {
     return false;
   }
 
-  // 必須フィールドのチェック
+  // 最小限の必須フィールドのチェック
   const hasRequiredFields = (
     isString(value.id) &&
     isPetType(value.type) &&
-    isString(value.name) &&
-    isString(value.prefecture) &&
-    isString(value.source_url) &&
-    isNumber(value.has_jpeg) &&
-    isNumber(value.has_webp) &&
-    isString(value.created_at) &&
-    isString(value.updated_at)
+    isString(value.name)
   );
 
-  if (!hasRequiredFields) {
-    return false;
-  }
-
-  // オプショナルフィールドのチェック
-  const hasValidOptionalFields = (
-    (value.breed === undefined || isString(value.breed)) &&
-    (value.age === undefined || isNumber(value.age)) &&
-    (value.gender === undefined || isGender(value.gender)) &&
-    (value.city === undefined || isString(value.city)) &&
-    (value.description === undefined || isString(value.description)) &&
-    (value.personality === undefined || value.personality === null || isString(value.personality)) &&
-    (value.care_requirements === undefined || value.care_requirements === null || isString(value.care_requirements)) &&
-    (value.good_with === undefined || value.good_with === null || isString(value.good_with)) &&
-    (value.health_notes === undefined || value.health_notes === null || isString(value.health_notes)) &&
-    (value.image_checked_at === undefined || value.image_checked_at === null || isString(value.image_checked_at)) &&
-    (value.screenshot_requested_at === undefined || value.screenshot_requested_at === null || isString(value.screenshot_requested_at)) &&
-    (value.screenshot_completed_at === undefined || value.screenshot_completed_at === null || isString(value.screenshot_completed_at))
-  );
-
-  return hasValidOptionalFields;
+  return hasRequiredFields;
 }
 
 /**

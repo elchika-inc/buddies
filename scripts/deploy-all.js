@@ -130,8 +130,8 @@ async function deployApps() {
   const appPath = path.join(__dirname, '../app');
   
   const deployPromises = [
-    { name: 'DogMatch', project: 'dogmatch', color: 'blue' },
-    { name: 'CatMatch', project: 'catmatch', color: 'green' },
+    { name: 'DogMatch', project: 'pawmatch-dogs', color: 'blue' },
+    { name: 'CatMatch', project: 'pawmatch-cats', color: 'green' },
   ].map(async (app) => {
     log(`  📤 Deploying ${app.name}...`, app.color);
     

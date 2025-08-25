@@ -101,20 +101,6 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
               </p>
             </div>
 
-            <div className="mb-4 sm:mb-6">
-              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">健康状態</h2>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs sm:text-sm">
-                  ワクチン接種済み
-                </span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs sm:text-sm">
-                  健康チェック済み
-                </span>
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs sm:text-sm">
-                  避妊・去勢手術済み
-                </span>
-              </div>
-            </div>
 
             {/* PC表示時のボタン（カード内） */}
             <div className="hidden sm:block mt-6 space-y-3">

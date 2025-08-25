@@ -2,18 +2,16 @@
   "name": "pawmatch-crawler-worker",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
     "db:init": "node scripts/dev/init-db.js",
     "db:reset": "./scripts/dev/reset-dev-db.sh",
     "test": "./scripts/dev/test-crawlers.sh",
     "seed:api": "node scripts/dev/seed-api-data.js",
-    "seed:sample": "node scripts/dev/create-sample-data.js",
-    "crawl": "tsx scripts/run-crawler.ts",
-    "crawl:dogs": "tsx scripts/run-crawler.ts dog 30",
-    "crawl:cats": "tsx scripts/run-crawler.ts cat 30"
+    "seed:sample": "node scripts/dev/create-sample-data.js"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",

@@ -11,7 +11,7 @@ import { cors } from 'hono/cors';
 
 interface ImageEnv {
   DB: D1Database;
-  R2_BUCKET: R2Bucket;
+  IMAGES_BUCKET: R2Bucket;
   CF_IMAGE_RESIZING_URL?: string;
   GITHUB_TOKEN?: string;
   GITHUB_OWNER?: string;
@@ -65,7 +65,7 @@ app.post('/convert/batch', async (c) => {
       const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
       
       try {
-        const jpegObject = await c.env.R2_BUCKET.get(jpegKey);
+        const jpegObject = await c.env.IMAGES_BUCKET.get(jpegKey);
         if (jpegObject) {
           const jpegBuffer = await jpegObject.arrayBuffer();
           const webpBuffer = await processor['convertToWebP'](jpegBuffer);
@@ -115,6 +115,69 @@ app.get('/status', async (c) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// R2とデータベースの同期
+app.post('/sync/r2-status', async (c) => {
+  try {
+    // 画像がないとマークされているペットを取得
+    const pets = await c.env.DB.prepare(`
+      SELECT id, type
+      FROM pets 
+      WHERE has_jpeg = 0 OR has_webp = 0
+      LIMIT 100
+    `).all<Pet>();
+    
+    if (!pets.results || pets.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'No pets to sync',
+        count: 0
+      });
+    }
+    
+    const updates = [];
+    for (const pet of pets.results) {
+      const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
+      const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`;
+      
+      // R2で画像の存在を確認
+      const [jpegExists, webpExists] = await Promise.all([
+        c.env.IMAGES_BUCKET.head(jpegKey).then(obj => !!obj).catch(() => false),
+        c.env.IMAGES_BUCKET.head(webpKey).then(obj => !!obj).catch(() => false)
+      ]);
+      
+      // データベースを更新
+      if (jpegExists || webpExists) {
+        await c.env.DB.prepare(`
+          UPDATE pets 
+          SET has_jpeg = ?, has_webp = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(jpegExists ? 1 : 0, webpExists ? 1 : 0, pet.id).run();
+        
+        updates.push({
+          id: pet.id,
+          has_jpeg: jpegExists,
+          has_webp: webpExists
+        });
+      }
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Sync completed',
+      checked: pets.results.length,
+      updated: updates.length,
+      updates
+    });
+    
+  } catch (error) {
+    console.error('R2 sync error:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -174,7 +237,7 @@ class ImageProcessor {
     }
 
     const jpegKey = `pets/${petType}s/${pet.id}/original.jpg`;
-    const jpegObject = await this.env.R2_BUCKET.get(jpegKey);
+    const jpegObject = await this.env.IMAGES_BUCKET.get(jpegKey);
 
     if (!jpegObject) {
       // R2にないがDBにはある場合、DBを更新
@@ -212,7 +275,7 @@ class ImageProcessor {
    * キャッシュされたWebPを取得
    */
   private async getCachedWebp(webpKey: string, pet: Pet): Promise<Response | null> {
-    const webpObject = await this.env.R2_BUCKET.get(webpKey);
+    const webpObject = await this.env.IMAGES_BUCKET.get(webpKey);
     
     if (webpObject) {
       return new Response(webpObject.body, {
@@ -241,7 +304,7 @@ class ImageProcessor {
     }
 
     const jpegKey = `pets/${petType}s/${pet.id}/original.jpg`;
-    const jpegObject = await this.env.R2_BUCKET.get(jpegKey);
+    const jpegObject = await this.env.IMAGES_BUCKET.get(jpegKey);
 
     if (!jpegObject) {
       await this.updatePetImageStatus(pet.id, false, false);
@@ -280,7 +343,7 @@ class ImageProcessor {
     petId: string, 
     jpegSize: number
   ): Promise<void> {
-    await this.env.R2_BUCKET.put(webpKey, webpBuffer, {
+    await this.env.IMAGES_BUCKET.put(webpKey, webpBuffer, {
       httpMetadata: {
         contentType: 'image/webp'
       },
@@ -435,7 +498,7 @@ const imageWorker: ImageWorker = {
     const url = new URL(request.url);
     
     // Honoアプリケーションのルートにマッチする場合
-    if (url.pathname === '/' || url.pathname.startsWith('/convert/batch') || url.pathname === '/status') {
+    if (url.pathname === '/' || url.pathname.startsWith('/convert/batch') || url.pathname === '/status' || url.pathname.startsWith('/sync/')) {
       return app.fetch(request, env, ctx);
     }
     
@@ -507,8 +570,8 @@ const imageWorker: ImageWorker = {
           const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`;
           
           const [jpegExists, webpExists] = await Promise.all([
-            env.R2_BUCKET.head(jpegKey).then(r => !!r).catch(() => false),
-            env.R2_BUCKET.head(webpKey).then(r => !!r).catch(() => false)
+            env.IMAGES_BUCKET.head(jpegKey).then(r => !!r).catch(() => false),
+            env.IMAGES_BUCKET.head(webpKey).then(r => !!r).catch(() => false)
           ]);
           
           // DBとR2の状態が異なる場合は修正

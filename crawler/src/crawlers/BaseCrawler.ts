@@ -316,6 +316,7 @@ export abstract class BaseCrawler implements ICrawler {
 
   /**
    * 画像をR2に保存（オリジナルとWebPの両方）
+   * GitHub Actions実行時のみWebP変換処理を追加
    */
   protected async saveImageToR2(pet: Pet): Promise<void> {
     try {
@@ -323,6 +324,8 @@ export abstract class BaseCrawler implements ICrawler {
       if (!imageUrl || !imageUrl.startsWith('http')) {
         return;
       }
+      
+      const isGithubActions = !!this.env.GITHUB_ACTIONS;
       
       const imageResponse = await RetryHandler.execute(async () => {
         return await fetch(imageUrl, {
@@ -380,32 +383,34 @@ export abstract class BaseCrawler implements ICrawler {
       
       console.log(`Original image saved: ${originalKey} (${(imageSize / 1024).toFixed(2)}KB)`);
       
-      // 2. WebP形式で保存
-      // 注: 実際の変換はCloudflare Image Resizing APIやWorkers内で
-      // sharp等のライブラリが使えないため、ここでは同じデータを保存
-      // 本番環境では外部APIやImage Resizing APIを使用する必要があります
-      const webpKey = ImageProcessor.generateR2Key(
-        pet.type,
-        pet.id,
-        'webp'
-      );
-      
-      // WebP変換（簡易実装）
-      const webpData = await ImageProcessor.convertToWebP(imageArrayBuffer, 85);
-      
-      await this.env.IMAGES_BUCKET.put(webpKey, webpData, {
-        httpMetadata: {
-          contentType: 'image/webp',
-          cacheControl: 'public, max-age=31536000', // 1年間キャッシュ
-        },
-        customMetadata: {
-          ...metadata,
-          format: 'webp',
-          quality: '85',
-        },
-      });
-      
-      console.log(`WebP image saved: ${webpKey}`);
+      // 2. WebP形式で保存（GitHub Actions時のみ変換処理）
+      if (isGithubActions) {
+        const webpKey = ImageProcessor.generateR2Key(
+          pet.type,
+          pet.id,
+          'webp'
+        );
+        
+        // GitHub Actions環境でのWebP変換処理
+        // 注: 実際の変換は外部API/サービスと連携
+        const webpData = await ImageProcessor.convertToWebP(imageArrayBuffer, 85);
+        
+        await this.env.IMAGES_BUCKET.put(webpKey, webpData, {
+          httpMetadata: {
+            contentType: 'image/webp',
+            cacheControl: 'public, max-age=31536000', // 1年間キャッシュ
+          },
+          customMetadata: {
+            ...metadata,
+            format: 'webp',
+            quality: '85',
+          },
+        });
+        
+        console.log(`WebP image saved: ${webpKey}`);
+      } else {
+        console.log(`Skipped WebP conversion (local environment)`);
+      }
       
     } catch (error) {
       console.error(`Failed to save image for pet ${pet.id}:`, error);

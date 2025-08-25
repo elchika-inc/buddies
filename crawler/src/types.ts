@@ -3,6 +3,7 @@ export interface Env {
   DB: D1Database;
   ALLOWED_ORIGIN: string;
   PET_HOME_BASE_URL: string;
+  GITHUB_ACTIONS?: string;
 }
 
 export interface Pet {
@@ -10,7 +11,7 @@ export interface Pet {
   type: 'dog' | 'cat';
   name: string;
   breed: string;
-  age: number;
+  age: string;
   gender: string;
   prefecture: string;
   city: string;

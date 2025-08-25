@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev --local --port 8787",
+    "dev": "wrangler dev --local --port 8788",
     "dev:local": "node scripts/run-local.js",
     "build": "wrangler build",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
     "db:init": "wrangler d1 execute pawmatch-db --local --file=./schema.sql",
-    "db:migrate": "wrangler d1 migrations apply pawmatch-db --local"
+    "db:migrate": "wrangler d1 migrations apply pawmatch-db --local",
+    "db:generate": "drizzle-kit generate:sqlite",
+    "db:push": "drizzle-kit push:sqlite",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",
@@ -21,6 +25,8 @@
     "wrangler": "^3.0.0"
   },
   "dependencies": {
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.4",
     "hono": "^3.12.0"
   }
 }

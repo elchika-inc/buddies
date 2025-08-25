@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # 環境変数
 [vars]
-ALLOWED_ORIGIN = "https://pawmatch.app"
+ALLOWED_ORIGIN = "*"
 
 # R2バケット設定（画像配信用）
 [[r2_buckets]]

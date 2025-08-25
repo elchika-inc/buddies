@@ -40,14 +40,21 @@ export function validatePagination(limit: string | undefined, offset: string | u
 }
 
 export function extractPetIdFromFilename(filename: string): string {
-  const fileMatch = filename.match(/^(pethome_\d+|\d+)(?:\.(jpg|jpeg|png|webp))?$/);
+  const fileMatch = filename.match(/^(pet-home_\d+|pethome_\d+|\d+)(?:\.(jpg|jpeg|png|webp))?$/);
   
   if (!fileMatch) {
     throw new ValidationError('Invalid filename format');
   }
   
   const rawId = fileMatch[1];
-  return rawId.startsWith('pethome_') ? rawId : `pethome_${rawId}`;
+  
+  // pet-home_ または pethome_ 形式の場合はそのまま返す
+  if (rawId.startsWith('pet-home_') || rawId.startsWith('pethome_')) {
+    return rawId;
+  }
+  
+  // 数字のみの場合はpethome_プレフィックスを付ける
+  return `pethome_${rawId}`;
 }
 
 export function parseJsonField<T>(field: string | null, defaultValue: T): T {

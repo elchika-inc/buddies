@@ -12,6 +12,7 @@ type PetSwipeCardProps = {
   onSwipe: (direction: SwipeDirection) => void
   isTopCard?: boolean
   buttonSwipeDirection?: SwipeDirection | null
+  onTap?: () => void
 }
 
 export function PetSwipeCard({
@@ -19,6 +20,7 @@ export function PetSwipeCard({
   onSwipe,
   isTopCard = true,
   buttonSwipeDirection,
+  onTap,
 }: PetSwipeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   
@@ -79,7 +81,7 @@ export function PetSwipeCard({
       {...dragHandlers}
       className="select-none touch-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
-      <PetCard pet={pet} />
+      <PetCard pet={pet} onTap={onTap} />
 
       {showIndicator && (
         <SwipeIndicator

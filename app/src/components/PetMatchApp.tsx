@@ -5,12 +5,16 @@ import { PetSwipeCard } from './PetSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
 import { LocationModal, Location } from './LocationModal'
+import { PetDetailModal } from './PetDetailModal'
 import { usePetSwipeStateWithPagination } from '@/hooks/usePetSwipeStateWithPagination'
 import { getCurrentPetConfig, getPetType } from '@/config/petConfig'
+import { Pet } from '@/types/pet'
 
 export function PetMatchApp() {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [showLocationModal, setShowLocationModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedPet, setSelectedPet] = useState<Pet | null>(null)
   
   const config = getCurrentPetConfig()
   const petType = getPetType()
@@ -29,6 +33,18 @@ export function PetMatchApp() {
 
   // ページネーション対応のスワイプステートを使用
   const swipeState = usePetSwipeStateWithPagination()
+  
+  // ペット詳細モーダルを開く
+  const handlePetTap = (pet: Pet) => {
+    setSelectedPet(pet)
+    setShowDetailModal(true)
+  }
+  
+  // 詳細モーダルを閉じる
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false)
+    setSelectedPet(null)
+  }
 
   // 次のペットを取得
   const nextPet = swipeState.remainingPets[1] || null
@@ -78,6 +94,7 @@ export function PetMatchApp() {
               pet={nextPet}
               onSwipe={() => {}}
               isTopCard={false}
+              onTap={() => handlePetTap(nextPet)}
             />
           )}
           
@@ -89,6 +106,7 @@ export function PetMatchApp() {
               onSwipe={swipeState.handleSwipe}
               isTopCard={true}
               buttonSwipeDirection={swipeState.buttonSwipeDirection}
+              onTap={() => swipeState.currentPet && handlePetTap(swipeState.currentPet)}
             />
           )}
           
@@ -124,6 +142,14 @@ export function PetMatchApp() {
         selectedLocations={selectedLocations}
         onLocationsChange={setSelectedLocations}
       />
+
+      {selectedPet && (
+        <PetDetailModal
+          pet={selectedPet}
+          isOpen={showDetailModal}
+          onClose={handleCloseDetailModal}
+        />
+      )}
     </div>
   )
 }
