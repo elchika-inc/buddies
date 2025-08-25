@@ -194,6 +194,8 @@ crawler/.env.local
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+# Exception: converter needs package-lock.json for GitHub Actions
+!converter/package-lock.json
 
 # Build artifacts
 *.tsbuildinfo
