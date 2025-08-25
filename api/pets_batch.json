@@ -1,0 +1,62 @@
+[
+  {
+    "id": "dog_1756101806863_0",
+    "name": "ポチ",
+    "sourceUrl": "https://example.com/dogs/0",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_1",
+    "name": "タロウ",
+    "sourceUrl": "https://example.com/dogs/1",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_2",
+    "name": "マロン",
+    "sourceUrl": "https://example.com/dogs/2",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_3",
+    "name": "ココ",
+    "sourceUrl": "https://example.com/dogs/3",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_4",
+    "name": "モカ",
+    "sourceUrl": "https://example.com/dogs/4",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_5",
+    "name": "レオ",
+    "sourceUrl": "https://example.com/dogs/5",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_6",
+    "name": "ソラ",
+    "sourceUrl": "https://example.com/dogs/6",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_7",
+    "name": "ハナ",
+    "sourceUrl": "https://example.com/dogs/7",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_8",
+    "name": "リン",
+    "sourceUrl": "https://example.com/dogs/8",
+    "type": "dog"
+  },
+  {
+    "id": "dog_1756101806863_9",
+    "name": "ユキ",
+    "sourceUrl": "https://example.com/dogs/9",
+    "type": "dog"
+  }
+]

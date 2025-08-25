@@ -49,7 +49,7 @@ jobs:
       - name: Fetch pets without images from API
         id: fetch-pets
         env:
-          API_URL: ${{ secrets.API_URL || 'https://api.pawmatch.app' }}
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
         run: |
           # APIから画像がないペットを取得
           PETS_JSON=$(curl -s "${API_URL}/api/stats" | \
@@ -81,7 +81,7 @@ jobs:
       - name: Update database with image URLs
         if: steps.fetch-pets.outputs.pet_count > 0
         env:
-          API_URL: ${{ secrets.API_URL || 'https://api.pawmatch.app' }}
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           # 処理結果をAPIに送信してDBを更新

@@ -81,14 +81,25 @@ app.get('/api/pets/:type/:id', withEnv(async (c) => {
 }));
 
 // Image endpoints
+app.get('/api/images/:filename',
+  cache({
+    cacheName: CONFIG.CACHE_NAME,
+    cacheControl: CONFIG.CACHE_CONTROL,
+  }),
+  withEnv(async (c) => {
+    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB);
+    return imageController.getImage(c);
+  })
+);
+
 app.get('/api/images/:type/:filename',
   cache({
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
   withEnv(async (c) => {
-    const imageController = new ImageController();
-    return imageController.proxyToImageWorker(c);
+    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB);
+    return imageController.getImageByType(c);
   })
 );
 
