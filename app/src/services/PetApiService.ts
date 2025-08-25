@@ -6,7 +6,8 @@ import {
   LegacyPetListResponse, 
   LegacySinglePetResponse,
   LegacyPrefecturesResponse,
-  LegacyStatsResponse
+  LegacyStatsResponse,
+  UnifiedApiResponse
 } from './ResponseTransformer';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
@@ -60,7 +61,7 @@ export class PetApiService {
       }
       
       const response = await this.apiClient.get('/api/pets/cat', queryParams);
-      return this.responseTransformer.transformToLegacyFormat(response.data) as LegacyPetListResponse;
+      return this.responseTransformer.transformToLegacyFormat(response.data as UnifiedApiResponse<unknown>) as LegacyPetListResponse;
     }
   }
   
@@ -103,7 +104,7 @@ export class PetApiService {
       }
       
       const response = await this.apiClient.get('/api/pets/dog', queryParams);
-      return this.responseTransformer.transformToLegacyFormat(response.data) as LegacyPetListResponse;
+      return this.responseTransformer.transformToLegacyFormat(response.data as UnifiedApiResponse<unknown>) as LegacyPetListResponse;
     }
   }
   

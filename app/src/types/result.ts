@@ -131,7 +131,7 @@ export function combine<T extends readonly unknown[], E>(
     values.push(result.data);
   }
   
-  return ok(values as T);
+  return ok(values as unknown as T);
 }
 
 /**

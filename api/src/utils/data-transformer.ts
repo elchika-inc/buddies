@@ -142,12 +142,19 @@ export interface ApiPetRecord {
   gender?: 'male' | 'female' | 'unknown';
   prefecture: string;
   city?: string;
+  location?: string;
   description?: string;
   personality?: string[];
+  medicalInfo?: string;
   careRequirements?: string[];
   goodWith?: string[];
   healthNotes?: string[];
+  imageUrl?: string;
+  shelterName?: string;
+  shelterContact?: string;
   sourceUrl: string;
+  adoptionFee?: number;
+  metadata?: string;
   hasJpeg: boolean;
   hasWebp: boolean;
   imageCheckedAt?: string;
@@ -194,6 +201,23 @@ export function transformPetRecord(dbRecord: any): ApiPetRecord {
     } catch {
       pet.healthNotes = [];
     }
+  }
+
+  // R2の画像URLを設定（画像がある場合）
+  // もしR2に画像がある場合は、APIエンドポイントを通して配信
+  if (pet.hasJpeg || pet.hasWebp) {
+    // R2の画像を配信するAPIエンドポイント
+    pet.imageUrl = `https://pawmatch-api.naoto24kawa.workers.dev/api/images/${pet.id}.jpg`;
+  } else if (dbRecord.image_url) {
+    // データベースに既存の画像URLがある場合はそれを使用
+    pet.imageUrl = dbRecord.image_url;
+  }
+
+  // locationフィールドの設定
+  if (pet.prefecture && pet.city) {
+    pet.location = `${pet.prefecture}${pet.city}`;
+  } else if (pet.prefecture) {
+    pet.location = pet.prefecture;
   }
 
   return pet;

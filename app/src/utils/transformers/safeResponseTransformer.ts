@@ -74,7 +74,7 @@ export function safeTransformToLegacyFormat<T>(
     case 'petList':
       return transformPetListResponseSafe(dataObj.pets as Pet[], meta);
     case 'singlePet':
-      return transformSinglePetResponseSafe(dataObj as Pet);
+      return transformSinglePetResponseSafe(dataObj as unknown as Pet);
     case 'prefectures':
       return transformPrefecturesResponseSafe(dataObj.prefectures as string[]);
     case 'stats':
@@ -132,7 +132,12 @@ export function transformPetListResponseSafe(
         offset: ((meta.page || 1) - 1) * (meta.limit || 20),
         total: meta.total || 0,
         hasMore: meta.hasMore || false
-      } : undefined
+      } : {
+        limit: 20,
+        offset: 0,
+        total: pets.length,
+        hasMore: false
+      }
     };
     return ok(response);
   } catch (error) {
@@ -255,7 +260,7 @@ export function validateLegacyResponseSafe(
         details: res.prefectures
       });
     }
-    return ok(res as LegacyPrefecturesResponse);
+    return ok(res as unknown as LegacyPrefecturesResponse);
   }
   
   // 統計レスポンスの検証
@@ -271,7 +276,7 @@ export function validateLegacyResponseSafe(
         details: res
       });
     }
-    return ok(res as LegacyStatsResponse);
+    return ok(res as unknown as LegacyStatsResponse);
   }
   
   return err({

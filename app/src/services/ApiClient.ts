@@ -75,7 +75,7 @@ export class ApiClient {
       const response = await fetch(url, {
         method,
         headers: this.defaultHeaders,
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JSON.stringify(data) : null,
         mode: 'cors',
         signal: controller.signal,
       });

@@ -16,7 +16,14 @@ app.use('*', errorHandlerMiddleware);
 app.use('*', async (c, next) => {
   const origin = c.env?.['ALLOWED_ORIGIN'] || '*';
   const corsMiddleware = cors({
-    origin: [origin, 'http://localhost:3004', 'http://localhost:3005', 'http://localhost:3006'] as string[],
+    origin: [
+      origin, 
+      'https://pawmatch.pages.dev',
+      'https://*.pawmatch.pages.dev',
+      'http://localhost:3004', 
+      'http://localhost:3005', 
+      'http://localhost:3006'
+    ] as string[],
     allowMethods: ['GET', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: false,

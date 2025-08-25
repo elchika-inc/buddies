@@ -4,6 +4,7 @@ import withPWA from 'next-pwa'
 const nextConfig = {
   output: process.env.CF_PAGES ? 'export' : undefined,
   images: {
+    unoptimized: process.env.CF_PAGES ? true : false,
     remotePatterns: [
       {
         protocol: 'https',

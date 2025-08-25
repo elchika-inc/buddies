@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { Pet } from '@/types/pet'
 import { useState } from 'react'
+import { getPetType } from '@/config/petConfig'
 
 type PetCardProps = {
   pet: Pet
@@ -8,9 +9,10 @@ type PetCardProps = {
 
 export function PetCard({ pet }: PetCardProps) {
   const [imageError, setImageError] = useState(false)
+  const petType = getPetType()
   
   // フォールバック画像URL（ペットタイプ別）
-  const fallbackImage = pet.type === 'dog' 
+  const fallbackImage = petType === 'dog' 
     ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
     : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
   

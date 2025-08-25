@@ -62,12 +62,15 @@ export function useDragGesture(
     if (!isEnabled) return
     setIsDragging(true)
     const touch = e.touches[0]
-    setStartPos({ x: touch.clientX, y: touch.clientY })
+    if (touch) {
+      setStartPos({ x: touch.clientX, y: touch.clientY })
+    }
   }, [isEnabled])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging || !isEnabled) return
     const touch = e.touches[0]
+    if (!touch) return
     const deltaX = touch.clientX - startPos.x
     const deltaY = touch.clientY - startPos.y
     setDragOffset({ x: deltaX, y: deltaY })

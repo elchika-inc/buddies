@@ -23,7 +23,7 @@ export function parseLocation(location: string): {
     const city = location.substring(match[0].length).trim();
     
     // 都道府県名が正しいかチェック（型ガード関数を使用）
-    if (isValidPrefecture(prefecture)) {
+    if (prefecture && isValidPrefecture(prefecture)) {
       return {
         prefecture: prefecture,
         city: city || prefecture // 市町村がない場合は都道府県名をセット

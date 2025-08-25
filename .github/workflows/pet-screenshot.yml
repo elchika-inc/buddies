@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./converter
         run: |
-          npm ci
+          npm install
           npm install playwright sharp @aws-sdk/client-s3
       
       - name: Install Playwright browsers

@@ -40,7 +40,7 @@ export function isPetListData(obj: Record<string, unknown>): obj is { pets: Pet[
 /**
  * 単一ペットデータの型ガード
  */
-export function isSinglePetData(obj: Record<string, unknown>): obj is Pet {
+export function isSinglePetData(obj: Record<string, unknown>): obj is Record<string, unknown> & Pet {
   return isPet(obj);
 }
 
@@ -82,7 +82,7 @@ export function isPrefecturesData(
 /**
  * 統計データの型ガード
  */
-export function isStatsData(obj: Record<string, unknown>): obj is StatsData {
+export function isStatsData(obj: Record<string, unknown>): obj is Record<string, unknown> & StatsData {
   return (
     typeof obj.total === 'number' &&
     typeof obj.cats === 'number' &&

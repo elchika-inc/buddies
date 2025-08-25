@@ -19,9 +19,9 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
-# Cron Trigger設定（6時間ごとに実行）
+# Cron Trigger設定（4時間ごとに実行）
 [triggers]
-crons = ["0 */6 * * *"]
+crons = ["0 */4 * * *"]
 
 # 開発環境設定
 [env.development]

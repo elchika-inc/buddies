@@ -49,6 +49,13 @@ export function safeParseLocation(location: string): Result<ParsedLocation, Pars
     const city = trimmedLocation.substring(match[0].length).trim();
     
     // 都道府県名の検証
+    if (!prefectureCandidate) {
+      return err({
+        code: 'INVALID_FORMAT',
+        message: '都道府県名が見つかりません',
+        input: trimmedLocation
+      });
+    }
     const validationResult = validatePrefecture(prefectureCandidate);
     
     if (validationResult.success) {

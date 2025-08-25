@@ -17,7 +17,7 @@ export function migrateDogData(dog: Dog): Dog {
     city: city || undefined,
     // locationフィールドはそのまま保持（後方互換性のため）
     sourceUrl: dog.sourceUrl || DEFAULT_PET_HOME_URLS.DOGS
-  }
+  } as Dog
 }
 
 /**
@@ -34,7 +34,7 @@ export function migrateCatData(cat: Cat): Cat {
     city: city || undefined,
     // locationフィールドはそのまま保持（後方互換性のため）
     sourceUrl: cat.sourceUrl || DEFAULT_PET_HOME_URLS.CATS
-  }
+  } as Cat
 }
 
 /**

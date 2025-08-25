@@ -20,6 +20,10 @@
     "deploy": "cd app && npm run deploy:cf",
     "deploy:dog": "cd app && npm run deploy:cf:dog",
     "deploy:cat": "cd app && npm run deploy:cf:cat",
+    "deploy:all": "node scripts/deploy-all.js",
+    "deploy:all:sh": "bash scripts/deploy-all.sh",
+    "deploy:workers": "concurrently --names 'CRAWLER,DISPATCH,CONVERT' --prefix-colors 'cyan,magenta,yellow' 'cd crawler && npm run deploy' 'cd dispatcher && npm run deploy' 'cd converter && npm run deploy'",
+    "deploy:apps": "concurrently --names 'DOG,CAT' --prefix-colors 'blue,green' 'npm run deploy:dog' 'npm run deploy:cat'",
     "dev:dog": "cd app && npm run dev:dog",
     "dev:cat": "cd app && npm run dev:cat",
     "api:install": "cd api && npm install",
@@ -34,6 +38,9 @@
     "crawler:cats": "cd crawler && npm run crawl:cats",
     "crawler:dogs": "cd crawler && npm run crawl:dogs",
     "crawler:dev": "cd crawler && npm run dev",
+    "crawler:deploy": "cd crawler && npm run deploy",
+    "dispatcher:deploy": "cd dispatcher && npm run deploy",
+    "converter:deploy": "cd converter && npm run deploy",
     "dev:all": "npm run api:dev & npm run dev"
   },
   "dependencies": {
@@ -45,6 +52,7 @@
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "autoprefixer": "^10.4.14",
+    "concurrently": "^8.2.2",
     "eslint": "^8.45.0",
     "eslint-config-next": "^14.0.0",
     "eslint-plugin-react-hooks": "^4.6.0",

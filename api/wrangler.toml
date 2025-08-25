@@ -16,7 +16,7 @@ bucket_name = "pawmatch-images"
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
-database_id = "local-pawmatch-db" # ローカル開発用ID
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 migrations_dir = "migrations"
 
 # Service Binding - 画像変換Worker

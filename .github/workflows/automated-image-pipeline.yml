@@ -1,9 +1,9 @@
 name: Automated Image Pipeline
 
 on:
-  # 定期実行: 6時間ごと（Crawlerの実行後）
+  # 定期実行: 4時間ごと（Dispatcherの30分後）
   schedule:
-    - cron: '30 */6 * * *'  # Crawlerの30分後に実行
+    - cron: '45 */4 * * *'  # 0:45, 4:45, 8:45, 12:45, 16:45, 20:45に実行
   
   # 手動実行も可能
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./converter
         run: |
-          npm ci
+          npm install
           npm install playwright sharp @aws-sdk/client-s3
       
       - name: Install Playwright browsers

@@ -74,7 +74,12 @@ export function transformPetListResponse(
       offset: ((meta.page || 1) - 1) * (meta.limit || 20),
       total: meta.total || 0,
       hasMore: meta.hasMore || false
-    } : undefined
+    } : {
+      limit: 20,
+      offset: 0,
+      total: pets.length,
+      hasMore: false
+    }
   };
 }
 

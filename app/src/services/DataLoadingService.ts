@@ -52,7 +52,7 @@ export class DataLoadingService {
     limit: number = 10,
     filters?: Record<string, unknown>
   ): Promise<LoadingResult> {
-    const params: PaginationParams = { offset, limit, filters };
+    const params: PaginationParams = { offset, limit, filters: filters || {} };
     return this.strategy.loadPetData(petType, params);
   }
   

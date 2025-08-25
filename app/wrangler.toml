@@ -1,17 +1,4 @@
 name = "pawmatch"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = ".next"
-
-[build]
-command = "npm run build"
-
-[build.environment]
-NODE_VERSION = "18"
-
-# DogMatch用の環境設定
-[[env.production]]
-vars = { NEXT_PUBLIC_PET_TYPE = "dog" }
-
-# CatMatch用の環境設定（別プロジェクトとしてデプロイする場合）
-# [[env.production-cat]]
-# vars = { NEXT_PUBLIC_PET_TYPE = "cat" }
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"

@@ -215,6 +215,8 @@ export function usePetSwipeStateWithPagination() {
 
       const newState = { ...prev }
       const lastHistory = prev.history[prev.history.length - 1]
+      if (!lastHistory) return prev
+      
       newState.history = prev.history.slice(0, -1)
       newState.currentIndex = Math.max(0, prev.currentIndex - 1)
 
