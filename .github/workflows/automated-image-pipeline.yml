@@ -1,0 +1,110 @@
+name: Automated Image Pipeline
+
+on:
+  # 定期実行: 6時間ごと（Crawlerの実行後）
+  schedule:
+    - cron: '30 */6 * * *'  # Crawlerの30分後に実行
+  
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Number of pets to process'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  fetch-and-process-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/ms-playwright
+            converter/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+      
+      - name: Install dependencies
+        working-directory: ./converter
+        run: |
+          npm ci
+          npm install playwright sharp @aws-sdk/client-s3
+      
+      - name: Install Playwright browsers
+        working-directory: ./converter
+        run: npx playwright install chromium --with-deps
+      
+      - name: Fetch pets without images from API
+        id: fetch-pets
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://api.pawmatch.app' }}
+        run: |
+          # APIから画像がないペットを取得
+          PETS_JSON=$(curl -s "${API_URL}/api/stats" | \
+            jq '[.data.missingImages[0:${{ github.event.inputs.limit || 10 }}] | 
+                .[] | {id: .id, name: .name, sourceUrl: .sourceUrl, type: .type}]')
+          
+          # JSONを一時ファイルに保存
+          echo "$PETS_JSON" > pets_to_process.json
+          
+          # ペット数を出力に設定
+          PET_COUNT=$(echo "$PETS_JSON" | jq 'length')
+          echo "pet_count=${PET_COUNT}" >> $GITHUB_OUTPUT
+          echo "Found ${PET_COUNT} pets without images"
+      
+      - name: Process images if pets found
+        if: steps.fetch-pets.outputs.pet_count > 0
+        working-directory: ./converter
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          # スクリーンショット取得とWebP変換を実行
+          node scripts/automated-screenshot-converter.js \
+            --batch-file="../pets_to_process.json" \
+            --batch-id="auto-$(date +%Y%m%d-%H%M%S)"
+      
+      - name: Update database with image URLs
+        if: steps.fetch-pets.outputs.pet_count > 0
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://api.pawmatch.app' }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          # 処理結果をAPIに送信してDBを更新
+          if [ -f "converter/logs/results.json" ]; then
+            curl -X POST "${API_URL}/api/admin/update-images" \
+              -H "Authorization: Bearer ${API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d @converter/logs/results.json
+          fi
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-pipeline-logs-${{ github.run_id }}
+          path: |
+            converter/logs/
+            pets_to_process.json
+          retention-days: 7
+      
+      - name: Notify completion
+        if: steps.fetch-pets.outputs.pet_count > 0
+        run: |
+          echo "✅ Processed ${{ steps.fetch-pets.outputs.pet_count }} pets"
+          echo "📸 Screenshots captured and converted to WebP"
+          echo "☁️ Images uploaded to R2 storage"

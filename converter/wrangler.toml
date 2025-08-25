@@ -12,11 +12,11 @@ bucket_name = "pawmatch-images"
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
-database_id = "local-pawmatch-db"
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
 # カスタムドメイン設定
 [env.production]
-route = { pattern = "images.pawmatch.app/*", zone_name = "pawmatch.app" }
+route = { pattern = "pawmatch.elchika.app/*", zone_name = "pawmatch.elchika.app" }
 
 # 開発環境設定
 [env.development]

@@ -2,131 +2,136 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## プロジェクト概要
 
-PawMatch is a Tinder-style pet adoption platform with two specialized apps: DogMatch and CatMatch. The application uses Next.js 14 with App Router, TypeScript, and TailwindCSS. The project follows a monorepo structure with the main application code in the `app/` directory.
+PawMatchは保護犬・保護猫の里親マッチングWebアプリケーションです。Tinder形式のスワイプUIで、ペットと里親候補者をマッチングします。
 
-## Common Development Commands
+## アーキテクチャ
 
-### Development Server
-```bash
-# Run development server (both apps)
-npm run dev
-
-# Run DogMatch app only
-npm run dev:dog
-
-# Run CatMatch app only
-npm run dev:cat
+### モノレポ構造
+```
+pawmatch/
+├── app/          # Next.js フロントエンド (Cloudflare Pages)
+├── api/          # Cloudflare Workers API (Hono)
+├── crawler/      # データクローラー (Cloudflare Workers)
+├── converter/    # 画像変換・スクリーンショット処理
+└── dispatcher/   # タスクディスパッチャー
 ```
 
-### Build and Production
+### 技術スタック
+- **Frontend**: Next.js 14, TypeScript (厳格モード), TailwindCSS, Framer Motion
+- **Backend**: Cloudflare Workers, Hono, D1 Database
+- **Storage**: Cloudflare R2
+- **Package Manager**: Bun/npm
+
+## 開発コマンド
+
+### 基本コマンド（ルートディレクトリから実行）
 ```bash
-# Build for production
-npm run build
+# 開発サーバー起動
+npm run dev:all      # API + App 同時起動
+npm run dev          # App のみ (port 3004)
+npm run api:dev      # API のみ (port 8787)
 
-# Build DogMatch specifically
-npm run build:dog
+# ビルド・型チェック
+npm run build        # App ビルド
+npm run type-check   # TypeScript 型チェック
+npm run lint         # ESLint
+npm run lint:fix     # ESLint 自動修正
 
-# Build CatMatch specifically
-npm run build:cat
+# デプロイ
+npm run deploy       # Cloudflare Pages デプロイ
+npm run deploy:dog   # DogMatch デプロイ
+npm run deploy:cat   # CatMatch デプロイ
 
-# Start production server
-npm run start
+# データベース
+npm run api:db:init     # DB初期化
+npm run api:db:migrate  # マイグレーション実行
+
+# クローラー
+npm run crawler:dogs    # 犬データクロール
+npm run crawler:cats    # 猫データクロール
 ```
 
-### Code Quality
+### 個別モジュールでの作業
 ```bash
-# Run linter
-npm run lint
+# app/ ディレクトリ内
+cd app && npm run dev
+cd app && npm test
 
-# Fix linting issues
-npm run lint:fix
+# api/ ディレクトリ内  
+cd api && npm run dev
+cd api && wrangler tail  # ログ監視
 
-# Type checking
-npm run type-check
-
-# Clean build cache
-npm run clean
+# crawler/ ディレクトリ内
+cd crawler && npm run test
 ```
 
-### Deployment
-```bash
-# Deploy to Cloudflare Pages
-npm run deploy
+## コーディング規約
 
-# Deploy DogMatch specifically
-npm run deploy:dog
+### TypeScript設定
+- **厳格モード有効** (`strict: true`)
+- `noUncheckedIndexedAccess: true` - 配列アクセス時のundefinedチェック必須
+- `exactOptionalPropertyTypes: true` - オプショナルプロパティの厳密な型定義
+- `noImplicitReturns: true` - 暗黙的なreturn禁止
 
-# Deploy CatMatch specifically
-npm run deploy:cat
+### エラーハンドリング
+- Result型パターンを使用（`Result<T, E>`）
+- API応答は必ず型ガード関数で検証
+- 非同期処理は必ずtry-catchでラップ
+
+### ファイル構成パターン
+```typescript
+// services/ - ビジネスロジック
+// controllers/ - APIエンドポイント
+// types/ - 型定義（*.ts）
+// utils/ - ユーティリティ関数
+// hooks/ - Reactカスタムフック
+// components/ - UIコンポーネント
 ```
 
-## Architecture
+### データ変換
+- APIレスポンスは`ResponseTransformer`で正規化
+- 住所解析は`addressParser`を使用
+- 都道府県名は`prefectureNormalizer`で統一
 
-### App Switching Mechanism
-The application switches between DogMatch and CatMatch using the `NEXT_PUBLIC_PET_TYPE` environment variable:
-- Set to `'dog'` for DogMatch
-- Set to `'cat'` for CatMatch
+## 重要な実装詳細
 
-This affects:
-- Data loading in `src/data/petDataLoader.ts`
-- Configuration in `src/config/petConfig.ts`
-- Type definitions (`src/types/dog.ts` vs `src/types/cat.ts`)
+### ペットデータ管理
+- DogとCatで別々のデータ型（`Dog`、`Cat`型）
+- 環境変数`NEXT_PUBLIC_PET_TYPE`で犬/猫モード切り替え
+- データはCloudflare D1から取得、R2に画像保存
 
-### State Management
-- Uses React hooks for local state management
-- `useLocalStorage` hook for persistent storage
-- `usePetSwipeState` hook for managing swipe interactions
-- No external state management library
+### 状態管理
+- LocalStorageでスワイプ履歴・お気に入り管理
+- `useLocalStorage`フックでエラーハンドリング込みの永続化
+- マイグレーション処理でデータ構造の更新対応
 
-### Data Flow
-1. Mock data is loaded from `src/data/dog/` or `src/data/cat/` based on pet type
-2. `petDataLoader.ts` dynamically imports the correct dataset
-3. Components receive typed data (Dog or Cat types)
-4. User interactions are saved to localStorage
+### パフォーマンス最適化
+- 画像は事前にR2で最適化済み
+- PWA対応でオフライン動作サポート
+- React.memoとuseMemoで再レンダリング最適化
 
-### Component Architecture
-- `PetMatchApp` is the main container component
-- `PetSwipeCard` handles the swipeable card interface
-- `PetDetailModal` shows detailed pet information
-- `LocationModal` manages location selection
-- All components are TypeScript functional components
+## デバッグ・トラブルシューティング
 
-### PWA Configuration
-- Service Worker at `public/sw.js` for offline functionality
-- Manifest at `public/manifest.json` for app metadata
-- Uses `next-pwa` for PWA generation
+### ログ確認
+```bash
+# Cloudflare Workers ログ
+cd api && wrangler tail
 
-### Type System
-- Base `Pet` interface in `src/types/pet.ts`
-- Extended by `Dog` and `Cat` types with specific attributes
-- Strict TypeScript configuration with no implicit any
+# ブラウザコンソールでデバッグ情報
+localStorage.debug = 'pawmatch:*'
+```
 
-## Key Implementation Details
+### よくある問題
+- **CORS エラー**: API側の`Access-Control-Allow-Origin`設定確認
+- **型エラー**: `npm run type-check`で事前チェック
+- **D1接続エラー**: wrangler.tomlのbinding設定確認
 
-### Pet Type Switching
-The pet type is determined at build time or runtime through environment variables. Components and data loading adapt dynamically based on this configuration.
+## GitHub Actions
 
-### Location System
-- Hierarchical structure: Region → Prefecture → City
-- Data stored in `locations.ts` and `regions.ts` files
-- Separate location data for dogs and cats
+### pet-screenshot.yml
+バッチ処理でペット詳細ページのスクリーンショットを自動生成し、R2にアップロード。
 
-### Swipe Functionality
-- Uses framer-motion for animations
-- Tracks swipe history in localStorage
-- Implements like/pass actions with visual feedback
-
-### Responsive Design
-- Mobile-first approach using TailwindCSS
-- Breakpoints: mobile (<768px), tablet (768px-1024px), desktop (>1024px)
-- Touch-optimized interactions
-
-## Important Notes
-
-- Always work within the `app/` directory for application code
-- The project uses Bun as the package manager (see `bunfig.toml`)
-- Path alias `@/*` maps to `./src/*` in the app directory
-- Development server runs on port 3004 by default
-- The app is designed to work as a PWA with offline capabilities
+### automated-image-pipeline.yml  
+新規ペットデータの画像処理パイプライン。

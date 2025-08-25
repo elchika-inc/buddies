@@ -1,0 +1,25 @@
+name = "pawmatch-dispatcher"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 環境変数
+[vars]
+GITHUB_OWNER = "elchika-inc"
+GITHUB_REPO = "pawmatch"
+WORKFLOW_FILE = "pet-screenshot.yml"
+API_URL = "https://api.pawmatch.app"
+
+# D1データベース設定
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
+
+# Cron Trigger設定（Crawlerの30分後）
+[triggers]
+crons = ["30 */6 * * *"]
+
+# 開発環境設定
+[env.development]
+vars = { API_URL = "http://localhost:8787" }

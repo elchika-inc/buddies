@@ -3,7 +3,7 @@ import { CrawlCheckpoint } from '../interfaces/ICrawler';
 import { BaseCrawler } from './BaseCrawler';
 import { HtmlParser } from '../utils/HtmlParser';
 import { RetryHandler } from '../utils/RetryHandler';
-import { ImageDownloader } from '../utils/ImageDownloader';
+// import { ImageDownloader } from '../utils/ImageDownloader';
 
 /**
  * ペットホーム専用クローラー
@@ -239,21 +239,21 @@ export class PetHomeCrawler extends BaseCrawler {
       // 画像URL取得（詳細ページから取得）
       const imageUrl = await this.fetchImageFromDetailPage(sourceUrl, id);
       
-      // 画像をダウンロードして保存
+      // 画像をダウンロードして保存 (Cloudflare Workers環境では無効化)
       let finalImageUrl = imageUrl;
-      if (imageUrl && !imageUrl.includes('unsplash.com')) {
-        const downloadResult = await ImageDownloader.downloadAndSave(
-          imageUrl,
-          id,
-          petType,
-          '/Users/nishikawa/projects/elchika/pawmatch/data/images'
-        );
-        
-        if (downloadResult) {
-          // ローカル画像パスを使用
-          finalImageUrl = ImageDownloader.getLocalImagePath(id, petType, 'original');
-        }
-      }
+      // if (imageUrl && !imageUrl.includes('unsplash.com')) {
+      //   const downloadResult = await ImageDownloader.downloadAndSave(
+      //     imageUrl,
+      //     id,
+      //     petType,
+      //     '/Users/nishikawa/projects/elchika/pawmatch/data/images'
+      //   );
+      //   
+      //   if (downloadResult) {
+      //     // ローカル画像パスを使用
+      //     finalImageUrl = ImageDownloader.getLocalImagePath(id, petType, 'original');
+      //   }
+      // }
       
       // 説明文取得
       const descElement = element.querySelector('.description, .pet-desc, p');
