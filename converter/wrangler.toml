@@ -14,9 +14,8 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
-# カスタムドメイン設定
-[env.production]
-route = { pattern = "pawmatch.elchika.app/*", zone_name = "pawmatch.elchika.app" }
+# Workers はデフォルトドメインを使用（.workers.dev）
+# カスタムドメインは不要
 
 # 開発環境設定
 [env.development]

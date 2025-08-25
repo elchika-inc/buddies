@@ -27,8 +27,8 @@ environment = "production"
 
 # カスタムドメイン設定
 [env.production]
-vars = { ALLOWED_ORIGIN = "https://pawmatch.app" }
-route = { pattern = "api.pawmatch.app/*", zone_name = "pawmatch.app" }
+vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }
+route = { pattern = "pawmatch-api.elchika.app/*", zone_name = "elchika.app" }
 
 # 開発環境設定
 [env.development]

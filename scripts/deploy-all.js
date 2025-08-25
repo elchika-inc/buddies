@@ -9,8 +9,12 @@
  * 3. Apps並列 (DogMatch, CatMatch)
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Colors for console output
 const colors = {
@@ -29,6 +33,9 @@ function log(message, color = 'reset') {
 
 function runCommand(command, args = [], options = {}) {
   return new Promise((resolve, reject) => {
+    const fullCommand = `${command} ${args.join(' ')}`;
+    log(`  Running: ${fullCommand}`, 'cyan');
+    
     const child = spawn(command, args, {
       shell: true,
       stdio: 'inherit',
@@ -39,11 +46,13 @@ function runCommand(command, args = [], options = {}) {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`Command failed with exit code ${code}`));
+        reject(new Error(`Command failed: ${fullCommand} (exit code ${code})`));
       }
     });
 
-    child.on('error', reject);
+    child.on('error', (err) => {
+      reject(new Error(`Command error: ${fullCommand} - ${err.message}`));
+    });
   });
 }
 
@@ -92,31 +101,28 @@ async function deployWorkers() {
 }
 
 async function buildApps() {
-  log('\n🔨 Step 3: Building Apps in parallel...', 'yellow');
+  log('\n🔨 Step 3: Building Apps sequentially...', 'yellow');
   const appPath = path.join(__dirname, '../app');
   
-  const buildPromises = [
+  const apps = [
     { name: 'DogMatch', command: 'build:dog', color: 'blue' },
     { name: 'CatMatch', command: 'build:cat', color: 'green' },
-  ].map(async (app) => {
+  ];
+
+  // Build sequentially to avoid conflicts
+  for (const app of apps) {
     log(`  🏗️ Building ${app.name}...`, app.color);
     
     try {
       await runCommand('npm', ['run', app.command], { cwd: appPath });
       log(`  ✅ ${app.name} built`, 'green');
     } catch (error) {
-      log(`  ❌ ${app.name} build failed`, 'red');
+      log(`  ❌ ${app.name} build failed: ${error.message}`, 'red');
       throw error;
     }
-  });
-
-  try {
-    await Promise.all(buildPromises);
-    log('✅ All Apps built successfully', 'green');
-  } catch (error) {
-    log('❌ App builds failed', 'red');
-    throw error;
   }
+
+  log('✅ All Apps built successfully', 'green');
 }
 
 async function deployApps() {
@@ -183,9 +189,9 @@ async function main() {
     log('  ✅ CatMatch app deployed');
     log(`\n⏱️ Total deployment time: ${duration}s`, 'cyan');
     log('\nURLs:', 'yellow');
-    log('  API: https://api.pawmatch.app');
-    log('  DogMatch: https://dogmatch.pages.dev');
-    log('  CatMatch: https://catmatch.pages.dev');
+    log('  API: https://pawmatch-api.elchika.app');
+    log('  DogMatch: https://pawmatch-dogs.elchika.app');
+    log('  CatMatch: https://pawmatch-cats.elchika.app');
     
   } catch (error) {
     log('\n❌ Deployment failed!', 'red');

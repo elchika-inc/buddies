@@ -6,6 +6,8 @@
 
 import type { D1Database, R2Bucket, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types';
 import type { PetForImage as Pet, ImageRequest } from './types';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 
 interface ImageEnv {
   DB: D1Database;
@@ -20,6 +22,105 @@ interface ImageWorker {
   fetch(request: Request, env: ImageEnv, ctx: ExecutionContext): Promise<Response>;
   scheduled(event: ScheduledEvent, env: ImageEnv, ctx: ExecutionContext): Promise<void>;
 }
+
+const app = new Hono<{ Bindings: ImageEnv }>();
+
+// CORS設定
+app.use('*', cors());
+
+// ヘルスチェック
+app.get('/', (c) => {
+  return c.json({
+    service: 'PawMatch Image Converter',
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 手動変換トリガー
+app.post('/convert/batch', async (c) => {
+  const { limit = 10 } = await c.req.json().catch(() => ({}));
+  const processor = new ImageProcessor(c.env);
+  
+  try {
+    // WebPがないペットを取得
+    const pets = await c.env.DB.prepare(`
+      SELECT id, type, name, source_url, has_jpeg, has_webp
+      FROM pets 
+      WHERE has_jpeg = 1 AND (has_webp = 0 OR has_webp IS NULL)
+      LIMIT ?
+    `).bind(limit).all<Pet>();
+    
+    if (!pets.results || pets.results.length === 0) {
+      return c.json({
+        success: true,
+        message: 'No images to convert',
+        count: 0
+      });
+    }
+    
+    const results = [];
+    for (const pet of pets.results) {
+      const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`;
+      const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
+      
+      try {
+        const jpegObject = await c.env.R2_BUCKET.get(jpegKey);
+        if (jpegObject) {
+          const jpegBuffer = await jpegObject.arrayBuffer();
+          const webpBuffer = await processor['convertToWebP'](jpegBuffer);
+          await processor['saveWebpImage'](webpKey, webpBuffer, jpegKey, pet.id, jpegBuffer.byteLength);
+          await processor['updatePetImageStatus'](pet.id, true, true);
+          
+          results.push({ id: pet.id, status: 'converted' });
+        } else {
+          results.push({ id: pet.id, status: 'jpeg_missing' });
+        }
+      } catch (error) {
+        results.push({ id: pet.id, status: 'error', error: String(error) });
+      }
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Batch conversion completed',
+      count: results.length,
+      results
+    });
+    
+  } catch (error) {
+    console.error('Batch conversion error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// 画像ステータス確認
+app.get('/status', async (c) => {
+  try {
+    const stats = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as with_jpeg,
+        SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as with_webp,
+        SUM(CASE WHEN has_jpeg = 1 AND has_webp = 0 THEN 1 ELSE 0 END) as needs_conversion
+      FROM pets
+    `).first();
+    
+    return c.json({
+      success: true,
+      stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
 
 /**
  * 画像処理のメインクラス
@@ -330,11 +431,16 @@ class ImageProcessor {
  * メインのWorker実装
  */
 const imageWorker: ImageWorker = {
-  async fetch(request: Request, env: ImageEnv, _ctx: ExecutionContext): Promise<Response> {
-    const processor = new ImageProcessor(env);
+  async fetch(request: Request, env: ImageEnv, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
-    // リクエストを解析
+    // Honoアプリケーションのルートにマッチする場合
+    if (url.pathname === '/' || url.pathname.startsWith('/convert/batch') || url.pathname === '/status') {
+      return app.fetch(request, env, ctx);
+    }
+    
+    // 既存の画像変換処理
+    const processor = new ImageProcessor(env);
     const imageRequest = processor.parseRequest(url);
     if (!imageRequest) {
       return new Response('Invalid path format', { status: 400 });

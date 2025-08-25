@@ -8,7 +8,7 @@ compatibility_flags = ["nodejs_compat"]
 GITHUB_OWNER = "elchika-inc"
 GITHUB_REPO = "pawmatch"
 WORKFLOW_FILE = "pet-screenshot.yml"
-API_URL = "https://api.pawmatch.app"
+API_URL = "https://pawmatch-api.elchika.app"
 
 # D1データベース設定
 [[d1_databases]]

@@ -176,23 +176,21 @@ export default {
   ): Promise<void> {
     console.log('Scheduled crawl started at:', new Date().toISOString());
     
-    // 全ての利用可能なクローラーを実行
-    const crawlers = CrawlerFactory.createAllCrawlers(env);
+    // PetHomeクローラーを実行
+    const crawler = CrawlerFactory.createCrawler('pet-home', env);
     const options: CrawlOptions = {
       limit: 20,
       useDifferential: true
     };
     
-    for (const crawler of crawlers) {
-      console.log(`Running crawler: ${crawler.sourceName}`);
-      
-      // 猫と犬を順番にクロール
-      const catResult = await crawler.crawl('cat', options);
-      console.log(`${crawler.sourceId} cat crawl result:`, catResult);
-      
-      const dogResult = await crawler.crawl('dog', options);
-      console.log(`${crawler.sourceId} dog crawl result:`, dogResult);
-    }
+    console.log(`Running crawler: ${crawler.sourceName}`);
+    
+    // 猫と犬を順番にクロール
+    const catResult = await crawler.crawl('cat', options);
+    console.log(`pet-home cat crawl result:`, catResult);
+    
+    const dogResult = await crawler.crawl('dog', options);
+    console.log(`pet-home dog crawl result:`, dogResult);
     
     console.log('Scheduled crawl completed');
   },

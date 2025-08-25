@@ -14,8 +14,8 @@ pawmatch/
 ├── app/          # Next.js フロントエンド (Cloudflare Pages)
 ├── api/          # Cloudflare Workers API (Hono)
 ├── crawler/      # データクローラー (Cloudflare Workers)
-├── converter/    # 画像変換・スクリーンショット処理
-└── dispatcher/   # タスクディスパッチャー
+├── converter/    # 画像変換・スクリーンショット処理 (Cloudflare Workers)
+└── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
 ```
 
 ### 技術スタック
@@ -23,6 +23,15 @@ pawmatch/
 - **Backend**: Cloudflare Workers, Hono, D1 Database
 - **Storage**: Cloudflare R2
 - **Package Manager**: Bun/npm
+
+### ドメイン構成
+- **API**: `pawmatch-api.elchika.app` - メインAPI（カスタムドメイン）
+- **App (Dogs)**: `pawmatch-dogs.elchika.app` - 犬専用フロントエンド
+- **App (Cats)**: `pawmatch-cats.elchika.app` - 猫専用フロントエンド
+- **Workers**: デフォルトの `.workers.dev` ドメインを使用
+  - `pawmatch-crawler.*.workers.dev`
+  - `pawmatch-dispatcher.*.workers.dev`
+  - `pawmatch-image-converter.*.workers.dev`
 
 ## 開発コマンド
 

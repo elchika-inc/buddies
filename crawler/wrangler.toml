@@ -5,8 +5,8 @@ compatibility_flags = ["nodejs_compat"]
 
 # 環境変数
 [vars]
-ALLOWED_ORIGIN = "https://pawmatch.elchika.app"
-PET_HOME_BASE_URL = "https://pawmatch.elchika.app"
+ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
+PET_HOME_BASE_URL = "https://www.pet-home.jp"
 
 # R2バケット設定
 [[r2_buckets]]

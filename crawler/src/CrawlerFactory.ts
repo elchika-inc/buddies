@@ -1,8 +1,6 @@
 import { Env } from './types';
 import { ICrawler } from './interfaces/ICrawler';
 import { PetHomeCrawler } from './crawlers/PetHomeCrawler';
-import { AnifareCrawler } from './crawlers/AnifareCrawler';
-import { HugoooCrawler } from './crawlers/HugoooCrawler';
 
 /**
  * クローラーファクトリー
@@ -13,7 +11,7 @@ export class CrawlerFactory {
    * 利用可能なクローラーのリスト
    */
   static getAvailableSources(): string[] {
-    return ['pet-home', 'anifare', 'hugooo'];
+    return ['pet-home'];
   }
   
   /**
@@ -23,12 +21,6 @@ export class CrawlerFactory {
     switch (sourceId) {
       case 'pet-home':
         return new PetHomeCrawler(env);
-      
-      case 'anifare':
-        return new AnifareCrawler(env);
-        
-      case 'hugooo':
-        return new HugoooCrawler(env);
       
       default:
         throw new Error(`Unknown crawler source: ${sourceId}`);

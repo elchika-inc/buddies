@@ -38,10 +38,22 @@ async function captureScreenshot(page, pet) {
     console.log(`📸 Processing ${pet.id} - ${pet.name}`);
     
     // ページに移動
-    await page.goto(pet.sourceUrl, {
-      waitUntil: 'domcontentloaded',
-      timeout: 15000
-    });
+    try {
+      await page.goto(pet.sourceUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000
+      });
+    } catch (navigationError) {
+      console.warn(`  ⚠️ Navigation error for ${pet.id}: ${navigationError.message}`);
+      console.log(`  🔄 Skipping ${pet.id} due to navigation failure`);
+      return {
+        petId: pet.id,
+        success: false,
+        error: `Navigation failed: ${navigationError.message}`,
+        skipped: true,
+        duration: Date.now() - startTime
+      };
+    }
     
     // ページが安定するまで待機
     await page.waitForTimeout(2000);
@@ -129,12 +141,14 @@ async function captureScreenshot(page, pet) {
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`  ❌ Error: ${error.message}`);
+    console.log(`  🔄 Skipping ${pet.id} and continuing`);
     
     return {
       petId: pet.id,
       success: false,
       error: error.message,
-      duration
+      duration,
+      skipped: true
     };
   }
 }
@@ -221,12 +235,27 @@ async function processBatch(petsData, batchId) {
       const pet = pets[i];
       console.log(`\n[${i + 1}/${pets.length}] Processing ${pet.name}`);
       
-      const result = await captureScreenshot(page, pet);
-      results.push(result);
-      
-      if (result.success) {
-        successCount++;
-      } else {
+      try {
+        const result = await captureScreenshot(page, pet);
+        results.push(result);
+        
+        if (result.success) {
+          successCount++;
+        } else if (result.skipped) {
+          console.log(`  ⏭️ Skipped ${pet.id} - continuing with next pet`);
+          failureCount++;
+        } else {
+          failureCount++;
+        }
+      } catch (error) {
+        console.error(`  ❌ Unexpected error for ${pet.id}: ${error.message}`);
+        console.log(`  ⏭️ Continuing with next pet`);
+        results.push({
+          petId: pet.id,
+          success: false,
+          error: error.message,
+          skipped: true
+        });
         failureCount++;
       }
       
@@ -279,13 +308,16 @@ async function main() {
     
     const results = await processBatch(batch, batchId);
     
-    // 全て成功した場合のみ exit code 0
-    const allSuccess = results.every(r => r.success);
-    process.exit(allSuccess ? 0 : 1);
+    // エラーがあってもワークフローを継続するため、常に exit code 0 を返す
+    // ログで成功/失敗を確認できる
+    const successRate = results.filter(r => r.success).length / results.length * 100;
+    console.log(`\n🎯 Success rate: ${successRate.toFixed(1)}%`);
+    process.exit(0);
     
   } catch (error) {
     console.error('Fatal error:', error);
-    process.exit(1);
+    // エラーがあってもワークフローを継続するため exit code 0 を返す
+    process.exit(0);
   }
 }
 

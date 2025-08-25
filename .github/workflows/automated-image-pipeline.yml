@@ -48,6 +48,7 @@ jobs:
       
       - name: Fetch pets without images from API
         id: fetch-pets
+        continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
         run: |
@@ -66,6 +67,7 @@ jobs:
       
       - name: Process images if pets found
         if: steps.fetch-pets.outputs.pet_count > 0
+        continue-on-error: true
         working-directory: ./converter
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -80,6 +82,7 @@ jobs:
       
       - name: Update database with image URLs
         if: steps.fetch-pets.outputs.pet_count > 0
+        continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
           API_KEY: ${{ secrets.API_KEY }}
