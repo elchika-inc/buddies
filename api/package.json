@@ -13,12 +13,17 @@
     "db:generate": "drizzle-kit generate:sqlite",
     "db:push": "drizzle-kit push:sqlite",
     "db:studio": "drizzle-kit studio",
-    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote"
+    "db:studio:prod": "drizzle-kit studio --config drizzle.config.prod.ts",
+    "db:generate:prod": "drizzle-kit generate:sqlite --config drizzle.config.prod.ts",
+    "db:push:prod": "drizzle-kit push:sqlite --config drizzle.config.prod.ts",
+    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",
     "@hono/node-server": "^1.0.0",
     "@types/node": "^20.0.0",
+    "dotenv": "^16.4.5",
     "sqlite": "^5.0.0",
     "sqlite3": "^5.1.0",
     "typescript": "^5.0.4",
@@ -27,6 +32,6 @@
   "dependencies": {
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.4",
-    "hono": "^3.12.0"
+    "hono": "^4.9.4"
   }
 }

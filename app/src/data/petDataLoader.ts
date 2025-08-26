@@ -3,20 +3,21 @@ import { Pet } from '@/types/pet'
 import petApi from '@/services/api'
 
 // APIレスポンスをPet型に変換
-function transformApiPet(apiPet: any): Pet {
+function transformApiPet(apiPet: unknown): Pet {
+  const pet = apiPet as Record<string, unknown>;
   return {
-    ...apiPet,
-    imageUrl: apiPet.image_url || apiPet.imageUrl || '',
-    medicalInfo: apiPet.medical_info || apiPet.medicalInfo || '',
-    careRequirements: apiPet.care_requirements || apiPet.careRequirements || [],
-    shelterName: apiPet.shelter_name || apiPet.shelterName || '',
-    shelterContact: apiPet.shelter_contact || apiPet.shelterContact || '',
-    adoptionFee: apiPet.adoption_fee || apiPet.adoptionFee || 0,
-    isNeutered: apiPet.is_neutered || apiPet.isNeutered || false,
-    isVaccinated: apiPet.is_vaccinated || apiPet.isVaccinated || false,
-    createdAt: apiPet.created_at || apiPet.createdAt || '',
-    sourceUrl: apiPet.source_url || apiPet.sourceUrl
-  }
+    ...pet,
+    imageUrl: (pet.image_url || pet.imageUrl || '') as string,
+    medicalInfo: (pet.medical_info || pet.medicalInfo || '') as string,
+    careRequirements: (pet.care_requirements || pet.careRequirements || []) as string[],
+    shelterName: (pet.shelter_name || pet.shelterName || '') as string,
+    shelterContact: (pet.shelter_contact || pet.shelterContact || '') as string,
+    adoptionFee: (pet.adoption_fee || pet.adoptionFee || 0) as number,
+    isNeutered: (pet.is_neutered || pet.isNeutered || false) as boolean,
+    isVaccinated: (pet.is_vaccinated || pet.isVaccinated || false) as boolean,
+    createdAt: (pet.created_at || pet.createdAt || '') as string,
+    sourceUrl: (pet.source_url || pet.sourceUrl) as string
+  } as Pet
 }
 
 // API経由またはローカルデータでペットデータを読み込む

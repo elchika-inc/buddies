@@ -5,7 +5,7 @@
  */
 
 import type { D1Database, R2Bucket, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types';
-import type { PetForImage as Pet, ImageRequest } from './types';
+import type { PetForImage as Pet } from './types';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
@@ -39,12 +39,12 @@ app.get('/', (c) => {
 
 // 手動変換トリガー
 app.post('/convert/batch', async (c) => {
-  const { limit = 10 } = await c.req.json().catch(() => ({}));
-  const processor = new ImageProcessor(c.env);
+  const { limit = 10 } = await c.req.json<{ limit?: number }>().catch(() => ({} as { limit?: number }));
+  const processor = new ImageProcessor(c.env as ImageEnv);
   
   try {
     // WebPがないペットを取得
-    const pets = await c.env.DB.prepare(`
+    const pets = await (c.env as ImageEnv).DB.prepare(`
       SELECT id, type, name, source_url, has_jpeg, has_webp
       FROM pets 
       WHERE has_jpeg = 1 AND (has_webp = 0 OR has_webp IS NULL)
@@ -65,12 +65,12 @@ app.post('/convert/batch', async (c) => {
       const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`;
       
       try {
-        const jpegObject = await c.env.IMAGES_BUCKET.get(jpegKey);
+        const jpegObject = await (c.env as ImageEnv).IMAGES_BUCKET.get(jpegKey);
         if (jpegObject) {
           const jpegBuffer = await jpegObject.arrayBuffer();
-          const webpBuffer = await processor['convertToWebP'](jpegBuffer);
-          await processor['saveWebpImage'](webpKey, webpBuffer, jpegKey, pet.id, jpegBuffer.byteLength);
-          await processor['updatePetImageStatus'](pet.id, true, true);
+          const webpBuffer = await processor.convertToWebP(jpegBuffer);
+          await processor.saveWebpImage(webpKey, webpBuffer, jpegKey, pet.id, jpegBuffer.byteLength);
+          await processor.updatePetImageStatus(pet.id, true, true);
           
           results.push({ id: pet.id, status: 'converted' });
         } else {
@@ -100,7 +100,7 @@ app.post('/convert/batch', async (c) => {
 // 画像ステータス確認
 app.get('/status', async (c) => {
   try {
-    const stats = await c.env.DB.prepare(`
+    const stats = await (c.env as ImageEnv).DB.prepare(`
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as with_jpeg,
@@ -126,7 +126,7 @@ app.get('/status', async (c) => {
 app.post('/sync/r2-status', async (c) => {
   try {
     // 画像がないとマークされているペットを取得
-    const pets = await c.env.DB.prepare(`
+    const pets = await (c.env as ImageEnv).DB.prepare(`
       SELECT id, type
       FROM pets 
       WHERE has_jpeg = 0 OR has_webp = 0
@@ -148,13 +148,13 @@ app.post('/sync/r2-status', async (c) => {
       
       // R2で画像の存在を確認
       const [jpegExists, webpExists] = await Promise.all([
-        c.env.IMAGES_BUCKET.head(jpegKey).then(obj => !!obj).catch(() => false),
-        c.env.IMAGES_BUCKET.head(webpKey).then(obj => !!obj).catch(() => false)
+        (c.env as ImageEnv).IMAGES_BUCKET.head(jpegKey).then(obj => !!obj).catch(() => false),
+        (c.env as ImageEnv).IMAGES_BUCKET.head(webpKey).then(obj => !!obj).catch(() => false)
       ]);
       
       // データベースを更新
       if (jpegExists || webpExists) {
-        await c.env.DB.prepare(`
+        await (c.env as ImageEnv).DB.prepare(`
           UPDATE pets 
           SET has_jpeg = ?, has_webp = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -194,15 +194,15 @@ class ImageProcessor {
   /**
    * リクエストパスを解析
    */
-  parseRequest(url: URL): ImageRequest | null {
+  parseRequest(url: URL): { petType: 'dog' | 'cat'; petId: string; format: 'webp' | 'jpeg' | 'jpg' | 'auto' } | null {
     const pathMatch = url.pathname.match(/^\/convert\/pets\/(dog|cat)s\/([^\/]+)\/(webp|jpeg|jpg|auto)$/);
     if (!pathMatch) return null;
     
     const [, petType, petId, format] = pathMatch;
     return {
       petType: petType as 'dog' | 'cat',
-      petId,
-      format: format as ImageRequest['format']
+      petId: petId || '',
+      format: format as 'webp' | 'jpeg' | 'jpg' | 'auto'
     };
   }
 
@@ -245,7 +245,7 @@ class ImageProcessor {
       return new Response('Image file missing', { status: 404 });
     }
 
-    return new Response(jpegObject.body, {
+    return new Response(jpegObject.body as ReadableStream<Uint8Array>, {
       headers: {
         'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=86400',
@@ -278,7 +278,7 @@ class ImageProcessor {
     const webpObject = await this.env.IMAGES_BUCKET.get(webpKey);
     
     if (webpObject) {
-      return new Response(webpObject.body, {
+      return new Response(webpObject.body as ReadableStream<Uint8Array>, {
         headers: {
           'Content-Type': 'image/webp',
           'Cache-Control': 'public, max-age=604800',
@@ -336,7 +336,7 @@ class ImageProcessor {
   /**
    * WebP画像をR2に保存
    */
-  private async saveWebpImage(
+  async saveWebpImage(
     webpKey: string, 
     webpBuffer: ArrayBuffer, 
     jpegKey: string, 
@@ -359,7 +359,7 @@ class ImageProcessor {
   /**
    * WebP変換処理
    */
-  private async convertToWebP(jpegBuffer: ArrayBuffer): Promise<ArrayBuffer> {
+  async convertToWebP(jpegBuffer: ArrayBuffer): Promise<ArrayBuffer> {
     // Cloudflare Image Resizing APIを使用する場合
     if (this.env.CF_IMAGE_RESIZING_URL) {
       try {
@@ -388,7 +388,7 @@ class ImageProcessor {
   /**
    * ペットの画像ステータスを更新
    */
-  private async updatePetImageStatus(petId: string, hasJpeg: boolean, hasWebp: boolean): Promise<void> {
+  async updatePetImageStatus(petId: string, hasJpeg: boolean, hasWebp: boolean): Promise<void> {
     try {
       await this.env.DB.prepare(`
         UPDATE pets SET 
@@ -577,7 +577,7 @@ const imageWorker: ImageWorker = {
           // DBとR2の状態が異なる場合は修正
           if ((pet.has_jpeg === 1) !== jpegExists || (pet.has_webp === 1) !== webpExists) {
             const processor = new ImageProcessor(env);
-            await processor['updatePetImageStatus'](pet.id, jpegExists, webpExists);
+            await processor.updatePetImageStatus(pet.id, jpegExists, webpExists);
             console.log(`Fixed status for ${pet.id}: JPEG=${jpegExists}, WebP=${webpExists}`);
           }
         }

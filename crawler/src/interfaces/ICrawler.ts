@@ -56,11 +56,11 @@ export interface CrawlOptions {
  */
 export interface CrawlCheckpoint {
   /** 最後に処理したアイテムの識別子 */
-  lastItemId?: string;
+  lastItemId: string;
   /** 最後のクロール時刻 */
   lastCrawlAt: string;
   /** サイト固有のメタデータ（必要に応じて） */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

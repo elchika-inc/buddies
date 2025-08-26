@@ -39,6 +39,15 @@ interface PetWithMissingImage {
   screenshot_requested_at: string | null;
 }
 
+interface RecentPet {
+  id: string;
+  type: string;
+  name: string;
+  has_jpeg: number;
+  has_webp: number;
+  created_at: string;
+}
+
 interface DetailedStats {
   readiness: DataReadiness;
   missingImages: {
@@ -49,7 +58,7 @@ interface DetailedStats {
     count: number;
     samples: PetWithMissingImage[];
   };
-  recentPets: any[];
+  recentPets: RecentPet[];
   timestamp: string;
 }
 
@@ -281,7 +290,7 @@ export class SimpleSyncService {
       FROM pets
       ORDER BY created_at DESC
       LIMIT 10
-    `).all();
+    `).all<RecentPet>();
 
     return {
       readiness,

@@ -36,6 +36,35 @@ interface BatchImageUpdate {
   errors: string[];
 }
 
+interface ImageStatistics {
+  total_pets: number;
+  pets_with_jpeg: number;
+  pets_with_webp: number;
+  pets_with_both: number;
+  pets_without_images: number;
+  screenshots_requested: number;
+  screenshots_completed: number;
+  coverage: {
+    jpeg: string | number;
+    webp: string | number;
+    both: string | number;
+  };
+  storage: {
+    jpegStorageMB: string;
+    webpStorageMB: string;
+    totalStorageMB: string;
+  };
+}
+
+interface PetWithMissingImage {
+  id: string;
+  type: 'dog' | 'cat';
+  name: string;
+  source_url: string;
+  has_jpeg: number;
+  has_webp: number;
+}
+
 export class ImageManagementService {
   constructor(
     private readonly db: D1Database,
@@ -287,7 +316,7 @@ export class ImageManagementService {
   /**
    * 画像統計を取得
    */
-  async getImageStatistics(): Promise<any> {
+  async getImageStatistics(): Promise<ImageStatistics> {
     const stats = await this.db.prepare(`
       SELECT 
         COUNT(*) as total_pets,
@@ -298,7 +327,15 @@ export class ImageManagementService {
         SUM(CASE WHEN screenshot_requested_at IS NOT NULL THEN 1 ELSE 0 END) as screenshots_requested,
         SUM(CASE WHEN screenshot_completed_at IS NOT NULL THEN 1 ELSE 0 END) as screenshots_completed
       FROM pets
-    `).first();
+    `).first<{
+      total_pets: number;
+      pets_with_jpeg: number;
+      pets_with_webp: number;
+      pets_with_both: number;
+      pets_without_images: number;
+      screenshots_requested: number;
+      screenshots_completed: number;
+    }>();
 
     // R2のストレージ使用量を推定
     const avgJpegSize = 150 * 1024; // 150KB
@@ -332,7 +369,7 @@ export class ImageManagementService {
   async getPetsWithMissingImages(
     limit: number = 50,
     petType?: 'dog' | 'cat'
-  ): Promise<any[]> {
+  ): Promise<PetWithMissingImage[]> {
     const query = petType
       ? `SELECT id, type, name, source_url, has_jpeg, has_webp 
          FROM pets 
@@ -347,7 +384,7 @@ export class ImageManagementService {
          LIMIT ?`;
 
     const params = petType ? [petType, limit] : [limit];
-    const result = await this.db.prepare(query).bind(...params).all();
+    const result = await this.db.prepare(query).bind(...params).all<PetWithMissingImage>();
 
     return result.results || [];
   }

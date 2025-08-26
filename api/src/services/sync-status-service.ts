@@ -35,7 +35,7 @@ interface SyncJobStats {
   imagesWithJpeg?: number;
   imagesWithWebp?: number;
   imagesMissing?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface DataReadiness {

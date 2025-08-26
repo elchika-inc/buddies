@@ -17,7 +17,10 @@ export class DatabaseInitializer {
         .prepare("SELECT name FROM sqlite_master WHERE type='table'")
         .all();
       
-      const tableNames = tables.results?.map((t: any) => t.name) || [];
+      const tableNames = tables.results?.map((t: Record<string, unknown>) => {
+        const name = t['name'];
+        return typeof name === 'string' ? name : '';
+      }).filter(Boolean) || [];
       
       const requiredTables = ['pets', 'crawler_states', 'crawl_logs'];
       const missingTables = requiredTables.filter(table => !tableNames.includes(table));
@@ -118,7 +121,7 @@ export class DatabaseInitializer {
         .prepare("SELECT 1 as test")
         .first();
       
-      return result?.test === 1;
+      return result?.['test'] === 1;
     } catch (error) {
       console.error('Database connection test failed:', error);
       return false;

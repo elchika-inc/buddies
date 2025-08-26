@@ -51,7 +51,7 @@ export class ImageProcessor {
     try {
       const pathname = new URL(url).pathname;
       const match = pathname.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-      return match ? match[1].toLowerCase() : 'jpg';
+      return match?.[1]?.toLowerCase() || 'jpg';
     } catch {
       return 'jpg';
     }
@@ -64,7 +64,7 @@ export class ImageProcessor {
    */
   static async convertToWebP(
     imageData: ArrayBuffer,
-    quality: number = 85
+    _quality: number = 85
   ): Promise<ArrayBuffer> {
     // Cloudflare Workers環境では、実際の変換は
     // Image Resizing APIや外部サービスを使用する必要があります

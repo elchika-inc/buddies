@@ -96,16 +96,18 @@ export class PetHomeCrawler extends BaseCrawler {
    * チェックポイントから最後のペットID（pn番号）を抽出
    */
   private extractLastPetId(checkpoint?: CrawlCheckpoint): number {
-    if (!checkpoint?.metadata?.lastPetNumber) {
+    if (!checkpoint?.metadata?.['lastPetNumber']) {
       return 0;
     }
-    return parseInt(checkpoint.metadata.lastPetNumber) || 0;
+    const lastPetNumber = checkpoint.metadata['lastPetNumber'];
+    return parseInt(String(lastPetNumber)) || 0;
   }
   
   /**
    * ペットIDから番号部分を抽出
    */
   private extractPetNumber(petId: string): number {
+    if (!petId) return 0;
     const match = petId.match(/(\d+)/);
     return match ? parseInt(match[1]) : 0;
   }
@@ -176,7 +178,10 @@ export class PetHomeCrawler extends BaseCrawler {
         return this.parseHTMLContentFallback(html, petType, baseUrl);
       }
       
-      for (const element of petElements) {
+      for (let i = 0; i < petElements.length; i++) {
+        const element = petElements[i];
+        if (!element) continue;
+        
         try {
           const pet = await this.parsePetElement(element, petType, baseUrl);
           if (pet) pets.push(pet);
@@ -200,24 +205,29 @@ export class PetHomeCrawler extends BaseCrawler {
     try {
       // ID取得（data属性またはURLから）
       const idAttr = element.getAttribute('data-pet-id') || 
-                    element.getAttribute('data-id') ||
-                    element.querySelector('[data-pet-id]')?.getAttribute('data-pet-id');
+                    element.getAttribute('data-id');
       
-      let id = idAttr;
+      const petIdElement = element.querySelector('[data-pet-id]') as HTMLElement;
+      const petIdFromElement = petIdElement?.getAttribute('data-pet-id') || null;
+      
+      let id = idAttr || petIdFromElement;
       if (!id) {
         // リンクからIDを抽出
-        const link = element.querySelector('a[href*="pn"]');
+        const link = element.querySelector('a[href*="pn"]') as HTMLAnchorElement;
         if (link) {
-          const match = link.getAttribute('href')?.match(/pn(\d+)/);
-          id = match ? match[1] : null;
+          const href = link.getAttribute('href');
+          if (href) {
+            const match = href.match(/pn(\d+)/);
+            id = match?.[1] || null;
+          }
         }
       }
       
       if (!id) return null;
       
       // 名前取得
-      const nameElement = element.querySelector('h3, .pet-name, .name, [data-name]');
-      const name = HtmlParser.cleanText(nameElement?.textContent);
+      const nameElement = element.querySelector('h3, .pet-name, .name, [data-name]') as HTMLElement;
+      const name = HtmlParser.cleanText(nameElement?.textContent || '');
       if (!name) return null;
       
       // 詳細情報取得
@@ -231,10 +241,14 @@ export class PetHomeCrawler extends BaseCrawler {
       const [prefecture, city] = this.parseLocation(locationText);
       
       // 詳細ページURL取得
-      const linkElement = element.querySelector('a[href]');
-      const sourceUrl = linkElement ?
-        new URL(linkElement.getAttribute('href') || '', baseUrl).href :
-        `https://www.pet-home.jp/${petType}s/tokyo/pn${id}/`;
+      const linkElement = element.querySelector('a[href]') as HTMLAnchorElement;
+      let sourceUrl: string;
+      if (linkElement) {
+        const href = linkElement.getAttribute('href');
+        sourceUrl = href ? new URL(href, baseUrl).href : `https://www.pet-home.jp/${petType}s/tokyo/pn${id}/`;
+      } else {
+        sourceUrl = `https://www.pet-home.jp/${petType}s/tokyo/pn${id}/`;
+      }
       
       // 画像URL取得（詳細ページから取得）
       const imageUrl = await this.fetchImageFromDetailPage(sourceUrl, id);
@@ -256,18 +270,18 @@ export class PetHomeCrawler extends BaseCrawler {
       // }
       
       // 性格・特徴情報取得（リストページでは限定的）
-      const personalityElement = element.querySelector('.personality, .trait, .characteristic');
+      const personalityElement = element.querySelector('.personality, .trait, .characteristic') as HTMLElement;
       let personality: string[] = [];
       if (personalityElement) {
-        const personalityText = HtmlParser.cleanText(personalityElement.textContent);
+        const personalityText = HtmlParser.cleanText(personalityElement.textContent || '');
         if (personalityText) {
           personality = personalityText.split(/[　、。]/).filter(trait => trait.trim().length > 1);
         }
       }
       
       // 説明文取得
-      const descElement = element.querySelector('.description, .pet-desc, p');
-      const description = HtmlParser.cleanText(descElement?.textContent) ||
+      const descElement = element.querySelector('.description, .pet-desc, p') as HTMLElement;
+      const description = HtmlParser.cleanText(descElement?.textContent || '') ||
         `${name} - 素敵な${petType === 'dog' ? '犬' : '猫'}ちゃんです。新しい家族を待っています。`;
       
       return {
@@ -308,9 +322,13 @@ export class PetHomeCrawler extends BaseCrawler {
     
     for (let i = 0; i < Math.min(linkMatches.length, 20); i++) {
       const match = linkMatches[i];
+      if (!match || match.length < 4) continue;
+      
       const relativeUrl = match[1];
       const prefectureCode = match[2]; // URLから都道府県コードを取得
       const id = match[3];
+      
+      if (!relativeUrl || !id) continue;
       
       // 詳細ページのURLを構築
       const detailUrl = new URL(relativeUrl, baseUrl).href;
@@ -324,7 +342,7 @@ export class PetHomeCrawler extends BaseCrawler {
       } catch (error) {
         console.error(`Failed to fetch details for pet ${id}:`, error);
         // フォールバックとして基本情報だけでペットを作成
-        const prefecture = this.normalizePrefecture(prefectureCode);
+        const prefecture = this.normalizePrefecture(prefectureCode || '');
         pets.push({
           id,
           type: petType,
@@ -361,11 +379,11 @@ export class PetHomeCrawler extends BaseCrawler {
       if (dataValue) return dataValue;
       
       // テキスト内容から検索
-      const text = element.textContent || '';
+      const text = (element as HTMLElement).textContent || '';
       for (const kw of keywords) {
         const regex = new RegExp(`${kw}[：:\\s]*([^\\s\\n,，]+)`, 'i');
         const match = text.match(regex);
-        if (match) return match[1].trim();
+        if (match && match[1]) return match[1].trim();
       }
     }
     return null;
@@ -397,19 +415,21 @@ export class PetHomeCrawler extends BaseCrawler {
   /**
    * チェックポイント更新時にペットホーム固有の情報を追加
    */
-  protected async updateCheckpoint(
+  protected override async updateCheckpoint(
     petType: 'dog' | 'cat',
     processedIds: string[]
   ): Promise<void> {
     // 最大のpn番号を記録
-    const maxPetNumber = Math.max(...processedIds.map(id => {
+    const petNumbers = processedIds.map(id => {
       const parts = id.split('_');
       return this.extractPetNumber(parts[1] || '0');
-    }));
+    }).filter(num => num > 0);
+    
+    const maxPetNumber = petNumbers.length > 0 ? Math.max(...petNumbers) : 0;
     
     const now = new Date().toISOString();
     const checkpoint: CrawlCheckpoint = {
-      lastItemId: processedIds[0],
+      lastItemId: processedIds[0] || '',
       lastCrawlAt: now,
       metadata: {
         lastPetNumber: maxPetNumber,
@@ -462,7 +482,7 @@ export class PetHomeCrawler extends BaseCrawler {
       
       // 名前を取得 - h3 class="main_title"から
       const nameMatch = response.match(/<h3[^>]*class="main_title"[^>]*>([^<]+)<\/h3>/i);
-      const name = nameMatch ? HtmlParser.cleanText(nameMatch[1]) : `${petType === 'dog' ? '犬' : '猫'} ID:${id}`;
+      const name = nameMatch?.[1] ? HtmlParser.cleanText(nameMatch[1]) : `${petType === 'dog' ? '犬' : '猫'} ID:${id}`;
       console.log(`[DEBUG] Name found: ${name}`);
       
       // 犬種・猫種を取得 - /dogs/cg_ または /cats/cg_ を含むリンクから
@@ -471,7 +491,7 @@ export class PetHomeCrawler extends BaseCrawler {
         ? /<a[^>]*href="\/dogs\/cg_[^"]*"[^>]*>([^<]+)<\/a>/i
         : /<a[^>]*href="\/cats\/cg_[^"]*"[^>]*>([^<]+)<\/a>/i;
       const breedMatch = response.match(breedPattern);
-      if (breedMatch) {
+      if (breedMatch?.[1]) {
         breed = HtmlParser.cleanText(breedMatch[1]) || '不明';
       }
       console.log(`[DEBUG] Breed found: ${breed}`);
@@ -483,12 +503,12 @@ export class PetHomeCrawler extends BaseCrawler {
       if (ageMatches) {
         for (const match of ageMatches) {
           const textMatch = match.match(/>([^<]+)<\/a>([^<]*)<\/dd>/);
-          if (textMatch) {
+          if (textMatch?.[1] && textMatch[2] !== undefined) {
             const fullText = textMatch[1] + textMatch[2];
             console.log(`[DEBUG] Age text found: ${fullText}`);
             // 括弧内の年齢情報を抽出
             const ageDetailMatch = fullText.match(/（([^）]+)）/);
-            if (ageDetailMatch) {
+            if (ageDetailMatch?.[1]) {
               age = ageDetailMatch[1];
             } else {
               age = HtmlParser.cleanText(fullText) || '不明';
@@ -501,7 +521,7 @@ export class PetHomeCrawler extends BaseCrawler {
       // 性別を取得 - dd class="right inline"から
       let gender = '不明';
       const genderMatch = response.match(/<dd[^>]*class="right inline"[^>]*>([^<]*(?:<[^>]*>[^<]*)*)<\/dd>/i);
-      if (genderMatch) {
+      if (genderMatch?.[1]) {
         const genderText = genderMatch[1];
         console.log(`[DEBUG] Gender text found: ${genderText}`);
         if (genderText.includes('♀') || genderText.includes('メス') || genderText.includes('girl')) {
@@ -514,7 +534,7 @@ export class PetHomeCrawler extends BaseCrawler {
       // 募集地域を取得
       let location = '';
       const locationMatch = response.match(/<dt[^>]*>(?:募集地域|地域)[^<]*<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i);
-      if (locationMatch) {
+      if (locationMatch?.[1]) {
         location = HtmlParser.cleanText(locationMatch[1]) || '';
       }
       
@@ -529,7 +549,7 @@ export class PetHomeCrawler extends BaseCrawler {
         // 複数のp.info要素を処理
         for (const match of personalityMatch) {
           const textMatch = match.match(/<p[^>]*class="info"[^>]*>([^<]+)<\/p>/i);
-          if (textMatch) {
+          if (textMatch?.[1]) {
             const personalityText = HtmlParser.cleanText(textMatch[1]);
             if (personalityText && personalityText.length > 5) { // 最小文字数チェック
               // 全角スペースや句読点で分割して複数の特徴に分ける
@@ -550,7 +570,7 @@ export class PetHomeCrawler extends BaseCrawler {
       // 説明文を取得
       let description = `${name}の里親募集中です。`;
       const descMatch = response.match(/<div[^>]*class="[^"]*(?:description|pet-description|comment|message)[^"]*"[^>]*>([^<]+(?:<[^>]*>[^<]*)*)<\/div>/i);
-      if (descMatch) {
+      if (descMatch?.[1]) {
         const cleanDesc = HtmlParser.cleanText(descMatch[1].replace(/<[^>]+>/g, ' '));
         if (cleanDesc) {
           description = cleanDesc;
@@ -668,15 +688,4 @@ export class PetHomeCrawler extends BaseCrawler {
     return '東京都';
   }
 
-  /**
-   * 性別を正規化
-   */
-  private normalizeGender(text: string): string {
-    if (text.includes('メス') || text.includes('女') || text.includes('♀')) {
-      return 'メス';
-    } else if (text.includes('オス') || text.includes('男') || text.includes('♂')) {
-      return 'オス';
-    }
-    return '不明';
-  }
 }

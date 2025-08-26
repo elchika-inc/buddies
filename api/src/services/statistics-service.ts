@@ -20,6 +20,19 @@ import {
   isString
 } from '../utils/type-guards';
 
+// データベースクエリ結果の型定義
+interface StatsQueryResult {
+  total_pets?: number;
+  total_dogs?: number;
+  total_cats?: number;
+  pets_with_jpeg?: number;
+  pets_with_webp?: number;
+  dogs_with_jpeg?: number;
+  dogs_with_webp?: number;
+  cats_with_jpeg?: number;
+  cats_with_webp?: number;
+}
+
 /**
  * 統計情報管理サービス
  * 
@@ -53,7 +66,7 @@ export class StatisticsService {
         SUM(CASE WHEN type = 'cat' AND has_jpeg = 1 THEN 1 ELSE 0 END) as cats_with_jpeg,
         SUM(CASE WHEN type = 'cat' AND has_webp = 1 THEN 1 ELSE 0 END) as cats_with_webp
       FROM pets
-    `).first();
+    `).first<StatsQueryResult>();
 
     const result: PetStatistics = {
       totalPets: stats?.total_pets || 0,
@@ -131,7 +144,7 @@ export class StatisticsService {
     `).all();
 
     // 型ガードを使用して安全にデータを変換
-    const validPrefectureStats = ensureArray(prefectureStats.results, (item): item is any => {
+    const validPrefectureStats = ensureArray(prefectureStats.results, (item): item is Record<string, unknown> => {
       return (
         safeGet(item, 'prefecture', isString, '') !== '' &&
         safeGet(item, 'count', isNumber, 0) >= 0
@@ -143,14 +156,14 @@ export class StatisticsService {
       cats: safeGet(stat, 'cats', isNumber, 0)
     }));
 
-    const validAgeDistribution = ensureArray(ageDistribution.results, (item): item is any => {
+    const validAgeDistribution = ensureArray(ageDistribution.results, (item): item is Record<string, unknown> => {
       return safeGet(item, 'age', isNumber, -1) >= 0;
     }).map(stat => ({
       age: safeGet(stat, 'age', isNumber, 0),
       count: safeGet(stat, 'count', isNumber, 0)
     }));
 
-    const validRecentPets = ensureArray(recentPets.results, (item): item is any => {
+    const validRecentPets = ensureArray(recentPets.results, (item): item is Record<string, unknown> => {
       return (
         safeGet(item, 'id', isString, '') !== '' &&
         safeGet(item, 'name', isString, '') !== ''
@@ -162,7 +175,7 @@ export class StatisticsService {
       created_at: safeGet(pet, 'created_at', isString, new Date().toISOString())
     }));
 
-    const validCoverageTrend = ensureArray(coverageTrend.results, (item): item is any => {
+    const validCoverageTrend = ensureArray(coverageTrend.results, (item): item is Record<string, unknown> => {
       return safeGet(item, 'date', isString, '') !== '';
     }).map(trend => ({
       date: safeGet(trend, 'date', isString, ''),

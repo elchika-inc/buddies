@@ -166,7 +166,7 @@ export function transformSinglePetResponseSafe(
   return err({
     code: 'UNKNOWN_TYPE',
     message: 'Unknown pet type in response',
-    details: { petType: (pet as any).type }
+    details: { petType: (pet as Record<string, unknown>).type }
   });
 }
 

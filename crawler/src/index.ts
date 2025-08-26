@@ -5,12 +5,40 @@ import { CrawlerFactory } from './CrawlerFactory';
 import { CrawlOptions } from './interfaces/ICrawler';
 import { DatabaseInitializer } from './utils/DatabaseInitializer';
 
+// データベースレコードの型定義
+interface CrawlerStateRecord {
+  source_id: string;
+  pet_type: string;
+  checkpoint: string | null;
+  total_processed: number;
+  updated_at: string;
+}
+
+interface PetRecord {
+  id: string;
+  type: 'dog' | 'cat';
+  name: string;
+  breed?: string;
+  age?: number;
+  gender?: 'male' | 'female' | 'unknown';
+  prefecture: string;
+  city?: string;
+  description?: string;
+  personality?: string | null;
+  care_requirements?: string | null;
+  good_with?: string | null;
+  health_notes?: string | null;
+  source_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 // CORS設定
 app.use('*', (c, next) => {
   const corsMiddleware = cors({
-    origin: [c.env.ALLOWED_ORIGIN, 'http://localhost:3004'],
+    origin: [c.env?.ALLOWED_ORIGIN || '*', 'http://localhost:3004'],
     allowMethods: ['GET', 'POST'],
     allowHeaders: ['Content-Type'],
   });
@@ -97,7 +125,7 @@ app.get('/crawl/status/:source?/:type?', async (c) => {
   
   try {
     let query = 'SELECT source_id, pet_type, checkpoint, total_processed, updated_at FROM crawler_states';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     const conditions: string[] = [];
     
     if (sourceId && CrawlerFactory.isValidSource(sourceId)) {
@@ -114,13 +142,13 @@ app.get('/crawl/status/:source?/:type?', async (c) => {
       query += ' WHERE ' + conditions.join(' AND ');
     }
     
-    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const result = await c.env['DB'].prepare(query).bind(...params).all<CrawlerStateRecord>();
     
     // チェックポイントをパース
-    const statuses = result.results?.map((row: any) => ({
+    const statuses = result.results?.map((row) => ({
       ...row,
       checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null
-    }));
+    })) || [];
     
     return c.json({
       availableSources: CrawlerFactory.getAvailableSources(),
@@ -140,7 +168,7 @@ app.get('/pets/:type?', async (c) => {
   const offset = parseInt(c.req.query('offset') || '0');
 
   let query = 'SELECT * FROM pets';
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   if (petType === 'dog' || petType === 'cat') {
     query += ' WHERE type = ?';
@@ -151,10 +179,10 @@ app.get('/pets/:type?', async (c) => {
   params.push(limit, offset);
 
   try {
-    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const result = await c.env['DB'].prepare(query).bind(...params).all<PetRecord>();
     
     return c.json({
-      pets: result.results,
+      pets: result.results || [],
       pagination: {
         limit,
         offset,
@@ -170,9 +198,9 @@ app.get('/pets/:type?', async (c) => {
 // Cron Trigger処理
 export default {
   async scheduled(
-    controller: ScheduledController,
+    _controller: ScheduledController,
     env: Env,
-    ctx: ExecutionContext
+    _ctx: ExecutionContext
   ): Promise<void> {
     console.log('Scheduled crawl started at:', new Date().toISOString());
     

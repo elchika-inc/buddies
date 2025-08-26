@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { validatePetType } from '../utils/validation';
 import { NotFoundError, ServiceUnavailableError } from '../utils/error-handler';
 import { successResponse, paginationMeta } from '../utils/response-formatter';
-import { transformPetRecord } from '../utils/data-transformer';
+import { transformPetRecord, ApiPetRecord } from '../utils/data-transformer';
 import { CONFIG } from '../utils/constants';
 import { isRawPetRecord, isCountResult, ensureArray } from '../utils/type-guards';
 
@@ -140,7 +140,7 @@ export class PetController {
     limit: number, 
     offset: number, 
     prefecture?: string
-  ): Promise<{ data: any; total: number }> {
+  ): Promise<{ data: ApiPetRecord[]; total: number }> {
     // WHERE条件を動的に構築
     const conditions: string[] = [];
     const params: (string | number)[] = [];

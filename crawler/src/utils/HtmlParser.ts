@@ -1,9 +1,29 @@
+import { parseHTML } from 'linkedom';
+
+// DOM型定義（Cloudflare Workers環境との互換性のため）
+declare global {
+  interface Document {
+    querySelector(selector: string): Element | null;
+    querySelectorAll(selector: string): NodeListOf<Element>;
+    getElementById(id: string): HTMLElement | null;
+    getElementsByClassName(className: string): HTMLCollectionOf<Element>;
+    getElementsByTagName(tagName: string): HTMLCollectionOf<Element>;
+  }
+  
+  interface Element {
+    textContent: string | null;
+    getAttribute(name: string): string | null;
+    querySelector(selector: string): Element | null;
+    querySelectorAll(selector: string): NodeListOf<Element>;
+  }
+}
+
 /**
  * 堅牢なHTMLパーサーユーティリティ
  * HTMLパース処理の共通化とエラーハンドリングの強化
  */
 export class HtmlParser {
-  private document: Document;
+  public readonly document: Document;
 
   constructor(html: string) {
     this.document = this.parseHtml(html);
@@ -18,15 +38,20 @@ export class HtmlParser {
     }
 
     try {
-      // DOMParserを使用してHTMLをパース（Node.js環境では利用不可）
-      // Cloudflare Workersでは使用可能
+      // DOMParserを使用してHTMLをパース（Cloudflare Workers環境）
       if (typeof DOMParser !== 'undefined') {
         const parser = new DOMParser();
         return parser.parseFromString(html, 'text/html');
       }
 
-      // フォールバック実装（簡易的なHTMLパース）
-      return this.createSimpleDocument(html);
+      // linkedomを使用したフォールバック（Node.js環境）
+      try {
+        const { document } = parseHTML(html);
+        return document as Document;
+      } catch (linkedomError) {
+        console.warn('linkedom parsing failed:', linkedomError);
+        return this.createSimpleDocument(html);
+      }
     } catch (error) {
       throw new Error(`Failed to parse HTML: ${error}`);
     }
@@ -35,14 +60,20 @@ export class HtmlParser {
   /**
    * 簡易DocumentLike オブジェクトを作成（DOMParserが使えない場合のフォールバック）
    */
-  private createSimpleDocument(html: string): Document {
+  private createSimpleDocument(_html: string): Document {
     // HTMLRewriterを使う場合の最小実装
     const mockDocument = {
-      querySelector: (selector: string) => null,
-      querySelectorAll: (selector: string) => [],
-      getElementById: (id: string) => null,
-      getElementsByClassName: (className: string) => [],
-      getElementsByTagName: (tagName: string) => [],
+      querySelector: (_selector: string): Element | null => null,
+      querySelectorAll: (_selector: string): NodeListOf<Element> => {
+        return [] as unknown as NodeListOf<Element>;
+      },
+      getElementById: (_id: string): HTMLElement | null => null,
+      getElementsByClassName: (_className: string): HTMLCollectionOf<Element> => {
+        return [] as unknown as HTMLCollectionOf<Element>;
+      },
+      getElementsByTagName: (_tagName: string): HTMLCollectionOf<Element> => {
+        return [] as unknown as HTMLCollectionOf<Element>;
+      },
     } as unknown as Document;
 
     return mockDocument;
@@ -81,8 +112,8 @@ export class HtmlParser {
     try {
       const elements = this.document.querySelectorAll(selector);
       return Array.from(elements)
-        .map(el => el.textContent?.trim())
-        .filter(text => text && text.length > 0) as string[];
+        .map(el => (el as HTMLElement).textContent?.trim())
+        .filter((text): text is string => Boolean(text && text.length > 0));
     } catch (error) {
       console.warn(`Failed to get texts for selector "${selector}":`, error);
       return [];
@@ -157,19 +188,24 @@ export class HtmlParser {
 
       // ヘッダー行を取得
       const headerRow = rows[0];
+      if (!headerRow) return [];
+      
       const headers = Array.from(headerRow.querySelectorAll('th, td'))
-        .map(cell => cell.textContent?.trim() || '');
+        .map(cell => (cell as HTMLElement).textContent?.trim() || '');
 
       // データ行を処理
       const data: Array<Record<string, string>> = [];
       for (let i = 1; i < rows.length; i++) {
-        const cells = Array.from(rows[i].querySelectorAll('td'));
+        const row = rows[i];
+        if (!row) continue;
+        
+        const cells = Array.from(row.querySelectorAll('td'));
         const rowData: Record<string, string> = {};
 
         cells.forEach((cell, index) => {
           const header = headers[index];
           if (header) {
-            rowData[header] = cell.textContent?.trim() || '';
+            rowData[header] = (cell as HTMLElement).textContent?.trim() || '';
           }
         });
 
@@ -195,8 +231,8 @@ export class HtmlParser {
 
       const items = list.querySelectorAll('li');
       return Array.from(items)
-        .map(item => item.textContent?.trim())
-        .filter(text => text && text.length > 0) as string[];
+        .map(item => (item as HTMLElement).textContent?.trim())
+        .filter((text): text is string => Boolean(text && text.length > 0));
     } catch (error) {
       console.warn(`Failed to get list items for selector "${listSelector}":`, error);
       return [];

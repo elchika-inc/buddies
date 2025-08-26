@@ -1,5 +1,5 @@
 import { Env, Pet, CrawlResult } from '../types';
-import { ICrawler, CrawlOptions, CrawlCheckpoint, CrawlerState } from '../interfaces/ICrawler';
+import { ICrawler, CrawlOptions, CrawlCheckpoint } from '../interfaces/ICrawler';
 import { RetryHandler } from '../utils/RetryHandler';
 import { ImageProcessor } from '../utils/ImageProcessor';
 
@@ -149,7 +149,7 @@ export abstract class BaseCrawler implements ICrawler {
       await RetryHandler.execute(async () => {
         const now = new Date().toISOString();
         const checkpoint: CrawlCheckpoint = {
-          lastItemId: processedIds[0], // 最新のID
+          lastItemId: processedIds[0] || '',
           lastCrawlAt: now,
           metadata: {
             processedCount: processedIds.length,

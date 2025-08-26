@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { Context } from 'hono';
 
 interface Env {
   DB: D1Database;
@@ -8,6 +9,7 @@ interface Env {
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   API_URL: string;
+  [key: string]: unknown;
 }
 
 interface PetRecord {
@@ -20,6 +22,14 @@ interface PetRecord {
 }
 
 const app = new Hono<{ Bindings: Env }>();
+
+// 環境変数の型安全な取得
+function getEnv(c: Context<{ Bindings: Env }>): Env {
+  if (!c.env) {
+    throw new Error('Environment variables not available');
+  }
+  return c.env;
+}
 
 // CORS設定
 app.use('*', cors());
@@ -34,7 +44,7 @@ app.get('/', (c) => {
 });
 
 // 画像がないペットを取得
-async function fetchPetsWithoutImages(db: D1Database, limit: number = 10): Promise<PetRecord[]> {
+async function fetchPetsWithoutImages(db: D1Database, limit = 10): Promise<PetRecord[]> {
   const query = `
     SELECT id, type, name, source_url, has_jpeg, has_webp
     FROM pets
@@ -44,7 +54,7 @@ async function fetchPetsWithoutImages(db: D1Database, limit: number = 10): Promi
   `;
   
   const result = await db.prepare(query).bind(limit).all();
-  return result.results as PetRecord[];
+  return (result.results || []) as unknown as PetRecord[];
 }
 
 // GitHub Actions ワークフローをトリガー
@@ -86,8 +96,10 @@ app.post('/dispatch', async (c) => {
   const { limit = 10 } = await c.req.json().catch(() => ({}));
   
   try {
+    const env = getEnv(c);
+    
     // 画像がないペットを取得
-    const pets = await fetchPetsWithoutImages(c.env.DB, limit);
+    const pets = await fetchPetsWithoutImages(env.DB, limit);
     
     if (pets.length === 0) {
       return c.json({
@@ -101,14 +113,14 @@ app.post('/dispatch', async (c) => {
     const batchId = `dispatch-${Date.now()}`;
     
     // GitHub Actionsをトリガー
-    const response = await triggerGitHubWorkflow(c.env, pets, batchId);
+    const response = await triggerGitHubWorkflow(env, pets, batchId);
     
     if (!response.ok) {
       throw new Error(`GitHub API error: ${response.status}`);
     }
     
     // ディスパッチ履歴を記録
-    await c.env.DB.prepare(`
+    await env.DB.prepare(`
       INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
       VALUES (?, ?, 'dispatched', CURRENT_TIMESTAMP)
     `).bind(batchId, pets.length).run();
@@ -122,10 +134,11 @@ app.post('/dispatch', async (c) => {
     });
     
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Dispatch error:', error);
     return c.json({
       success: false,
-      error: error.message
+      error: errorMessage
     }, 500);
   }
 });
@@ -135,8 +148,10 @@ app.post('/scheduled', async (c) => {
   console.log('Scheduled dispatch triggered');
   
   try {
+    const env = getEnv(c);
+    
     // 画像がないペットを取得（自動実行時は20件）
-    const pets = await fetchPetsWithoutImages(c.env.DB, 20);
+    const pets = await fetchPetsWithoutImages(env.DB, 20);
     
     if (pets.length === 0) {
       console.log('No pets without images found');
@@ -147,14 +162,14 @@ app.post('/scheduled', async (c) => {
     const batchId = `cron-${new Date().toISOString().split('T')[0]}-${Date.now()}`;
     
     // GitHub Actionsをトリガー
-    const response = await triggerGitHubWorkflow(c.env, pets, batchId);
+    const response = await triggerGitHubWorkflow(env, pets, batchId);
     
     if (!response.ok) {
       throw new Error(`GitHub API error: ${response.status}`);
     }
     
     // ディスパッチ履歴を記録
-    await c.env.DB.prepare(`
+    await env.DB.prepare(`
       INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
       VALUES (?, ?, 'scheduled', CURRENT_TIMESTAMP)
     `).bind(batchId, pets.length).run();
@@ -168,41 +183,59 @@ app.post('/scheduled', async (c) => {
     });
     
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Scheduled dispatch error:', error);
     return c.json({
       success: false,
-      error: error.message
+      error: errorMessage
     }, 500);
   }
 });
 
 // ディスパッチ履歴を取得
 app.get('/history', async (c) => {
-  const result = await c.env.DB.prepare(`
-    SELECT * FROM dispatch_history
-    ORDER BY created_at DESC
-    LIMIT 50
-  `).all();
-  
-  return c.json({
-    success: true,
-    history: result.results
-  });
+  try {
+    const env = getEnv(c);
+    
+    const result = await env.DB.prepare(`
+      SELECT * FROM dispatch_history
+      ORDER BY created_at DESC
+      LIMIT 50
+    `).all();
+    
+    return c.json({
+      success: true,
+      history: result.results
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('History fetch error:', error);
+    return c.json({
+      success: false,
+      error: errorMessage
+    }, 500);
+  }
 });
 
 // Cloudflare Workers のスケジュール実行
 export default {
   fetch: app.fetch,
   
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    // Cron実行時の処理
-    const response = await app.fetch(
-      new Request('http://dispatcher/scheduled', {
-        method: 'POST'
-      }),
-      env
-    );
-    
-    console.log('Scheduled execution result:', await response.json());
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    try {
+      // Cron実行時の処理
+      const response = await app.fetch(
+        new Request('http://dispatcher/scheduled', {
+          method: 'POST'
+        }),
+        env
+      );
+      
+      const result = await response.json();
+      console.log('Scheduled execution result:', result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Scheduled execution error:', errorMessage);
+    }
   }
 };

@@ -129,7 +129,7 @@ describe('モデル型ガード', () => {
 
     it('必須フィールドが欠けている場合falseを返す', () => {
       const invalidPet = { ...validPet };
-      delete (invalidPet as any).id;
+      delete (invalidPet as Record<string, unknown>).id;
       expect(isRawPetRecord(invalidPet)).toBe(false);
     });
 
@@ -182,7 +182,7 @@ describe('モデル型ガード', () => {
 
     it('フィールドが欠けている場合falseを返す', () => {
       const invalidStats = { ...validStats };
-      delete (invalidStats as any).totalPets;
+      delete (invalidStats as Record<string, unknown>).totalPets;
       expect(isPetStatistics(invalidStats)).toBe(false);
     });
   });

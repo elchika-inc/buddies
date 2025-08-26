@@ -41,7 +41,7 @@ export class ImageController {
       
       // ファイル拡張子によって適切なファイルを取得
       const isWebP = filename.endsWith('.webp');
-      const imageKey = `pets/${pet.type}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
+      const imageKey = `pets/${pet['type']}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
       
       const object = await this.bucket.get(imageKey);
       
@@ -52,7 +52,7 @@ export class ImageController {
       // 適切なContent-Typeを設定
       const contentType = isWebP ? 'image/webp' : 'image/jpeg';
       
-      return new Response(object.body, {
+      return new Response(object.body as ReadableStream<Uint8Array>, {
         headers: {
           'Content-Type': contentType,
           'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ
@@ -102,7 +102,7 @@ export class ImageController {
       // 適切なContent-Typeを設定
       const contentType = isWebP ? 'image/webp' : 'image/jpeg';
       
-      return new Response(object.body, {
+      return new Response(object.body as ReadableStream<Uint8Array>, {
         headers: {
           'Content-Type': contentType,
           'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ

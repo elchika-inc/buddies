@@ -22,7 +22,7 @@ interface SyncJob {
   startedAt: string;
   completedAt?: string;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface SyncProgress {
@@ -207,7 +207,7 @@ export class SyncService {
   /**
    * 個別ペットデータを同期
    */
-  private async syncPetData(pet: any): Promise<void> {
+  private async syncPetData(pet: Record<string, unknown>): Promise<void> {
     // 実際の同期処理をここに実装
     console.log(`Syncing pet ${pet.id}`);
     // データの取得、更新などの処理
@@ -284,7 +284,7 @@ export class SyncService {
   /**
    * 残り時間を推定
    */
-  private estimateTimeRemaining(job: any): number {
+  private estimateTimeRemaining(job: SyncJob): number {
     if (job.progress === 0) return 0;
     
     const elapsedTime = Date.now() - new Date(job.startedAt).getTime();
@@ -379,7 +379,17 @@ export class SyncService {
   /**
    * 同期ステータスサマリーを取得
    */
-  async getSyncStatus(): Promise<any> {
+  async getSyncStatus(): Promise<{
+    lastSync: SyncJob | null;
+    coverage: {
+      total: number;
+      withJpeg: number;
+      withWebp: number;
+      jpegPercentage: number;
+      webpPercentage: number;
+    };
+    lastUpdated: string | null;
+  }> {
     const lastJobId = await this.metadataService.getMetadata('last_sync_job_id');
     const lastJob = lastJobId ? 
       JSON.parse(await this.metadataService.getMetadata(`sync_job_${lastJobId}`) || '{}') : null;

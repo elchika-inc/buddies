@@ -6,7 +6,7 @@ export interface RetryConfig {
   maxAttempts: number;
   delayMs: number;
   backoffMultiplier: number;
-  retryableErrors?: (error: any) => boolean;
+  retryableErrors?: (error: unknown) => boolean;
 }
 
 export class RetryHandler {
@@ -16,11 +16,18 @@ export class RetryHandler {
     backoffMultiplier: 2,
     retryableErrors: (error) => {
       // デフォルトでネットワークエラーをリトライ対象とする
-      return error?.message?.includes('fetch failed') ||
-             error?.message?.includes('network') ||
-             error?.code === 'ETIMEDOUT' ||
-             error?.code === 'ECONNREFUSED' ||
-             error?.code === 'ENOTFOUND';
+      if (error && typeof error === 'object') {
+        const errorObj = error as Record<string, unknown>;
+        const message = typeof errorObj['message'] === 'string' ? errorObj['message'] : '';
+        const code = typeof errorObj['code'] === 'string' ? errorObj['code'] : '';
+        
+        return message.includes('fetch failed') ||
+               message.includes('network') ||
+               code === 'ETIMEDOUT' ||
+               code === 'ECONNREFUSED' ||
+               code === 'ENOTFOUND';
+      }
+      return false;
     }
   };
 
@@ -32,7 +39,7 @@ export class RetryHandler {
     config: Partial<RetryConfig> = {}
   ): Promise<T> {
     const finalConfig = { ...this.DEFAULT_CONFIG, ...config };
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= finalConfig.maxAttempts; attempt++) {
       try {
@@ -48,8 +55,11 @@ export class RetryHandler {
 
         // 指数バックオフで待機
         const delay = finalConfig.delayMs * Math.pow(finalConfig.backoffMultiplier, attempt - 1);
+        const errorMessage = error && typeof error === 'object' && 'message' in error 
+          ? String(error.message) 
+          : String(error);
         console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms...`, {
-          error: error.message,
+          error: errorMessage,
           attempt,
           maxAttempts: finalConfig.maxAttempts
         });
@@ -71,25 +81,33 @@ export class RetryHandler {
       backoffMultiplier: 2,
       retryableErrors: (error) => {
         // HTTP関連のエラーをリトライ対象とする
-        const message = error?.message?.toLowerCase() || '';
-        const status = error?.status;
-        
-        return (
-          // ネットワークエラー
-          message.includes('fetch failed') ||
-          message.includes('network') ||
-          message.includes('timeout') ||
-          message.includes('connection') ||
+        if (error && typeof error === 'object') {
+          const errorObj = error as Record<string, unknown>;
+          const message = typeof errorObj['message'] === 'string' 
+            ? errorObj['message'].toLowerCase() 
+            : '';
+          const status = typeof errorObj['status'] === 'number' 
+            ? errorObj['status'] 
+            : undefined;
           
-          // 一時的なHTTPエラー
-          status === 429 || // Too Many Requests
-          status === 502 || // Bad Gateway
-          status === 503 || // Service Unavailable
-          status === 504 || // Gateway Timeout
-          
-          // サーバーエラー（5xx）で一時的な可能性があるもの
-          (status >= 500 && status < 600)
-        );
+          return (
+            // ネットワークエラー
+            message.includes('fetch failed') ||
+            message.includes('network') ||
+            message.includes('timeout') ||
+            message.includes('connection') ||
+            
+            // 一時的なHTTPエラー
+            status === 429 || // Too Many Requests
+            status === 502 || // Bad Gateway
+            status === 503 || // Service Unavailable
+            status === 504 || // Gateway Timeout
+            
+            // サーバーエラー（5xx）で一時的な可能性があるもの
+            (status !== undefined && status >= 500 && status < 600)
+          );
+        }
+        return false;
       }
     };
   }
@@ -103,14 +121,20 @@ export class RetryHandler {
       delayMs: 500,
       backoffMultiplier: 2,
       retryableErrors: (error) => {
-        const message = error?.message?.toLowerCase() || '';
+        if (error && typeof error === 'object') {
+          const errorObj = error as Record<string, unknown>;
+          const message = typeof errorObj['message'] === 'string' 
+            ? errorObj['message'].toLowerCase() 
+            : '';
         
-        return (
-          message.includes('database is locked') ||
-          message.includes('busy') ||
-          message.includes('timeout') ||
-          message.includes('connection')
-        );
+          return (
+            message.includes('database is locked') ||
+            message.includes('busy') ||
+            message.includes('timeout') ||
+            message.includes('connection')
+          );
+        }
+        return false;
       }
     };
   }

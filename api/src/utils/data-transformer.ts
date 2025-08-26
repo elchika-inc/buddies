@@ -21,55 +21,57 @@ export function camelToSnake(str: string): string {
 /**
  * オブジェクトのキーをsnake_caseからcamelCaseに変換
  */
-export function transformToCamelCase<T = any>(obj: any): T {
+export function transformToCamelCase<T = unknown>(obj: unknown): T {
   if (obj === null || obj === undefined) {
-    return obj;
+    return obj as T;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => transformToCamelCase(item)) as any;
+    return obj.map(item => transformToCamelCase(item)) as T;
   }
 
   if (typeof obj !== 'object') {
-    return obj;
+    return obj as T;
   }
 
-  const transformed: any = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+  const transformed: Record<string, unknown> = {};
+  const record = obj as Record<string, unknown>;
+  for (const key in record) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
       const camelKey = snakeToCamel(key);
-      transformed[camelKey] = transformToCamelCase(obj[key]);
+      transformed[camelKey] = transformToCamelCase(record[key]);
     }
   }
 
-  return transformed;
+  return transformed as T;
 }
 
 /**
  * オブジェクトのキーをcamelCaseからsnake_caseに変換
  */
-export function transformToSnakeCase<T = any>(obj: any): T {
+export function transformToSnakeCase<T = unknown>(obj: unknown): T {
   if (obj === null || obj === undefined) {
-    return obj;
+    return obj as T;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => transformToSnakeCase(item)) as any;
+    return obj.map(item => transformToSnakeCase(item)) as T;
   }
 
   if (typeof obj !== 'object') {
-    return obj;
+    return obj as T;
   }
 
-  const transformed: any = {};
-  for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+  const transformed: Record<string, unknown> = {};
+  const record = obj as Record<string, unknown>;
+  for (const key in record) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
       const snakeKey = camelToSnake(key);
-      transformed[snakeKey] = transformToSnakeCase(obj[key]);
+      transformed[snakeKey] = transformToSnakeCase(record[key]);
     }
   }
 
-  return transformed;
+  return transformed as T;
 }
 
 /**
@@ -77,14 +79,14 @@ export function transformToSnakeCase<T = any>(obj: any): T {
  * 
  * @description snake_caseのDBレコードをcamelCaseのAPIレスポンスに変換
  */
-export function dbToApi<T = any>(record: any): T {
-  if (!record) return record;
+export function dbToApi<T = unknown>(record: unknown): T {
+  if (!record) return record as T;
 
   const transformed = transformToCamelCase<T>(record);
   
   // boolean型への変換（DB: 0/1 → API: boolean）
   if (typeof transformed === 'object' && transformed !== null) {
-    const obj = transformed as any;
+    const obj = transformed as Record<string, unknown>;
     
     // has_jpeg/has_webp のような boolean フィールドを変換
     if ('hasJpeg' in obj && typeof obj.hasJpeg === 'number') {
@@ -106,14 +108,14 @@ export function dbToApi<T = any>(record: any): T {
  * 
  * @description camelCaseのAPIリクエストをsnake_caseのDBレコードに変換
  */
-export function apiToDb<T = any>(data: any): T {
-  if (!data) return data;
+export function apiToDb<T = unknown>(data: unknown): T {
+  if (!data) return data as T;
 
   const transformed = transformToSnakeCase<T>(data);
   
   // boolean型への変換（API: boolean → DB: 0/1）
   if (typeof transformed === 'object' && transformed !== null) {
-    const obj = transformed as any;
+    const obj = transformed as Record<string, unknown>;
     
     // has_jpeg/has_webp のような boolean フィールドを変換
     if ('has_jpeg' in obj && typeof obj.has_jpeg === 'boolean') {
@@ -167,7 +169,7 @@ export interface ApiPetRecord {
 /**
  * データベースのペットレコードをAPI用に変換
  */
-export function transformPetRecord(dbRecord: any): ApiPetRecord {
+export function transformPetRecord(dbRecord: unknown): ApiPetRecord {
   const pet = dbToApi<ApiPetRecord>(dbRecord);
   
   // JSON文字列フィールドのパース
@@ -208,9 +210,9 @@ export function transformPetRecord(dbRecord: any): ApiPetRecord {
   if (pet.hasJpeg || pet.hasWebp) {
     // R2の画像を配信するAPIエンドポイント（カスタムドメイン使用）
     pet.imageUrl = `https://pawmatch-api.elchika.app/api/images/${pet.type}/${pet.id}.jpg`;
-  } else if (dbRecord.image_url) {
+  } else if (typeof dbRecord === 'object' && dbRecord !== null && 'image_url' in dbRecord && typeof (dbRecord as Record<string, unknown>).image_url === 'string') {
     // データベースに既存の画像URLがある場合はそれを使用
-    pet.imageUrl = dbRecord.image_url;
+    pet.imageUrl = (dbRecord as Record<string, unknown>).image_url as string;
   }
 
   // locationフィールドの設定

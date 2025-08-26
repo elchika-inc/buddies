@@ -21,7 +21,7 @@ interface ErrorDetails {
   status: number;
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -167,7 +167,7 @@ export function methodNotAllowedHandler(c: Context) {
  * 
  * @description リクエストバリデーションエラーを統一的に処理
  */
-export function validationErrorHandler(errors: any[]) {
+export function validationErrorHandler(errors: unknown[]) {
   const response = errorResponse(
     'Validation failed',
     'VALIDATION_ERROR',
