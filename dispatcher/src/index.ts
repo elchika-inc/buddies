@@ -1,15 +1,31 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
+import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 
 interface Env {
   DB: D1Database;
+  PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>;
+  PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>;
   GITHUB_TOKEN: string;
   GITHUB_OWNER: string;
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   API_URL: string;
   [key: string]: unknown;
+}
+
+interface DispatchMessage {
+  type: 'screenshot' | 'crawl' | 'convert';
+  pets: Array<{
+    id: string;
+    name: string;
+    type: 'dog' | 'cat';
+    source_url: string;
+  }>;
+  batchId: string;
+  retryCount?: number;
+  timestamp: string;
 }
 
 interface PetRecord {
@@ -91,7 +107,7 @@ async function triggerGitHubWorkflow(
   return response;
 }
 
-// 手動トリガー
+// 手動トリガー（Queueに送信）
 app.post('/dispatch', async (c) => {
   const { limit = 10 } = await c.req.json().catch(() => ({}));
   
@@ -112,22 +128,31 @@ app.post('/dispatch', async (c) => {
     // バッチIDを生成
     const batchId = `dispatch-${Date.now()}`;
     
-    // GitHub Actionsをトリガー
-    const response = await triggerGitHubWorkflow(env, pets, batchId);
+    // Queueにメッセージを送信
+    const message: DispatchMessage = {
+      type: 'screenshot',
+      pets: pets.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        source_url: p.source_url
+      })),
+      batchId,
+      retryCount: 0,
+      timestamp: new Date().toISOString()
+    };
     
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
+    await env.PAWMATCH_DISPATCH_QUEUE.send(message);
     
     // ディスパッチ履歴を記録
     await env.DB.prepare(`
       INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
-      VALUES (?, ?, 'dispatched', CURRENT_TIMESTAMP)
+      VALUES (?, ?, 'queued', CURRENT_TIMESTAMP)
     `).bind(batchId, pets.length).run();
     
     return c.json({
       success: true,
-      message: 'Workflow dispatched successfully',
+      message: 'Batch queued for processing',
       batchId,
       count: pets.length,
       pets: pets.map(p => ({ id: p.id, name: p.name }))
@@ -143,7 +168,7 @@ app.post('/dispatch', async (c) => {
   }
 });
 
-// Cron実行（scheduled）
+// Cron実行（scheduled） - Queueに送信
 app.post('/scheduled', async (c) => {
   console.log('Scheduled dispatch triggered');
   
@@ -161,20 +186,29 @@ app.post('/scheduled', async (c) => {
     // バッチIDを生成
     const batchId = `cron-${new Date().toISOString().split('T')[0]}-${Date.now()}`;
     
-    // GitHub Actionsをトリガー
-    const response = await triggerGitHubWorkflow(env, pets, batchId);
+    // Queueにメッセージを送信
+    const message: DispatchMessage = {
+      type: 'screenshot',
+      pets: pets.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        source_url: p.source_url
+      })),
+      batchId,
+      retryCount: 0,
+      timestamp: new Date().toISOString()
+    };
     
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
-    }
+    await env.PAWMATCH_DISPATCH_QUEUE.send(message);
     
     // ディスパッチ履歴を記録
     await env.DB.prepare(`
       INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
-      VALUES (?, ?, 'scheduled', CURRENT_TIMESTAMP)
+      VALUES (?, ?, 'scheduled_queued', CURRENT_TIMESTAMP)
     `).bind(batchId, pets.length).run();
     
-    console.log(`Scheduled dispatch completed: ${pets.length} pets`);
+    console.log(`Scheduled dispatch queued: ${pets.length} pets`);
     
     return c.json({
       success: true,
@@ -217,9 +251,83 @@ app.get('/history', async (c) => {
   }
 });
 
-// Cloudflare Workers のスケジュール実行
+// Queue Consumer - GitHub Actionsを呼び出す処理
+async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env): Promise<void> {
+  for (const message of batch.messages) {
+    try {
+      const { type, pets, batchId, retryCount = 0 } = message.body;
+      
+      console.log(`Processing queue message: ${batchId}, type: ${type}, retry: ${retryCount}`);
+      
+      // GitHub Actionsをトリガー
+      const response = await triggerGitHubWorkflow(env, pets as PetRecord[], batchId);
+      
+      if (!response.ok) {
+        // 429 (Rate Limit) の場合は後でリトライ
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const delaySeconds = retryAfter ? parseInt(retryAfter) : 60;
+          
+          if (retryCount < 3) {
+            // リトライメッセージをキューに再送信
+            await env.PAWMATCH_DISPATCH_QUEUE.send(
+              { ...message.body, retryCount: retryCount + 1 },
+              { delaySeconds }
+            );
+            message.ack(); // 現在のメッセージは処理済みとする
+            continue;
+          }
+        }
+        
+        throw new Error(`GitHub API error: ${response.status}`);
+      }
+      
+      // 成功時の処理
+      await env.DB.prepare(`
+        UPDATE dispatch_history 
+        SET status = 'completed', completed_at = CURRENT_TIMESTAMP 
+        WHERE batch_id = ?
+      `).bind(batchId).run();
+      
+      message.ack();
+      
+    } catch (error) {
+      console.error('Queue message processing failed:', error);
+      const retryCount = message.body.retryCount || 0;
+      
+      if (retryCount >= 3) {
+        // 最大リトライ回数に達した場合はDLQに送信
+        await env.PAWMATCH_DISPATCH_DLQ.send({
+          ...message.body,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          failedAt: new Date().toISOString()
+        } as any);
+        
+        await env.DB.prepare(`
+          UPDATE dispatch_history 
+          SET status = 'failed', error = ?, completed_at = CURRENT_TIMESTAMP 
+          WHERE batch_id = ?
+        `).bind(
+          error instanceof Error ? error.message : 'Unknown error',
+          message.body.batchId
+        ).run();
+        
+        message.ack();
+      } else {
+        // リトライ
+        message.retry();
+      }
+    }
+  }
+}
+
+// Cloudflare Workers のエントリポイント
 export default {
   fetch: app.fetch,
+  
+  async queue(batch: MessageBatch<DispatchMessage>, env: Env): Promise<void> {
+    await handleQueueBatch(batch, env);
+  },
   
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
     try {

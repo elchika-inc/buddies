@@ -19,9 +19,30 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
+# Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_CRAWL_QUEUE"
+queue = "pawmatch-crawl-queue"
+
+[[queues.consumers]]
+queue = "pawmatch-crawl-queue"
+max_batch_size = 5
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-crawl-dlq"
+
+# Dead Letter Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_CRAWL_DLQ"
+queue = "pawmatch-crawl-dlq"
+
 # Cron Trigger設定（4時間ごとに実行）
 [triggers]
 crons = ["0 */4 * * *"]
+
+# Observability設定
+[observability.logs]
+enabled = true
 
 # 本番環境でのGitHub Actions設定
 [env.production]

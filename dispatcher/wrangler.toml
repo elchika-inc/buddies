@@ -16,9 +16,30 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
+# Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_DISPATCH_QUEUE"
+queue = "pawmatch-dispatch-queue"
+
+[[queues.consumers]]
+queue = "pawmatch-dispatch-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-dispatch-dlq"
+
+# Dead Letter Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_DISPATCH_DLQ"
+queue = "pawmatch-dispatch-dlq"
+
 # Cron Trigger設定（Crawlerの15分後、4時間ごと）
 [triggers]
 crons = ["15 */4 * * *"]
+
+# Observability設定
+[observability.logs]
+enabled = true
 
 # 開発環境設定
 [env.development]

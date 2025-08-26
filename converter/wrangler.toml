@@ -14,8 +14,33 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
+# Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_CONVERT_QUEUE"
+queue = "pawmatch-convert-queue"
+
+[[queues.consumers]]
+queue = "pawmatch-convert-queue"
+max_batch_size = 5
+max_batch_timeout = 60
+max_retries = 3
+dead_letter_queue = "pawmatch-convert-dlq"
+
+# Dead Letter Queue設定
+[[queues.producers]]
+binding = "PAWMATCH_CONVERT_DLQ"
+queue = "pawmatch-convert-dlq"
+
+# Scheduled Event（定期的な画像チェック）
+[triggers]
+crons = ["30 */6 * * *"]
+
 # Workers はデフォルトドメインを使用（.workers.dev）
 # カスタムドメインは不要
+
+# Observability設定
+[observability.logs]
+enabled = true
 
 # 開発環境設定
 [env.development]

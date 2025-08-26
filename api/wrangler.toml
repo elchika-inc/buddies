@@ -25,6 +25,10 @@ binding = "IMAGE_WORKER"
 service = "pawmatch-image-converter"
 environment = "production"
 
+# Observability設定
+[observability.logs]
+enabled = true
+
 # カスタムドメイン設定
 [env.production]
 vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }

@@ -2,7 +2,7 @@
   "compilerOptions": {
     /* Language and Environment */
     "target": "ES2021",
-    "lib": ["ES2021", "WebWorker"],
+    "lib": ["ES2021", "WebWorker", "DOM"],
     "types": ["@cloudflare/workers-types"],
     
     /* Modules */
