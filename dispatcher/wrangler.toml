@@ -33,9 +33,17 @@ dead_letter_queue = "pawmatch-dispatch-dlq"
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
-# Cron Trigger設定（Crawlerの15分後、4時間ごと）
+# R2バケット設定（オプション: R2から画像削除する場合）
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "pawmatch-images"
+
+# Cron Trigger設定
 [triggers]
-crons = ["15 */4 * * *"]
+crons = [
+  "15 */4 * * *",  # Crawlerの15分後、4時間ごと（スクリーンショット処理）
+  "0 2 * * *"      # 毎日深夜2時（データクリーンアップ）
+]
 
 # Observability設定
 [observability.logs]

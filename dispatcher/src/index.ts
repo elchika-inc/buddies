@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
-import type { MessageBatch, Queue } from '@cloudflare/workers-types';
+import type { MessageBatch, Queue, R2Bucket, ScheduledEvent, ExecutionContext, D1Database } from '@cloudflare/workers-types';
+import { CleanupService } from './cleanup-service';
 
 interface Env {
   DB: D1Database;
@@ -12,12 +13,13 @@ interface Env {
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   API_URL: string;
+  R2_BUCKET?: R2Bucket;
   [key: string]: unknown;
 }
 
 interface DispatchMessage {
-  type: 'screenshot' | 'crawl' | 'convert';
-  pets: Array<{
+  type: 'screenshot' | 'crawl' | 'convert' | 'cleanup';
+  pets?: Array<{
     id: string;
     name: string;
     type: 'dog' | 'cat';
@@ -26,6 +28,7 @@ interface DispatchMessage {
   batchId: string;
   retryCount?: number;
   timestamp: string;
+  cleanupType?: 'expired' | 'all';
 }
 
 interface PetRecord {
@@ -321,6 +324,71 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
   }
 }
 
+// クリーンアップ処理
+async function performDataCleanup(env: Env, ctx: ExecutionContext): Promise<void> {
+  console.log('Starting data cleanup process');
+  
+  const cleanupService = new CleanupService(env.DB);
+  
+  try {
+    // 期限切れペットのソフト削除と物理削除
+    const result = await cleanupService.deleteExpiredPets();
+    console.log(`Cleanup result: deleted=${result.deletedCount}, soft-deleted=${result.softDeletedCount}`);
+    
+    // エラーがあればログ出力
+    if (result.errors.length > 0) {
+      console.error('Cleanup errors:', result.errors);
+    }
+    
+    // R2から画像削除（オプション）
+    if (env.R2_BUCKET) {
+      const expiredImages = await cleanupService.getExpiredPetImages();
+      console.log(`Found ${expiredImages.length} expired images to delete`);
+      
+      // バッチで削除（パフォーマンス考慮）
+      const deletePromises = expiredImages.map(async (imageKey) => {
+        try {
+          await env.R2_BUCKET!.delete(imageKey);
+        } catch (error) {
+          console.error(`Failed to delete image ${imageKey}:`, error);
+        }
+      });
+      
+      // 並列実行（最大10個ずつ）
+      const batchSize = 10;
+      for (let i = 0; i < deletePromises.length; i += batchSize) {
+        await Promise.all(deletePromises.slice(i, i + batchSize));
+      }
+    }
+    
+    // クリーンアップ統計をログ出力
+    const stats = await cleanupService.getCleanupStats();
+    console.log('Cleanup statistics:', stats);
+    
+    // 履歴に記録
+    await env.DB.prepare(`
+      INSERT INTO dispatch_history (batch_id, pet_count, status, created_at, notes)
+      VALUES (?, ?, 'cleanup_completed', CURRENT_TIMESTAMP, ?)
+    `).bind(
+      `cleanup-${Date.now()}`,
+      result.deletedCount + result.softDeletedCount,
+      JSON.stringify(stats)
+    ).run();
+    
+  } catch (error) {
+    console.error('Data cleanup failed:', error);
+    
+    // エラーを履歴に記録
+    await env.DB.prepare(`
+      INSERT INTO dispatch_history (batch_id, pet_count, status, error, created_at)
+      VALUES (?, 0, 'cleanup_failed', ?, CURRENT_TIMESTAMP)
+    `).bind(
+      `cleanup-${Date.now()}`,
+      error instanceof Error ? error.message : 'Unknown error'
+    ).run();
+  }
+}
+
 // Cloudflare Workers のエントリポイント
 export default {
   fetch: app.fetch,
@@ -329,18 +397,27 @@ export default {
     await handleQueueBatch(batch, env);
   },
   
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     try {
-      // Cron実行時の処理
-      const response = await app.fetch(
-        new Request('http://dispatcher/scheduled', {
-          method: 'POST'
-        }),
-        env
-      );
+      const cronType = event.cron;
+      console.log(`Scheduled execution triggered: ${cronType}`);
       
-      const result = await response.json();
-      console.log('Scheduled execution result:', result);
+      // cronスケジュールに基づいて処理を分岐
+      if (cronType === '0 2 * * *' || cronType === '0 0 2 * * *') {
+        // 毎日深夜2時: データクリーンアップ
+        await performDataCleanup(env, ctx);
+      } else {
+        // その他: スクリーンショット処理
+        const response = await app.fetch(
+          new Request('http://dispatcher/scheduled', {
+            method: 'POST'
+          }),
+          env
+        );
+        
+        const result = await response.json();
+        console.log('Scheduled execution result:', result);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Scheduled execution error:', errorMessage);
