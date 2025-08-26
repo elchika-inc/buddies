@@ -1,79 +1,86 @@
 {
   "name": "pawmatch",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "保護犬・保護猫とユーザーをマッチングするWebアプリケーション",
   "keywords": [
     "react",
     "typescript",
-    "pet-adoption"
+    "pet-adoption",
+    "cloudflare-workers",
+    "next.js"
+  ],
+  "workspaces": [
+    "app",
+    "api",
+    "crawler",
+    "converter",
+    "dispatcher"
   ],
   "scripts": {
+    "// Development Commands": "",
     "dev": "cd app && npm run dev",
-    "build": "cd app && npm run build",
-    "start": "cd app && npm run start",
-    "lint": "cd app && npm run lint",
-    "lint:fix": "cd app && npm run lint:fix",
-    "type-check": "cd app && npm run type-check",
-    "clean": "cd app && npm run clean",
-    "deploy": "cd app && npm run deploy",
-    "deploy:dog": "cd app && npm run deploy:dog",
-    "deploy:cat": "cd app && npm run deploy:cat",
-    "deploy:all": "node scripts/deploy-all.js",
-    "deploy:all:sh": "bash scripts/deploy-all.sh",
-    "deploy:workers": "concurrently --names 'CRAWLER,DISPATCH,CONVERT' --prefix-colors 'cyan,magenta,yellow' 'cd crawler && npm run deploy' 'cd dispatcher && npm run deploy' 'cd converter && npm run deploy'",
-    "deploy:apps": "concurrently --names 'DOG,CAT' --prefix-colors 'blue,green' 'npm run deploy:dog' 'npm run deploy:cat'",
+    "dev:all": "concurrently --names 'API,APP' --prefix-colors 'yellow,cyan' 'npm run api:dev' 'npm run dev'",
     "dev:dog": "cd app && npm run dev:dog",
     "dev:cat": "cd app && npm run dev:cat",
-    "api:install": "cd api && npm install",
+    
+    "// Build Commands": "",
+    "build": "cd app && npm run build",
+    "build:all": "npm run build && npm run api:build",
+    
+    "// Type Check & Lint": "",
+    "type-check": "cd app && npm run type-check",
+    "lint": "cd app && npm run lint",
+    "lint:fix": "cd app && npm run lint:fix",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
+    
+    "// Deployment Commands": "",
+    "deploy:dog": "cd app && npm run deploy:dog",
+    "deploy:cat": "cd app && npm run deploy:cat",
+    "deploy:apps": "concurrently --names 'DOG,CAT' --prefix-colors 'blue,green' 'npm run deploy:dog' 'npm run deploy:cat'",
+    "deploy:workers": "concurrently --names 'API,CRAWLER,DISPATCH,CONVERT' --prefix-colors 'yellow,cyan,magenta,green' 'npm run api:deploy' 'npm run crawler:deploy' 'npm run dispatcher:deploy' 'npm run converter:deploy'",
+    "deploy:all": "npm run deploy:apps && npm run deploy:workers",
+    
+    "// API Commands": "",
     "api:dev": "cd api && npm run dev",
     "api:build": "cd api && npm run build",
     "api:deploy": "cd api && npm run deploy",
     "api:db:init": "cd api && npm run db:init",
     "api:db:migrate": "cd api && npm run db:migrate",
-    "crawler:install": "cd crawler && npm install",
-    "crawler:build": "cd crawler && npm run build",
-    "crawler:test": "cd crawler && npm test",
-    "crawler:cats": "cd crawler && npm run crawl:cats",
-    "crawler:dogs": "cd crawler && npm run crawl:dogs",
+    
+    "// Crawler Commands": "",
     "crawler:dev": "cd crawler && npm run dev",
     "crawler:deploy": "cd crawler && npm run deploy",
-    "dispatcher:deploy": "cd dispatcher && npm run deploy",
+    "crawler:test": "cd crawler && npm test",
+    "crawler:dogs": "cd crawler && npm run crawl:dogs",
+    "crawler:cats": "cd crawler && npm run crawl:cats",
+    
+    "// Converter Commands": "",
     "converter:deploy": "cd converter && npm run deploy",
-    "dev:all": "npm run api:dev & npm run dev"
-  },
-  "dependencies": {
-    "dotenv": "^17.2.1",
-    "drizzle-orm": "^0.44.5",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    
+    "// Dispatcher Commands": "",
+    "dispatcher:deploy": "cd dispatcher && npm run deploy",
+    
+    "// Utility Commands": "",
+    "clean": "rm -rf node_modules app/node_modules api/node_modules crawler/node_modules converter/node_modules dispatcher/node_modules",
+    "clean:all": "rm -rf node_modules package-lock.json app/node_modules app/package-lock.json api/node_modules api/package-lock.json crawler/node_modules crawler/package-lock.json converter/node_modules converter/package-lock.json dispatcher/node_modules dispatcher/package-lock.json",
+    "clean:cache": "npm cache clean --force",
+    "reinstall": "npm run clean:all && npm run clean:cache && npm run install:all",
+    "reinstall:quick": "npm run clean:all && npm run install:all",
+    "install:all": "npm install && cd app && npm install && cd ../api && npm install && cd ../crawler && npm install && cd ../converter && npm install && cd ../dispatcher && npm install"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "autoprefixer": "^10.4.14",
-    "better-sqlite3": "^12.2.0",
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^20.16.0",
     "concurrently": "^8.2.2",
-    "drizzle-kit": "^0.31.4",
-    "eslint": "^8.45.0",
-    "eslint-config-next": "^14.0.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "postcss": "^8.4.27",
     "prettier": "^3.6.2",
-    "tailwindcss": "^3.3.0",
-    "tsx": "^4.20.5",
-    "typescript": "^5.0.2"
+    "typescript": "^5.6.0",
+    "wrangler": "^3.114.0"
   },
   "engines": {
-    "bun": ">=1.0.0",
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
-  "packageManager": "bun@1.1.0",
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+  "packageManager": "npm@10.8.2"
 }

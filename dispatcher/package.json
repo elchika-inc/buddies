@@ -1,19 +1,22 @@
 {
-  "name": "pawmatch-dispatcher",
+  "name": "@pawmatch/dispatcher",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "description": "Task dispatcher service for PawMatch",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "wrangler build",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail"
   },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240117.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.4",
-    "wrangler": "^3.0.0"
-  },
   "dependencies": {
     "hono": "^4.9.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^20.16.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^3.114.0"
   }
 }

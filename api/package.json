@@ -1,37 +1,37 @@
 {
-  "name": "pawmatch-api-worker",
+  "name": "@pawmatch/api",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --port 8788",
-    "dev:local": "node scripts/run-local.js",
+    "dev": "wrangler dev --local --port 8787",
     "build": "wrangler build",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
+    "type-check": "tsc --noEmit",
     "db:init": "wrangler d1 execute pawmatch-db --local --file=./schema.sql",
     "db:migrate": "wrangler d1 migrations apply pawmatch-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote",
     "db:generate": "drizzle-kit generate:sqlite",
     "db:push": "drizzle-kit push:sqlite",
     "db:studio": "drizzle-kit studio",
     "db:studio:prod": "drizzle-kit studio --config drizzle.config.prod.ts",
     "db:generate:prod": "drizzle-kit generate:sqlite --config drizzle.config.prod.ts",
-    "db:push:prod": "drizzle-kit push:sqlite --config drizzle.config.prod.ts",
-    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote",
-    "type-check": "tsc --noEmit"
+    "db:push:prod": "drizzle-kit push:sqlite --config drizzle.config.prod.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.4",
+    "hono": "^4.9.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",
     "@hono/node-server": "^1.0.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.16.0",
     "dotenv": "^16.4.5",
-    "sqlite": "^5.0.0",
-    "sqlite3": "^5.1.0",
-    "typescript": "^5.0.4",
-    "wrangler": "^3.0.0"
-  },
-  "dependencies": {
     "drizzle-kit": "^0.31.4",
-    "drizzle-orm": "^0.44.4",
-    "hono": "^4.9.4"
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
+    "typescript": "^5.6.0",
+    "wrangler": "^3.114.0"
   }
 }
