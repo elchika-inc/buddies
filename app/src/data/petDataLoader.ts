@@ -1,6 +1,7 @@
 import { getPetType } from '@/config/petConfig'
 import { Pet } from '@/types/pet'
 import petApi from '@/services/api'
+import { extractTimestamp, PetWithTimestamp } from '@/types/petWithTimestamp'
 
 // APIレスポンスをPet型に変換
 function transformApiPet(apiPet: unknown): Pet {
@@ -74,11 +75,11 @@ async function loadLocalDataIncremental(petType: 'dog' | 'cat', offset: number, 
     allData = cats
   }
   
-  // 新しい順にソート（created_atまたはcreatedAtフィールドで降順）
+  // 新しい順にソート（createdAtフィールドで降順）
   allData.sort((a, b) => {
-    const aDate = new Date(a.createdAt || a.created_at || 0)
-    const bDate = new Date(b.createdAt || b.created_at || 0)
-    return bDate.getTime() - aDate.getTime()
+    const aTimestamp = extractTimestamp(a as PetWithTimestamp)
+    const bTimestamp = extractTimestamp(b as PetWithTimestamp)
+    return bTimestamp - aTimestamp
   })
   
   const pets = allData.slice(offset, offset + limit)

@@ -1,12 +1,13 @@
-// APIレスポンスの変換を担当する関数群
-import { Pet } from '@/types/pet';
+/**
+ * シンプルなAPIレスポンス変換（Result型を使用しない）
+ */
+import { Pet, Dog, Cat } from '@/types/pet';
 import {
   UnifiedApiResponse,
   LegacyPetListResponse,
   LegacySinglePetResponse,
   LegacyPrefecturesResponse,
   LegacyStatsResponse,
-  StatsData,
   LegacyResponse,
   ApiMeta
 } from '@/types/api';
@@ -25,39 +26,61 @@ import {
 export function transformToLegacyFormat<T>(
   unifiedResponse: UnifiedApiResponse<T>
 ): LegacyResponse {
+  // APIレスポンスのチェック
   if (!unifiedResponse.success) {
     throw new Error(unifiedResponse.error?.message || 'API request failed');
   }
 
   const { data, meta } = unifiedResponse;
   
+  // データの存在チェック
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid API response data format');
   }
   
   const dataObj = data as Record<string, unknown>;
   
-  // ペットリストデータの場合
+  // データタイプの判定と変換
+  const dataType = identifyDataType(dataObj);
+
+  // データタイプに応じた変換
+  switch (dataType) {
+    case 'petList':
+      return transformPetListResponse(dataObj.pets as Pet[], meta);
+    case 'singlePet':
+      return transformSinglePetResponse(dataObj as unknown as Pet);
+    case 'prefectures':
+      return transformPrefecturesResponse(dataObj.prefectures as string[]);
+    case 'stats':
+      return transformStatsResponse(dataObj);
+    default:
+      throw new Error('Unknown data type in unified response');
+  }
+}
+
+/**
+ * データタイプの識別
+ */
+function identifyDataType(
+  dataObj: Record<string, unknown>
+): 'petList' | 'singlePet' | 'prefectures' | 'stats' {
   if (isPetListData(dataObj)) {
-    return transformPetListResponse(dataObj.pets, meta);
+    return 'petList';
   }
   
-  // 単一ペットデータの場合
   if (isSinglePetData(dataObj)) {
-    return transformSinglePetResponse(dataObj as Pet);
+    return 'singlePet';
   }
   
-  // 都道府県データの場合
   if (isPrefecturesData(dataObj)) {
-    return transformPrefecturesResponse(dataObj.prefectures);
+    return 'prefectures';
   }
   
-  // 統計データの場合
   if (isStatsData(dataObj)) {
-    return transformStatsResponse(dataObj);
+    return 'stats';
   }
   
-  throw new Error('Unknown data type in unified response');
+  throw new Error('Could not identify data type');
 }
 
 /**
@@ -86,14 +109,15 @@ export function transformPetListResponse(
 /**
  * 単一ペットレスポンスの変換
  */
-export function transformSinglePetResponse(pet: Pet): LegacySinglePetResponse {
-  if (isDog(pet)) {
-    return { dog: pet };
-  } else if (isCat(pet)) {
-    return { cat: pet };
+export function transformSinglePetResponse(
+  pet: Pet
+): LegacySinglePetResponse {
+  // ペットの型に応じて適切なフォーマットで返す
+  if ('type' in pet && pet.type === 'cat') {
+    return { cat: pet as Cat };
+  } else {
+    return { dog: pet as Dog };
   }
-  
-  throw new Error('Unknown pet type in response');
 }
 
 /**
@@ -106,51 +130,45 @@ export function transformPrefecturesResponse(
 }
 
 /**
- * 統計データレスポンスの変換
+ * 統計情報レスポンスの変換
  */
-export function transformStatsResponse(stats: StatsData): LegacyStatsResponse {
+export function transformStatsResponse(
+  data: Record<string, unknown>
+): LegacyStatsResponse {
+  // 統計データの構造を保証
   return {
-    total: stats.total,
-    cats: stats.cats,
-    dogs: stats.dogs,
-    last_updated: stats.last_updated
+    total: (data.total as number) || 0,
+    cats: (data.cats as number) || 0,
+    dogs: (data.dogs as number) || 0,
+    last_updated: (data.last_updated as string) || new Date().toISOString()
   };
 }
 
 /**
- * レガシー形式のバリデーション
+ * レガシーレスポンスの検証
  */
-export function validateLegacyResponse(response: unknown): boolean {
+export function validateLegacyResponse(response: unknown): response is LegacyResponse {
   if (!response || typeof response !== 'object') {
     return false;
   }
   
-  // 詳細なバリデーションロジックを実装
   const res = response as Record<string, unknown>;
   
-  // ペットリストレスポンスの検証
-  if ('pets' in res || 'cats' in res || 'dogs' in res) {
-    return Array.isArray(res.pets || res.cats || res.dogs);
+  // ペットリスト、都道府県、統計のいずれかの形式であることを確認
+  return (
+    ('pets' in res || 'dogs' in res || 'cats' in res) ||
+    ('prefectures' in res && Array.isArray(res.prefectures)) ||
+    ('total' in res && 'cats' in res && 'dogs' in res) ||
+    ('cat' in res || 'dog' in res)
+  );
+}
+
+/**
+ * APIエラーハンドリング
+ */
+export function handleApiError(error: unknown): never {
+  if (error instanceof Error) {
+    throw error;
   }
-  
-  // 単一ペットレスポンスの検証
-  if ('cat' in res || 'dog' in res) {
-    return typeof (res.cat || res.dog) === 'object';
-  }
-  
-  // 都道府県レスポンスの検証
-  if ('prefectures' in res) {
-    return Array.isArray(res.prefectures);
-  }
-  
-  // 統計レスポンスの検証
-  if ('total' in res && 'cats' in res && 'dogs' in res) {
-    return (
-      typeof res.total === 'number' &&
-      typeof res.cats === 'number' &&
-      typeof res.dogs === 'number'
-    );
-  }
-  
-  return false;
+  throw new Error('Unknown error occurred');
 }

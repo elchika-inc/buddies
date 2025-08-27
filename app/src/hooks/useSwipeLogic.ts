@@ -20,20 +20,46 @@ export interface SwipeLogicResult {
   ) => string
 }
 
+// スワイプ判定ヘルパー
+const SwipeDetector = {
+  /**
+   * 上方向のスワイプでスーパーライクかどうか判定
+   */
+  isSuperLikeGesture(dragOffset: { x: number; y: number }): boolean {
+    const isUpwardSwipe = dragOffset.y < 0;
+    const isBeyondThreshold = Math.abs(dragOffset.y) > SUPER_LIKE_THRESHOLD;
+    
+    return isUpwardSwipe && isBeyondThreshold;
+  },
+
+  /**
+   * 横方向のスワイプでライク/パスかどうか判定  
+   */
+  isHorizontalSwipe(dragOffset: { x: number; y: number }): boolean {
+    return Math.abs(dragOffset.x) > SWIPE_THRESHOLD;
+  },
+
+  /**
+   * 右方向（ライク）か左方向（パス）かを判定
+   */
+  isLikeDirection(dragOffset: { x: number; y: number }): boolean {
+    return dragOffset.x > 0;
+  }
+} as const;
+
 export function useSwipeLogic(): SwipeLogicResult {
   const determineSwipeDirection = useCallback(
     (dragOffset: { x: number; y: number }): SwipeDirection | null => {
-      // 上方向のスワイプでスーパーライク
-      if (Math.abs(dragOffset.y) > SUPER_LIKE_THRESHOLD && dragOffset.y < 0) {
-        return 'superLike'
+      // 段階的に判定することで理解しやすく
+      if (SwipeDetector.isSuperLikeGesture(dragOffset)) {
+        return 'superLike';
       }
       
-      // 横方向のスワイプでライク/パス
-      if (Math.abs(dragOffset.x) > SWIPE_THRESHOLD) {
-        return dragOffset.x > 0 ? 'like' : 'pass'
+      if (SwipeDetector.isHorizontalSwipe(dragOffset)) {
+        return SwipeDetector.isLikeDirection(dragOffset) ? 'like' : 'pass';
       }
       
-      return null
+      return null; // 判定できない場合
     },
     []
   )

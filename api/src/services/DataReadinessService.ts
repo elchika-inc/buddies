@@ -5,8 +5,8 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types';
-import { MetadataService } from './metadata-service';
-import { StatisticsService } from './statistics-service';
+import { MetadataService } from './MetadataService';
+import { StatisticsService } from './StatisticsService';
 import type { DataReadiness } from '../types/services';
 
 export class DataReadinessService {

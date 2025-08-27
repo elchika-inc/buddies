@@ -5,7 +5,7 @@
  */
 
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
-import { ImageStatusService } from './image-status-service';
+import { ImageStatusService } from './ImageStatusService';
 
 interface IntegrityCheckResult {
   checkedCount: number;

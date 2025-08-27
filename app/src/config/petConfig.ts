@@ -1,12 +1,17 @@
 export type PetType = 'dog' | 'cat'
 
+// 型ガード関数
+function isPetType(value: string): value is PetType {
+  return value === 'dog' || value === 'cat';
+}
+
 export const getPetType = (): PetType => {
   const petType = process.env.NEXT_PUBLIC_PET_TYPE || 'dog'
-  if (petType !== 'dog' && petType !== 'cat') {
+  if (!isPetType(petType)) {
     console.warn(`Invalid PET_TYPE: ${petType}, defaulting to 'dog'`)
     return 'dog'
   }
-  return petType as PetType
+  return petType
 }
 
 export const petConfig = {

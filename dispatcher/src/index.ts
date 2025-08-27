@@ -1,44 +1,10 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
-import type { MessageBatch, Queue, R2Bucket, ScheduledEvent, ExecutionContext, D1Database } from '@cloudflare/workers-types';
-import { CleanupService } from './cleanup-service';
-
-interface Env {
-  DB: D1Database;
-  PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>;
-  PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>;
-  GITHUB_TOKEN: string;
-  GITHUB_OWNER: string;
-  GITHUB_REPO: string;
-  WORKFLOW_FILE: string;
-  API_URL: string;
-  R2_BUCKET?: R2Bucket;
-  [key: string]: unknown;
-}
-
-interface DispatchMessage {
-  type: 'screenshot' | 'crawl' | 'convert' | 'cleanup';
-  pets?: Array<{
-    id: string;
-    name: string;
-    type: 'dog' | 'cat';
-    source_url: string;
-  }>;
-  batchId: string;
-  retryCount?: number;
-  timestamp: string;
-  cleanupType?: 'expired' | 'all';
-}
-
-interface PetRecord {
-  id: string;
-  type: 'dog' | 'cat';
-  name: string;
-  source_url: string;
-  has_jpeg: number;
-  has_webp: number;
-}
+import type { MessageBatch, ScheduledEvent, ExecutionContext } from '@cloudflare/workers-types';
+import { CleanupService } from './CleanupService';
+import type { Env, DispatchMessage, DLQMessage, PetRecord, PetDispatchData } from './types';
+import { isPetRecord } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -73,7 +39,13 @@ async function fetchPetsWithoutImages(db: D1Database, limit = 10): Promise<PetRe
   `;
   
   const result = await db.prepare(query).bind(limit).all();
-  return (result.results || []) as unknown as PetRecord[];
+  
+  if (!result.results) {
+    return [];
+  }
+  
+  // 型ガードを使用した安全な型変換
+  return result.results.filter(isPetRecord);
 }
 
 // GitHub Actions ワークフローをトリガー
@@ -262,8 +234,22 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
       
       console.log(`Processing queue message: ${batchId}, type: ${type}, retry: ${retryCount}`);
       
-      // GitHub Actionsをトリガー
-      const response = await triggerGitHubWorkflow(env, pets as PetRecord[], batchId);
+      // GitHub Actionsをトリガー (petsは既にPetDispatchData[]型として定義されている)
+      if (!pets || !Array.isArray(pets)) {
+        throw new Error('Invalid pets data in queue message');
+      }
+      
+      // PetDispatchDataをPetRecordに変換
+      const petRecords: PetRecord[] = pets.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.type,
+        source_url: p.source_url,
+        has_jpeg: 0, // Queue経由の場合はデフォルト値
+        has_webp: 0  // Queue経由の場合はデフォルト値
+      }));
+      
+      const response = await triggerGitHubWorkflow(env, petRecords, batchId);
       
       if (!response.ok) {
         // 429 (Rate Limit) の場合は後でリトライ
@@ -300,11 +286,12 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
       
       if (retryCount >= 3) {
         // 最大リトライ回数に達した場合はDLQに送信
-        await env.PAWMATCH_DISPATCH_DLQ.send({
+        const dlqMessage: DLQMessage = {
           ...message.body,
           error: error instanceof Error ? error.message : 'Unknown error',
           failedAt: new Date().toISOString()
-        } as any);
+        };
+        await env.PAWMATCH_DISPATCH_DLQ.send(dlqMessage);
         
         await env.DB.prepare(`
           UPDATE dispatch_history 

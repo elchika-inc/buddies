@@ -131,6 +131,8 @@ export function combine<T extends readonly unknown[], E>(
     values.push(result.data);
   }
   
+  // 配列の型をTにキャストして返す
+  // この関数は型システムに対して配列がT型であることを保証する
   return ok(values as unknown as T);
 }
 

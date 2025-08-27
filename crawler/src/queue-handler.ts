@@ -12,6 +12,18 @@ export interface CrawlMessage {
   timestamp: string;
 }
 
+export interface CrawlDLQMessage extends CrawlMessage {
+  error: string;
+  failedAt: string;
+}
+
+interface PetRecord {
+  id: string;
+  type: 'dog' | 'cat';
+  name: string;
+  source_url: string;
+}
+
 export interface CrawlerEnv {
   DB: D1Database;
   IMAGES_BUCKET: R2Bucket;
@@ -25,7 +37,7 @@ export class CrawlerQueueHandler {
   private crawler: PetHomeCrawler;
 
   constructor(private env: CrawlerEnv) {
-    this.crawler = new PetHomeCrawler(env as any);
+    this.crawler = new PetHomeCrawler(env);
   }
 
   async sendToQueue(message: CrawlMessage): Promise<void> {
@@ -122,15 +134,15 @@ export class CrawlerQueueHandler {
     await RetryHandler.execute(
       async () => {
         const pet = await this.env.DB.prepare(
-          'SELECT * FROM pets WHERE id = ?'
-        ).bind(message.petId).first();
+          'SELECT id, type, name, source_url FROM pets WHERE id = ?'
+        ).bind(message.petId).first<PetRecord>();
 
         if (!pet) {
           throw new Error(`Pet not found: ${message.petId}`);
         }
 
         // 特定のペットを再クロール
-        const result = await this.crawler.crawl((pet as any).type, {
+        const result = await this.crawler.crawl(pet.type, {
           limit: 1,
           useDifferential: false
         });
@@ -151,11 +163,12 @@ export class CrawlerQueueHandler {
 
     if (retryCount >= maxRetries) {
       // Dead Letter Queueに送信
-      await this.env.PAWMATCH_CRAWL_DLQ.send({
+      const dlqMessage: CrawlDLQMessage = {
         ...message.body,
         error: error instanceof Error ? error.message : 'Unknown error',
         failedAt: new Date().toISOString()
-      } as any);
+      };
+      await this.env.PAWMATCH_CRAWL_DLQ.send(dlqMessage);
 
       await this.logFailure(message.body, error);
       message.ack();
@@ -171,11 +184,12 @@ export class CrawlerQueueHandler {
         message.ack();
       } else {
         // リトライ不可能なエラーはDLQへ
-        await this.env.PAWMATCH_CRAWL_DLQ.send({
+        const dlqMessage: CrawlDLQMessage = {
           ...message.body,
           error: error instanceof Error ? error.message : 'Unknown error',
           failedAt: new Date().toISOString()
-        } as any);
+        };
+        await this.env.PAWMATCH_CRAWL_DLQ.send(dlqMessage);
         message.ack();
       }
     }

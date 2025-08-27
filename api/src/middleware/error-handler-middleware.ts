@@ -7,10 +7,7 @@
 import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { 
-  PawMatchError, 
-  ValidationError, 
-  NotFoundError, 
-  ServiceUnavailableError 
+  PawMatchError
 } from '../utils/error-handler';
 import { errorResponse } from '../utils/response-formatter';
 
@@ -34,7 +31,7 @@ function getErrorDetails(error: unknown): ErrorDetails {
       status: error.status,
       code: error.code,
       message: error.message,
-      details: error.details
+      details: (error as any).details
     };
   }
 
@@ -55,7 +52,7 @@ function getErrorDetails(error: unknown): ErrorDetails {
         status: 500,
         code: 'INTERNAL_ERROR',
         message: 'An internal error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: undefined // Cloudflare Workers環境にはprocess.envがない
       };
     }
 
@@ -145,7 +142,7 @@ export function notFoundHandler(c: Context) {
     'ROUTE_NOT_FOUND'
   );
 
-  return c.json(response, 404);
+  return c.json(response, 404 as any);
 }
 
 /**
@@ -153,13 +150,13 @@ export function notFoundHandler(c: Context) {
  * 
  * @description 許可されていないHTTPメソッドを処理
  */
-export function methodNotAllowedHandler(c: Context) {
+export function methodNotAllowedHandler(c: Context): Response {
   const response = errorResponse(
     `Method ${c.req.method} not allowed for ${c.req.path}`,
     'METHOD_NOT_ALLOWED'
   );
 
-  return c.json(response, 405);
+  return c.json(response, 405 as any);
 }
 
 /**
@@ -167,11 +164,11 @@ export function methodNotAllowedHandler(c: Context) {
  * 
  * @description リクエストバリデーションエラーを統一的に処理
  */
-export function validationErrorHandler(errors: unknown[]) {
+export function validationErrorHandler(errors: unknown[]): ReturnType<typeof errorResponse> {
   const response = errorResponse(
     'Validation failed',
     'VALIDATION_ERROR',
-    errors
+    errors as any
   );
 
   return response;

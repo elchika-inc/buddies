@@ -120,7 +120,7 @@ export class PetController {
       }
 
       return c.json(successResponse({
-        pets: validPets.map(pet => transformPetRecord(pet)),
+        pets: validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet)),
         type: petType,
         count: validPets.length
       }));
@@ -172,24 +172,24 @@ export class PetController {
       throw new Error('Database query failed');
     }
 
-    const total = isCountResult(countResult) ? countResult.total : 0;
+    const total = isCountResult(countResult) ? (countResult['total'] as number || countResult['count'] as number) : 0;
     
     // 型ガードで有効なペットデータのみ取得
-    const validPets = ensureArray(petsResult.results, isRawPetRecord);
-    const pets = validPets.map(pet => transformPetRecord(pet));
+    const validPets = ensureArray(petsResult.results).filter(isRawPetRecord);
+    const pets = validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet));
 
     // タイプが指定されていない場合は犬猫を分離して返す
     if (!type) {
-      const dogs = pets.filter(p => p.type === 'dog');
-      const cats = pets.filter(p => p.type === 'cat');
+      const dogs = pets.filter((p: ApiPetRecord) => p.type === 'dog');
+      const cats = pets.filter((p: ApiPetRecord) => p.type === 'cat');
       return {
-        data: { dogs, cats },
+        data: { dogs, cats } as any,
         total
       };
     }
 
     return {
-      data: { pets, type },
+      data: { pets, type } as any,
       total
     };
   }

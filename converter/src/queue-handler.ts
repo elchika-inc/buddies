@@ -1,5 +1,6 @@
 import type { MessageBatch, Queue, D1Database, R2Bucket } from '@cloudflare/workers-types';
 import type { PetForImage as Pet } from './types';
+import type { DLQMessage } from './types/queue';
 
 export interface ConvertMessage {
   type: 'convert_to_webp' | 'optimize_jpeg' | 'generate_thumbnails';
@@ -286,11 +287,12 @@ export class ConverterQueueHandler {
 
     if (retryCount >= maxRetries) {
       // Dead Letter Queueに送信
-      await this.env.PAWMATCH_CONVERT_DLQ.send({
+      const dlqMessage: DLQMessage = {
         ...message.body,
         error: error instanceof Error ? error.message : 'Unknown error',
         failedAt: new Date().toISOString()
-      } as any);
+      };
+      await this.env.PAWMATCH_CONVERT_DLQ.send(dlqMessage);
 
       await this.logFailure(message.body, error);
       message.ack();
@@ -306,11 +308,12 @@ export class ConverterQueueHandler {
         message.ack();
       } else {
         // リトライ不可能なエラーはDLQへ
-        await this.env.PAWMATCH_CONVERT_DLQ.send({
+        const dlqMessage: DLQMessage = {
           ...message.body,
           error: error instanceof Error ? error.message : 'Unknown error',
           failedAt: new Date().toISOString()
-        } as any);
+        };
+        await this.env.PAWMATCH_CONVERT_DLQ.send(dlqMessage);
         message.ack();
       }
     }

@@ -5,9 +5,9 @@
  */
 
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
-import { MetadataService } from './metadata-service';
-import { ReadinessService } from './readiness-service';
-import { StatisticsService } from './statistics-service';
+import { MetadataService } from './MetadataService';
+import { ReadinessService } from './ReadinessService';
+import { StatisticsService } from './StatisticsService';
 import type { ServiceHealth, SystemMetrics } from '../types/statistics';
 
 /**

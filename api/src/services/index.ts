@@ -6,22 +6,22 @@
  */
 
 // 統合サービス（ファサード）
-export { DataService } from './data-service';
-export { ImageManagementService } from './image-management-service';
-export { SyncService } from './sync-service';
+export { DataService } from './DataService';
+export { ImageManagementService } from './ImageManagementService';
+export { SyncService } from './SyncService';
 
 // 分割されたコアサービス
-export { ReadinessService } from './readiness-service';
-export { StatisticsService } from './statistics-service';
-export { HealthCheckService } from './health-check-service';
+export { ReadinessService } from './ReadinessService';
+export { StatisticsService } from './StatisticsService';
+export { HealthCheckService } from './HealthCheckService';
 
 // 共通サービス
-export { MetadataService } from './metadata-service';
+export { MetadataService } from './MetadataService';
 
 // レガシーサービス（段階的に廃止予定）
-export { DataReadinessService } from './data-readiness-service';
-export { ImageService } from './image-service';
-export { ImageStatusService } from './image-status-service';
-export { IntegrityCheckService } from './integrity-check-service';
-export { SimpleSyncService } from './simple-sync-service';
-export { SyncStatusService } from './sync-status-service';
+export { DataReadinessService } from './DataReadinessService';
+export { ImageService } from './ImageService';
+export { ImageStatusService } from './ImageStatusService';
+export { IntegrityCheckService } from './IntegrityCheckService';
+export { SimpleSyncService } from './SimpleSyncService';
+export { SyncStatusService } from './SyncStatusService';

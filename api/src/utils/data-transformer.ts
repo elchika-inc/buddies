@@ -4,6 +4,8 @@
  * @description データベース（snake_case）とAPI（camelCase）間の変換を提供
  */
 
+import { isRecord } from './type-guards';
+
 /**
  * snake_caseをcamelCaseに変換
  */
@@ -30,16 +32,15 @@ export function transformToCamelCase<T = unknown>(obj: unknown): T {
     return obj.map(item => transformToCamelCase(item)) as T;
   }
 
-  if (typeof obj !== 'object') {
+  if (!isRecord(obj)) {
     return obj as T;
   }
 
   const transformed: Record<string, unknown> = {};
-  const record = obj as Record<string, unknown>;
-  for (const key in record) {
-    if (Object.prototype.hasOwnProperty.call(record, key)) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const camelKey = snakeToCamel(key);
-      transformed[camelKey] = transformToCamelCase(record[key]);
+      transformed[camelKey] = transformToCamelCase(obj[key]);
     }
   }
 
@@ -58,16 +59,15 @@ export function transformToSnakeCase<T = unknown>(obj: unknown): T {
     return obj.map(item => transformToSnakeCase(item)) as T;
   }
 
-  if (typeof obj !== 'object') {
+  if (!isRecord(obj)) {
     return obj as T;
   }
 
   const transformed: Record<string, unknown> = {};
-  const record = obj as Record<string, unknown>;
-  for (const key in record) {
-    if (Object.prototype.hasOwnProperty.call(record, key)) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const snakeKey = camelToSnake(key);
-      transformed[snakeKey] = transformToSnakeCase(record[key]);
+      transformed[snakeKey] = transformToSnakeCase(obj[key]);
     }
   }
 
@@ -85,18 +85,16 @@ export function dbToApi<T = unknown>(record: unknown): T {
   const transformed = transformToCamelCase<T>(record);
   
   // boolean型への変換（DB: 0/1 → API: boolean）
-  if (typeof transformed === 'object' && transformed !== null) {
-    const obj = transformed as Record<string, unknown>;
-    
+  if (isRecord(transformed)) {
     // has_jpeg/has_webp のような boolean フィールドを変換
-    if ('hasJpeg' in obj && typeof obj.hasJpeg === 'number') {
-      obj.hasJpeg = obj.hasJpeg === 1;
+    if ('hasJpeg' in transformed && typeof transformed.hasJpeg === 'number') {
+      transformed.hasJpeg = transformed.hasJpeg === 1;
     }
-    if ('hasWebp' in obj && typeof obj.hasWebp === 'number') {
-      obj.hasWebp = obj.hasWebp === 1;
+    if ('hasWebp' in transformed && typeof transformed.hasWebp === 'number') {
+      transformed.hasWebp = transformed.hasWebp === 1;
     }
-    if ('isReady' in obj && typeof obj.isReady === 'number') {
-      obj.isReady = obj.isReady === 1;
+    if ('isReady' in transformed && typeof transformed.isReady === 'number') {
+      transformed.isReady = transformed.isReady === 1;
     }
   }
 
@@ -114,18 +112,16 @@ export function apiToDb<T = unknown>(data: unknown): T {
   const transformed = transformToSnakeCase<T>(data);
   
   // boolean型への変換（API: boolean → DB: 0/1）
-  if (typeof transformed === 'object' && transformed !== null) {
-    const obj = transformed as Record<string, unknown>;
-    
+  if (isRecord(transformed)) {
     // has_jpeg/has_webp のような boolean フィールドを変換
-    if ('has_jpeg' in obj && typeof obj.has_jpeg === 'boolean') {
-      obj.has_jpeg = obj.has_jpeg ? 1 : 0;
+    if ('has_jpeg' in transformed && typeof transformed.has_jpeg === 'boolean') {
+      transformed.has_jpeg = transformed.has_jpeg ? 1 : 0;
     }
-    if ('has_webp' in obj && typeof obj.has_webp === 'boolean') {
-      obj.has_webp = obj.has_webp ? 1 : 0;
+    if ('has_webp' in transformed && typeof transformed.has_webp === 'boolean') {
+      transformed.has_webp = transformed.has_webp ? 1 : 0;
     }
-    if ('is_ready' in obj && typeof obj.is_ready === 'boolean') {
-      obj.is_ready = obj.is_ready ? 1 : 0;
+    if ('is_ready' in transformed && typeof transformed.is_ready === 'boolean') {
+      transformed.is_ready = transformed.is_ready ? 1 : 0;
     }
   }
 

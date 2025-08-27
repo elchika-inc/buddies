@@ -6,7 +6,7 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types';
-import { MetadataService } from './metadata-service';
+import { MetadataService } from './MetadataService';
 import type { DataReadiness, PetStatistics } from '../types/services';
 
 /**

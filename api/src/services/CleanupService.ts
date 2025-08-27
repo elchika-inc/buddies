@@ -60,9 +60,9 @@ export class CleanupService {
       const imageKeys: string[] = [];
       
       for (const pet of expiredPets.results) {
-        if (pet.images && typeof pet.images === 'string') {
+        if (pet['images'] && typeof pet['images'] === 'string') {
           try {
-            const images = JSON.parse(pet.images);
+            const images = JSON.parse(pet['images']);
             if (Array.isArray(images)) {
               imageKeys.push(...images);
             }

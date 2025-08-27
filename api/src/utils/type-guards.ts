@@ -1,318 +1,176 @@
-/**
- * 型ガードユーティリティ
- * 
- * @description 実行時の型チェックを提供し、型安全性を保証
- */
+import type { Pet, PetStatus, ApiResponse, StatisticsData } from '../types/api';
+import type { PetType, ImageFormat } from './constants';
+import { PET_TYPES, IMAGE_FORMATS } from './constants';
 
-import type { 
-  RawPetRecord, 
-  CountResult 
-} from '../types/database';
-import type { 
-  Pet, 
-  Dog, 
-  Cat 
-} from '../types/models';
-import type { 
-  DataReadiness, 
-  PetStatistics, 
-  SyncJobStatus 
-} from '../types/services';
-import type {
-  ServiceHealth,
-  DetailedStatistics,
-  PrefectureStats,
-  AgeStats,
-  RecentPet,
-  CoverageTrend
-} from '../types/statistics';
+// 型ガード関数：PetType
+export function isPetType(value: unknown): value is PetType {
+  return typeof value === 'string' && PET_TYPES.includes(value as PetType);
+}
 
-/**
- * 基本的な型チェック
- */
-export const isString = (value: unknown): value is string => {
+// 型ガード関数：ImageFormat  
+export function isImageFormat(value: unknown): value is ImageFormat {
+  return typeof value === 'string' && IMAGE_FORMATS.includes(value as ImageFormat);
+}
+
+// 型ガード関数：Pet
+export function isPet(value: unknown): value is Pet {
+  if (!value || typeof value !== 'object') return false;
+  
+  const pet = value as Record<string, unknown>;
+  
+  return (
+    typeof pet['id'] === 'string' &&
+    typeof pet['name'] === 'string' &&
+    typeof pet['breed'] === 'string' &&
+    typeof pet['gender'] === 'string' &&
+    (typeof pet['age'] === 'string' || typeof pet['age'] === 'number') &&
+    typeof pet['prefecture'] === 'string' &&
+    typeof pet['city'] === 'string' &&
+    typeof pet['organization'] === 'string' &&
+    typeof pet['description'] === 'string' &&
+    typeof pet['sourceUrl'] === 'string' &&
+    (pet['imageUrl'] === undefined || typeof pet['imageUrl'] === 'string') &&
+    (pet['imageOptimizedUrl'] === undefined || typeof pet['imageOptimizedUrl'] === 'string') &&
+    (pet['hasJpeg'] === undefined || typeof pet['hasJpeg'] === 'boolean') &&
+    (pet['hasWebp'] === undefined || typeof pet['hasWebp'] === 'boolean') &&
+    (pet['jpegSize'] === undefined || typeof pet['jpegSize'] === 'number') &&
+    (pet['webpSize'] === undefined || typeof pet['webpSize'] === 'number') &&
+    (pet['status'] === undefined || isPetStatus(pet['status'])) &&
+    (pet['detailedInfo'] === undefined || isDetailedInfo(pet['detailedInfo'])) &&
+    (pet['updatedAt'] === undefined || typeof pet['updatedAt'] === 'string' || pet['updatedAt'] instanceof Date)
+  );
+}
+
+// 型ガード関数：PetStatus
+export function isPetStatus(value: unknown): value is PetStatus {
+  const validStatuses: PetStatus[] = ['healthy', 'medical_care', 'special_needs'];
+  return typeof value === 'string' && validStatuses.includes(value as PetStatus);
+}
+
+// 型ガード関数：DetailedInfo
+function isDetailedInfo(value: unknown): value is Pet['detailedInfo'] {
+  if (value === null) return true;
+  if (!value || typeof value !== 'object') return false;
+  
+  const info = value as Record<string, unknown>;
+  
+  return (
+    (info['personality'] === undefined || typeof info['personality'] === 'string') &&
+    (info['healthNotes'] === undefined || typeof info['healthNotes'] === 'string') &&
+    (info['requirements'] === undefined || typeof info['requirements'] === 'string')
+  );
+}
+
+// 型ガード関数：ApiResponse
+export function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
+  if (!value || typeof value !== 'object') return false;
+  
+  const response = value as Record<string, unknown>;
+  
+  return (
+    typeof response['success'] === 'boolean' &&
+    response['data'] !== undefined &&
+    (response['error'] === undefined || typeof response['error'] === 'string' || 
+     (typeof response['error'] === 'object' && response['error'] !== null && 
+      'message' in response['error'] && typeof (response['error'] as any)['message'] === 'string'))
+  );
+}
+
+// 型ガード関数：StatisticsData
+export function isStatisticsData(value: unknown): value is StatisticsData {
+  if (!value || typeof value !== 'object') return false;
+  
+  const stats = value as Record<string, unknown>;
+  
+  return (
+    typeof stats['totalPets'] === 'number' &&
+    typeof stats['totalDogs'] === 'number' &&
+    typeof stats['totalCats'] === 'number' &&
+    stats['prefectureDistribution'] !== undefined &&
+    typeof stats['prefectureDistribution'] === 'object' &&
+    stats['breedDistribution'] !== undefined &&
+    typeof stats['breedDistribution'] === 'object' &&
+    stats['genderDistribution'] !== undefined &&
+    typeof stats['genderDistribution'] === 'object' &&
+    stats['ageDistribution'] !== undefined &&
+    typeof stats['ageDistribution'] === 'object' &&
+    stats['organizationDistribution'] !== undefined &&
+    typeof stats['organizationDistribution'] === 'object' &&
+    stats['storageUsage'] !== undefined &&
+    typeof stats['storageUsage'] === 'object' &&
+    stats['healthMetrics'] !== undefined &&
+    typeof stats['healthMetrics'] === 'object'
+  );
+}
+
+// 型ガード関数：Record
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+// 型ガード関数：Array
+export function isArray<T>(value: unknown, itemGuard?: (item: unknown) => item is T): value is T[] {
+  if (!Array.isArray(value)) return false;
+  if (!itemGuard) return true;
+  
+  return value.every(item => itemGuard(item));
+}
+
+// 型ガード関数：文字列配列
+export function isStringArray(value: unknown): value is string[] {
+  return isArray(value, (item): item is string => typeof item === 'string');
+}
+
+// 型ガード関数：数値
+export function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !isNaN(value);
+}
+
+// 型ガード関数：文字列
+export function isString(value: unknown): value is string {
   return typeof value === 'string';
-};
+}
 
-export const isNumber = (value: unknown): value is number => {
-  return typeof value === 'number';
-};
-
-export const isBoolean = (value: unknown): value is boolean => {
+// 型ガード関数：真偽値
+export function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
-};
+}
 
-export const isObject = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-};
-
-export const isArray = (value: unknown): value is unknown[] => {
-  return Array.isArray(value);
-};
-
-/**
- * null/undefined チェック
- */
-export const isNullOrUndefined = (value: unknown): value is null | undefined => {
-  return value === null || value === undefined;
-};
-
-export const isDefined = <T>(value: T | null | undefined): value is T => {
-  return value !== null && value !== undefined;
-};
-
-/**
- * 文字列型のユニオン型チェック
- */
-export const isPetType = (value: unknown): value is 'dog' | 'cat' => {
-  return value === 'dog' || value === 'cat';
-};
-
-export const isGender = (value: unknown): value is 'male' | 'female' | 'unknown' => {
-  return value === 'male' || value === 'female' || value === 'unknown';
-};
-
-export const isServiceStatus = (value: unknown): value is 'healthy' | 'degraded' | 'down' => {
-  return value === 'healthy' || value === 'degraded' || value === 'down';
-};
-
-export const isSyncStatus = (value: unknown): value is 'pending' | 'running' | 'completed' | 'failed' => {
-  return value === 'pending' || value === 'running' || value === 'completed' || value === 'failed';
-};
-
-/**
- * RawPetRecord の完全な型ガード
- */
-export function isRawPetRecord(value: unknown): value is RawPetRecord {
-  if (!isObject(value)) {
-    return false;
+// 安全なJSONパース
+export function safeJsonParse<T>(json: string, guard?: (value: unknown) => value is T): T | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (guard && !guard(parsed)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
   }
-
-  // 最小限の必須フィールドのチェック
-  const hasRequiredFields = (
-    isString(value.id) &&
-    isPetType(value.type) &&
-    isString(value.name)
-  );
-
-  return hasRequiredFields;
 }
 
-/**
- * CountResult の型ガード
- */
-export function isCountResult(value: unknown): value is CountResult {
-  return isObject(value) && isNumber(value.total);
+// エラーをスローするヘルパー
+export function throwInvalidDataError(message: string): never {
+  throw new Error(`Invalid data format: ${message}`);
 }
 
-/**
- * DataReadiness の型ガード
- */
-export function isDataReadiness(value: unknown): value is DataReadiness {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isBoolean(value.isReady) &&
-    isNumber(value.totalPets) &&
-    isNumber(value.totalDogs) &&
-    isNumber(value.totalCats) &&
-    isNumber(value.petsWithJpeg) &&
-    isNumber(value.imageCoverage) &&
-    (value.lastSyncAt === null || isString(value.lastSyncAt)) &&
-    isString(value.message)
-  );
+// 型ガード関数：RawPetRecord（データベースから取得した生のペットレコード）
+export function isRawPetRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return typeof record['id'] === 'string' && 
+         typeof record['type'] === 'string' &&
+         typeof record['name'] === 'string';
 }
 
-/**
- * PetStatistics の型ガード
- */
-export function isPetStatistics(value: unknown): value is PetStatistics {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isNumber(value.totalPets) &&
-    isNumber(value.totalDogs) &&
-    isNumber(value.totalCats) &&
-    isNumber(value.petsWithJpeg) &&
-    isNumber(value.petsWithWebp) &&
-    isNumber(value.dogsWithJpeg) &&
-    isNumber(value.dogsWithWebp) &&
-    isNumber(value.catsWithJpeg) &&
-    isNumber(value.catsWithWebp)
-  );
+// 型ガード関数：CountResult（COUNT(*)クエリの結果）
+export function isCountResult(value: unknown): value is { count: number; [key: string]: unknown } {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Record<string, unknown>;
+  return typeof result['count'] === 'number' || typeof result['total'] === 'number';
 }
 
-/**
- * ServiceHealth の型ガード
- */
-export function isServiceHealth(value: unknown): value is ServiceHealth {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isString(value.service) &&
-    isServiceStatus(value.status) &&
-    isString(value.message) &&
-    isString(value.lastCheck) &&
-    (value.metrics === undefined || isObject(value.metrics))
-  );
-}
-
-/**
- * ServiceHealth配列の型ガード
- */
-export function isServiceHealthArray(value: unknown): value is ServiceHealth[] {
-  return isArray(value) && value.every(isServiceHealth);
-}
-
-/**
- * PrefectureStats の型ガード
- */
-export function isPrefectureStats(value: unknown): value is PrefectureStats {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isString(value.prefecture) &&
-    isNumber(value.count) &&
-    isNumber(value.dogs) &&
-    isNumber(value.cats)
-  );
-}
-
-/**
- * AgeStats の型ガード
- */
-export function isAgeStats(value: unknown): value is AgeStats {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isNumber(value.age) &&
-    isNumber(value.count)
-  );
-}
-
-/**
- * RecentPet の型ガード
- */
-export function isRecentPet(value: unknown): value is RecentPet {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isString(value.id) &&
-    isPetType(value.type) &&
-    isString(value.name) &&
-    isString(value.created_at)
-  );
-}
-
-/**
- * CoverageTrend の型ガード
- */
-export function isCoverageTrend(value: unknown): value is CoverageTrend {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isString(value.date) &&
-    isNumber(value.checked) &&
-    isNumber(value.with_images)
-  );
-}
-
-/**
- * DetailedStatistics の型ガード
- */
-export function isDetailedStatistics(value: unknown): value is DetailedStatistics {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isArray(value.prefectureDistribution) && value.prefectureDistribution.every(isPrefectureStats) &&
-    isArray(value.ageDistribution) && value.ageDistribution.every(isAgeStats) &&
-    isArray(value.recentPets) && value.recentPets.every(isRecentPet) &&
-    isArray(value.coverageTrend) && value.coverageTrend.every(isCoverageTrend) &&
-    isString(value.timestamp)
-  );
-}
-
-/**
- * データベースクエリ結果の型ガード
- */
-export function isQueryResult<T>(
-  value: unknown,
-  itemGuard: (item: unknown) => item is T
-): value is { results: T[] } {
-  if (!isObject(value)) {
-    return false;
-  }
-
-  return (
-    isArray(value.results) &&
-    value.results.every(itemGuard)
-  );
-}
-
-/**
- * 安全な型キャスト（型ガード付き）
- */
-export function safeCast<T>(
-  value: unknown,
-  guard: (value: unknown) => value is T,
-  defaultValue: T
-): T {
-  return guard(value) ? value : defaultValue;
-}
-
-/**
- * 複数の型ガードを組み合わせる
- */
-export function combineGuards<T, U>(
-  guard1: (value: unknown) => value is T,
-  guard2: (value: T) => value is U
-): (value: unknown) => value is U {
-  return (value: unknown): value is U => {
-    return guard1(value) && guard2(value);
-  };
-}
-
-/**
- * 配列の全要素が特定の型であることを保証
- */
-export function ensureArray<T>(
-  value: unknown,
-  itemGuard: (item: unknown) => item is T
-): T[] {
-  if (!isArray(value)) {
-    return [];
-  }
-  return value.filter(itemGuard);
-}
-
-/**
- * オブジェクトから安全にプロパティを取得
- */
-export function safeGet<T>(
-  obj: unknown,
-  key: string,
-  guard: (value: unknown) => value is T,
-  defaultValue: T
-): T {
-  if (!isObject(obj)) {
-    return defaultValue;
-  }
-  const value = obj[key];
-  return guard(value) ? value : defaultValue;
+// 配列を安全に確保する
+export function ensureArray<T>(value: T | T[]): T[] {
+  return Array.isArray(value) ? value : [value];
 }
