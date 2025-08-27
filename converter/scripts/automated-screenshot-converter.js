@@ -1,8 +1,12 @@
-const { chromium } = require('playwright');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const sharp = require('sharp');
-const fs = require('fs').promises;
-const path = require('path');
+import { chromium } from 'playwright';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // R2クライアントの設定
 const r2Client = new S3Client({

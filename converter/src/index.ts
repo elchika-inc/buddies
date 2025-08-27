@@ -4,14 +4,17 @@
  * petsテーブルのhas_jpeg/has_webpカラムを参照して効率的な画像処理
  */
 
-import type { D1Database, R2Bucket, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types';
+import type { D1Database, R2Bucket, ExecutionContext, ScheduledEvent, MessageBatch, Queue } from '@cloudflare/workers-types';
 import type { PetForImage as Pet } from './types';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { ConverterQueueHandler, ConvertMessage } from './queue-handler';
 
 interface ImageEnv {
   DB: D1Database;
   IMAGES_BUCKET: R2Bucket;
+  PAWMATCH_CONVERT_QUEUE: Queue<ConvertMessage>;
+  PAWMATCH_CONVERT_DLQ: Queue<ConvertMessage>;
   CF_IMAGE_RESIZING_URL?: string;
   GITHUB_TOKEN?: string;
   GITHUB_OWNER?: string;
@@ -21,6 +24,7 @@ interface ImageEnv {
 interface ImageWorker {
   fetch(request: Request, env: ImageEnv, ctx: ExecutionContext): Promise<Response>;
   scheduled(event: ScheduledEvent, env: ImageEnv, ctx: ExecutionContext): Promise<void>;
+  queue(batch: MessageBatch<ConvertMessage>, env: ImageEnv, ctx: ExecutionContext): Promise<void>;
 }
 
 const app = new Hono<{ Bindings: ImageEnv }>();
@@ -588,6 +592,14 @@ const imageWorker: ImageWorker = {
     } catch (error) {
       console.error('Scheduled task error:', error);
     }
+  },
+
+  /**
+   * Queueハンドラー
+   */
+  async queue(batch: MessageBatch<ConvertMessage>, env: ImageEnv, _ctx: ExecutionContext): Promise<void> {
+    const handler = new ConverterQueueHandler(env as any);
+    await handler.handleBatch(batch);
   }
 };
 
