@@ -567,14 +567,47 @@ export class PetHomeCrawler extends BaseCrawler {
       
       console.log(`[DEBUG] Personality found: ${JSON.stringify(personality)}`);
       
-      // 説明文を取得
-      let description = `${name}の里親募集中です。`;
-      const descMatch = response.match(/<div[^>]*class="[^"]*(?:description|pet-description|comment|message)[^"]*"[^>]*>([^<]+(?:<[^>]*>[^<]*)*)<\/div>/i);
-      if (descMatch?.[1]) {
-        const cleanDesc = HtmlParser.cleanText(descMatch[1].replace(/<[^>]+>/g, ' '));
-        if (cleanDesc) {
-          description = cleanDesc;
+      // 説明文を取得 - まず募集説明文を探す
+      let description = '';
+      
+      // パターン1: class="pc_only"のテキストエリアから取得（募集者のコメント）
+      const textareaMatch = response.match(/<textarea[^>]*class="pc_only"[^>]*>([^<]+)<\/textarea>/i);
+      if (textareaMatch?.[1]) {
+        const text = HtmlParser.cleanText(textareaMatch[1]);
+        if (text && text.length > 10 && !text.includes('window.')) {
+          description = text;
         }
+      }
+      
+      // パターン2: 募集説明のセクションから取得
+      if (!description) {
+        const sectionMatch = response.match(/<section[^>]*>[\s\S]*?<h3[^>]*>募集経緯<\/h3>[\s\S]*?<p[^>]*>([^<]+)<\/p>/i);
+        if (sectionMatch?.[1]) {
+          const text = HtmlParser.cleanText(sectionMatch[1]);
+          if (text && text.length > 10) {
+            description = text;
+          }
+        }
+      }
+      
+      // パターン3: 最初の有用なp要素から取得（フォールバック）
+      if (!description) {
+        const paragraphMatches = response.match(/<p[^>]*>([^<]{10,500})<\/p>/gi);
+        if (paragraphMatches) {
+          for (const match of paragraphMatches) {
+            const text = match.replace(/<[^>]+>/g, '').trim();
+            // スクリプトやCSSを除外
+            if (text && text.length > 10 && !text.includes('window.') && !text.includes('function') && !text.includes('Copyright')) {
+              description = HtmlParser.cleanText(text);
+              break;
+            }
+          }
+        }
+      }
+      
+      // デフォルトの説明文
+      if (!description) {
+        description = `${name}の里親募集中です。`;
       }
       
       // 画像URLは詳細ページのURLを使用（スクリーンショット用）

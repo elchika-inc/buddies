@@ -174,3 +174,14 @@ export function isCountResult(value: unknown): value is { count: number; [key: s
 export function ensureArray<T>(value: T | T[]): T[] {
   return Array.isArray(value) ? value : [value];
 }
+
+// オブジェクトから安全に値を取得する
+export function safeGet<T>(
+  obj: Record<string, unknown>,
+  key: string,
+  guard: (value: unknown) => value is T,
+  defaultValue: T
+): T {
+  const value = obj[key];
+  return guard(value) ? value : defaultValue;
+}

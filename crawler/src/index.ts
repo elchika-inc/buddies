@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { MessageBatch } from '@cloudflare/workers-types';
 import { Env } from './types';
 import { CrawlerFactory } from './CrawlerFactory';
 import { CrawlOptions } from './interfaces/ICrawler';
 import { DatabaseInitializer } from './utils/DatabaseInitializer';
+import { CrawlerQueueHandler, CrawlMessage } from './queue-handler';
 
 // データベースレコードの型定義
 interface CrawlerStateRecord {
@@ -225,5 +227,10 @@ export default {
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(request, env, ctx);
+  },
+
+  async queue(batch: MessageBatch<CrawlMessage>, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const handler = new CrawlerQueueHandler(env as any);
+    await handler.handleBatch(batch);
   },
 };

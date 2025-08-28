@@ -1,5 +1,111 @@
-# Logs
-logs
+# =====================================
+# Node.js & Package Management
+# =====================================
+
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Package manager lock files (project uses Bun primarily)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+# Exception: converter needs package-lock.json for GitHub Actions
+!converter/package-lock.json
+
+# Bun specific
+bun.lockb
+
+# npm/yarn/pnpm cache
+.npm
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# =====================================
+# Build Outputs & Cache
+# =====================================
+
+# General build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Next.js specific
+.next/
+
+# Cloudflare Workers specific
+_worker.js
+_worker.js.map
+.wrangler/
+worker-configuration.d.ts
+
+# Bundler cache
+.cache
+.parcel-cache
+.turbo/
+
+# =====================================
+# Environment & Configuration
+# =====================================
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.dev.vars
+
+# Local configuration overrides
+*.dev.toml
+*.local.toml
+local.config.js
+local.config.ts
+config.local.json
+
+# =====================================
+# Database & Storage
+# =====================================
+
+# D1 Database files
+*.db
+*.sqlite
+*.sqlite3
+.d1/
+
+# Local data storage
+crawler/data/
+crawler/output/
+crawler/test-output/
+.pawmatch-data/
+
+# Images (handled by Cloudflare R2)
+app/public/images/*.jpg
+app/public/images/*.png
+app/public/images/*.gif
+app/public/images/*.webp
+
+# =====================================
+# Testing & Coverage
+# =====================================
+
+coverage/
+*.lcov
+.nyc_output/
+playwright-report/
+test-results/
+jest.config.local.js
+
+# =====================================
+# Logs & Debug
+# =====================================
+
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -8,225 +114,103 @@ pnpm-debug.log*
 lerna-debug.log*
 bun-debug.log*
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# =====================================
+# IDE & Editor
+# =====================================
 
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-.nyc_output
-
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Yarn v2
-.yarn/cache
-.yarn/unplugged
-.yarn/build-state.yml
-.yarn/install-state.gz
-.pnp.*
-
-# dotenv environment variable files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.dev.vars
-
-# Build outputs
-dist/
-dist-ssr/
-build/
-out/
-.next/
-
-# Bundler cache
-.cache
-.parcel-cache
-.turbo/
-
-# IDE files
+# VS Code
 .vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# IntelliJ IDEA
 .idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
 *.swp
 *.swo
 *~
 
-# OS generated files
+# =====================================
+# OS Files
+# =====================================
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+
+# Windows
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Temporary files
-*.tmp
-*.temp
+# Linux
+.directory
+.Trash-*
 
-# Backup files
-*.bak
-*.backup
+# =====================================
+# Development Tools
+# =====================================
 
-# Local development files
-.local
-
-# Storybook build outputs
-storybook-static
-
-# Cloudflare Workers
-.wrangler/
-wrangler.toml.bak
-worker-configuration.d.ts
-
-# D1 Database
-*.db
-*.sqlite
-*.sqlite3
-.d1/
-
-# Build outputs specific to Workers
-_worker.js
-_worker.js.map
-
-# Bun
-bun.lockb
-
-# Test coverage
-coverage/
-.nyc_output/
-
-# Deployment
-
-# Development tools
+# AI assistants
 .claude/
 .serena/
-
-# Git internals (should not be tracked)
-.git/
-
-# Project specific
-.pawmatch-data/
-.tsx-cache/
-schema.generated.ts
-
-# Development configuration files
-*.dev.toml
-*.local.toml
-
-# Crawler legacy files (migrated to Workers)
-crawler/output/
-crawler/data/images/
-crawler/test-output/
-crawler/dist/
-
-# Temporary migration files
-update-catmatch-data.ts
-
-# Images (handled by Cloudflare R2)
-app/public/images/*.jpg
-app/public/images/*.png
-app/public/images/*.gif
+.cursor/
 
 # Playwright MCP
 .playwright-mcp/
 
-# Local data storage (accumulated data files)
-crawler/data/accumulated-*.json
-crawler/data/crawler-state.json
-crawler/data/dog-crawler-state.json
+# Linting cache
+.eslintcache
+.stylelintcache
 
-# Local image storage directories
-crawler/data/dog-images/
-crawler/data/cat-images/
+# =====================================
+# Security
+# =====================================
 
-# Wrangler local development files
-workers/crawler/wrangler.dev.toml
-workers/api/wrangler.dev.toml
-workers/*/migrations/
-.wrangler/
-worker-configuration.d.ts
-
-# Local database files
-*.db
-*.sqlite
-*.sqlite3
-.d1/
-
-# Environment files (keep .env.example files)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.dev.vars
-app/.env.local
-crawler/.env.local
-
-# Package manager lock files (project uses Bun)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-# Exception: converter needs package-lock.json for GitHub Actions
-!converter/package-lock.json
-
-# Build artifacts
-*.tsbuildinfo
-.turbo/
-
-# Editor and IDE files
-.vscode/settings.json
-.idea/workspace.xml
-.idea/tasks.xml
-*.sublime-project
-*.sublime-workspace
-*~
-
-# Runtime and process files
-*.pid
-*.seed
-*.pid.lock
-
-# Test files and coverage
-jest.config.local.js
-playwright-report/
-test-results/
-
-# Security and sensitive files
+# SSL/TLS certificates
 *.pem
 *.key
 *.crt
 *.p12
 *.pfx
 
-# Local configuration overrides
-local.config.js
-local.config.ts
-config.local.json
+# =====================================
+# Temporary & Misc
+# =====================================
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+.local
+
+# Package files
+*.tgz
+
+# Runtime
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# REPL history
+.node_repl_history
+
+# Generated files
+schema.generated.ts
+.tsx-cache/
+
+# Migration scripts (temporary)
+update-catmatch-data.ts

@@ -38,7 +38,7 @@
     "// Deployment Commands": "",
     "deploy:dog": "cd app && npm run deploy:dog",
     "deploy:cat": "cd app && npm run deploy:cat",
-    "deploy:apps": "concurrently --names 'DOG,CAT' --prefix-colors 'blue,green' 'npm run deploy:dog' 'npm run deploy:cat'",
+    "deploy:apps": "npm run deploy:dog && npm run deploy:cat",
     "deploy:workers": "concurrently --names 'API,CRAWLER,DISPATCH,CONVERT' --prefix-colors 'yellow,cyan,magenta,green' 'npm run api:deploy' 'npm run crawler:deploy' 'npm run dispatcher:deploy' 'npm run converter:deploy'",
     "deploy:all": "npm run deploy:apps && npm run deploy:workers",
     

@@ -206,9 +206,9 @@ export function transformPetRecord(dbRecord: unknown): ApiPetRecord {
   if (pet.hasJpeg || pet.hasWebp) {
     // R2の画像を配信するAPIエンドポイント（カスタムドメイン使用）
     pet.imageUrl = `https://pawmatch-api.elchika.app/api/images/${pet.type}/${pet.id}.jpg`;
-  } else if (typeof dbRecord === 'object' && dbRecord !== null && 'image_url' in dbRecord && typeof (dbRecord as Record<string, unknown>).image_url === 'string') {
-    // データベースに既存の画像URLがある場合はそれを使用
-    pet.imageUrl = (dbRecord as Record<string, unknown>).image_url as string;
+  } else {
+    // R2に画像がない場合は、フロントエンドでフォールバック画像を使用するためnullを返す
+    pet.imageUrl = undefined;
   }
 
   // locationフィールドの設定

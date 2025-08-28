@@ -20,6 +20,10 @@ app.use('*', async (c, next) => {
       origin, 
       'https://pawmatch.pages.dev',
       'https://*.pawmatch.pages.dev',
+      'https://pawmatch-dogs.elchika.app',
+      'https://pawmatch-cats.elchika.app',
+      'https://*.dogmatch-16r.pages.dev',
+      'https://*.catmatch.pages.dev',
       'http://localhost:3004', 
       'http://localhost:3005', 
       'http://localhost:3006'
