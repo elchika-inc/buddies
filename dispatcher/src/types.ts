@@ -2,10 +2,9 @@
  * Dispatcher モジュールの型定義
  */
 
-import type { D1Database, Queue, R2Bucket, MessageBatch, ScheduledEvent, ExecutionContext } from '@cloudflare/workers-types';
+import type { Queue, R2Bucket, MessageBatch, ScheduledEvent, ExecutionContext } from '@cloudflare/workers-types';
 
 export interface Env {
-  DB: D1Database;
   PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>;
   PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>;
   GITHUB_TOKEN: string;
@@ -13,6 +12,7 @@ export interface Env {
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   API_URL: string;
+  API_KEY?: string;
   R2_BUCKET?: R2Bucket;
   [key: string]: unknown;
 }

@@ -90,6 +90,10 @@ app/public/images/*.png
 app/public/images/*.gif
 app/public/images/*.webp
 
+# Service Worker生成ファイル
+app/public/workbox-*.js
+app/public/fallback-*.js
+
 # =====================================
 # Testing & Coverage
 # =====================================

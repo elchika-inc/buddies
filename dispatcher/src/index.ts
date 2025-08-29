@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
 import type { MessageBatch, ScheduledEvent, ExecutionContext } from '@cloudflare/workers-types';
-import { CleanupService } from './CleanupService';
 import type { Env, DispatchMessage, DLQMessage, PetRecord, PetDispatchData } from './types';
 import { isPetRecord } from './types';
 
@@ -28,24 +27,39 @@ app.get('/', (c) => {
   });
 });
 
-// 画像がないペットを取得
-async function fetchPetsWithoutImages(db: D1Database, limit = 10): Promise<PetRecord[]> {
-  const query = `
-    SELECT id, type, name, source_url, has_jpeg, has_webp
-    FROM pets
-    WHERE has_jpeg = 0 OR has_webp = 0
-    ORDER BY created_at DESC
-    LIMIT ?
-  `;
-  
-  const result = await db.prepare(query).bind(limit).all();
-  
-  if (!result.results) {
+// 画像がないペットを取得（API経由）
+async function fetchPetsWithoutImages(env: Env, limit = 10): Promise<PetRecord[]> {
+  try {
+    const apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
+    const response = await fetch(`${apiUrl}/api/stats`);
+    
+    if (!response.ok) {
+      console.error(`API request failed: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json() as any;
+    
+    if (!data.success || !data.data?.missingImages) {
+      console.error('Invalid API response structure');
+      return [];
+    }
+    
+    // APIレスポンスをPetRecord型に変換（必要なフィールドのみ）
+    const pets = data.data.missingImages.slice(0, limit).map((pet: any) => ({
+      id: pet.id,
+      type: pet.type,
+      name: pet.name,
+      source_url: pet.sourceUrl, // APIはcamelCase、DBはsnake_case
+      has_jpeg: pet.hasJpeg ? 1 : 0,
+      has_webp: pet.hasWebp ? 1 : 0
+    }));
+    
+    return pets.filter(isPetRecord);
+  } catch (error) {
+    console.error('Failed to fetch pets from API:', error);
     return [];
   }
-  
-  // 型ガードを使用した安全な型変換
-  return result.results.filter(isPetRecord);
 }
 
 // GitHub Actions ワークフローをトリガー
@@ -92,8 +106,8 @@ app.post('/dispatch', async (c) => {
   try {
     const env = getEnv(c);
     
-    // 画像がないペットを取得
-    const pets = await fetchPetsWithoutImages(env.DB, limit);
+    // 画像がないペットを取得（API経由）
+    const pets = await fetchPetsWithoutImages(env, limit);
     
     if (pets.length === 0) {
       return c.json({
@@ -122,11 +136,8 @@ app.post('/dispatch', async (c) => {
     
     await env.PAWMATCH_DISPATCH_QUEUE.send(message);
     
-    // ディスパッチ履歴を記録
-    await env.DB.prepare(`
-      INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
-      VALUES (?, ?, 'queued', CURRENT_TIMESTAMP)
-    `).bind(batchId, pets.length).run();
+    // ディスパッチ履歴をAPIに送信（オプション）
+    // TODO: APIに履歴記録エンドポイントを追加する場合はここで呼び出す
     
     return c.json({
       success: true,
@@ -153,8 +164,8 @@ app.post('/scheduled', async (c) => {
   try {
     const env = getEnv(c);
     
-    // 画像がないペットを取得（10件に統一）
-    const pets = await fetchPetsWithoutImages(env.DB, 10);
+    // 画像がないペットを取得（API経由、10件に統一）
+    const pets = await fetchPetsWithoutImages(env, 10);
     
     if (pets.length === 0) {
       console.log('No pets without images found');
@@ -180,11 +191,8 @@ app.post('/scheduled', async (c) => {
     
     await env.PAWMATCH_DISPATCH_QUEUE.send(message);
     
-    // ディスパッチ履歴を記録
-    await env.DB.prepare(`
-      INSERT INTO dispatch_history (batch_id, pet_count, status, created_at)
-      VALUES (?, ?, 'scheduled_queued', CURRENT_TIMESTAMP)
-    `).bind(batchId, pets.length).run();
+    // ディスパッチ履歴をAPIに送信（オプション）
+    // TODO: APIに履歴記録エンドポイントを追加する場合はここで呼び出す
     
     console.log(`Scheduled dispatch queued: ${pets.length} pets`);
     
@@ -204,20 +212,19 @@ app.post('/scheduled', async (c) => {
   }
 });
 
-// ディスパッチ履歴を取得
+// ディスパッチ履歴を取得（API経由）
 app.get('/history', async (c) => {
   try {
     const env = getEnv(c);
     
-    const result = await env.DB.prepare(`
-      SELECT * FROM dispatch_history
-      ORDER BY created_at DESC
-      LIMIT 50
-    `).all();
+    // TODO: APIから履歴を取得するエンドポイントを呼び出す
+    // const response = await fetch(`${env.API_URL}/api/dispatch/history`);
+    // const data = await response.json();
     
     return c.json({
       success: true,
-      history: result.results
+      message: 'History endpoint not implemented (DB removed)',
+      history: []
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -275,11 +282,8 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
       }
       
       // 成功時の処理
-      await env.DB.prepare(`
-        UPDATE dispatch_history 
-        SET status = 'completed', completed_at = CURRENT_TIMESTAMP 
-        WHERE batch_id = ?
-      `).bind(batchId).run();
+      // TODO: APIに完了通知を送信する場合はここで呼び出す
+      console.log(`Batch ${batchId} completed successfully`);
       
       message.ack();
       
@@ -296,14 +300,8 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
         };
         await env.PAWMATCH_DISPATCH_DLQ.send(dlqMessage);
         
-        await env.DB.prepare(`
-          UPDATE dispatch_history 
-          SET status = 'failed', error = ?, completed_at = CURRENT_TIMESTAMP 
-          WHERE batch_id = ?
-        `).bind(
-          error instanceof Error ? error.message : 'Unknown error',
-          message.body.batchId
-        ).run();
+        // TODO: APIに失敗通知を送信する場合はここで呼び出す
+        console.error(`Batch ${message.body.batchId} failed:`, error instanceof Error ? error.message : 'Unknown error');
         
         message.ack();
       } else {
@@ -314,29 +312,37 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
   }
 }
 
-// クリーンアップ処理
+// クリーンアップ処理（API経由）
 async function performDataCleanup(env: Env, ctx: ExecutionContext): Promise<void> {
-  console.log('Starting data cleanup process');
-  
-  const cleanupService = new CleanupService(env.DB);
+  console.log('Starting data cleanup process via API');
   
   try {
-    // 期限切れペットのソフト削除と物理削除
-    const result = await cleanupService.deleteExpiredPets();
-    console.log(`Cleanup result: deleted=${result.deletedCount}, soft-deleted=${result.softDeletedCount}`);
+    // APIのクリーンアップエンドポイントを呼び出す
+    const apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
+    const response = await fetch(`${apiUrl}/api/admin/cleanup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(env.API_KEY ? { 'Authorization': `Bearer ${env.API_KEY}` } : {})
+      },
+      body: JSON.stringify({
+        cleanupType: 'expired',
+        includeImages: !!env.R2_BUCKET
+      })
+    });
     
-    // エラーがあればログ出力
-    if (result.errors.length > 0) {
-      console.error('Cleanup errors:', result.errors);
+    if (!response.ok) {
+      throw new Error(`API cleanup request failed: ${response.status}`);
     }
     
-    // R2から画像削除（オプション）
-    if (env.R2_BUCKET) {
-      const expiredImages = await cleanupService.getExpiredPetImages();
-      console.log(`Found ${expiredImages.length} expired images to delete`);
+    const result = await response.json() as any;
+    console.log('Cleanup result from API:', result);
+    
+    // R2から画像削除（必要に応じて）
+    if (env.R2_BUCKET && result.expiredImages && Array.isArray(result.expiredImages)) {
+      console.log(`Deleting ${result.expiredImages.length} expired images from R2`);
       
-      // バッチで削除（パフォーマンス考慮）
-      const deletePromises = expiredImages.map(async (imageKey) => {
+      const deletePromises = result.expiredImages.map(async (imageKey: string) => {
         try {
           await env.R2_BUCKET!.delete(imageKey);
         } catch (error) {
@@ -344,38 +350,16 @@ async function performDataCleanup(env: Env, ctx: ExecutionContext): Promise<void
         }
       });
       
-      // 並列実行（最大10個ずつ）
+      // バッチで削除（最大10個ずつ）
       const batchSize = 10;
       for (let i = 0; i < deletePromises.length; i += batchSize) {
         await Promise.all(deletePromises.slice(i, i + batchSize));
       }
     }
     
-    // クリーンアップ統計をログ出力
-    const stats = await cleanupService.getCleanupStats();
-    console.log('Cleanup statistics:', stats);
-    
-    // 履歴に記録
-    await env.DB.prepare(`
-      INSERT INTO dispatch_history (batch_id, pet_count, status, created_at, notes)
-      VALUES (?, ?, 'cleanup_completed', CURRENT_TIMESTAMP, ?)
-    `).bind(
-      `cleanup-${Date.now()}`,
-      result.deletedCount + result.softDeletedCount,
-      JSON.stringify(stats)
-    ).run();
-    
   } catch (error) {
     console.error('Data cleanup failed:', error);
-    
-    // エラーを履歴に記録
-    await env.DB.prepare(`
-      INSERT INTO dispatch_history (batch_id, pet_count, status, error, created_at)
-      VALUES (?, 0, 'cleanup_failed', ?, CURRENT_TIMESTAMP)
-    `).bind(
-      `cleanup-${Date.now()}`,
-      error instanceof Error ? error.message : 'Unknown error'
-    ).run();
+    // エラーログのみ出力（DB接続がないため履歴記録はできない）
   }
 }
 

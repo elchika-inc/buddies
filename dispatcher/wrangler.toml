@@ -11,12 +11,6 @@ WORKFLOW_FILE = "automated-image-pipeline.yml"
 API_URL = "https://pawmatch-api.elchika.app"
 
 
-# D1データベース設定（APIと共有）
-[[d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db"
-database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
-
 # Queue設定
 [[queues.producers]]
 binding = "PAWMATCH_DISPATCH_QUEUE"
