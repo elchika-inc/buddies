@@ -94,18 +94,24 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           # 処理結果をAPIに送信してDBを更新
-          if [ -f "logs/results.json" ]; then
+          if [ -f "scripts/logs/results.json" ]; then
+            echo "Found results.json, sending to API..."
             # API_KEYが設定されている場合のみAuthorizationヘッダーを追加
             if [ -n "$API_KEY" ]; then
               curl -X POST "${API_URL}/api/admin/update-images" \
                 -H "Authorization: Bearer ${API_KEY}" \
                 -H "Content-Type: application/json" \
-                -d @logs/results.json
+                -d @scripts/logs/results.json \
+                -v
             else
               curl -X POST "${API_URL}/api/admin/update-images" \
                 -H "Content-Type: application/json" \
-                -d @logs/results.json
+                -d @scripts/logs/results.json \
+                -v
             fi
+          else
+            echo "Warning: scripts/logs/results.json not found"
+            ls -la scripts/logs/ || echo "scripts/logs directory not found"
           fi
       
       - name: Upload logs
@@ -114,7 +120,7 @@ jobs:
         with:
           name: image-pipeline-logs-${{ github.run_id }}
           path: |
-            logs/
+            scripts/logs/
             pets_to_process.json
           retention-days: 7
       
