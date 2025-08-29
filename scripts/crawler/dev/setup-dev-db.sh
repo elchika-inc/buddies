@@ -16,14 +16,15 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🚀 PawMatch Crawler 開発環境セットアップを開始します...${NC}"
 
 # 現在のディレクトリをチェック
-if [ ! -f "wrangler.dev.toml" ]; then
-    echo -e "${RED}❌ wrangler.dev.toml が見つかりません。crawlerディレクトリで実行してください。${NC}"
+WRANGLER_CONFIG="../../../crawler/wrangler.dev.toml"
+if [ ! -f "$WRANGLER_CONFIG" ]; then
+    echo -e "${RED}❌ wrangler.dev.toml が見つかりません。${NC}"
     exit 1
 fi
 
 # 1. D1データベースの状態確認
 echo -e "${YELLOW}📊 データベース状態を確認中...${NC}"
-DB_STATUS=$(wrangler d1 execute pawmatch-db-dev --local --config wrangler.dev.toml --command="SELECT name FROM sqlite_master WHERE type='table' LIMIT 1;" 2>&1 || true)
+DB_STATUS=$(wrangler d1 execute pawmatch-db-dev --local --config "$WRANGLER_CONFIG" --command="SELECT name FROM sqlite_master WHERE type='table' LIMIT 1;" 2>&1 || true)
 
 if echo "$DB_STATUS" | grep -q "no such table"; then
     echo -e "${YELLOW}⚠️  データベースが空です。初期スキーマを適用します。${NC}"
@@ -36,13 +37,13 @@ fi
 # 2. スキーマ適用
 if [ "$NEED_SCHEMA" = true ]; then
     echo -e "${YELLOW}📋 開発用スキーマを適用中...${NC}"
-    wrangler d1 execute pawmatch-db-dev --local --config wrangler.dev.toml --file=scripts/dev/schema-dev.sql
+    wrangler d1 execute pawmatch-db-dev --local --config "$WRANGLER_CONFIG" --file=./schema-dev.sql
     echo -e "${GREEN}✅ スキーマ適用完了${NC}"
 fi
 
 # 3. テーブル確認
 echo -e "${YELLOW}🔍 テーブル一覧を確認中...${NC}"
-TABLES=$(wrangler d1 execute pawmatch-db-dev --local --config wrangler.dev.toml --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+TABLES=$(wrangler d1 execute pawmatch-db-dev --local --config "$WRANGLER_CONFIG" --command="SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
 echo "$TABLES"
 
 # 4. クローラーの動作確認

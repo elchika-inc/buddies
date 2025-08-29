@@ -56,10 +56,11 @@ async function triggerGitHubWorkflow(
 ): Promise<Response> {
   const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/dispatches`;
   
+  // JSONファイル形式に合わせたデータ構造
   const petsData = pets.map(pet => ({
     id: pet.id,
     name: pet.name,
-    sourceUrl: pet.source_url,
+    sourceUrl: pet.source_url,  // camelCaseに変換
     type: pet.type
   }));
   
@@ -73,8 +74,10 @@ async function triggerGitHubWorkflow(
     body: JSON.stringify({
       ref: 'main',
       inputs: {
-        pets_batch: JSON.stringify(petsData),
-        batch_id: batchId
+        // automated-image-pipeline.yml用の入力形式
+        batch_data: JSON.stringify(petsData),
+        batch_id: batchId,
+        limit: String(pets.length)
       }
     })
   });
@@ -150,8 +153,8 @@ app.post('/scheduled', async (c) => {
   try {
     const env = getEnv(c);
     
-    // 画像がないペットを取得（自動実行時は20件）
-    const pets = await fetchPetsWithoutImages(env.DB, 20);
+    // 画像がないペットを取得（10件に統一）
+    const pets = await fetchPetsWithoutImages(env.DB, 10);
     
     if (pets.length === 0) {
       console.log('No pets without images found');

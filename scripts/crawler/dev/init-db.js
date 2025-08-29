@@ -9,8 +9,8 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-const CONFIG_FILE = 'wrangler.dev.toml';
-const SCHEMA_FILE = 'scripts/dev/schema-dev.sql';
+const CONFIG_FILE = '../../../crawler/wrangler.dev.toml';
+const SCHEMA_FILE = './schema-dev.sql';
 
 // カラー定義
 const colors = {

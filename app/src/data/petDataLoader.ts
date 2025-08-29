@@ -1,7 +1,6 @@
 import { getPetType } from '@/config/petConfig'
 import { Pet } from '@/types/pet'
 import petApi from '@/services/api'
-import { extractTimestamp, PetWithTimestamp } from '@/types/petWithTimestamp'
 
 // APIレスポンスをPet型に変換
 function transformApiPet(apiPet: unknown): Pet {
@@ -21,9 +20,6 @@ function transformApiPet(apiPet: unknown): Pet {
   } as Pet
 }
 
-// API経由またはローカルデータでペットデータを読み込む
-const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true' || process.env.NODE_ENV === 'development'
-
 // ペットデータをインクリメンタルに読み込む（10件ずつ）
 export const loadPetDataIncremental = async (offset: number = 0, limit: number = 10): Promise<{
   pets: Pet[];
@@ -33,63 +29,25 @@ export const loadPetDataIncremental = async (offset: number = 0, limit: number =
   const petType = getPetType()
   
   // API経由でデータを取得
-  if (USE_API) {
-    try {
-      if (petType === 'cat') {
-        const response = await petApi.getCats({ limit, offset })
-        const pets = (response.pets || response.cats || []).map(transformApiPet)
-        return {
-          pets,
-          hasMore: response.pagination?.hasMore || false,
-          total: response.pagination?.total || 0
-        }
-      } else {
-        const response = await petApi.getDogs({ limit, offset })
-        const pets = (response.pets || response.dogs || []).map(transformApiPet)
-        return {
-          pets,
-          hasMore: response.pagination?.hasMore || false,
-          total: response.pagination?.total || 0
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch from API, falling back to local data:', error)
-      // APIエラー時はローカルデータにフォールバック
-      return loadLocalDataIncremental(petType, offset, limit)
+  if (petType === 'cat') {
+    const response = await petApi.getCats({ limit, offset })
+    const pets = (response.pets || response.cats || []).map(transformApiPet)
+    return {
+      pets,
+      hasMore: response.pagination?.hasMore || false,
+      total: response.pagination?.total || 0
+    }
+  } else {
+    const response = await petApi.getDogs({ limit, offset })
+    const pets = (response.pets || response.dogs || []).map(transformApiPet)
+    return {
+      pets,
+      hasMore: response.pagination?.hasMore || false,
+      total: response.pagination?.total || 0
     }
   }
-  
-  // ローカルデータを使用
-  return loadLocalDataIncremental(petType, offset, limit)
 }
 
-// ローカルデータをインクリメンタルに読み込む
-async function loadLocalDataIncremental(petType: 'dog' | 'cat', offset: number, limit: number) {
-  let allData: Pet[] = []
-  
-  if (petType === 'dog') {
-    const { mockDogs } = await import('./dog/dogs')
-    allData = mockDogs
-  } else {
-    const { cats } = await import('./cat/cats')
-    allData = cats
-  }
-  
-  // 新しい順にソート（createdAtフィールドで降順）
-  allData.sort((a, b) => {
-    const aTimestamp = extractTimestamp(a as PetWithTimestamp)
-    const bTimestamp = extractTimestamp(b as PetWithTimestamp)
-    return bTimestamp - aTimestamp
-  })
-  
-  const pets = allData.slice(offset, offset + limit)
-  
-  return {
-    pets,
-    hasMore: offset + limit < allData.length,
-    total: allData.length
-  }
-}
 
 // 既存のloadPetData関数（互換性のために残す）
 export const loadPetData = async (): Promise<Pet[]> => {

@@ -14,19 +14,26 @@ export class PetDataNormalizer {
     detailData: DetailedPetData | null,
     petType: 'dog' | 'cat'
   ): NormalizedPet {
-    const { prefecture, city } = this.parseLocation(rawData.location);
+    // 詳細ページのlocationを優先、なければリストページのlocationを使用
+    const locationToUse = detailData?.location || rawData.location;
+    const { prefecture, city } = this.parseLocation(locationToUse);
     
     return {
       id: this.normalizeId(rawData.id),
       type: petType,
       name: this.normalizeName(rawData.name),
-      breed: this.normalizeBreed(rawData.breed, petType),
-      age: rawData.age,
-      gender: rawData.gender,
+      // 詳細ページのbreedを優先、なければリストページのbreedを使用
+      breed: this.normalizeBreed(detailData?.breed || rawData.breed, petType),
+      // 詳細ページのageを優先、なければリストページのageを使用
+      age: detailData?.age || rawData.age,
+      // 詳細ページのgenderを優先、なければリストページのgenderを使用
+      gender: detailData?.gender || rawData.gender,
       prefecture,
       city,
-      location: rawData.location,
-      description: rawData.description,
+      location: locationToUse,
+      // descriptionは詳細ページのpersonalityデータから生成
+      // personalityが配列の場合は結合、なければ募集経緯やリストページのdescriptionを使用
+      description: this.createDescription(detailData, rawData),
       personality: detailData?.personality || [],
       medicalInfo: detailData?.medicalInfo || '',
       careRequirements: detailData?.requirements || [],
@@ -156,6 +163,28 @@ export class PetDataNormalizer {
       .replace(/町$/, '')
       .replace(/村$/, '')
       .trim() || '不明';
+  }
+
+  /**
+   * 説明文を作成
+   */
+  private createDescription(
+    detailData: DetailedPetData | null,
+    rawData: ParsedPetData
+  ): string {
+    // 1. 詳細ページのpersonalityがある場合はそれを使用
+    if (detailData?.personality && detailData.personality.length > 0) {
+      // 配列の場合は結合
+      return detailData.personality.join(' ');
+    }
+    
+    // 2. リストページのdescriptionがある場合はそれを使用
+    if (rawData.description) {
+      return rawData.description;
+    }
+    
+    // 3. どれもない場合はデフォルトメッセージ
+    return `${rawData.name}の里親を募集しています。`;
   }
 
   /**

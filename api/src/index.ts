@@ -5,6 +5,7 @@ import { PetController, ImageController, HealthController } from './controllers'
 import { CONFIG } from './utils';
 import { withEnv } from './middleware/env-middleware';
 import { errorHandlerMiddleware, notFoundHandler } from './middleware/error-handler-middleware';
+import crawlerRoutes from './routes/crawler';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -106,6 +107,67 @@ app.get('/api/images/:type/:filename',
     return imageController.getImageByType(c);
   })
 );
+
+// Crawler routes (内部API)
+app.route('/crawler', crawlerRoutes);
+
+// Admin endpoint - Update image flags after screenshot processing
+app.post('/api/admin/update-images', withEnv(async (c) => {
+  try {
+    const body = await c.req.json();
+    
+    // Validate request body
+    if (!body.results || !Array.isArray(body.results)) {
+      return c.json({
+        success: false,
+        error: 'Invalid request body'
+      }, 400);
+    }
+
+    let updatedCount = 0;
+    const errors: any[] = [];
+
+    // Process each result
+    for (const result of body.results) {
+      if (result.success && result.pet_id) {
+        try {
+          // Update has_jpeg and has_webp flags based on upload results
+          const hasJpeg = result.jpegUrl ? 1 : 0;
+          const hasWebp = result.webpUrl ? 1 : 0;
+          
+          await c.env.DB.prepare(`
+            UPDATE pets 
+            SET has_jpeg = ?, 
+                has_webp = ?,
+                screenshot_completed_at = CURRENT_TIMESTAMP,
+                image_checked_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).bind(hasJpeg, hasWebp, result.pet_id).run();
+          
+          updatedCount++;
+        } catch (error) {
+          errors.push({
+            petId: result.pet_id,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: `Updated ${updatedCount} pets`,
+      updatedCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Update images error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update images'
+    }, 500);
+  }
+}));
 
 // 404 handler
 app.notFound((c) => {

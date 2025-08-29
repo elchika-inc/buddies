@@ -8,16 +8,21 @@
     "build": "wrangler build",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "test": "./scripts/dev/test-crawlers.sh",
-    "db:init": "node scripts/dev/init-db.js",
-    "db:reset": "./scripts/dev/reset-dev-db.sh",
-    "seed:api": "node scripts/dev/seed-api-data.js",
-    "seed:sample": "node scripts/dev/create-sample-data.js",
+    "test": "../../scripts/crawler/dev/test-crawlers.sh",
+    "db:init": "node ../../scripts/crawler/dev/init-db.js",
+    "db:reset": "../../scripts/crawler/dev/reset-dev-db.sh",
+    "seed:api": "node ../../scripts/crawler/dev/seed-api-data.js",
+    "seed:sample": "node ../../scripts/crawler/dev/create-sample-data.js",
     "crawl:dogs": "npm run seed:api -- --type=dog",
-    "crawl:cats": "npm run seed:api -- --type=cat"
+    "crawl:cats": "npm run seed:api -- --type=cat",
+    "crawl:pethome": "../../scripts/crawler/crawl-pethome.sh",
+    "crawl:pethome:dogs": "../../scripts/crawler/crawl-pethome.sh --type dog",
+    "crawl:pethome:cats": "../../scripts/crawler/crawl-pethome.sh --type cat",
+    "crawl:pethome:all": "../../scripts/crawler/crawl-pethome.sh --type both --limit 20"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.872.0",
+    "cheerio": "^1.1.2",
     "hono": "^4.9.4",
     "linkedom": "^0.18.12",
     "sharp": "^0.34.3"
@@ -32,6 +37,6 @@
     "sqlite3": "^5.1.7",
     "tsx": "^4.20.5",
     "typescript": "^5.6.0",
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.33.0"
   }
 }

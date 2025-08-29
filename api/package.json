@@ -4,20 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --port 8787",
+    "dev": "wrangler dev --local",
     "build": "wrangler build",
-    "deploy": "wrangler deploy",
-    "tail": "wrangler tail",
-    "type-check": "tsc --noEmit",
-    "db:init": "wrangler d1 execute pawmatch-db --local --file=./schema.sql",
-    "db:migrate": "wrangler d1 migrations apply pawmatch-db --local",
-    "db:migrate:prod": "wrangler d1 migrations apply pawmatch-db --remote",
-    "db:generate": "drizzle-kit generate:sqlite",
-    "db:push": "drizzle-kit push:sqlite",
-    "db:studio": "drizzle-kit studio",
-    "db:studio:prod": "drizzle-kit studio --config drizzle.config.prod.ts",
-    "db:generate:prod": "drizzle-kit generate:sqlite --config drizzle.config.prod.ts",
-    "db:push:prod": "drizzle-kit push:sqlite --config drizzle.config.prod.ts"
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
@@ -32,6 +21,6 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typescript": "^5.6.0",
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.33.0"
   }
 }

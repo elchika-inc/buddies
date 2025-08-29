@@ -14,8 +14,8 @@ pawmatch/
 ├── app/          # Next.js フロントエンド (Cloudflare Pages)
 ├── api/          # Cloudflare Workers API (Hono)
 ├── crawler/      # データクローラー (Cloudflare Workers)
-├── converter/    # 画像変換・スクリーンショット処理 (Cloudflare Workers)
-└── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
+├── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
+└── scripts/      # スクリーンショット・画像変換スクリプト (GitHub Actionsで実行)
 ```
 
 ### 技術スタック
@@ -31,14 +31,13 @@ pawmatch/
 - **Workers**: デフォルトの `.workers.dev` ドメインを使用
   - `pawmatch-crawler.*.workers.dev`
   - `pawmatch-dispatcher.*.workers.dev`
-  - `pawmatch-image-converter.*.workers.dev`
 
 ## 開発コマンド
 
 ### 基本コマンド（ルートディレクトリから実行）
 ```bash
 # 開発サーバー起動
-npm run dev:all      # API + App 同時起動
+npm run dev:all      # API + App + Crawler + Dispatcher 同時起動
 npm run dev          # App のみ (port 3004)
 npm run api:dev      # API のみ (port 8787)
 
@@ -139,8 +138,5 @@ localStorage.debug = 'pawmatch:*'
 
 ## GitHub Actions
 
-### pet-screenshot.yml
-バッチ処理でペット詳細ページのスクリーンショットを自動生成し、R2にアップロード。
-
 ### automated-image-pipeline.yml  
-新規ペットデータの画像処理パイプライン。
+Dispatcher経由で起動される画像処理パイプライン。ペットのスクリーンショットを取得し、JPEG/WebP形式に変換してR2にアップロード。

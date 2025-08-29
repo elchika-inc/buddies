@@ -11,6 +11,9 @@ import type { Env } from '../types/env';
 import type { NormalizedPet } from '../types/pet';
 
 export class PetHomeCrawler extends BaseCrawler {
+  readonly sourceId = 'pet-home';
+  readonly sourceName = 'PetHome';
+  
   private parser: PetHomeHtmlParser;
   private fetcher: PetHomeDataFetcher;
   private normalizer: PetDataNormalizer;

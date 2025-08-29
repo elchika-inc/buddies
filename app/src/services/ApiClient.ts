@@ -78,6 +78,8 @@ export class ApiClient {
         body: data ? JSON.stringify(data) : null,
         mode: 'cors',
         signal: controller.signal,
+        // キャッシュを完全に無効化
+        cache: 'no-store',
       });
 
       clearTimeout(timeoutId);

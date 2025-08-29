@@ -11,7 +11,6 @@ import { petApiService } from '@/services/index';
 
 // 環境変数による戦略選択
 const USE_API = process.env.NEXT_PUBLIC_USE_API === 'true';
-const USE_SAMPLE_DATA = process.env.NEXT_PUBLIC_USE_SAMPLE_DATA === 'true';
 
 // データローディングサービス
 export class DataLoadingService {
@@ -23,16 +22,8 @@ export class DataLoadingService {
   
   // デフォルト戦略の作成
   private createDefaultStrategy(): DataLoadingStrategy {
-    if (USE_SAMPLE_DATA) {
-      return new LocalDataStrategy();
-    }
-    
-    if (USE_API) {
-      return new ApiDataStrategy(petApiService);
-    }
-    
-    // デフォルトはハイブリッド戦略（API + フォールバック）
-    return new HybridDataStrategy(petApiService);
+    // APIデータ戦略のみ使用
+    return new ApiDataStrategy(petApiService);
   }
   
   // 戦略の動的変更

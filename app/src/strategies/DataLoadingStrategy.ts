@@ -55,30 +55,44 @@ export abstract class DataLoadingStrategy {
  * 新しい実装では SimpleDataLoader を直接使用してください
  */
 
-// ローカルデータ専用ローダー（互換性維持）
+// ローカルデータ専用ローダー（互換性維持 - 非推奨）
 export class LocalDataStrategy extends DataLoadingStrategy {
-  private loader: SimpleDataLoader;
-
   constructor() {
     super('local');
-    // ダミーのAPIサービスを渡し、フォールバック無効にして純粋ローカル動作
-    this.loader = new SimpleDataLoader(
-      {} as PetApiService, 
-      { useLocalAsFallback: false }
-    );
   }
   
   async loadPetData(petType: 'dog' | 'cat', params: PaginationParams): Promise<LoadingResult> {
-    // SimpleDataLoaderのローカル実装を直接呼び出し
-    return this.loader.loadFromLocal(petType, params);
+    // ローカルデータが削除されたため、空の結果を返す
+    return {
+      data: [],
+      hasMore: false,
+      total: 0
+    };
   }
   
   async loadLocationData(petType: 'dog' | 'cat'): Promise<Record<string, string[]>> {
-    return this.loader.loadLocationFromLocal(petType);
+    return {};
   }
   
   async loadRegionData(petType: 'dog' | 'cat'): Promise<Record<string, string[]>> {
-    return this.loader.loadRegionFromLocal(petType);
+    // リージョンデータは残す
+    if (petType === 'dog') {
+      const { regions } = await import('@/data/dog/regions');
+      // readonlyを解除してmutableな形式に変換
+      const mutableRegions: Record<string, string[]> = {};
+      for (const [key, value] of Object.entries(regions)) {
+        mutableRegions[key] = [...value];
+      }
+      return mutableRegions;
+    } else {
+      const { regions } = await import('@/data/cat/regions');
+      // readonlyを解除してmutableな形式に変換
+      const mutableRegions: Record<string, string[]> = {};
+      for (const [key, value] of Object.entries(regions)) {
+        mutableRegions[key] = [...value];
+      }
+      return mutableRegions;
+    }
   }
 }
 
@@ -88,7 +102,7 @@ export class ApiDataStrategy extends DataLoadingStrategy {
   
   constructor(apiService: PetApiService) {
     super('api');
-    this.loader = new SimpleDataLoader(apiService, { useLocalAsFallback: false });
+    this.loader = new SimpleDataLoader(apiService);
   }
   
   async loadPetData(petType: 'dog' | 'cat', params: PaginationParams): Promise<LoadingResult> {
@@ -104,13 +118,13 @@ export class ApiDataStrategy extends DataLoadingStrategy {
   }
 }
 
-// ハイブリッドローダー（互換性維持）
+// ハイブリッドローダー（互換性維持 - APIのみ使用）
 export class HybridDataStrategy extends DataLoadingStrategy {
   private loader: SimpleDataLoader;
   
   constructor(apiService: PetApiService) {
     super('hybrid');
-    this.loader = new SimpleDataLoader(apiService, { useLocalAsFallback: true });
+    this.loader = new SimpleDataLoader(apiService);
   }
   
   async loadPetData(petType: 'dog' | 'cat', params: PaginationParams): Promise<LoadingResult> {

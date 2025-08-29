@@ -1,6 +1,6 @@
 import { Env } from './types';
 import { ICrawler } from './interfaces/ICrawler';
-import { PetHomeCrawler } from './crawlers/PetHomeCrawler';
+import { PetHomeCrawler } from './crawlers/PetHomeCrawlerRefactored';
 
 /**
  * クローラーファクトリー

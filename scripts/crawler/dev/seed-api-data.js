@@ -7,7 +7,7 @@
 
 import { execSync } from 'child_process';
 
-const CONFIG_FILE = 'wrangler.dev.toml';
+const CONFIG_FILE = '../../../crawler/wrangler.dev.toml';
 const API_ENDPOINT = 'http://localhost:8788';
 
 // カラー定義

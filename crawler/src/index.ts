@@ -21,7 +21,7 @@ interface PetRecord {
   type: 'dog' | 'cat';
   name: string;
   breed?: string;
-  age?: number;
+  age?: string;  // Changed from number to string
   gender?: 'male' | 'female' | 'unknown';
   prefecture: string;
   city?: string;

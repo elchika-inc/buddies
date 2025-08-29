@@ -1,13 +1,17 @@
 name: Automated Image Pipeline
 
 on:
-  # 定期実行: 4時間ごと（Dispatcherの30分後）
-  schedule:
-    - cron: '45 */4 * * *'  # 0:45, 4:45, 8:45, 12:45, 16:45, 20:45に実行
-  
-  # 手動実行も可能
+  # Dispatcher経由の呼び出しに対応
   workflow_dispatch:
     inputs:
+      batch_data:
+        description: 'JSON batch data from Dispatcher'
+        required: false
+        type: string
+      batch_id:
+        description: 'Batch ID from Dispatcher'
+        required: false
+        type: string
       limit:
         description: 'Number of pets to process'
         required: false
@@ -33,42 +37,44 @@ jobs:
         with:
           path: |
             ~/.cache/ms-playwright
-            converter/node_modules
+            node_modules
           key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
       
       - name: Install dependencies
-        working-directory: ./converter
         run: |
           npm install
           npm install playwright sharp @aws-sdk/client-s3
       
       - name: Install Playwright browsers
-        working-directory: ./converter
         run: npx playwright install chromium --with-deps
       
-      - name: Fetch pets without images from API
-        id: fetch-pets
+      - name: Prepare pets data
+        id: prepare-pets
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
         run: |
-          # APIから画像がないペットを取得
-          PETS_JSON=$(curl -s "${API_URL}/api/stats" | \
-            jq '[.data.missingImages[0:${{ github.event.inputs.limit || 10 }}] | 
-                .[] | {id: .id, name: .name, sourceUrl: .sourceUrl, type: .type}]')
+          # Dispatcher経由の場合
+          if [ -n "${{ github.event.inputs.batch_data }}" ]; then
+            echo 'Processing data from Dispatcher...'
+            echo '${{ github.event.inputs.batch_data }}' > pets_to_process.json
+            PET_COUNT=$(echo '${{ github.event.inputs.batch_data }}' | jq 'length')
+          else
+            # 手動実行（APIから取得）
+            echo 'Fetching data from API...'
+            PETS_JSON=$(curl -s "${API_URL}/api/stats" | \
+              jq '[.data.missingImages[0:${{ github.event.inputs.limit || 10 }}] | 
+                  .[] | {id: .id, name: .name, sourceUrl: .sourceUrl, type: .type}]')
+            echo "$PETS_JSON" > pets_to_process.json
+            PET_COUNT=$(echo "$PETS_JSON" | jq 'length')
+          fi
           
-          # JSONを一時ファイルに保存
-          echo "$PETS_JSON" > pets_to_process.json
-          
-          # ペット数を出力に設定
-          PET_COUNT=$(echo "$PETS_JSON" | jq 'length')
           echo "pet_count=${PET_COUNT}" >> $GITHUB_OUTPUT
-          echo "Found ${PET_COUNT} pets without images"
+          echo "Found ${PET_COUNT} pets to process"
       
       - name: Process images if pets found
-        if: steps.fetch-pets.outputs.pet_count > 0
+        if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
-        working-directory: ./converter
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -77,22 +83,22 @@ jobs:
         run: |
           # スクリーンショット取得とWebP変換を実行
           node scripts/automated-screenshot-converter.js \
-            --batch-file="../pets_to_process.json" \
-            --batch-id="auto-$(date +%Y%m%d-%H%M%S)"
+            --batch-file="pets_to_process.json" \
+            --batch-id="${{ github.event.inputs.batch_id || format('auto-{0}', github.run_id) }}"
       
       - name: Update database with image URLs
-        if: steps.fetch-pets.outputs.pet_count > 0
+        if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           # 処理結果をAPIに送信してDBを更新
-          if [ -f "converter/logs/results.json" ]; then
+          if [ -f "logs/results.json" ]; then
             curl -X POST "${API_URL}/api/admin/update-images" \
               -H "Authorization: Bearer ${API_KEY}" \
               -H "Content-Type: application/json" \
-              -d @converter/logs/results.json
+              -d @logs/results.json
           fi
       
       - name: Upload logs
@@ -101,13 +107,13 @@ jobs:
         with:
           name: image-pipeline-logs-${{ github.run_id }}
           path: |
-            converter/logs/
+            logs/
             pets_to_process.json
           retention-days: 7
       
       - name: Notify completion
-        if: steps.fetch-pets.outputs.pet_count > 0
+        if: steps.prepare-pets.outputs.pet_count > 0
         run: |
-          echo "✅ Processed ${{ steps.fetch-pets.outputs.pet_count }} pets"
+          echo "✅ Processed ${{ steps.prepare-pets.outputs.pet_count }} pets"
           echo "📸 Screenshots captured and converted to WebP"
           echo "☁️ Images uploaded to R2 storage"

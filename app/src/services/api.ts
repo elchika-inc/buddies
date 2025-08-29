@@ -2,7 +2,6 @@ import { Pet, Dog, Cat } from '@/types/pet';
 
 // API service for fetching pet data
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787';
-const USE_SAMPLE_DATA = process.env.NEXT_PUBLIC_USE_SAMPLE_DATA === 'true';
 
 interface PaginationParams {
   limit?: number;
@@ -84,7 +83,9 @@ class PetApiService {
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'cors'
+        mode: 'cors',
+        // キャッシュを完全に無効化
+        cache: 'no-store'
       });
       
       if (!response.ok) {
@@ -147,50 +148,34 @@ class PetApiService {
   async getCats(params: PaginationParams = {}): Promise<LegacyPetListResponse> {
     const { limit = 10, offset = 0, prefecture } = params;
     
-    if (USE_SAMPLE_DATA) {
-      const queryParams = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-        ...(prefecture && { prefecture })
-      });
-      const endpoint = `/api/sample/cats?${queryParams}`;
-      return this.fetchApi<LegacyPetListResponse>(endpoint, false);
-    } else {
-      // 新しいAPI形式：offsetをpageに変換
-      const page = Math.floor(offset / limit) + 1;
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(prefecture && { prefecture })
-      });
-      const endpoint = `/api/pets/cat?${queryParams}`;
-      return this.fetchApi<LegacyPetListResponse>(endpoint, true);
-    }
+    // 新しいAPI形式：offsetをpageに変換
+    const page = Math.floor(offset / limit) + 1;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(prefecture && { prefecture })
+    });
+    const endpoint = `/api/pets/cat?${queryParams}`;
+    return this.fetchApi<LegacyPetListResponse>(endpoint, true);
   }
   
   // 特定の猫データ取得
   async getCatById(id: string): Promise<LegacySinglePetResponse> {
-    const endpoint = USE_SAMPLE_DATA
-      ? `/api/sample/cats/${id}`
-      : `/api/pets/cat/${id}`;
+    const endpoint = `/api/pets/cat/${id}`;
       
     return this.fetchApi<LegacySinglePetResponse>(endpoint);
   }
   
   // 都道府県一覧取得
   async getPrefectures(): Promise<LegacyPrefecturesResponse> {
-    const endpoint = USE_SAMPLE_DATA
-      ? '/api/sample/prefectures'
-      : '/api/prefectures';
+    const endpoint = '/api/prefectures';
       
     return this.fetchApi<LegacyPrefecturesResponse>(endpoint);
   }
   
   // 統計情報取得
   async getStats(): Promise<LegacyStatsResponse> {
-    const endpoint = USE_SAMPLE_DATA
-      ? '/api/sample/stats'
-      : '/api/stats';
+    const endpoint = '/api/stats';
       
     return this.fetchApi<LegacyStatsResponse>(endpoint);
   }
@@ -199,32 +184,20 @@ class PetApiService {
   async getDogs(params: PaginationParams = {}): Promise<LegacyPetListResponse> {
     const { limit = 10, offset = 0, prefecture } = params;
     
-    if (USE_SAMPLE_DATA) {
-      const queryParams = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-        ...(prefecture && { prefecture })
-      });
-      const endpoint = `/api/sample/dogs?${queryParams}`;
-      return this.fetchApi<LegacyPetListResponse>(endpoint, false);
-    } else {
-      // 新しいAPI形式：offsetをpageに変換
-      const page = Math.floor(offset / limit) + 1;
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(prefecture && { prefecture })
-      });
-      const endpoint = `/api/pets/dog?${queryParams}`;
-      return this.fetchApi<LegacyPetListResponse>(endpoint, true);
-    }
+    // 新しいAPI形式：offsetをpageに変換
+    const page = Math.floor(offset / limit) + 1;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(prefecture && { prefecture })
+    });
+    const endpoint = `/api/pets/dog?${queryParams}`;
+    return this.fetchApi<LegacyPetListResponse>(endpoint, true);
   }
   
   // 特定の犬データ取得
   async getDogById(id: string): Promise<LegacySinglePetResponse> {
-    const endpoint = USE_SAMPLE_DATA
-      ? `/api/sample/dogs/${id}`
-      : `/api/pets/dog/${id}`;
+    const endpoint = `/api/pets/dog/${id}`;
       
     return this.fetchApi<LegacySinglePetResponse>(endpoint);
   }

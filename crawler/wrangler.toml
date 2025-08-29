@@ -7,13 +7,15 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
 PET_HOME_BASE_URL = "https://www.pet-home.jp"
+API_URL = "http://localhost:8787"
 
 # R2バケット設定
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"
 
-# D1データベース設定
+
+# D1データベース設定（APIと共有）
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
@@ -51,3 +53,8 @@ vars = { GITHUB_ACTIONS = "true" }
 # 開発環境設定
 [env.development]  
 vars = { ALLOWED_ORIGIN = "http://localhost:3004" }
+
+# 開発サーバーポート設定
+[dev]
+port = 9787
+inspector_port = 10230

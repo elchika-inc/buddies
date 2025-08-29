@@ -14,10 +14,8 @@ export class PetHomeHtmlParser {
     const $ = cheerio.load(html);
     const pets: ParsedPetData[] = [];
 
-    // ペットリストを取得
-    const selector = petType === 'dog' 
-      ? '.dog-list-item, .pet-item' 
-      : '.cat-list-item, .pet-item';
+    // ペットリストを取得 - Pet-homeの実際の構造
+    const selector = 'li.contribute_result';
 
     $(selector).each((_, element) => {
       const petData = this.extractPetDataFromListItem($, element);
@@ -36,12 +34,16 @@ export class PetHomeHtmlParser {
     const $ = cheerio.load(html);
     
     return {
+      breed: this.extractBreed($),
+      age: this.extractAge($),
+      gender: this.extractGender($),
+      location: this.extractLocation($),
       imageUrl: this.extractImageUrl($),
       personality: this.extractPersonality($),
-      healthNotes: this.extractHealthNotes($),
-      requirements: this.extractRequirements($),
+      healthNotes: [],  // 不要
+      requirements: [],  // 不要
       goodWith: this.extractGoodWith($),
-      medicalInfo: this.extractMedicalInfo($),
+      medicalInfo: '',  // 不要
       adoptionFee: this.extractAdoptionFee($),
       shelterContact: this.extractShelterContact($)
     };
@@ -53,34 +55,231 @@ export class PetHomeHtmlParser {
   private extractPetDataFromListItem($: cheerio.CheerioAPI, element: cheerio.Element): ParsedPetData | null {
     const $item = $(element);
     
-    // 基本情報の抽出
-    const id = $item.attr('data-pet-id') || $item.find('.pet-id').text().trim();
-    const name = $item.find('.pet-name, .name').text().trim();
-    const detailUrl = $item.find('a').attr('href');
-
-    if (!id || !name || !detailUrl) {
+    // Pet-homeの実際の構造に基づいて抽出
+    const $inner = $item.find('.inner');
+    const $link = $inner.find('h3.title a');
+    const detailUrl = $link.attr('href');
+    
+    if (!detailUrl) {
       return null;
     }
+    
+    // URLからIDを抽出（例: /dogs/tokyo/pn12345/ -> pn12345）
+    const idMatch = detailUrl.match(/\/pn(\d+)\//);
+    const id = idMatch ? `pn${idMatch[1]}` : '';
+    
+    // タイトル（名前として使用）
+    const name = $link.text().trim() || '名前なし';
+    
+    // 画像URL
+    const thumbnailUrl = $inner.find('img').attr('src') || '';
+    
+    // その他の情報（テキストから抽出）
+    const allText = $inner.text().replace(/\s+/g, ' ').trim();
+    
+    // 簡単な説明（テキストの一部）
+    const description = allText.substring(0, 100);
 
     return {
       id,
       name,
-      breed: $item.find('.breed, .pet-breed').text().trim() || '不明',
-      age: this.parseAge($item.find('.age, .pet-age').text().trim()),
-      gender: this.parseGender($item.find('.gender, .pet-gender').text().trim()),
-      location: $item.find('.location, .pet-location').text().trim() || '',
-      organization: $item.find('.shelter, .organization').text().trim() || '',
-      description: $item.find('.description, .pet-description').text().trim() || '',
-      thumbnailUrl: $item.find('img').attr('src') || '',
+      breed: '不明', // 後で詳細ページから取得
+      age: '不明',
+      gender: 'unknown',
+      location: '',
+      organization: '',
+      description,
+      thumbnailUrl,
       detailUrl: this.normalizeUrl(detailUrl)
     };
+  }
+
+  /**
+   * 犬種・猫種を抽出
+   */
+  private extractBreed($: cheerio.CheerioAPI): string {
+    // Pet-homeの実際の構造: <dt>種類</dt><dd><a href="/dogs/cg_1060/">柴犬</a></dd>
+    let breed = '';
+    
+    // パターン1: dt:contains("種類") の次のdd要素
+    const breedElement = $('dt:contains("種類")').next('dd');
+    if (breedElement.length > 0) {
+      breed = breedElement.text().trim();
+    }
+    
+    // パターン2: バックアップ
+    if (!breed) {
+      // class="top_row inline"を持つdt/ddペアを探す
+      $('dt.top_row.inline').each((_, el) => {
+        const $dt = $(el);
+        if ($dt.text().trim() === '種類') {
+          breed = $dt.next('dd').text().trim();
+          return false; // ループを終了
+        }
+      });
+    }
+    
+    return breed || '不明';
+  }
+
+  /**
+   * 年齢を抽出
+   */
+  private extractAge($: cheerio.CheerioAPI): string {
+    // Pet-homeの実際の構造: <dt>年齢</dt><dd>成犬（1歳）</dd>
+    let age = '';
+    
+    // パターン1: dt:contains("年齢") の次のdd要素
+    const ageElement = $('dt:contains("年齢")').next('dd');
+    if (ageElement.length > 0) {
+      // テキスト全体を取得（リンクのテキストも含む）
+      age = ageElement.text().replace(/\s+/g, ' ').trim();
+    }
+    
+    // パターン2: バックアップ（class="inline"を持つdt/ddペア）
+    if (!age) {
+      $('dt.inline').each((_, el) => {
+        const $dt = $(el);
+        if ($dt.text().trim() === '年齢') {
+          const $dd = $dt.next('dd');
+          age = $dd.text().replace(/\s+/g, ' ').trim();
+          return false; // ループを終了
+        }
+      });
+    }
+    
+    // 整形（余分な空白を削除、括弧内を維持）
+    if (age) {
+      // 例: "成犬 （1歳）" -> "成犬 (1歳)"
+      age = age.replace(/（/g, '(').replace(/）/g, ')');
+      age = age.replace(/\s*\(\s*/g, ' (').replace(/\s*\)\s*/g, ')');
+    }
+    
+    return age || '不明';
+  }
+
+  /**
+   * 性別を抽出
+   */
+  private extractGender($: cheerio.CheerioAPI): 'male' | 'female' | 'unknown' {
+    // Pet-homeの実際の構造: <dt>雄雌</dt><dd>♂ オス</dd>
+    let genderText = '';
+    
+    // パターン1: dt:contains("雄雌") の次のdd要素
+    const genderElement = $('dt:contains("雄雌")').next('dd');
+    if (genderElement.length > 0) {
+      genderText = genderElement.text().trim();
+    }
+    
+    // パターン2: dt:contains("性別") の次のdd要素（別パターン）
+    if (!genderText) {
+      const altGenderElement = $('dt:contains("性別")').next('dd');
+      if (altGenderElement.length > 0) {
+        genderText = altGenderElement.text().trim();
+      }
+    }
+    
+    // パターン3: バックアップ（class="inline"を持つdt/ddペア）
+    if (!genderText) {
+      $('dt.inline').each((_, el) => {
+        const $dt = $(el);
+        const dtText = $dt.text().trim();
+        if (dtText === '雄雌' || dtText === '性別') {
+          genderText = $dt.next('dd').text().trim();
+          return false; // ループを終了
+        }
+      });
+    }
+    
+    // テキストから性別を判定
+    if (genderText) {
+      // オス、♂、male などを判定
+      if (genderText.includes('オス') || 
+          genderText.includes('♂') || 
+          genderText.toLowerCase().includes('male') ||
+          genderText.includes('男の子')) {
+        return 'male';
+      }
+      // メス、♀、female などを判定
+      if (genderText.includes('メス') || 
+          genderText.includes('♀') || 
+          genderText.toLowerCase().includes('female') ||
+          genderText.includes('女の子')) {
+        return 'female';
+      }
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * 現在所在地を抽出
+   */
+  private extractLocation($: cheerio.CheerioAPI): string {
+    // Pet-homeの実際の構造: <dt>現在所在地</dt><dd><a href="/dogs/ibaraki/">茨城県</a> 常総市</dd>
+    let location = '';
+    
+    // パターン1: dt:contains("現在所在地") の次のdd要素
+    const locationElement = $('dt:contains("現在所在地")').next('dd');
+    if (locationElement.length > 0) {
+      // テキスト全体を取得（リンクのテキストも含む）
+      location = locationElement.text().replace(/\s+/g, ' ').trim();
+    }
+    
+    // パターン2: バックアップ（class="top_row inline"を持つdt/ddペア）
+    if (!location) {
+      $('dt.top_row.inline').each((_, el) => {
+        const $dt = $(el);
+        if ($dt.text().trim() === '現在所在地') {
+          const $dd = $dt.next('dd');
+          location = $dd.text().replace(/\s+/g, ' ').trim();
+          return false; // ループを終了
+        }
+      });
+    }
+    
+    // パターン3: バックアップ（一般的なdt/ddペア）
+    if (!location) {
+      $('dt').each((_, el) => {
+        const $dt = $(el);
+        const dtText = $dt.text().trim();
+        if (dtText === '現在所在地' || dtText === '所在地') {
+          location = $dt.next('dd').text().replace(/\s+/g, ' ').trim();
+          return false; // ループを終了
+        }
+      });
+    }
+    
+    return location || '';
   }
 
   /**
    * 画像URLを抽出
    */
   private extractImageUrl($: cheerio.CheerioAPI): string {
-    return $('.pet-main-image img, .detail-image img, #pet-image').attr('src') || '';
+    // Pet-homeの実際の画像セレクタを試す
+    let imageUrl = '';
+    
+    // パターン1: メインの画像
+    const mainImage = $('.main_photo img, .photo_main img, #photo_main img').attr('src');
+    if (mainImage) {
+      imageUrl = mainImage;
+    }
+    
+    // パターン2: 他の可能性
+    if (!imageUrl) {
+      const img = $('img[src*="/user_file/"]').first().attr('src');
+      if (img) {
+        imageUrl = img;
+      }
+    }
+    
+    // パターン3: さらに一般的なセレクタ
+    if (!imageUrl) {
+      imageUrl = $('.pet-main-image img, .detail-image img, #pet-image').attr('src') || '';
+    }
+    
+    return imageUrl;
   }
 
   /**
@@ -89,48 +288,33 @@ export class PetHomeHtmlParser {
   private extractPersonality($: cheerio.CheerioAPI): string[] {
     const traits: string[] = [];
     
-    $('.personality-trait, .trait-tag, .pet-trait').each((_, el) => {
-      const trait = $(el).text().trim();
-      if (trait) traits.push(trait);
-    });
-
-    // テキストからも抽出
-    const personalityText = $('.personality-section, .pet-personality').text();
-    if (personalityText) {
-      const additionalTraits = this.extractTraitsFromText(personalityText);
-      traits.push(...additionalTraits);
+    // PetHomeの実際の構造から性格・特徴を取得
+    // セレクタ1: 性格・特徴のタイトルの次の要素
+    const personalityInfo = $('div.list_title:contains("性格・特徴")').next('p.info').text().trim();
+    
+    if (personalityInfo) {
+      // 性格・特徴のテキスト全体を1つの要素として保存
+      traits.push(personalityInfo);
+      return traits;
     }
-
-    return [...new Set(traits)]; // 重複除去
-  }
-
-  /**
-   * 健康情報を抽出
-   */
-  private extractHealthNotes($: cheerio.CheerioAPI): string[] {
-    const notes: string[] = [];
     
-    $('.health-note, .medical-note').each((_, el) => {
-      const note = $(el).text().trim();
-      if (note) notes.push(note);
+    // セレクタ2: contribute_content_wrapの構造から取得（バックアップ）
+    $('.contribute_content_wrap').each((_, wrap) => {
+      const $wrap = $(wrap);
+      const title = $wrap.find('.list_title').text().trim();
+      if (title === '性格・特徴') {
+        const info = $wrap.find('.info').text().trim();
+        if (info) {
+          traits.push(info);
+          return false; // eachループを終了
+        }
+      }
     });
 
-    return notes;
+    return traits;
   }
 
-  /**
-   * 譲渡条件を抽出
-   */
-  private extractRequirements($: cheerio.CheerioAPI): string[] {
-    const requirements: string[] = [];
-    
-    $('.requirement-item, .adoption-requirement').each((_, el) => {
-      const req = $(el).text().trim();
-      if (req) requirements.push(req);
-    });
 
-    return requirements;
-  }
 
   /**
    * 相性情報を抽出
@@ -146,12 +330,6 @@ export class PetHomeHtmlParser {
     return compatibility;
   }
 
-  /**
-   * 医療情報を抽出
-   */
-  private extractMedicalInfo($: cheerio.CheerioAPI): string {
-    return $('.medical-info, .health-status').text().trim() || '';
-  }
 
   /**
    * 譲渡費用を抽出
@@ -174,32 +352,6 @@ export class PetHomeHtmlParser {
     return $('.shelter-contact, .contact-info').text().trim() || '';
   }
 
-  /**
-   * 年齢をパース
-   */
-  private parseAge(ageText: string): string {
-    // "2歳", "子犬", "シニア"などを正規化
-    if (ageText.includes('歳')) {
-      return ageText;
-    } else if (ageText.includes('子犬') || ageText.includes('子猫')) {
-      return '0-1歳';
-    } else if (ageText.includes('シニア')) {
-      return '7歳以上';
-    }
-    return ageText || '不明';
-  }
-
-  /**
-   * 性別をパース
-   */
-  private parseGender(genderText: string): 'male' | 'female' | 'unknown' {
-    if (genderText.includes('オス') || genderText.toLowerCase().includes('male')) {
-      return 'male';
-    } else if (genderText.includes('メス') || genderText.toLowerCase().includes('female')) {
-      return 'female';
-    }
-    return 'unknown';
-  }
 
   /**
    * URLを正規化
@@ -211,27 +363,4 @@ export class PetHomeHtmlParser {
     return `https://www.pet-home.jp${url}`;
   }
 
-  /**
-   * テキストから特性を抽出
-   */
-  private extractTraitsFromText(text: string): string[] {
-    const traits: string[] = [];
-    const patterns = [
-      /人懐っこい/g,
-      /おとなしい/g,
-      /活発/g,
-      /甘えん坊/g,
-      /遊び好き/g,
-      /賢い/g,
-      /優しい/g
-    ];
-
-    patterns.forEach(pattern => {
-      if (pattern.test(text)) {
-        traits.push(pattern.source);
-      }
-    });
-
-    return traits;
-  }
 }

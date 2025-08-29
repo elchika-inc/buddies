@@ -8,7 +8,7 @@
 import { Pet } from '@/types/pet';
 import { PetApiService } from '@/services/PetApiService';
 import { LegacyPetListResponse, LegacyPrefecturesResponse } from '@/services/ResponseTransformer';
-import { LocationData, RegionData, ensureLocationData, ensureRegionData } from '@/types/locations';
+import { RegionData, ensureRegionData } from '@/types/locations';
 
 export interface LoadingResult<T = Pet> {
   data: T[];
@@ -23,14 +23,13 @@ export interface PaginationParams {
 }
 
 export interface LoaderConfig {
-  useLocalAsFallback: boolean;
   timeoutMs?: number;
 }
 
 export class SimpleDataLoader {
   constructor(
     private apiService: PetApiService,
-    private config: LoaderConfig = { useLocalAsFallback: true, timeoutMs: 5000 }
+    private config: LoaderConfig = { timeoutMs: 5000 }
   ) {}
 
   /**
@@ -40,17 +39,7 @@ export class SimpleDataLoader {
     petType: 'dog' | 'cat', 
     params: PaginationParams
   ): Promise<LoadingResult> {
-    try {
-      return await this.loadFromApi(petType, params);
-    } catch (error) {
-      console.warn(`API loading failed for ${petType}:`, error);
-      
-      if (this.config.useLocalAsFallback) {
-        return this.loadFromLocal(petType, params);
-      }
-      
-      throw error;
-    }
+    return await this.loadFromApi(petType, params);
   }
 
   /**
@@ -61,11 +50,6 @@ export class SimpleDataLoader {
       return await this.loadLocationFromApi();
     } catch (error) {
       console.warn('API location loading failed:', error);
-      
-      if (this.config.useLocalAsFallback) {
-        return this.loadLocationFromLocal(petType);
-      }
-      
       return {};
     }
   }
@@ -74,8 +58,15 @@ export class SimpleDataLoader {
    * リージョンデータを読み込み
    */
   async loadRegionData(petType: 'dog' | 'cat'): Promise<Record<string, string[]>> {
-    // 現在APIにリージョンエンドポイントがないため、ローカルから読み込み
-    return this.loadRegionFromLocal(petType);
+    // 現在APIにリージョンエンドポイントがないため、空を返す
+    // 将来的にAPIで実装する際にはここを更新
+    if (petType === 'dog') {
+      const { regions } = await import('@/data/dog/regions');
+      return ensureRegionData(regions);
+    } else {
+      const { regions } = await import('@/data/cat/regions');
+      return ensureRegionData(regions);
+    }
   }
 
   /**
@@ -105,37 +96,6 @@ export class SimpleDataLoader {
     };
   }
 
-  /**
-   * ローカルからペットデータを取得
-   */
-  async loadFromLocal(
-    petType: 'dog' | 'cat', 
-    params: PaginationParams
-  ): Promise<LoadingResult> {
-    let allData: Pet[] = [];
-    
-    if (petType === 'dog') {
-      const { mockDogs } = await import('@/data/dog/dogs');
-      allData = mockDogs;
-    } else {
-      const { cats } = await import('@/data/cat/cats');
-      allData = cats;
-    }
-    
-    // フィルタリング
-    if (params.filters) {
-      allData = this.applyFilters(allData, params.filters);
-    }
-    
-    const { offset, limit } = params;
-    const data = allData.slice(offset, offset + limit);
-    
-    return {
-      data,
-      hasMore: offset + limit < allData.length,
-      total: allData.length
-    };
-  }
 
   /**
    * APIから地域データを取得
@@ -153,31 +113,6 @@ export class SimpleDataLoader {
     return result;
   }
 
-  /**
-   * ローカルから地域データを取得
-   */
-  async loadLocationFromLocal(petType: 'dog' | 'cat'): Promise<LocationData> {
-    if (petType === 'dog') {
-      const { locations } = await import('@/data/dog/locations');
-      return ensureLocationData(locations);
-    } else {
-      const { locations } = await import('@/data/cat/locations');
-      return ensureLocationData(locations);
-    }
-  }
-
-  /**
-   * ローカルからリージョンデータを取得
-   */
-  async loadRegionFromLocal(petType: 'dog' | 'cat'): Promise<RegionData> {
-    if (petType === 'dog') {
-      const { regions } = await import('@/data/dog/regions');
-      return ensureRegionData(regions);
-    } else {
-      const { regions } = await import('@/data/cat/regions');
-      return ensureRegionData(regions);
-    }
-  }
 
   /**
    * フィルターを適用

@@ -7,10 +7,11 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 GITHUB_OWNER = "elchika-inc"
 GITHUB_REPO = "pawmatch"
-WORKFLOW_FILE = "pet-screenshot.yml"
+WORKFLOW_FILE = "automated-image-pipeline.yml"
 API_URL = "https://pawmatch-api.elchika.app"
 
-# D1データベース設定
+
+# D1データベース設定（APIと共有）
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
@@ -52,3 +53,8 @@ enabled = true
 # 開発環境設定
 [env.development]
 vars = { API_URL = "http://localhost:8787" }
+
+# 開発サーバーポート設定
+[dev]
+port = 9788
+inspector_port = 10231

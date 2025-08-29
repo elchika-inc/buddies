@@ -16,6 +16,10 @@ export interface ParsedPetData {
 }
 
 export interface DetailedPetData {
+  breed?: string;  // 詳細ページから取得する犬種・猫種
+  age?: string;    // 詳細ページから取得する年齢（例: "成犬 (1歳)"）
+  gender?: 'male' | 'female' | 'unknown';  // 詳細ページから取得する性別
+  location?: string;  // 詳細ページから取得する所在地（例: "茨城県 常総市"）
   imageUrl: string;
   personality: string[];
   healthNotes: string[];
