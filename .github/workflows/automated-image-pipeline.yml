@@ -82,7 +82,7 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
           # スクリーンショット取得とWebP変換を実行
-          node scripts/automated-screenshot-converter.js \
+          node scripts/dispatcher/automated-screenshot-converter.js \
             --batch-file="pets_to_process.json" \
             --batch-id="${{ github.event.inputs.batch_id || format('auto-{0}', github.run_id) }}"
       

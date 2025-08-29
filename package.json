@@ -68,8 +68,7 @@
     "clean:cache": "npm cache clean --force",
     "reinstall": "npm run clean:all && npm run clean:cache && npm run install:all",
     "reinstall:quick": "npm run clean:all && npm run install:all",
-    "install:all": "npm install && cd app && npm install && cd ../api && npm install && cd ../crawler && npm install && cd ../dispatcher && npm install",
-    "setup-shared-d1": "./scripts/api/setup-shared-d1.sh"
+    "install:all": "npm install && cd app && npm install && cd ../api && npm install && cd ../crawler && npm install && cd ../dispatcher && npm install"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",

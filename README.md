@@ -103,41 +103,73 @@ A: PawMatch works on any modern web browser (mobile or desktop).
 
 ### Quick Setup
 
-新しい開発者は以下のコマンドで環境を構築できます：
-
 ```bash
+# 1. リポジトリをクローン
 git clone <repository-url>
 cd pawmatch
-./scripts/setup-dev.sh
-```
 
-### Manual Setup
-
-1. **依存関係のインストール**
-```bash
+# 2. 依存関係をインストール
 npm install
-cd app && npm install && cd ..
-cd api && npm install && cd ..
-cd workers/crawler && npm install && cd ../..
+
+# 3. 環境変数をセットアップ
+cp app/.env.example app/.env.local
+cp .env.local.example .env.local
+
+# 4. データベースを初期化
+npm run api:db:init
+npm run api:db:migrate
+
+# 5. 開発サーバーを起動
+npm run dev:all
 ```
 
-2. **開発サーバーの起動**
+### 環境変数設定
+
+#### app/.env.local
+```env
+NEXT_PUBLIC_PET_TYPE=dog  # または cat
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8787
+```
+
+#### api/.dev.vars
+```env
+ALLOWED_ORIGIN=http://localhost:3004
+USE_LOCAL_IMAGES=true
+```
+
+### 開発コマンド
+
 ```bash
-npm run dev          # すべてのサービスを並行起動
-# または個別起動
-npm run dev:api      # APIサーバー (localhost:8787)
-npm run dev:app      # Appサーバー (localhost:3005)
+# 開発サーバー
+npm run dev:all      # 全サービス同時起動
+npm run dev          # App のみ (port 3004)
+npm run api:dev      # API のみ (port 8787)
+
+# ビルド・検証
+npm run build        # App ビルド
+npm run type-check   # TypeScript 型チェック
+npm run lint         # ESLint
+npm run lint:fix     # ESLint 自動修正
+
+# データベース
+npm run api:db:init     # DB初期化
+npm run api:db:migrate  # マイグレーション実行
+
+# デプロイ
+npm run deploy:dog   # DogMatch デプロイ
+npm run deploy:cat   # CatMatch デプロイ
 ```
 
 ### Project Structure
 
 ```
 pawmatch/
-├── app/                    # Next.js フロントエンド
-├── api/                    # Cloudflare Workers API
-├── workers/crawler/        # データクローラー
-├── scripts/               # 開発環境セットアップスクリプト
-└── CLAUDE.md              # プロジェクト開発ガイド
+├── app/          # Next.js フロントエンド (Cloudflare Pages)
+├── api/          # Cloudflare Workers API (Hono)
+├── crawler/      # データクローラー (Cloudflare Workers)
+├── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
+├── converter/    # 画像変換サービス (Cloudflare Workers)
+└── CLAUDE.md     # AI開発アシスタント用ガイド
 ```
 
 ### Tech Stack

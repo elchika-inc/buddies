@@ -10,7 +10,7 @@
     "tail": "wrangler tail",
     "test": "../../scripts/crawler/dev/test-crawlers.sh",
     "db:init": "node ../../scripts/crawler/dev/init-db.js",
-    "db:reset": "../../scripts/crawler/dev/reset-dev-db.sh",
+    "db:reset": "../scripts/dev/reset-dev-db.sh",
     "seed:api": "node ../../scripts/crawler/dev/seed-api-data.js",
     "seed:sample": "node ../../scripts/crawler/dev/create-sample-data.js",
     "crawl:dogs": "npm run seed:api -- --type=dog",
