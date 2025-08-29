@@ -29,7 +29,7 @@ app.use('*', async (c, next) => {
       'http://localhost:3005', 
       'http://localhost:3006'
     ] as string[],
-    allowMethods: ['GET', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: false,
   });
@@ -114,6 +114,18 @@ app.route('/crawler', crawlerRoutes);
 // Admin endpoint - Update image flags after screenshot processing
 app.post('/api/admin/update-images', withEnv(async (c) => {
   try {
+    // 簡易認証: AuthorizationヘッダーまたはAPI_ADMIN_KEYの環境変数をチェック
+    const authHeader = c.req.header('Authorization');
+    const adminKey = c.env.API_ADMIN_KEY;
+    
+    // 環境変数が設定されている場合は認証をチェック
+    if (adminKey && authHeader !== `Bearer ${adminKey}`) {
+      return c.json({
+        success: false,
+        error: 'Unauthorized'
+      }, 401);
+    }
+    
     const body = await c.req.json();
     
     // Validate request body

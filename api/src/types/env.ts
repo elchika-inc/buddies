@@ -30,4 +30,7 @@ export interface Env {
   
   // CORS設定
   ALLOWED_ORIGIN?: string;
+  
+  // Admin認証
+  API_ADMIN_KEY?: string;
 }

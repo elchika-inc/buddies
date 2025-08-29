@@ -27,14 +27,14 @@ export class PetHomeCrawler extends BaseCrawler {
     
     try {
       const baseUrl = petType === 'dog'
-        ? `${this.env.PET_HOME_BASE_URL}/dogs/`
-        : `${this.env.PET_HOME_BASE_URL}/cats/`;
+        ? `${this.env.PET_HOME_BASE_URL}/dogs/status_2/`
+        : `${this.env.PET_HOME_BASE_URL}/cats/status_2/`;
       
       const petsPerPage = 20;
       const maxPages = Math.ceil(limit / petsPerPage);
       let newPetsFound = 0;
       
-      console.log(`Fetching ${limit} ${petType}s from Pet-Home...`);
+      console.log(`Fetching ${limit} ${petType}s from Pet-Home (status_2: 里親募集中)...`);
       
       for (let page = 1; page <= Math.min(maxPages, 10); page++) {
         const url = `${baseUrl}?page=${page}`;

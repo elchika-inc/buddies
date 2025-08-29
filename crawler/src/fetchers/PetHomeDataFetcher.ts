@@ -67,7 +67,7 @@ export class PetHomeDataFetcher {
    * リストページURLを構築
    */
   private buildListUrl(petType: 'dog' | 'cat', page: number): string {
-    const path = petType === 'dog' ? '/dogs/' : '/cats/';
+    const path = petType === 'dog' ? '/dogs/status_2/' : '/cats/status_2/';
     return page > 1 
       ? `${this.baseUrl}${path}?page=${page}`
       : `${this.baseUrl}${path}`;

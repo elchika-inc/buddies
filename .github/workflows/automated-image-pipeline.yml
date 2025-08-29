@@ -52,7 +52,7 @@ jobs:
         id: prepare-pets
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
         run: |
           # Dispatcher経由の場合
           if [ -n "${{ github.event.inputs.batch_data }}" ]; then
@@ -90,15 +90,22 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.naoto24kawa.workers.dev' }}
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           # 処理結果をAPIに送信してDBを更新
           if [ -f "logs/results.json" ]; then
-            curl -X POST "${API_URL}/api/admin/update-images" \
-              -H "Authorization: Bearer ${API_KEY}" \
-              -H "Content-Type: application/json" \
-              -d @logs/results.json
+            # API_KEYが設定されている場合のみAuthorizationヘッダーを追加
+            if [ -n "$API_KEY" ]; then
+              curl -X POST "${API_URL}/api/admin/update-images" \
+                -H "Authorization: Bearer ${API_KEY}" \
+                -H "Content-Type: application/json" \
+                -d @logs/results.json
+            else
+              curl -X POST "${API_URL}/api/admin/update-images" \
+                -H "Content-Type: application/json" \
+                -d @logs/results.json
+            fi
           fi
       
       - name: Upload logs
