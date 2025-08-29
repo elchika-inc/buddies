@@ -19,11 +19,6 @@ database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 migrations_dir = "migrations"
 
-# Service Binding - 画像変換Worker
-[[services]]
-binding = "IMAGE_WORKER"
-service = "pawmatch-image-converter"
-environment = "production"
 
 # Observability設定
 [observability.logs]

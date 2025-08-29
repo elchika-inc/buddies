@@ -148,12 +148,17 @@ export abstract class BaseCrawler implements ICrawler {
     try {
       await RetryHandler.execute(async () => {
         const now = new Date().toISOString();
+        
+        // 最新100件のIDを保存（差分検知の精度向上のため）
+        const recentPetIds = processedIds.slice(0, 100);
+        
         const checkpoint: CrawlCheckpoint = {
           lastItemId: processedIds[0] || '',
           lastCrawlAt: now,
+          recentPetIds: recentPetIds,
           metadata: {
             processedCount: processedIds.length,
-            processedIds: processedIds.slice(0, 20) // 最新20件を保存
+            totalRecentIds: recentPetIds.length
           }
         };
         
@@ -173,6 +178,8 @@ export abstract class BaseCrawler implements ICrawler {
           processedIds.length,
           now
         ).run();
+        
+        console.log(`Updated checkpoint with ${recentPetIds.length} recent IDs`);
       }, RetryHandler.getDatabaseRetryConfig());
     } catch (error) {
       console.error('Failed to update checkpoint:', error);

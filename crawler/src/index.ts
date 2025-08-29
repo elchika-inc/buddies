@@ -102,7 +102,9 @@ app.post('/crawl/:source/:type?', async (c) => {
     const crawler = CrawlerFactory.createCrawler(sourceId, c.env);
     const options: CrawlOptions = {
       limit,
-      useDifferential: differential
+      useDifferential: differential,
+      minFetchCount: 10,  // 最低10件は取得
+      maxPages: differential ? 20 : 10  // 差分モードは最大20ページまで探索
     };
     
     const result = await crawler.crawl(petType, options);
@@ -209,8 +211,10 @@ export default {
     // PetHomeクローラーを実行
     const crawler = CrawlerFactory.createCrawler('pet-home', env);
     const options: CrawlOptions = {
-      limit: 20,
-      useDifferential: true
+      limit: 20,  // 最小取得件数
+      useDifferential: true,
+      minFetchCount: 10,  // 最低10件は取得
+      maxPages: 20  // 最大20ページまで探索（約400件）
     };
     
     console.log(`Running crawler: ${crawler.sourceName}`);

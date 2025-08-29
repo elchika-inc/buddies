@@ -42,12 +42,16 @@ export interface ICrawler {
  * クロールオプション
  */
 export interface CrawlOptions {
-  /** 取得件数制限 */
+  /** 取得件数制限（差分モードでは最小件数として扱う） */
   limit: number;
   /** 差分モードを使用するか */
   useDifferential: boolean;
   /** 強制的に全件取得するか */
   forceFullScan?: boolean;
+  /** 差分モードで既知のペットに到達してもこの件数は最低限取得 */
+  minFetchCount?: number;
+  /** 差分モードで最大何ページまで探索するか */
+  maxPages?: number;
 }
 
 /**
@@ -59,6 +63,8 @@ export interface CrawlCheckpoint {
   lastItemId: string;
   /** 最後のクロール時刻 */
   lastCrawlAt: string;
+  /** 最近処理したペットIDのセット（差分検知用） */
+  recentPetIds?: string[];
   /** サイト固有のメタデータ（必要に応じて） */
   metadata?: Record<string, unknown>;
 }
