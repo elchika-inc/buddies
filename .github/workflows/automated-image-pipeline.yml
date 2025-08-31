@@ -93,25 +93,69 @@ jobs:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          # 処理結果をAPIに送信してDBを更新
+          echo "=== Checking for results.json ==="
+          # 複数の可能なパスをチェック
+          RESULTS_FILE=""
           if [ -f "scripts/logs/results.json" ]; then
-            echo "Found results.json, sending to API..."
-            # API_KEYが設定されている場合のみAuthorizationヘッダーを追加
-            if [ -n "$API_KEY" ]; then
-              curl -X POST "${API_URL}/api/admin/update-images" \
-                -H "Authorization: Bearer ${API_KEY}" \
-                -H "Content-Type: application/json" \
-                -d @scripts/logs/results.json \
-                -v
-            else
-              curl -X POST "${API_URL}/api/admin/update-images" \
-                -H "Content-Type: application/json" \
-                -d @scripts/logs/results.json \
-                -v
-            fi
+            RESULTS_FILE="scripts/logs/results.json"
+            echo "✅ Found at: scripts/logs/results.json"
+          elif [ -f "logs/results.json" ]; then
+            RESULTS_FILE="logs/results.json"
+            echo "✅ Found at: logs/results.json"
+          elif [ -f "scripts/dispatcher/logs/results.json" ]; then
+            RESULTS_FILE="scripts/dispatcher/logs/results.json"
+            echo "✅ Found at: scripts/dispatcher/logs/results.json"
           else
-            echo "Warning: scripts/logs/results.json not found"
-            ls -la scripts/logs/ || echo "scripts/logs directory not found"
+            echo "❌ results.json not found in any expected location"
+            echo "Current directory: $(pwd)"
+            echo "Directory listing:"
+            ls -la
+            echo "Scripts directory:"
+            ls -la scripts/ || echo "scripts/ not found"
+            echo "Dispatcher directory:"
+            ls -la scripts/dispatcher/ || echo "scripts/dispatcher/ not found"
+            exit 0
+          fi
+          
+          # ファイルの内容を確認
+          echo "=== Results file content (first 500 chars) ==="
+          head -c 500 "$RESULTS_FILE"
+          echo ""
+          
+          # 処理結果をAPIに送信してDBを更新
+          echo "=== Sending to API ==="
+          echo "API URL: ${API_URL}/api/admin/update-images"
+          
+          # API_KEYが設定されている場合のみAuthorizationヘッダーを追加
+          if [ -n "$API_KEY" ]; then
+            echo "Using API key authentication"
+            RESPONSE=$(curl -X POST "${API_URL}/api/admin/update-images" \
+              -H "Authorization: Bearer ${API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d @"$RESULTS_FILE" \
+              -w "\nHTTP_STATUS:%{http_code}\n" \
+              -s)
+          else
+            echo "No API key, sending without authentication"
+            RESPONSE=$(curl -X POST "${API_URL}/api/admin/update-images" \
+              -H "Content-Type: application/json" \
+              -d @"$RESULTS_FILE" \
+              -w "\nHTTP_STATUS:%{http_code}\n" \
+              -s)
+          fi
+          
+          # レスポンスの解析
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | sed -n '1,/HTTP_STATUS:/p' | head -n -1)
+          
+          echo "=== API Response ==="
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response Body: $BODY"
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ Successfully updated database"
+          else
+            echo "⚠️ API returned status $HTTP_STATUS"
           fi
       
       - name: Upload logs

@@ -114,16 +114,24 @@ app.route('/crawler', crawlerRoutes);
 // Admin endpoint - Update image flags after screenshot processing
 app.post('/api/admin/update-images', withEnv(async (c) => {
   try {
+    console.log('[update-images] Request received');
+    
     // 簡易認証: AuthorizationヘッダーまたはAPI_ADMIN_KEYの環境変数をチェック
     const authHeader = c.req.header('Authorization');
     const adminKey = c.env.API_ADMIN_KEY;
     
-    // 環境変数が設定されている場合は認証をチェック
-    if (adminKey && authHeader !== `Bearer ${adminKey}`) {
-      return c.json({
-        success: false,
-        error: 'Unauthorized'
-      }, 401);
+    // 環境変数が設定されている場合のみ認証をチェック（設定されてない場合はスキップ）
+    if (adminKey) {
+      console.log('[update-images] API key is configured, checking authorization');
+      if (authHeader !== `Bearer ${adminKey}`) {
+        console.log('[update-images] Authorization failed');
+        return c.json({
+          success: false,
+          error: 'Unauthorized'
+        }, 401);
+      }
+    } else {
+      console.log('[update-images] No API key configured, skipping authentication');
     }
     
     const body = await c.req.json();
@@ -136,6 +144,8 @@ app.post('/api/admin/update-images', withEnv(async (c) => {
       }, 400);
     }
 
+    console.log(`[update-images] Processing ${body.results.length} results`);
+    
     let updatedCount = 0;
     const errors: any[] = [];
 
@@ -147,7 +157,9 @@ app.post('/api/admin/update-images', withEnv(async (c) => {
           const hasJpeg = result.jpegUrl ? 1 : 0;
           const hasWebp = result.webpUrl ? 1 : 0;
           
-          await c.env.DB.prepare(`
+          console.log(`[update-images] Updating pet ${result.pet_id}: has_jpeg=${hasJpeg}, has_webp=${hasWebp}`);
+          
+          const updateResult = await c.env.DB.prepare(`
             UPDATE pets 
             SET has_jpeg = ?, 
                 has_webp = ?,
@@ -156,15 +168,29 @@ app.post('/api/admin/update-images', withEnv(async (c) => {
             WHERE id = ?
           `).bind(hasJpeg, hasWebp, result.pet_id).run();
           
-          updatedCount++;
+          if (updateResult.meta.changes > 0) {
+            updatedCount++;
+            console.log(`[update-images] Successfully updated pet ${result.pet_id}`);
+          } else {
+            console.log(`[update-images] No rows updated for pet ${result.pet_id} - pet may not exist`);
+            errors.push({
+              petId: result.pet_id,
+              error: 'Pet not found in database'
+            });
+          }
         } catch (error) {
+          console.error(`[update-images] Error updating pet ${result.pet_id}:`, error);
           errors.push({
             petId: result.pet_id,
             error: error instanceof Error ? error.message : 'Unknown error'
           });
         }
+      } else {
+        console.log(`[update-images] Skipping result - success: ${result.success}, pet_id: ${result.pet_id}`);
       }
     }
+    
+    console.log(`[update-images] Update complete - updated: ${updatedCount}, errors: ${errors.length}`);
 
     return c.json({
       success: true,
