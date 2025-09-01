@@ -21,22 +21,41 @@ binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 
-# Queue設定
+# Queue設定 - 猫用
 [[queues.producers]]
-binding = "PAWMATCH_CRAWL_QUEUE"
-queue = "pawmatch-crawl-queue"
+binding = "PAWMATCH_CAT_QUEUE"
+queue = "pawmatch-cat-queue"
 
 [[queues.consumers]]
-queue = "pawmatch-crawl-queue"
-max_batch_size = 5
+queue = "pawmatch-cat-queue"
+max_batch_size = 1  # 1メッセージずつ順次処理
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-crawl-dlq"
+dead_letter_queue = "pawmatch-cat-dlq"
+max_concurrency = 1  # 順次実行を保証
 
-# Dead Letter Queue設定
+# Queue設定 - 犬用
 [[queues.producers]]
-binding = "PAWMATCH_CRAWL_DLQ"
-queue = "pawmatch-crawl-dlq"
+binding = "PAWMATCH_DOG_QUEUE"
+queue = "pawmatch-dog-queue"
+
+[[queues.consumers]]
+queue = "pawmatch-dog-queue"
+max_batch_size = 1  # 1メッセージずつ順次処理
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-dog-dlq"
+max_concurrency = 1  # 順次実行を保証
+
+# Dead Letter Queue設定 - 猫用
+[[queues.producers]]
+binding = "PAWMATCH_CAT_DLQ"
+queue = "pawmatch-cat-dlq"
+
+# Dead Letter Queue設定 - 犬用
+[[queues.producers]]
+binding = "PAWMATCH_DOG_DLQ"
+queue = "pawmatch-dog-dlq"
 
 # Cron Trigger設定（4時間ごとに実行）
 [triggers]

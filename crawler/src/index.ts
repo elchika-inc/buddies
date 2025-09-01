@@ -206,35 +206,30 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    console.log('Scheduled crawl started at:', new Date().toISOString());
-    
-    // PetHomeクローラーを実行
-    const crawler = CrawlerFactory.createCrawler('pet-home', env);
-    const options: CrawlOptions = {
-      limit: 20,  // 最小取得件数
-      useDifferential: true,
-      minFetchCount: 10,  // 最低10件は取得
-      maxPages: 20  // 最大20ページまで探索（約400件）
-    };
-    
-    console.log(`Running crawler: ${crawler.sourceName}`);
-    
-    // 猫と犬を順番にクロール
-    const catResult = await crawler.crawl('cat', options);
-    console.log(`pet-home cat crawl result:`, catResult);
-    
-    const dogResult = await crawler.crawl('dog', options);
-    console.log(`pet-home dog crawl result:`, dogResult);
-    
-    console.log('Scheduled crawl completed');
+    // Queue Schedulerを使って各Queueにメッセージを送信
+    const { QueueScheduler } = await import('./queue-scheduler');
+    const scheduler = new QueueScheduler(env);
+    await scheduler.scheduleCrawl();
   },
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     return app.fetch(request, env, ctx);
   },
 
-  async queue(batch: MessageBatch<CrawlMessage>, env: Env, _ctx: ExecutionContext): Promise<void> {
-    const handler = new CrawlerQueueHandler(env as any);
-    await handler.handleBatch(batch);
+  // Queue Consumer - 猫と犬それぞれのQueueを順次処理
+  async queue(batch: MessageBatch<any>, env: Env, _ctx: ExecutionContext): Promise<void> {
+    const { QueueScheduler, CrawlQueueMessage } = await import('./queue-scheduler');
+    const scheduler = new QueueScheduler(env);
+    
+    // Queueの種類を判定（メッセージの内容から判断）
+    if (batch.queue === 'pawmatch-cat-queue') {
+      await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'cat');
+    } else if (batch.queue === 'pawmatch-dog-queue') {
+      await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'dog');
+    } else {
+      // 旧形式のQueueハンドラー（互換性のため残す）
+      const handler = new CrawlerQueueHandler(env as any);
+      await handler.handleBatch(batch);
+    }
   },
 };

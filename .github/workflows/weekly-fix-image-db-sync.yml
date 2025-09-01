@@ -1,0 +1,121 @@
+name: Weekly Fix Image-DB Sync
+
+on:
+  schedule:
+    # 毎週日曜日 午前2時 (JST) = 土曜日 17:00 UTC
+    - cron: '0 17 * * 6'
+  
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (no actual changes)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      limit:
+        description: 'Number of pets to process'
+        required: false
+        default: '500'
+        type: string
+      pet_type:
+        description: 'Pet type to process'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'dog'
+          - 'cat'
+
+jobs:
+  fix-image-db-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install @aws-sdk/client-s3
+      
+      - name: Fix Image-DB Sync
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          echo "🔧 Image-DB Sync Fix"
+          echo "========================"
+          echo "Mode: ${{ github.event.inputs.dry_run == 'true' && 'DRY RUN' || 'PRODUCTION' }}"
+          echo "Limit: ${{ github.event.inputs.limit || '500' }}"
+          echo "Pet Type: ${{ github.event.inputs.pet_type || 'all' }}"
+          echo "========================"
+          
+          # オプションを構築
+          OPTIONS=""
+          if [ "${{ github.event.inputs.dry_run || 'true' }}" = "true" ]; then
+            OPTIONS="$OPTIONS --dry-run"
+          fi
+          OPTIONS="$OPTIONS --limit=${{ github.event.inputs.limit || '500' }}"
+          OPTIONS="$OPTIONS --type=${{ github.event.inputs.pet_type || 'all' }}"
+          
+          # スクリプト実行
+          node scripts/patch/fix-image-db-sync.js $OPTIONS
+      
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: sync-report-${{ github.run_number }}
+          path: |
+            scripts/sync-report-*.json
+            scripts/patch/sync-report-*.json
+          retention-days: 30
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 📊 Fix Image-DB Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mode**: ${{ github.event.inputs.dry_run == 'true' && 'DRY RUN' || 'PRODUCTION' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Limit**: ${{ github.event.inputs.limit || '500' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pet Type**: ${{ github.event.inputs.pet_type || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          
+          # レポートファイルが存在する場合、サマリーを表示
+          if ls scripts/patch/sync-report-*.json 1> /dev/null 2>&1; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📄 Report Summary" >> $GITHUB_STEP_SUMMARY
+            REPORT=$(ls -t scripts/patch/sync-report-*.json | head -1)
+            if [ -f "$REPORT" ]; then
+              echo '```json' >> $GITHUB_STEP_SUMMARY
+              jq '.summary' "$REPORT" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

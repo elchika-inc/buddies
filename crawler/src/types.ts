@@ -4,6 +4,10 @@ export interface Env {
   ALLOWED_ORIGIN: string;
   PET_HOME_BASE_URL: string;
   GITHUB_ACTIONS?: string;
+  PAWMATCH_CAT_QUEUE?: Queue;
+  PAWMATCH_DOG_QUEUE?: Queue;
+  PAWMATCH_CAT_DLQ?: Queue;
+  PAWMATCH_DOG_DLQ?: Queue;
 }
 
 export interface Pet {

@@ -28,7 +28,7 @@ app.get('/', (c) => {
 });
 
 // 画像がないペットを取得（API経由）
-async function fetchPetsWithoutImages(env: Env, limit = 10): Promise<PetRecord[]> {
+async function fetchPetsWithoutImages(env: Env, limit = 30): Promise<PetRecord[]> {
   try {
     const apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
     const response = await fetch(`${apiUrl}/api/stats`);
@@ -101,7 +101,7 @@ async function triggerGitHubWorkflow(
 
 // 手動トリガー（Queueに送信）
 app.post('/dispatch', async (c) => {
-  const { limit = 10 } = await c.req.json().catch(() => ({}));
+  const { limit = 30 } = await c.req.json().catch(() => ({}));
   
   try {
     const env = getEnv(c);
@@ -164,8 +164,8 @@ app.post('/scheduled', async (c) => {
   try {
     const env = getEnv(c);
     
-    // 画像がないペットを取得（API経由、10件に統一）
-    const pets = await fetchPetsWithoutImages(env, 10);
+    // 画像がないペットを取得（API経由、30件に設定）
+    const pets = await fetchPetsWithoutImages(env, 30);
     
     if (pets.length === 0) {
       console.log('No pets without images found');
