@@ -5,7 +5,6 @@ import { Env } from './types';
 import { CrawlerFactory } from './CrawlerFactory';
 import { CrawlOptions } from './interfaces/ICrawler';
 import { DatabaseInitializer } from './utils/DatabaseInitializer';
-import { CrawlerQueueHandler, CrawlMessage } from './queue-handler';
 
 // データベースレコードの型定義
 interface CrawlerStateRecord {
@@ -222,14 +221,12 @@ export default {
     const scheduler = new QueueScheduler(env);
     
     // Queueの種類を判定（メッセージの内容から判断）
-    if (batch.queue === 'pawmatch-cat-queue') {
+    if (batch.queue === 'pawmatch-cat-pethome-queue') {
       await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'cat');
-    } else if (batch.queue === 'pawmatch-dog-queue') {
+    } else if (batch.queue === 'pawmatch-dog-pethome-queue') {
       await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'dog');
     } else {
-      // 旧形式のQueueハンドラー（互換性のため残す）
-      const handler = new CrawlerQueueHandler(env as any);
-      await handler.handleBatch(batch);
+      console.error('⚠️ Unknown queue:', batch.queue);
     }
   },
 };

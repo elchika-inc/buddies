@@ -48,8 +48,8 @@ export class QueueScheduler {
 
     // Queue送信（並列）
     const results = await Promise.allSettled([
-      this.env.PAWMATCH_CAT_QUEUE?.send(catMessage),
-      this.env.PAWMATCH_DOG_QUEUE?.send(dogMessage)
+      this.env.PAWMATCH_CAT_PETHOME_QUEUE?.send(catMessage),
+      this.env.PAWMATCH_DOG_PETHOME_QUEUE?.send(dogMessage)
     ]);
 
     results.forEach((result, index) => {
