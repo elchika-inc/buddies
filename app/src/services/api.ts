@@ -70,19 +70,31 @@ interface LegacyStatsResponse {
 
 class PetApiService {
   private baseUrl: string;
+  private apiKey: string | undefined;
   
   constructor() {
     this.baseUrl = API_BASE_URL;
+    this.apiKey = process.env.NEXT_PUBLIC_API_KEY;
   }
   
   private async fetchApi<T>(endpoint: string, useUnified: boolean = true): Promise<T> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
+      
+      // APIキーをヘッダーに追加
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (this.apiKey) {
+        headers['X-API-Key'] = this.apiKey;
+        // または Bearer トークンとして送信
+        // headers['Authorization'] = `Bearer ${this.apiKey}`;
+      }
+      
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         mode: 'cors',
         // キャッシュを完全に無効化
         cache: 'no-store'

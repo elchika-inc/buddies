@@ -1,0 +1,150 @@
+name: Automated Image Conversion
+
+on:
+  # 手動実行可能
+  workflow_dispatch:
+    inputs:
+      pets_data:
+        description: 'JSON array of pets to convert (optional)'
+        required: false
+        type: string
+      batch_id:
+        description: 'Batch ID for this conversion'
+        required: false
+        type: string
+      source:
+        description: 'Source of request (screenshot-capture, manual, api)'
+        required: false
+        default: 'manual'
+        type: string
+      limit:
+        description: 'Number of pets to process (for API fetch)'
+        required: false
+        default: '50'
+        type: string
+      conversion_mode:
+        description: 'Conversion mode: all, missing-webp, missing-jpeg'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - missing-webp
+          - missing-jpeg
+  
+  # 定期実行（毎日午前3時）
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  convert-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install sharp @aws-sdk/client-s3
+      
+      - name: Prepare conversion list
+        id: prepare-list
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          # 入力データの準備
+          if [ -n "${{ github.event.inputs.pets_data }}" ]; then
+            echo 'Using provided pets data...'
+            echo '${{ github.event.inputs.pets_data }}' > conversion_list.json
+            PET_COUNT=$(echo '${{ github.event.inputs.pets_data }}' | jq 'length')
+          else
+            echo 'Fetching unconverted images from R2/API...'
+            
+            # R2から未変換画像を検出するスクリプトを実行
+            node scripts/dispatcher/detect-unconverted-images.js \
+              --mode="${{ github.event.inputs.conversion_mode || 'all' }}" \
+              --limit="${{ github.event.inputs.limit || 50 }}" \
+              --output="conversion_list.json"
+            
+            PET_COUNT=$(jq 'length' conversion_list.json)
+          fi
+          
+          echo "pet_count=${PET_COUNT}" >> $GITHUB_OUTPUT
+          echo "Found ${PET_COUNT} images to convert"
+      
+      - name: Convert images
+        if: steps.prepare-list.outputs.pet_count > 0
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          # 画像変換を実行
+          node scripts/dispatcher/image-converter.js \
+            --input-file="conversion_list.json" \
+            --batch-id="${{ github.event.inputs.batch_id || format('convert-{0}', github.run_id) }}" \
+            --mode="${{ github.event.inputs.conversion_mode || 'all' }}"
+      
+      - name: Update database
+        if: steps.prepare-list.outputs.pet_count > 0
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
+          API_ADMIN_SECRET: ${{ secrets.API_ADMIN_SECRET }}
+        run: |
+          RESULTS_FILE="scripts/logs/conversion-results.json"
+          
+          if [ -f "$RESULTS_FILE" ]; then
+            echo "=== Updating database with conversion results ==="
+            
+            # API認証ヘッダーを設定
+            RESPONSE=$(curl -X POST "${API_URL}/api/admin/update-images" \
+              -H "X-API-Key: ${API_SECRET_KEY}" \
+              -H "X-Admin-Secret: ${API_ADMIN_SECRET}" \
+              -H "Content-Type: application/json" \
+              -d @"$RESULTS_FILE" \
+              -w "\nHTTP_STATUS:%{http_code}\n" \
+              -s)
+            
+            HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+            
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Successfully updated database"
+            else
+              echo "⚠️ API returned status $HTTP_STATUS"
+            fi
+          else
+            echo "⚠️ No results file found"
+          fi
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conversion-logs-${{ github.run_id }}
+          path: |
+            scripts/logs/
+            conversion_list.json
+          retention-days: 7
+      
+      - name: Summary
+        if: steps.prepare-list.outputs.pet_count > 0
+        run: |
+          echo "✅ Image conversion completed"
+          echo "📊 Processed ${{ steps.prepare-list.outputs.pet_count }} images"
+          echo "🔄 Mode: ${{ github.event.inputs.conversion_mode || 'all' }}"
+          echo "📝 Source: ${{ github.event.inputs.source || 'manual/scheduled' }}"

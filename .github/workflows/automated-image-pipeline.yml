@@ -1,4 +1,4 @@
-name: Automated Image Pipeline
+name: Automated Image Pipeline (Legacy)
 
 on:
   # Dispatcher経由の呼び出しに対応
@@ -17,9 +17,39 @@ on:
         required: false
         default: '10'
         type: string
+      use_new_pipeline:
+        description: 'Use new split pipeline instead'
+        required: false
+        default: 'true'
+        type: boolean
 
 jobs:
+  # 新しい分割パイプラインへのリダイレクト
+  redirect-to-new-pipeline:
+    if: github.event.inputs.use_new_pipeline == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger screenshot capture workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'automated-screenshot-capture.yml',
+              ref: 'main',
+              inputs: {
+                batch_data: '${{ github.event.inputs.batch_data }}',
+                batch_id: '${{ github.event.inputs.batch_id }}',
+                limit: '${{ github.event.inputs.limit }}',
+                trigger_conversion: 'true'
+              }
+            });
+            console.log('✅ Redirected to new screenshot capture pipeline');
+  
+  # 旧パイプライン（互換性のため残す）
   fetch-and-process-images:
+    if: github.event.inputs.use_new_pipeline != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     

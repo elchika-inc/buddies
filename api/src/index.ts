@@ -4,6 +4,8 @@ import { cache } from 'hono/cache';
 import { PetController, ImageController, HealthController } from './controllers';
 import { CONFIG } from './utils';
 import { withEnv } from './middleware/env-middleware';
+import { adminAuth } from './middleware/admin-auth';
+import { apiAuth } from './middleware/api-auth';
 import { errorHandlerMiddleware, notFoundHandler } from './middleware/error-handler-middleware';
 import crawlerRoutes from './routes/crawler';
 import type { Env } from './types';
@@ -12,6 +14,9 @@ const app = new Hono<{ Bindings: Env }>();
 
 // グローバルエラーハンドリング
 app.use('*', errorHandlerMiddleware);
+
+// グローバル認証（すべてのエンドポイントで必須）
+app.use('*', apiAuth);
 
 // CORS設定
 app.use('*', async (c, next) => {
@@ -30,7 +35,7 @@ app.use('*', async (c, next) => {
       'http://localhost:3006'
     ] as string[],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
     credentials: false,
   });
   return corsMiddleware(c, next);
@@ -111,28 +116,88 @@ app.get('/api/images/:type/:filename',
 // Crawler routes (内部API)
 app.route('/crawler', crawlerRoutes);
 
+// Admin endpoint - Update pet flags (has_webp, has_jpeg)
+// 認証ミドルウェアを使用
+app.post('/api/admin/pets/update-flags', adminAuth, withEnv(async (c) => {
+  try {
+    console.log('[update-flags] Processing request');
+    
+    const body = await c.req.json();
+    
+    // リクエストボディの検証
+    if (!body.petType || !body.petIds || !Array.isArray(body.petIds) || !body.flags) {
+      return c.json({
+        success: false,
+        error: 'Invalid request body'
+      }, 400);
+    }
+    
+    const { petType, petIds, flags } = body;
+    console.log(`[update-flags] Updating ${petIds.length} ${petType} records`);
+    
+    // フラグの更新フィールドを構築
+    const updateFields = [];
+    if (flags.has_webp !== undefined) {
+      updateFields.push(`has_webp = ${flags.has_webp ? 1 : 0}`);
+    }
+    if (flags.has_jpeg !== undefined) {
+      updateFields.push(`has_jpeg = ${flags.has_jpeg ? 1 : 0}`);
+    }
+    
+    if (updateFields.length === 0) {
+      return c.json({
+        success: false,
+        error: 'No flags to update'
+      }, 400);
+    }
+    
+    // バッチサイズごとに更新（SQLiteの制限を考慮）
+    const BATCH_SIZE = 50;
+    let totalUpdated = 0;
+    
+    for (let i = 0; i < petIds.length; i += BATCH_SIZE) {
+      const batch = petIds.slice(i, i + BATCH_SIZE);
+      const placeholders = batch.map(() => '?').join(',');
+      
+      const sql = `
+        UPDATE pets 
+        SET ${updateFields.join(', ')}, 
+            updated_at = datetime('now')
+        WHERE id IN (${placeholders}) 
+          AND type = ?
+      `;
+      
+      const result = await c.env.DB.prepare(sql)
+        .bind(...batch, petType)
+        .run();
+      
+      totalUpdated += result.meta.changes || 0;
+      console.log(`[update-flags] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${result.meta.changes} updated`);
+    }
+    
+    console.log(`[update-flags] Total updated: ${totalUpdated}/${petIds.length}`);
+    
+    return c.json({
+      success: true,
+      updated: totalUpdated,
+      requested: petIds.length,
+      petType
+    });
+    
+  } catch (error) {
+    console.error('[update-flags] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update flags'
+    }, 500);
+  }
+}));
+
 // Admin endpoint - Update image flags after screenshot processing
-app.post('/api/admin/update-images', withEnv(async (c) => {
+// adminAuth追加で二重認証（API全体 + Admin権限）
+app.post('/api/admin/update-images', adminAuth, withEnv(async (c) => {
   try {
     console.log('[update-images] Request received');
-    
-    // 簡易認証: AuthorizationヘッダーまたはAPI_ADMIN_KEYの環境変数をチェック
-    const authHeader = c.req.header('Authorization');
-    const adminKey = c.env.API_ADMIN_KEY;
-    
-    // 環境変数が設定されている場合のみ認証をチェック（設定されてない場合はスキップ）
-    if (adminKey) {
-      console.log('[update-images] API key is configured, checking authorization');
-      if (authHeader !== `Bearer ${adminKey}`) {
-        console.log('[update-images] Authorization failed');
-        return c.json({
-          success: false,
-          error: 'Unauthorized'
-        }, 401);
-      }
-    } else {
-      console.log('[update-images] No API key configured, skipping authentication');
-    }
     
     const body = await c.req.json();
     
