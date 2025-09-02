@@ -60,6 +60,8 @@ worker-configuration.d.ts
 .env.test.local
 .env.production.local
 .dev.vars
+api-keys/api-keys.env
+api-keys/.env
 
 # Local configuration overrides
 *.dev.toml

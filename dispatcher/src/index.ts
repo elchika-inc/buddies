@@ -31,7 +31,12 @@ app.get('/', (c) => {
 async function fetchPetsWithoutImages(env: Env, limit = 30): Promise<PetRecord[]> {
   try {
     const apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
-    const response = await fetch(`${apiUrl}/api/stats`);
+    const response = await fetch(`${apiUrl}/api/stats`, {
+      headers: {
+        'X-API-Key': env.API_KEY || '',
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
       console.error(`API request failed: ${response.status}`);
@@ -312,56 +317,6 @@ async function handleQueueBatch(batch: MessageBatch<DispatchMessage>, env: Env):
   }
 }
 
-// クリーンアップ処理（API経由）
-async function performDataCleanup(env: Env, ctx: ExecutionContext): Promise<void> {
-  console.log('Starting data cleanup process via API');
-  
-  try {
-    // APIのクリーンアップエンドポイントを呼び出す
-    const apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
-    const response = await fetch(`${apiUrl}/api/admin/cleanup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(env.API_KEY ? { 'Authorization': `Bearer ${env.API_KEY}` } : {})
-      },
-      body: JSON.stringify({
-        cleanupType: 'expired',
-        includeImages: !!env.R2_BUCKET
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API cleanup request failed: ${response.status}`);
-    }
-    
-    const result = await response.json() as any;
-    console.log('Cleanup result from API:', result);
-    
-    // R2から画像削除（必要に応じて）
-    if (env.R2_BUCKET && result.expiredImages && Array.isArray(result.expiredImages)) {
-      console.log(`Deleting ${result.expiredImages.length} expired images from R2`);
-      
-      const deletePromises = result.expiredImages.map(async (imageKey: string) => {
-        try {
-          await env.R2_BUCKET!.delete(imageKey);
-        } catch (error) {
-          console.error(`Failed to delete image ${imageKey}:`, error);
-        }
-      });
-      
-      // バッチで削除（最大10個ずつ）
-      const batchSize = 10;
-      for (let i = 0; i < deletePromises.length; i += batchSize) {
-        await Promise.all(deletePromises.slice(i, i + batchSize));
-      }
-    }
-    
-  } catch (error) {
-    console.error('Data cleanup failed:', error);
-    // エラーログのみ出力（DB接続がないため履歴記録はできない）
-  }
-}
 
 // Cloudflare Workers のエントリポイント
 export default {
@@ -373,25 +328,18 @@ export default {
   
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
     try {
-      const cronType = event.cron;
-      console.log(`Scheduled execution triggered: ${cronType}`);
+      console.log(`Scheduled execution triggered: ${event.cron}`);
       
-      // cronスケジュールに基づいて処理を分岐
-      if (cronType === '0 2 * * *' || cronType === '0 0 2 * * *') {
-        // 毎日深夜2時: データクリーンアップ
-        await performDataCleanup(env, ctx);
-      } else {
-        // その他: スクリーンショット処理
-        const response = await app.fetch(
-          new Request('http://dispatcher/scheduled', {
-            method: 'POST'
-          }),
-          env
-        );
-        
-        const result = await response.json();
-        console.log('Scheduled execution result:', result);
-      }
+      // スクリーンショット処理をトリガー
+      const response = await app.fetch(
+        new Request('http://dispatcher/scheduled', {
+          method: 'POST'
+        }),
+        env
+      );
+      
+      const result = await response.json();
+      console.log('Scheduled execution result:', result);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Scheduled execution error:', errorMessage);

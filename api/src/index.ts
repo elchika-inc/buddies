@@ -6,6 +6,7 @@ import { CONFIG } from './utils';
 import { withEnv } from './middleware/env-middleware';
 import { adminAuth } from './middleware/admin-auth';
 import { apiAuth } from './middleware/api-auth';
+import { validateApiKey } from './middleware/api-key-validator';
 import { errorHandlerMiddleware, notFoundHandler } from './middleware/error-handler-middleware';
 import crawlerRoutes from './routes/crawler';
 import type { Env } from './types';
@@ -15,10 +16,7 @@ const app = new Hono<{ Bindings: Env }>();
 // グローバルエラーハンドリング
 app.use('*', errorHandlerMiddleware);
 
-// グローバル認証（すべてのエンドポイントで必須）
-app.use('*', apiAuth);
-
-// CORS設定
+// CORS設定（認証より先に実行する必要がある）
 app.use('*', async (c, next) => {
   const origin = c.env?.['ALLOWED_ORIGIN'] || '*';
   const corsMiddleware = cors({
@@ -40,6 +38,10 @@ app.use('*', async (c, next) => {
   });
   return corsMiddleware(c, next);
 });
+
+// グローバル認証（CORS設定の後に実行）
+// 新しいAPIキー管理サービスを使用、フォールバックとして旧認証も利用
+app.use('*', validateApiKey);
 
 // ========================================
 // Health & Status Endpoints

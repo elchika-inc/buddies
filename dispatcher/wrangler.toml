@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 GITHUB_OWNER = "elchika-inc"
 GITHUB_REPO = "pawmatch"
-WORKFLOW_FILE = "automated-image-pipeline.yml"
+WORKFLOW_FILE = "automated-screenshot-capture.yml"
 API_URL = "https://pawmatch-api.elchika.app"
 
 
@@ -36,8 +36,7 @@ bucket_name = "pawmatch-images"
 # Cron Trigger設定
 [triggers]
 crons = [
-  "15 */4 * * *",  # Crawlerの15分後、4時間ごと（スクリーンショット処理）
-  "0 2 * * *"      # 毎日深夜2時（データクリーンアップ）
+  "15 */4 * * *"  # Crawlerの15分後、4時間ごと（スクリーンショット処理）
 ]
 
 # Observability設定

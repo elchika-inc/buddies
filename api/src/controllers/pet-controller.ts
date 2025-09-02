@@ -61,9 +61,9 @@ export class PetController {
         throw new NotFoundError('Pet type is required');
       }
 
-      // データベースから取得を試みる
+      // データベースから取得を試みる（画像があるペットのみ）
       const pet = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? AND id = ?')
+        .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND has_jpeg = 1')
         .bind(petType, petId)
         .first();
 
@@ -102,9 +102,9 @@ export class PetController {
         throw new NotFoundError('Pet type is required');
       }
 
-      // データベースから取得を試みる
+      // データベースから取得を試みる（画像があるペットのみ）
       const dbPets = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? ORDER BY RANDOM() LIMIT ?')
+        .prepare('SELECT * FROM pets WHERE type = ? AND has_jpeg = 1 ORDER BY RANDOM() LIMIT ?')
         .bind(petType, count)
         .all();
 
@@ -113,7 +113,7 @@ export class PetController {
       }
 
       // 型ガードで有効なペットデータのみフィルタリング
-      const validPets = ensureArray(dbPets.results, isRawPetRecord);
+      const validPets = ensureArray(dbPets.results).filter(isRawPetRecord);
       
       if (validPets.length === 0) {
         throw new ServiceUnavailableError('Invalid pet data format');
@@ -141,8 +141,8 @@ export class PetController {
     offset: number, 
     prefecture?: string
   ): Promise<{ data: ApiPetRecord[]; total: number }> {
-    // WHERE条件を動的に構築
-    const conditions: string[] = [];
+    // WHERE条件を動的に構築（画像があるものを必須条件として追加）
+    const conditions: string[] = ['has_jpeg = 1'];
     const params: (string | number)[] = [];
     
     if (type) {

@@ -19,7 +19,6 @@ database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
 migrations_dir = "migrations"
 
-
 # Observability設定
 [observability.logs]
 enabled = true
@@ -28,6 +27,17 @@ enabled = true
 [env.production]
 vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }
 route = { pattern = "pawmatch-api.elchika.app/*", zone_name = "elchika.app" }
+
+# Production環境でもR2とD1バインディングを追加
+[[env.production.r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "pawmatch-images"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
+migrations_dir = "migrations"
 
 # 開発環境設定
 [env.development]

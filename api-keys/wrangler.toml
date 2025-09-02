@@ -1,0 +1,31 @@
+name = "pawmatch-api-keys"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# アカウントID
+account_id = "4c6f1bd50e566f5ba6c78865b89fb158"
+
+# KVネームスペース（高速キャッシュ用）
+[[kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "ec30a1e116fb42c081ad0b7f07d413da"
+preview_id = "ec30a1e116fb42c081ad0b7f07d413da"
+
+# D1データベース（永続的なキー管理）
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-api-keys"
+database_id = "2ab1afd2-0f01-4f5b-add8-f1d101a75a4c"
+
+# 環境変数
+[vars]
+ALLOWED_ORIGINS = "https://pawmatch-api.elchika.app,http://localhost:8787"
+
+# 本番環境設定
+[env.production]
+vars = { ALLOWED_ORIGINS = "https://pawmatch-api.elchika.app" }
+
+# 開発サーバー設定
+[dev]
+port = 8788
