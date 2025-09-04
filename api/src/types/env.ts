@@ -2,7 +2,7 @@
  * Cloudflare Workers環境変数の型定義
  */
 
-import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import type { D1Database, R2Bucket, KVNamespace } from '@cloudflare/workers-types';
 
 export interface Env {
   // D1 Database
@@ -30,7 +30,22 @@ export interface Env {
   
   // CORS設定
   ALLOWED_ORIGIN?: string;
+  ALLOWED_ORIGINS?: string;
   
   // Admin認証
   API_ADMIN_KEY?: string;
+  API_ADMIN_SECRET?: string;
+  ADMIN_ALLOWED_IPS?: string;
+  
+  // API認証
+  API_SECRET_KEY?: string;
+  API_KEY?: string;
+  PUBLIC_API_KEY?: string;
+  
+  // APIキー管理
+  API_KEYS_CACHE: KVNamespace;
+  MASTER_SECRET?: string;
+  
+  // Rate Limiting
+  RATE_LIMIT_KV?: KVNamespace;
 }

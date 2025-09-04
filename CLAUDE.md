@@ -4,139 +4,137 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-PawMatchは保護犬・保護猫の里親マッチングWebアプリケーションです。Tinder形式のスワイプUIで、ペットと里親候補者をマッチングします。
+PawMatch - 保護犬・保護猫と里親をマッチングするTinder風Webアプリケーション。Cloudflare インフラストラクチャ上で動作するフルスタックアプリケーション。
 
 ## アーキテクチャ
 
-### モノレポ構造
-```
-pawmatch/
-├── app/          # Next.js フロントエンド (Cloudflare Pages)
-├── api/          # Cloudflare Workers API (Hono)
-├── crawler/      # データクローラー (Cloudflare Workers)
-├── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
-└── scripts/      # スクリーンショット・画像変換スクリプト (GitHub Actionsで実行)
-```
+### マイクロサービス構成
+- **Frontend** (`/frontend`): Next.js 14 + TypeScript、Cloudflare Pages上で動作
+- **API** (`/api`): Hono + Cloudflare Workers、D1データベースとR2ストレージを使用
+- **Crawler** (`/crawler`): ペット情報収集サービス、Cloudflare Workers上で動作
+- **Dispatcher** (`/dispatcher`): タスクスケジューリングサービス、Cloudflare Workers上で動作
 
-### 技術スタック
-- **Frontend**: Next.js 14, TypeScript (厳格モード), TailwindCSS, Framer Motion
-- **Backend**: Cloudflare Workers, Hono, D1 Database
-- **Storage**: Cloudflare R2
-- **Package Manager**: Bun/npm
-
-### ドメイン構成
-- **API**: `pawmatch-api.elchika.app` - メインAPI（カスタムドメイン）
-- **App (Dogs)**: `pawmatch-dogs.elchika.app` - 犬専用フロントエンド
-- **App (Cats)**: `pawmatch-cats.elchika.app` - 猫専用フロントエンド
-- **Workers**: デフォルトの `.workers.dev` ドメインを使用
-  - `pawmatch-crawler.*.workers.dev`
-  - `pawmatch-dispatcher.*.workers.dev`
+### データフロー
+1. Crawler → Dispatcher経由でタスクをキューイング → APIへデータ送信
+2. Frontend → API経由でペットデータ取得 → ユーザーへ表示
+3. 画像はCloudflare R2に保存、D1データベースでメタデータ管理
 
 ## 開発コマンド
 
-### 基本コマンド（ルートディレクトリから実行）
+### 初期セットアップ
 ```bash
-# 開発サーバー起動
-npm run dev:all      # API + App + Crawler + Dispatcher 同時起動
-npm run dev          # App のみ (port 3004)
-npm run api:dev      # API のみ (port 8787)
-
-# ビルド・型チェック
-npm run build        # App ビルド
-npm run type-check   # TypeScript 型チェック
-npm run lint         # ESLint
-npm run lint:fix     # ESLint 自動修正
-
-# デプロイ
-npm run deploy       # Cloudflare Pages デプロイ
-npm run deploy:dog   # DogMatch デプロイ
-npm run deploy:cat   # CatMatch デプロイ
-
-# データベース
-npm run api:db:init     # DB初期化
-npm run api:db:migrate  # マイグレーション実行
-
-# クローラー
-npm run crawler:dogs    # 犬データクロール
-npm run crawler:cats    # 猫データクロール
+npm install
+cp frontend/.env.local.example frontend/.env.local
+cp api/.env.local.example api/.env.local
+npm run db:init     # D1データベース初期化
+npm run db:migrate  # マイグレーション実行
 ```
 
-### 個別モジュールでの作業
+### 開発サーバー
 ```bash
-# app/ ディレクトリ内
-cd app && npm run dev
-cd app && npm test
-
-# api/ ディレクトリ内  
-cd api && npm run dev
-cd api && wrangler tail  # ログ監視
-
-# crawler/ ディレクトリ内
-cd crawler && npm run test
+npm run dev:all     # 全サービス同時起動（推奨）
+npm run dev:app     # Frontend のみ (port 3004)
+npm run dev:api     # API のみ (port 9789)
 ```
 
-## コーディング規約
+### ビルド・検証
+```bash
+npm run build       # Frontend ビルド
+npm run type-check  # 全ワークスペースの型チェック
+npm run lint        # ESLint実行
+npm run lint:fix    # ESLint自動修正
+```
 
-### TypeScript設定
-- **厳格モード有効** (`strict: true`)
-- `noUncheckedIndexedAccess: true` - 配列アクセス時のundefinedチェック必須
-- `exactOptionalPropertyTypes: true` - オプショナルプロパティの厳密な型定義
-- `noImplicitReturns: true` - 暗黙的なreturn禁止
+### テスト実行
+```bash
+npm run test        # 全ワークスペースのテスト実行
+npm run test:app    # Frontend のテストのみ
+```
+
+### データベース操作
+```bash
+npm run db:migrate       # ローカルマイグレーション
+npm run db:migrate:prod  # 本番マイグレーション
+npm run db:studio        # Drizzle Studio起動（DBビューア）
+npm run db:reset         # ローカルDB完全リセット
+```
+
+### デプロイ
+```bash
+npm run deploy:dog   # DogMatchアプリデプロイ
+npm run deploy:cat   # CatMatchアプリデプロイ
+npm run deploy:api   # APIデプロイ
+npm run deploy:all   # 全サービスデプロイ
+```
+
+## 技術スタック詳細
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: TailwindCSS + Radix UI
+- **State**: React Hooks + localStorage
+- **Icons**: Lucide React + FontAwesome
+- **Animation**: Framer Motion
+- **PWA**: next-pwa
+
+### API
+- **Framework**: Hono
+- **Database**: Cloudflare D1 (SQLite) + Drizzle ORM
+- **Storage**: Cloudflare R2
+- **Cache**: Cloudflare KV
+- **Validation**: Zod
+- **認証**: APIキーベース（ヘッダー認証）
+
+### 共通
+- **TypeScript**: 厳格モード有効
+- **パッケージマネージャ**: npm workspaces
+- **モノレポ管理**: ルートpackage.jsonでworkspace管理
+
+## 重要な環境変数
+
+### Frontend (.env.local)
+- `NEXT_PUBLIC_ENVIRONMENT`: development/production
+- `NEXT_PUBLIC_ANIMALS_API`: APIエンドポイントURL
+- `NEXT_PUBLIC_API_KEY`: API認証キー
+- `NEXT_PUBLIC_PET_TYPE`: dog/cat (アプリケーションタイプ)
+
+### API (.dev.vars)
+- `ALLOWED_ORIGIN`: CORS許可オリジン
+- `USE_LOCAL_IMAGES`: ローカル画像使用フラグ
+
+### Cloudflare設定 (wrangler.toml)
+- D1データベース: pawmatch-db
+- R2バケット: pawmatch-images
+- KVネームスペース: API_KEYS_CACHE
+
+## ディレクトリ構造とルーティング
+
+### API エンドポイント
+- `/api/pets` - ペット情報CRUD
+- `/api/images` - 画像管理
+- `/api/stats` - 統計情報
+- `/api/admin` - 管理機能
+- `/api/keys` - APIキー管理
+- `/crawler` - 内部クローラー用エンドポイント
+
+### Frontend ルーティング
+- App RouterによるNext.js 14標準構成
+- `/` - メインのマッチングアプリ
+- 動的ルーティングなし（SPAとして動作）
+
+## 開発時の注意事項
+
+### Cloudflare Workers環境
+- Node.js互換性フラグ有効（`nodejs_compat`）
+- Web API標準準拠
+- グローバル変数の使用制限あり
+
+### 型安全性
+- TypeScript strictモード使用
+- Zodによるランタイム検証
+- Drizzle ORMの型推論活用
 
 ### エラーハンドリング
-- Result型パターンを使用（`Result<T, E>`）
-- API応答は必ず型ガード関数で検証
-- 非同期処理は必ずtry-catchでラップ
-
-### ファイル構成パターン
-```typescript
-// services/ - ビジネスロジック
-// controllers/ - APIエンドポイント
-// types/ - 型定義（*.ts）
-// utils/ - ユーティリティ関数
-// hooks/ - Reactカスタムフック
-// components/ - UIコンポーネント
-```
-
-### データ変換
-- APIレスポンスは`ResponseTransformer`で正規化
-- 住所解析は`addressParser`を使用
-- 都道府県名は`prefectureNormalizer`で統一
-
-## 重要な実装詳細
-
-### ペットデータ管理
-- DogとCatで別々のデータ型（`Dog`、`Cat`型）
-- 環境変数`NEXT_PUBLIC_PET_TYPE`で犬/猫モード切り替え
-- データはCloudflare D1から取得、R2に画像保存
-
-### 状態管理
-- LocalStorageでスワイプ履歴・お気に入り管理
-- `useLocalStorage`フックでエラーハンドリング込みの永続化
-- マイグレーション処理でデータ構造の更新対応
-
-### パフォーマンス最適化
-- 画像は事前にR2で最適化済み
-- PWA対応でオフライン動作サポート
-- React.memoとuseMemoで再レンダリング最適化
-
-## デバッグ・トラブルシューティング
-
-### ログ確認
-```bash
-# Cloudflare Workers ログ
-cd api && wrangler tail
-
-# ブラウザコンソールでデバッグ情報
-localStorage.debug = 'pawmatch:*'
-```
-
-### よくある問題
-- **CORS エラー**: API側の`Access-Control-Allow-Origin`設定確認
-- **型エラー**: `npm run type-check`で事前チェック
-- **D1接続エラー**: wrangler.tomlのbinding設定確認
-
-## GitHub Actions
-
-### automated-image-pipeline.yml  
-Dispatcher経由で起動される画像処理パイプライン。ペットのスクリーンショットを取得し、JPEG/WebP形式に変換してR2にアップロード。
+- Resultパターン使用（`Result<T, E>`型）
+- 構造化エラーレスポンス
+- 適切なHTTPステータスコード返却

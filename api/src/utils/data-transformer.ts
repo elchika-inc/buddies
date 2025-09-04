@@ -152,7 +152,6 @@ export interface ApiPetRecord {
   shelterContact?: string;
   sourceUrl: string;
   adoptionFee?: number;
-  metadata?: string;
   hasJpeg: boolean;
   hasWebp: boolean;
   imageCheckedAt?: string;

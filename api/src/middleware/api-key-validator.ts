@@ -1,233 +1,187 @@
+/**
+ * APIキー検証ミドルウェア（型安全版）
+ * any型を排除し、Result型パターンを活用
+ */
 import { Context, Next } from 'hono';
 import type { Env } from '../types';
 
+// 型定義
+interface ValidationResponse {
+  success: boolean;
+  valid: boolean;
+  error?: string;
+  key_info?: KeyInfo;
+}
+
+interface KeyInfo {
+  name: string;
+  type: string;
+  permissions: string[];
+  rate_limit: number;
+  rate_limit_remaining: number;
+}
+
+type ValidationResult = 
+  | { success: true; keyInfo: KeyInfo }
+  | { success: false; error: string };
+
+// 定数
+const PUBLIC_PATHS = ['/', '/health', '/health/ready'] as const;
+const ALLOWED_ORIGINS = [
+  'https://pawmatch-dogs.elchika.app',
+  'https://pawmatch-cats.elchika.app',
+  'http://localhost:3004',
+  'http://localhost:3005',
+  'http://localhost:3006'
+] as const;
+
 /**
- * APIキー管理サービスと連携した認証ミドルウェア
- * 外部のAPIキー管理サービスでキーを検証する
+ * APIキー検証ミドルウェア（簡潔版）
  */
-export async function validateApiKey(c: Context<{ Bindings: Env }>, next: Next) {
-  // ヘルスチェックエンドポイントは認証不要
-  const publicPaths = [
-    '/',
-    '/health',
-    '/health/ready'
-  ];
-  
-  if (publicPaths.includes(c.req.path)) {
+export async function validateApiKey(
+  c: Context<{ Bindings: Env }>,
+  next: Next
+): Promise<Response | void> {
+  // パブリックパスは認証不要
+  if (isPublicPath(c.req.path) || c.req.method === 'OPTIONS') {
     return next();
   }
   
-  // OPTIONSリクエスト（CORS preflight）は認証不要
-  if (c.req.method === 'OPTIONS') {
-    return next();
+  // APIキーを取得
+  const apiKey = extractApiKey(c);
+  
+  if (!apiKey) {
+    return createUnauthorizedResponse(c, 'API key is required');
   }
+  
+  // キーを検証
+  const validationResult = await validateKey(apiKey, c);
+  
+  if (!validationResult.success) {
+    return createUnauthorizedResponse(c, validationResult.error);
+  }
+  
+  // 認証成功
+  // TODO: コンテキストの型定義を修正後に有効化
+  // c.set('apiKeyInfo', validationResult.keyInfo);
+  return next();
+}
+
+/**
+ * パブリックパスかどうかを判定
+ */
+function isPublicPath(path: string): boolean {
+  return PUBLIC_PATHS.includes(path as typeof PUBLIC_PATHS[number]);
+}
+
+/**
+ * APIキーを抽出
+ */
+function extractApiKey(c: Context<{ Bindings: Env }>): string | null {
+  const headerKey = c.req.header('X-API-Key');
+  if (headerKey) return headerKey;
+  
+  const authHeader = c.req.header('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  
+  return null;
+}
+
+/**
+ * APIキーを検証
+ */
+async function validateKey(
+  key: string,
+  c: Context<{ Bindings: Env }>
+): Promise<ValidationResult> {
+  const { resource, action } = determinePermissions(c.req.path, c.req.method);
   
   try {
-    // 認証情報を取得
-    const apiKey = c.req.header('X-API-Key');
-    const authHeader = c.req.header('Authorization');
-    
-    // どちらかの形式でキーを取得
-    let key: string | undefined;
-    if (apiKey) {
-      key = apiKey;
-    } else if (authHeader?.startsWith('Bearer ')) {
-      key = authHeader.substring(7);
-    }
-    
-    // キーが提供されていない場合
-    if (!key) {
-      console.warn('[ApiKeyValidator] No API key provided', {
-        path: c.req.path,
-        method: c.req.method,
-        timestamp: new Date().toISOString()
-      });
-      
-      // CORSヘッダーを手動で設定
-      const origin = c.req.header('Origin');
-      const allowedOrigins = [
-        'https://pawmatch-dogs.elchika.app',
-        'https://pawmatch-cats.elchika.app',
-        'http://localhost:3004',
-        'http://localhost:3005',
-        'http://localhost:3006'
-      ];
-      
-      if (origin && (allowedOrigins.includes(origin) || origin.includes('.pages.dev'))) {
-        c.header('Access-Control-Allow-Origin', origin);
-      } else {
-        c.header('Access-Control-Allow-Origin', '*');
-      }
-      c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
-      
-      return c.json({
-        success: false,
-        error: 'Unauthorized',
-        message: 'API key is required'
-      }, 401);
-    }
-    
-    // リクエストのパスから必要な権限を決定
-    const { resource, action } = determinePermissions(c.req.path, c.req.method);
-    
-    // APIキー管理サービスでキーを検証
-    console.log('[ApiKeyValidator] Validating key with service', {
-      keyPrefix: key.substring(0, 8) + '...',
-      resource,
-      action,
-      path: c.req.path
-    });
-    
-    const validationResponse = await fetch('https://pawmatch-api-keys.naoto24kawa.workers.dev/validate', {
+    const response = await fetch('https://pawmatch-api-keys.naoto24kawa.workers.dev/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        key,
-        resource,
-        action
-      })
+      body: JSON.stringify({ key, resource, action })
     });
     
-    // レスポンスステータスをチェック
-    if (!validationResponse.ok) {
-      console.error('[ApiKeyValidator] Validation service error', {
-        status: validationResponse.status,
-        statusText: validationResponse.statusText,
-        path: c.req.path,
-        keyPrefix: key.substring(0, 8) + '...'
-      });
-      throw new Error(`Validation service returned ${validationResponse.status}`);
+    if (!response.ok) {
+      return { success: false, error: 'Validation service error' };
     }
     
-    const validation = await validationResponse.json() as {
-      success: boolean;
-      valid: boolean;
-      error?: string;
-      key_info?: {
-        name: string;
-        type: string;
-        permissions: string[];
-        rate_limit: number;
-        rate_limit_remaining: number;
-      };
-    };
+    const validation = await response.json() as ValidationResponse;
     
-    // 検証失敗
     if (!validation.success || !validation.valid) {
-      console.warn('[ApiKeyValidator] Invalid API key', {
-        path: c.req.path,
-        method: c.req.method,
-        error: validation.error,
-        validation,
-        timestamp: new Date().toISOString()
-      });
-      
-      // CORSヘッダーを手動で設定
-      const origin = c.req.header('Origin');
-      const allowedOrigins = [
-        'https://pawmatch-dogs.elchika.app',
-        'https://pawmatch-cats.elchika.app',
-        'http://localhost:3004',
-        'http://localhost:3005',
-        'http://localhost:3006'
-      ];
-      
-      if (origin && (allowedOrigins.includes(origin) || origin.includes('.pages.dev'))) {
-        c.header('Access-Control-Allow-Origin', origin);
-      } else {
-        c.header('Access-Control-Allow-Origin', '*');
-      }
-      c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
-      
-      return c.json({
-        success: false,
-        error: 'Unauthorized',
-        message: validation.error || 'Invalid API key'
-      }, 401);
+      return { success: false, error: validation.error || 'Invalid API key' };
     }
     
-    // キー情報をコンテキストに保存（後続の処理で使用可能）
-    c.set('apiKeyInfo', validation.key_info);
+    if (!validation.key_info) {
+      return { success: false, error: 'Invalid validation response' };
+    }
     
-    // 認証成功
-    await next();
+    return { success: true, keyInfo: validation.key_info };
     
   } catch (error) {
-    console.error('[ApiKeyValidator] Middleware error:', error);
-    
-    // APIキー管理サービスがダウンしている場合はフォールバック
-    // 環境変数のキーで直接検証
-    const fallbackKeys = [
-      c.env.API_SECRET_KEY,
-      c.env.API_KEY,
-      c.env.PUBLIC_API_KEY,
-      'b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb' // Public API Key
-    ].filter(Boolean);
-    
-    if (fallbackKeys.length > 0) {
-      const apiKey = c.req.header('X-API-Key');
-      const authHeader = c.req.header('Authorization');
-      
-      let key: string | undefined;
-      if (apiKey) {
-        key = apiKey;
-      } else if (authHeader?.startsWith('Bearer ')) {
-        key = authHeader.substring(7);
-      }
-      
-      if (key && fallbackKeys.includes(key)) {
-        console.warn('[ApiKeyValidator] Using fallback authentication', {
-          path: c.req.path,
-          keyPrefix: key.substring(0, 8) + '...'
-        });
-        return next();
-      }
-    }
-    
-    // CORSヘッダーを手動で設定
-    c.header('Access-Control-Allow-Origin', c.req.header('Origin') || '*');
-    c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-Key');
-    
-    return c.json({
-      success: false,
-      error: 'Service unavailable',
-      message: 'Authentication service is temporarily unavailable'
-    }, 503);
+    // フォールバック: 環境変数のキーで検証
+    return fallbackValidation(key, c);
   }
 }
 
 /**
- * リクエストパスとメソッドから必要な権限を決定
+ * フォールバック検証
  */
-function determinePermissions(path: string, method: string): { resource: string; action: string } {
-  // ペット関連のエンドポイント
+function fallbackValidation(
+  key: string,
+  c: Context<{ Bindings: Env }>
+): ValidationResult {
+  const validKeys = [
+    c.env.API_SECRET_KEY,
+    c.env.API_KEY,
+    c.env.PUBLIC_API_KEY
+  ].filter((k): k is string => Boolean(k));
+  
+  if (validKeys.includes(key)) {
+    return {
+      success: true,
+      keyInfo: {
+        name: 'Fallback Key',
+        type: 'fallback',
+        permissions: ['*'],
+        rate_limit: 1000,
+        rate_limit_remaining: 1000
+      }
+    };
+  }
+  
+  return { success: false, error: 'Invalid API key' };
+}
+
+/**
+ * 必要な権限を決定
+ */
+function determinePermissions(
+  path: string,
+  method: string
+): { resource: string; action: string } {
+  // ペット関連
   if (path.includes('/api/pets') || path.includes('/api/pet')) {
-    if (method === 'GET') {
-      return { resource: 'pets', action: 'read' };
-    } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-      return { resource: 'pets', action: 'write' };
-    } else if (method === 'DELETE') {
-      return { resource: 'pets', action: 'delete' };
-    }
+    const action = method === 'GET' ? 'read' : 
+                   method === 'DELETE' ? 'delete' : 'write';
+    return { resource: 'pets', action };
   }
   
-  // 画像関連のエンドポイント
+  // 画像関連
   if (path.includes('/api/images') || path.includes('/image')) {
-    if (method === 'GET') {
-      return { resource: 'images', action: 'read' };
-    } else if (method === 'POST' || method === 'PUT') {
-      return { resource: 'images', action: 'write' };
-    }
+    const action = method === 'GET' ? 'read' : 'write';
+    return { resource: 'images', action };
   }
   
-  // 管理エンドポイント
+  // 管理関連
   if (path.includes('/admin')) {
-    return { resource: 'admin', action: method === 'GET' ? 'read' : 'write' };
+    const action = method === 'GET' ? 'read' : 'write';
+    return { resource: 'admin', action };
   }
   
   // クロール関連
@@ -235,6 +189,63 @@ function determinePermissions(path: string, method: string): { resource: string;
     return { resource: 'crawl', action: 'execute' };
   }
   
-  // デフォルト（読み取り権限）
+  // デフォルト
   return { resource: 'general', action: 'read' };
+}
+
+/**
+ * 認証エラーレスポンスを作成
+ */
+function createUnauthorizedResponse(
+  c: Context<{ Bindings: Env }>,
+  message: string
+): Response {
+  // CORS ヘッダーを設定
+  const origin = c.req.header('Origin');
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
+  });
+  
+  if (origin && (ALLOWED_ORIGINS.includes(origin as typeof ALLOWED_ORIGINS[number]) || origin.includes('.pages.dev'))) {
+    headers.set('Access-Control-Allow-Origin', origin);
+  } else {
+    headers.set('Access-Control-Allow-Origin', '*');
+  }
+  
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: 'Unauthorized',
+      message
+    }),
+    {
+      status: 401,
+      headers
+    }
+  );
+}
+
+/**
+ * シンプルな認証ミドルウェア（開発用）
+ */
+export function simpleApiKeyValidator(
+  c: Context<{ Bindings: Env }>,
+  next: Next
+): Response | Promise<void | Response> {
+  // 開発環境では認証をスキップ（環境変数が設定されている場合）
+  // if (c.env.NODE_ENV === 'development') {
+  //   console.log('[ApiKeyValidator] Development mode - Authentication skipped');
+  //   return next();
+  // }
+  
+  const apiKey = extractApiKey(c);
+  const validKeys = [c.env.API_KEY, c.env.PUBLIC_API_KEY].filter(Boolean);
+  
+  if (!apiKey || !validKeys.includes(apiKey)) {
+    return createUnauthorizedResponse(c, 'Invalid API key');
+  }
+  
+  return next();
 }

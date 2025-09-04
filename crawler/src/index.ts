@@ -1,40 +1,11 @@
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import type { MessageBatch } from '@cloudflare/workers-types';
-import { Env } from './types';
-import { CrawlerFactory } from './CrawlerFactory';
-import { CrawlOptions } from './interfaces/ICrawler';
-import { DatabaseInitializer } from './utils/DatabaseInitializer';
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import type { MessageBatch, ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
+import { Env, CrawlResult, CrawlerStateRecord, PetRecord } from './types'
+import { PetHomeCrawler } from './crawler'
+import { Result } from './types/result'
 
-// データベースレコードの型定義
-interface CrawlerStateRecord {
-  source_id: string;
-  pet_type: string;
-  checkpoint: string | null;
-  total_processed: number;
-  updated_at: string;
-}
-
-interface PetRecord {
-  id: string;
-  type: 'dog' | 'cat';
-  name: string;
-  breed?: string;
-  age?: string;  // Changed from number to string
-  gender?: 'male' | 'female' | 'unknown';
-  prefecture: string;
-  city?: string;
-  description?: string;
-  personality?: string | null;
-  care_requirements?: string | null;
-  good_with?: string | null;
-  health_notes?: string | null;
-  source_url: string;
-  created_at: string;
-  updated_at: string;
-}
-
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>()
 
 // CORS設定
 app.use('*', (c, next) => {
@@ -42,9 +13,9 @@ app.use('*', (c, next) => {
     origin: [c.env?.ALLOWED_ORIGIN || '*', 'http://localhost:3004'],
     allowMethods: ['GET', 'POST'],
     allowHeaders: ['Content-Type'],
-  });
-  return corsMiddleware(c, next);
-});
+  })
+  return corsMiddleware(c, next)
+})
 
 // ヘルスチェック
 app.get('/', (c) => {
@@ -52,151 +23,265 @@ app.get('/', (c) => {
     service: 'PawMatch Crawler',
     status: 'healthy',
     timestamp: new Date().toISOString(),
-  });
-});
+  })
+})
 
 // データベース初期化エンドポイント（開発環境専用）
 app.post('/dev/init-db', async (c) => {
-  try {
-    const dbInit = new DatabaseInitializer(c.env);
-    await dbInit.ensureTablesExist();
-    
+  const result = await initializeDatabase(c.env)
+
+  if (Result.isOk(result)) {
     return c.json({
       success: true,
       message: 'Database initialized successfully',
       timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    }, 500);
+    })
   }
-});
+
+  return c.json(
+    {
+      success: false,
+      error: result.error.message,
+      timestamp: new Date().toISOString(),
+    },
+    500
+  )
+})
 
 // 手動クロール実行エンドポイント
 app.post('/crawl/:source/:type?', async (c) => {
-  const sourceId = c.req.param('source') || 'pet-home';
-  const petType = (c.req.param('type') as 'dog' | 'cat') || 'cat';
-  const limit = parseInt(c.req.query('limit') || '10');
-  const differential = c.req.query('differential') !== 'false';
-  
-  // ソースIDの検証
-  if (!CrawlerFactory.isValidSource(sourceId)) {
-    return c.json({ 
-      error: `Invalid source. Available sources: ${CrawlerFactory.getAvailableSources().join(', ')}` 
-    }, 400);
+  const sourceId = c.req.param('source') || 'pet-home'
+  const petType = (c.req.param('type') as 'dog' | 'cat') || 'cat'
+  const limit = parseInt(c.req.query('limit') || '10')
+
+  // ソースIDの検証（pet-homeのみサポート）
+  if (sourceId !== 'pet-home') {
+    return c.json(
+      {
+        error: 'Invalid source. Only "pet-home" is supported.',
+      },
+      400
+    )
   }
-  
+
   if (petType !== 'dog' && petType !== 'cat') {
-    return c.json({ error: 'Invalid pet type. Use "dog" or "cat".' }, 400);
+    return c.json({ error: 'Invalid pet type. Use "dog" or "cat".' }, 400)
   }
 
   if (limit < 1 || limit > 100) {
-    return c.json({ error: 'Limit must be between 1 and 100.' }, 400);
+    return c.json({ error: 'Limit must be between 1 and 100.' }, 400)
   }
 
-  try {
-    const crawler = CrawlerFactory.createCrawler(sourceId, c.env);
-    const options: CrawlOptions = {
-      limit,
-      useDifferential: differential,
-      minFetchCount: 10,  // 最低10件は取得
-      maxPages: differential ? 20 : 10  // 差分モードは最大20ページまで探索
-    };
-    
-    const result = await crawler.crawl(petType, options);
+  const result = await crawlPets(c.env, petType, limit)
 
+  if (Result.isOk(result)) {
     return c.json({
       source: sourceId,
       petType,
       message: `Crawling completed from ${sourceId}`,
-      result,
+      result: result.data,
       timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Crawl error:', error);
-    return c.json({ error: 'Crawl failed', details: String(error) }, 500);
+    })
   }
-});
+
+  return c.json(
+    {
+      error: 'Crawl failed',
+      details: result.error.message,
+    },
+    500
+  )
+})
 
 // クロール状態取得エンドポイント
 app.get('/crawl/status/:source?/:type?', async (c) => {
-  const sourceId = c.req.param('source');
-  const petType = c.req.param('type');
-  
-  try {
-    let query = 'SELECT source_id, pet_type, checkpoint, total_processed, updated_at FROM crawler_states';
-    const params: (string | number)[] = [];
-    const conditions: string[] = [];
-    
-    if (sourceId && CrawlerFactory.isValidSource(sourceId)) {
-      conditions.push('source_id = ?');
-      params.push(sourceId);
-    }
-    
-    if (petType === 'dog' || petType === 'cat') {
-      conditions.push('pet_type = ?');
-      params.push(petType);
-    }
-    
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-    
-    const result = await c.env['DB'].prepare(query).bind(...params).all<CrawlerStateRecord>();
-    
-    // チェックポイントをパース
-    const statuses = result.results?.map((row) => ({
-      ...row,
-      checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null
-    })) || [];
-    
+  const sourceId = c.req.param('source')
+  const petType = c.req.param('type')
+
+  const result = await getCrawlStatus(c.env, sourceId, petType)
+
+  if (Result.isOk(result)) {
     return c.json({
-      availableSources: CrawlerFactory.getAvailableSources(),
-      statuses,
+      availableSources: ['pet-home'],
+      statuses: result.data,
       timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    return c.json({ error: 'Failed to get crawl status' }, 500);
+    })
   }
-});
+
+  return c.json(
+    {
+      error: 'Failed to get crawl status',
+      details: result.error.message,
+    },
+    500
+  )
+})
 
 // ペット一覧取得（API用）
 app.get('/pets/:type?', async (c) => {
-  const petType = c.req.param('type');
-  const limit = parseInt(c.req.query('limit') || '20');
-  const offset = parseInt(c.req.query('offset') || '0');
+  const petType = c.req.param('type')
+  const limit = parseInt(c.req.query('limit') || '20')
+  const offset = parseInt(c.req.query('offset') || '0')
 
-  let query = 'SELECT * FROM pets';
-  const params: (string | number)[] = [];
+  const result = await getPets(c.env, petType, limit, offset)
 
-  if (petType === 'dog' || petType === 'cat') {
-    query += ' WHERE type = ?';
-    params.push(petType);
-  }
-
-  query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  params.push(limit, offset);
-
-  try {
-    const result = await c.env['DB'].prepare(query).bind(...params).all<PetRecord>();
-    
+  if (Result.isOk(result)) {
     return c.json({
-      pets: result.results || [],
+      pets: result.data,
       pagination: {
         limit,
         offset,
-        total: result.results?.length || 0,
+        total: result.data.length,
       },
-    });
-  } catch (error) {
-    console.error('Database error:', error);
-    return c.json({ error: 'Database query failed' }, 500);
+    })
   }
-});
+
+  return c.json(
+    {
+      error: 'Database query failed',
+      details: result.error.message,
+    },
+    500
+  )
+})
+
+/**
+ * データベース初期化
+ */
+async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
+  return Result.tryCatch(async () => {
+    const sql = `
+      CREATE TABLE IF NOT EXISTS pets (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ('dog', 'cat')),
+        name TEXT NOT NULL,
+        breed TEXT,
+        age TEXT,
+        gender TEXT,
+        prefecture TEXT NOT NULL,
+        city TEXT,
+        location TEXT,
+        description TEXT,
+        personality TEXT,
+        medical_info TEXT,
+        care_requirements TEXT,
+        image_url TEXT,
+        shelter_name TEXT,
+        shelter_contact TEXT,
+        source_url TEXT,
+        adoption_fee INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS crawler_states (
+        source_id TEXT NOT NULL,
+        pet_type TEXT NOT NULL,
+        checkpoint TEXT,
+        total_processed INTEGER DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (source_id, pet_type)
+      );
+    `
+
+    await env['DB'].exec(sql)
+  })
+}
+
+/**
+ * ペットクロール処理
+ */
+async function crawlPets(
+  env: Env,
+  petType: 'dog' | 'cat',
+  limit: number
+): Promise<Result<CrawlResult, Error>> {
+  return Result.tryCatch(async () => {
+    const crawler = new PetHomeCrawler(env)
+    return await crawler.crawl(petType, limit)
+  })
+}
+
+/**
+ * クロール状態取得
+ */
+async function getCrawlStatus(
+  env: Env,
+  sourceId?: string,
+  petType?: string
+): Promise<Result<CrawlerStateRecord[], Error>> {
+  return Result.tryCatch(async () => {
+    let query =
+      'SELECT source_id, pet_type, checkpoint, total_processed, updated_at FROM crawler_states'
+    const params: (string | number)[] = []
+    const conditions: string[] = []
+
+    if (sourceId === 'pet-home') {
+      conditions.push('source_id = ?')
+      params.push(sourceId)
+    }
+
+    if (petType === 'dog' || petType === 'cat') {
+      conditions.push('pet_type = ?')
+      params.push(petType)
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
+
+    const result = await env['DB']
+      .prepare(query)
+      .bind(...params)
+      .all<CrawlerStateRecord>()
+
+    return (
+      result.results?.map((row) => ({
+        ...row,
+        checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null,
+      })) || []
+    )
+  })
+}
+
+/**
+ * ペット一覧取得
+ */
+async function getPets(
+  env: Env,
+  petType?: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Result<PetRecord[], Error>> {
+  return Result.tryCatch(async () => {
+    let query = 'SELECT * FROM pets'
+    const params: (string | number)[] = []
+
+    if (petType === 'dog' || petType === 'cat') {
+      query += ' WHERE type = ?'
+      params.push(petType)
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    params.push(limit, offset)
+
+    const result = await env['DB']
+      .prepare(query)
+      .bind(...params)
+      .all<PetRecord>()
+    return result.results || []
+  })
+}
+
+/**
+ * シンプルキューハンドリング
+ */
+async function handleQueueMessage(
+  env: Env,
+  petType: 'dog' | 'cat'
+): Promise<Result<CrawlResult, Error>> {
+  return crawlPets(env, petType, 10) // デフォルト10件
+}
 
 // Cron Trigger処理
 export default {
@@ -205,28 +290,37 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    // Queue Schedulerを使って各Queueにメッセージを送信
-    const { QueueScheduler } = await import('./queue-scheduler');
-    const scheduler = new QueueScheduler(env);
-    await scheduler.scheduleCrawl();
+    // シンプルなスケジュールクロール
+    const dogResult = await crawlPets(env, 'dog', 5)
+    const catResult = await crawlPets(env, 'cat', 5)
+
+    console.log('Scheduled crawl completed:', {
+      dog: Result.isOk(dogResult) ? dogResult.data : dogResult.error.message,
+      cat: Result.isOk(catResult) ? catResult.data : catResult.error.message,
+    })
   },
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, env, ctx)
   },
 
-  // Queue Consumer - 猫と犬それぞれのQueueを順次処理
-  async queue(batch: MessageBatch<any>, env: Env, _ctx: ExecutionContext): Promise<void> {
-    const { QueueScheduler, CrawlQueueMessage } = await import('./queue-scheduler');
-    const scheduler = new QueueScheduler(env);
-    
-    // Queueの種類を判定（メッセージの内容から判断）
-    if (batch.queue === 'pawmatch-cat-pethome-queue') {
-      await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'cat');
-    } else if (batch.queue === 'pawmatch-dog-pethome-queue') {
-      await scheduler.processCrawlQueue(batch as MessageBatch<CrawlQueueMessage>, 'dog');
-    } else {
-      console.error('⚠️ Unknown queue:', batch.queue);
+  // Queue Consumer - 猫と犬それぞれのQueueを処理
+  async queue(
+    batch: MessageBatch<{ petType: 'dog' | 'cat' }>,
+    env: Env,
+    _ctx: ExecutionContext
+  ): Promise<void> {
+    for (const message of batch.messages) {
+      const petType = message.body.petType || 'cat'
+      const result = await handleQueueMessage(env, petType)
+
+      if (Result.isOk(result)) {
+        console.log(`Queue processing completed for ${petType}:`, result.data)
+        message.ack()
+      } else {
+        console.error(`Queue processing failed for ${petType}:`, result.error)
+        message.retry()
+      }
     }
   },
-};
+}

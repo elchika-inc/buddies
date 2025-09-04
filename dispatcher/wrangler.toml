@@ -5,11 +5,12 @@ compatibility_flags = ["nodejs_compat"]
 
 # 環境変数
 [vars]
+NODE_ENV = "production"
 GITHUB_OWNER = "elchika-inc"
 GITHUB_REPO = "pawmatch"
 WORKFLOW_FILE = "automated-screenshot-capture.yml"
 API_URL = "https://pawmatch-api.elchika.app"
-
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
 # Queue設定
 [[queues.producers]]
@@ -45,9 +46,9 @@ enabled = true
 
 # 開発環境設定
 [env.development]
-vars = { API_URL = "http://localhost:8787" }
+vars = { NODE_ENV = "development", API_URL = "http://localhost:8787" }
 
 # 開発サーバーポート設定
 [dev]
 port = 9788
-inspector_port = 10231
+inspector_port = 10788

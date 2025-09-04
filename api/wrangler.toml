@@ -5,7 +5,17 @@ compatibility_flags = ["nodejs_compat"]
 
 # 環境変数
 [vars]
+NODE_ENV = "production"
 ALLOWED_ORIGIN = "*"
+ALLOWED_ORIGINS = "https://pawmatch-api.elchika.app,http://localhost:8787"
+API_BASE_URL = "https://pawmatch-api.elchika.app"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
+# KVネームスペース（APIキー高速キャッシュ用）
+[[kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "ec30a1e116fb42c081ad0b7f07d413da"
+preview_id = "ec30a1e116fb42c081ad0b7f07d413da"
 
 # R2バケット設定（画像配信用）
 [[r2_buckets]]
@@ -16,8 +26,8 @@ bucket_name = "pawmatch-images"
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
-database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
-migrations_dir = "migrations"
+database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+migrations_dir = "../database/migrations"
 
 # Observability設定
 [observability.logs]
@@ -28,7 +38,11 @@ enabled = true
 vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }
 route = { pattern = "pawmatch-api.elchika.app/*", zone_name = "elchika.app" }
 
-# Production環境でもR2とD1バインディングを追加
+# Production環境でもKV、R2とD1バインディングを追加
+[[env.production.kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "ec30a1e116fb42c081ad0b7f07d413da"
+
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"
@@ -37,13 +51,13 @@ bucket_name = "pawmatch-images"
 binding = "DB"
 database_name = "pawmatch-db"
 database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
-migrations_dir = "migrations"
+migrations_dir = "../database/migrations"
 
 # 開発環境設定
 [env.development]
-vars = { ALLOWED_ORIGIN = "http://localhost:3004" }
+vars = { NODE_ENV = "development", ALLOWED_ORIGIN = "http://localhost:3004" }
 
 # 開発サーバーポート設定
 [dev]
-port = 8787
-inspector_port = 10229
+port = 9789
+inspector_port = 10789

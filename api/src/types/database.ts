@@ -1,4 +1,23 @@
-// データベースから返される生のペットデータの型定義
+import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import { pets, crawlerStates, syncStatus, syncMetadata, apiKeys } from '../../../database/schema/schema';
+
+// Drizzleスキーマから推論される型
+export type PetSelect = InferSelectModel<typeof pets>;
+export type PetInsert = InferInsertModel<typeof pets>;
+
+export type CrawlerStateSelect = InferSelectModel<typeof crawlerStates>;
+export type CrawlerStateInsert = InferInsertModel<typeof crawlerStates>;
+
+export type SyncStatusSelect = InferSelectModel<typeof syncStatus>;
+export type SyncStatusInsert = InferInsertModel<typeof syncStatus>;
+
+export type SyncMetadataSelect = InferSelectModel<typeof syncMetadata>;
+export type SyncMetadataInsert = InferInsertModel<typeof syncMetadata>;
+
+export type ApiKeySelect = InferSelectModel<typeof apiKeys>;
+export type ApiKeyInsert = InferInsertModel<typeof apiKeys>;
+
+// データベースから返される生のペットデータの型定義（後方互換性のため維持）
 export interface RawPetRecord {
   id: string;
   type: 'dog' | 'cat';

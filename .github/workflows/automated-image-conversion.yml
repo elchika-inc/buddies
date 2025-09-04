@@ -111,6 +111,10 @@ jobs:
           if [ -f "$RESULTS_FILE" ]; then
             echo "=== Updating database with conversion results ==="
             
+            # デバッグ: 送信するデータの一部を表示
+            echo "📝 Sending data for $(jq '.results | length' "$RESULTS_FILE") pets"
+            echo "📝 Sample data: $(jq '.results[0]' "$RESULTS_FILE")"
+            
             # API認証ヘッダーを設定
             RESPONSE=$(curl -X POST "${API_URL}/api/admin/update-images" \
               -H "X-API-Key: ${API_SECRET_KEY}" \
@@ -121,11 +125,15 @@ jobs:
               -s)
             
             HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+            RESPONSE_BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS:")
             
             if [ "$HTTP_STATUS" = "200" ]; then
               echo "✅ Successfully updated database"
+              echo "📝 Response: $RESPONSE_BODY"
             else
-              echo "⚠️ API returned status $HTTP_STATUS"
+              echo "❌ API returned status $HTTP_STATUS"
+              echo "📝 Error response: $RESPONSE_BODY"
+              exit 1  # 失敗時は明示的にエラー終了
             fi
           else
             echo "⚠️ No results file found"

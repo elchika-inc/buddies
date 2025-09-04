@@ -24,8 +24,8 @@ function findD1Database(): string {
 }
 
 export default {
-  schema: './database/schema/*.ts',
-  out: './database/migrations',
+  schema: '../database/schema/*.ts',
+  out: '../database/migrations',
   dialect: 'sqlite',
   dbCredentials: {
     url: findD1Database(),

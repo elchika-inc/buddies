@@ -6,6 +6,19 @@ import { transformPetRecord, ApiPetRecord } from '../utils/data-transformer';
 import { CONFIG } from '../utils/constants';
 import { isRawPetRecord, isCountResult, ensureArray } from '../utils/type-guards';
 
+// 型定義を追加
+interface PetsResponseByCategoryData {
+  dogs: ApiPetRecord[];
+  cats: ApiPetRecord[];
+}
+
+interface PetsResponseByTypeData {
+  pets: ApiPetRecord[];
+  type: string;
+}
+
+type PetsResponseData = PetsResponseByCategoryData | PetsResponseByTypeData;
+
 /**
  * ペットコントローラー
  * 
@@ -140,7 +153,7 @@ export class PetController {
     limit: number, 
     offset: number, 
     prefecture?: string
-  ): Promise<{ data: ApiPetRecord[]; total: number }> {
+  ): Promise<{ data: PetsResponseData; total: number }> {
     // WHERE条件を動的に構築（画像があるものを必須条件として追加）
     const conditions: string[] = ['has_jpeg = 1'];
     const params: (string | number)[] = [];
@@ -182,14 +195,16 @@ export class PetController {
     if (!type) {
       const dogs = pets.filter((p: ApiPetRecord) => p.type === 'dog');
       const cats = pets.filter((p: ApiPetRecord) => p.type === 'cat');
+      const responseData: PetsResponseByCategoryData = { dogs, cats };
       return {
-        data: { dogs, cats } as any,
+        data: responseData,
         total
       };
     }
 
+    const responseData: PetsResponseByTypeData = { pets, type };
     return {
-      data: { pets, type } as any,
+      data: responseData,
       total
     };
   }

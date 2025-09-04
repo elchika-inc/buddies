@@ -13,8 +13,8 @@ export class ImageController {
     try {
       const filename = c.req.param('filename');
       
-      // ファイル名からpetIdを抽出（例: dog_1756101806863_0.jpg -> dog_1756101806863_0）
-      const petIdMatch = filename.match(/^((dog|cat|pethome)_[\d_]+)/);
+      // ファイル名からpetIdを抽出（例: pet-home_pethome_524619.jpg -> pet-home_pethome_524619）
+      const petIdMatch = filename.match(/^([\w-]+_[\w-]+_[\d]+)/);
       if (!petIdMatch) {
         throw new NotFoundError('Invalid filename format');
       }
@@ -41,16 +41,22 @@ export class ImageController {
       
       // ファイル拡張子によって適切なファイルを取得
       const isWebP = filename.endsWith('.webp');
-      const imageKey = `pets/${pet['type']}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
+      let imageKey = `pets/${pet['type']}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
       
-      const object = await this.bucket.get(imageKey);
+      let object = await this.bucket.get(imageKey);
+      
+      // JPEGが見つからない場合、PNGスクリーンショットを試す
+      if (!object && !isWebP) {
+        imageKey = `pets/${pet['type']}s/${petId}/screenshot.png`;
+        object = await this.bucket.get(imageKey);
+      }
       
       if (!object) {
         throw new NotFoundError('Image not found');
       }
       
       // 適切なContent-Typeを設定
-      const contentType = isWebP ? 'image/webp' : 'image/jpeg';
+      const contentType = isWebP ? 'image/webp' : (imageKey.endsWith('.png') ? 'image/png' : 'image/jpeg');
       
       return new Response(object.body as ReadableStream<Uint8Array>, {
         headers: {
@@ -81,8 +87,8 @@ export class ImageController {
       const fileMatch = filename.match(/\.(jpg|jpeg|png|webp)$/);
       const requestedFormat = fileMatch ? fileMatch[1] : format;
 
-      // 画像変換Workerへリクエストをプロキシ
-      const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}s/${petId}/${requestedFormat}`;
+      // 画像変換Workerへリクエストをプロキシ（将来の実装用）
+      // const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}s/${petId}/${requestedFormat}`;
       
       // R2から画像を取得
       if (!this.bucket) {
@@ -91,16 +97,22 @@ export class ImageController {
       
       // ファイル拡張子によって適切なファイルを取得
       const isWebP = requestedFormat === 'webp';
-      const imageKey = `pets/${petType}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
+      let imageKey = `pets/${petType}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`;
       
-      const object = await this.bucket.get(imageKey);
+      let object = await this.bucket.get(imageKey);
+      
+      // JPEGが見つからない場合、PNGスクリーンショットを試す
+      if (!object && !isWebP) {
+        imageKey = `pets/${petType}s/${petId}/screenshot.png`;
+        object = await this.bucket.get(imageKey);
+      }
       
       if (!object) {
         return c.notFound();
       }
       
       // 適切なContent-Typeを設定
-      const contentType = isWebP ? 'image/webp' : 'image/jpeg';
+      const contentType = isWebP ? 'image/webp' : (imageKey.endsWith('.png') ? 'image/png' : 'image/jpeg');
       
       return new Response(object.body as ReadableStream<Uint8Array>, {
         headers: {
