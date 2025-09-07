@@ -20,7 +20,7 @@ interface SwipeState {
  * 統合されたペットスワイプHook
  * シンプルな状態管理とスワイプロジックを提供
  */
-export function usePetSwipe(pets: Pet[], petType: 'dog' | 'cat') {
+export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
   const [state, setState] = useState<SwipeState>({
     currentIndex: 0,
     likes: [],

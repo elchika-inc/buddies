@@ -5,10 +5,10 @@
  * ペットタイプ、画像形式、ページネーション、ファイル名などの検証を提供
  */
 
-import { ValidationError } from './error-handler';
+import { ValidationError } from './errorHandler';
 import { PET_TYPES, IMAGE_FORMATS, CONFIG } from './constants';
 import type { PetType, ImageFormat } from './constants';
-import { isPetType, isImageFormat } from './type-guards';
+import { isPetType, isImageFormat } from './typeGuards';
 
 /**
  * ペットタイプの検証

@@ -3,7 +3,7 @@
  * 共通型を拡張してAPI固有の型を定義
  */
 
-import type { Pet, PetRecord, PetSearchFilters, SortOptions } from '../../../types/shared';
+import type { Pet, PetSearchFilters, SortOptions } from '../../../types/shared';
 
 /**
  * API固有のペット型（必要に応じて拡張）

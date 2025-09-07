@@ -3,27 +3,62 @@
 import { PetSwipeCard } from './PetSwipeCard'
 import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
-import { LocationModal } from './LocationModal'
+import { LocationModal, Location } from './LocationModal'
 import { PetDetailModal } from './PetDetailModal'
-import { usePetMatchState } from '@/hooks/usePetMatchState'
+import { usePetSwipe } from '@/hooks/usePetSwipe'
+import { useState, useEffect } from 'react'
+import { Pet } from '@/types/pet'
 import { getPetType } from '@/config/petConfig'
 
 export function PetMatchApp() {
   const petType = getPetType()
+  
+  // ダミーのペットデータ（実際のアプリではAPIから取得）
+  const [pets] = useState<Pet[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
+  const [buttonSwipeDirection, setButtonSwipeDirection] = useState<'like' | 'pass' | 'superLike' | null>(null)
+  
+  // モーダル状態
+  const [modals, setModals] = useState({
+    location: false,
+    detail: false,
+    selectedPet: null as Pet | null
+  })
+  
   const {
-    swipeState,
-    nextPet,
-    selectedLocations,
-    setSelectedLocations,
-    modals,
-    openLocationModal,
-    closeLocationModal,
-    openPetDetailModal,
-    closePetDetailModal,
-  } = usePetMatchState()
+    currentPet,
+    hasMorePets,
+    likes,
+    superLikes,
+    handleSwipe,
+    reset
+  } = usePetSwipe(pets, petType)
+  
+  // 次のペット（現在のペットの次）
+  const nextPet = pets.find((_, index) => pets.indexOf(currentPet!) !== -1 && index === pets.indexOf(currentPet!) + 1)
+  
+  // モーダル操作関数
+  const openLocationModal = () => setModals(prev => ({ ...prev, location: true }))
+  const closeLocationModal = () => setModals(prev => ({ ...prev, location: false }))
+  const openPetDetailModal = (pet: Pet) => setModals({ location: false, detail: true, selectedPet: pet })
+  const closePetDetailModal = () => setModals(prev => ({ ...prev, detail: false, selectedPet: null }))
+  
+  // ボタンスワイプのトリガー
+  const triggerButtonSwipe = (direction: 'like' | 'pass' | 'superLike') => {
+    setButtonSwipeDirection(direction)
+    setTimeout(() => setButtonSwipeDirection(null), 100)
+    handleSwipe(direction)
+  }
+  
+  // ペットデータの初期化（実際のアプリではAPIから取得）
+  useEffect(() => {
+    // TODO: 実際のAPIから取得する処理に置き換え
+    setIsLoading(false)
+  }, [])
 
   // ローディング表示
-  if (swipeState.isLoading && swipeState.remainingPets.length === 0) {
+  if (isLoading && pets.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl">読み込み中...</div>
@@ -38,8 +73,8 @@ export function PetMatchApp() {
         : 'from-purple-50 to-pink-50'
     }`}>
       <MatchHeader
-        likedPets={swipeState.likedPets}
-        superLikedPets={swipeState.superLikedPets}
+        likedPets={pets.filter(pet => likes.includes(pet.id))}
+        superLikedPets={pets.filter(pet => superLikes.includes(pet.id))}
         onRemoveLike={() => {
           // TODO: Implement remove like functionality
         }}
@@ -72,26 +107,26 @@ export function PetMatchApp() {
           )}
           
           {/* 現在のカード（前面） */}
-          {swipeState.currentPet && (
+          {currentPet && (
             <PetSwipeCard
-              key={`current-${swipeState.currentPet.id}`}
-              pet={swipeState.currentPet}
-              onSwipe={swipeState.handleSwipe}
+              key={`current-${currentPet.id}`}
+              pet={currentPet}
+              onSwipe={handleSwipe}
               isTopCard={true}
-              buttonSwipeDirection={swipeState.buttonSwipeDirection}
-              onTap={() => swipeState.currentPet && openPetDetailModal(swipeState.currentPet)}
+              buttonSwipeDirection={buttonSwipeDirection}
+              onTap={() => currentPet && openPetDetailModal(currentPet)}
             />
           )}
           
           {/* カードがない場合のメッセージ */}
-          {!swipeState.currentPet && !swipeState.isLoading && (
+          {!currentPet && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-xl mb-4">
-                {swipeState.hasMore ? '新しいペットを読み込んでいます...' : 'すべてのペットを見ました！'}
+                {hasMorePets ? '新しいペットを読み込んでいます...' : 'すべてのペットを見ました！'}
               </p>
-              {!swipeState.hasMore && (
+              {!hasMorePets && (
                 <button
-                  onClick={swipeState.reset}
+                  onClick={reset}
                   className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
                 >
                   最初から見る
@@ -102,9 +137,9 @@ export function PetMatchApp() {
         </div>
 
         <SwipeFooter
-          onPass={() => swipeState.triggerButtonSwipe('pass')}
-          onLike={() => swipeState.triggerButtonSwipe('like')}
-          disabled={!swipeState.currentPet}
+          onPass={() => triggerButtonSwipe('pass')}
+          onLike={() => triggerButtonSwipe('like')}
+          disabled={!currentPet}
           theme={petType}
         />
       </div>

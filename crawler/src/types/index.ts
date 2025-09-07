@@ -1,20 +1,20 @@
 import type { R2Bucket, D1Database, Queue } from '@cloudflare/workers-types';
 
-// Re-export shared types from root types.d.ts
+// Re-export shared types from shared/types
 export type { 
   Pet, 
   PetRecord, 
   CrawlResult,
   CrawlerState,
   CrawlerStateRecord,
-} from '../../types.d'
+} from '../../../shared/types'
 
 export {
   petToRecord,
   recordToPet,
   isPet,
   isPetRecord
-} from '../../types'
+} from '../../../shared/types'
 
 export interface Env {
   IMAGES_BUCKET: R2Bucket;

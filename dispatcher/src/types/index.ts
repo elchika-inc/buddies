@@ -10,14 +10,14 @@ export type {
   PetRecord,
   CrawlerState,
   CrawlerStateRecord,
-} from '../../types.d'
+} from '../../../shared/types'
 
 export {
   petToRecord,
   recordToPet,
   isPet,
   isPetRecord as isPetRecordType
-} from '../../types'
+} from '../../../shared/types'
 
 export interface Env {
   DB?: D1Database;  // D1データベースを追加

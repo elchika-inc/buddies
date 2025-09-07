@@ -4,7 +4,7 @@
  * @description データベース（snake_case）とAPI（camelCase）間の変換を提供
  */
 
-import { isRecord } from './type-guards';
+import { isRecord } from './typeGuards';
 
 /**
  * snake_caseをcamelCaseに変換

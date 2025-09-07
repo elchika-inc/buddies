@@ -8,8 +8,8 @@ import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { 
   PawMatchError
-} from '../utils/error-handler';
-import { errorResponse } from '../utils/response-formatter';
+} from '../utils/errorHandler';
+import { errorResponse } from '../utils/responseFormatter';
 import type { JsonValue } from '../types/common';
 
 /**
@@ -80,7 +80,7 @@ function logError(error: unknown, context: Context): void {
   const requestInfo = {
     method: context.req.method,
     url: context.req.url,
-    headers: Object.fromEntries([...context.req.raw.headers] as any),
+    headers: {} as Record<string, string>,  // Headers情報は省略（型の互換性問題のため）
     timestamp: new Date().toISOString()
   };
 

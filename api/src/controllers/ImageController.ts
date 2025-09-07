@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { extractPetIdFromFilename } from '../utils/validation';
-import { handleError, ServiceUnavailableError, NotFoundError } from '../utils/error-handler';
+import { handleError, ServiceUnavailableError, NotFoundError } from '../utils/errorHandler';
 import type { Env } from '../types/env';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 

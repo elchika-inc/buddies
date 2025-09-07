@@ -416,7 +416,7 @@ export class PetHomeCrawler {
       const imageBuffer = await response.arrayBuffer()
       const key = `pets/${pet.type}s/${pet.id}/original.jpg`
 
-      await this.env.IMAGES_BUCKET.put(key, imageBuffer, {
+      await this.env.R2_BUCKET.put(key, imageBuffer, {
         httpMetadata: {
           contentType: 'image/jpeg',
         },

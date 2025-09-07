@@ -15,7 +15,7 @@ import {
   isNumber,
   isString,
   isRecord
-} from '../utils/type-guards';
+} from '../utils/typeGuards';
 
 // データベースクエリ結果の型定義
 interface StatsQueryResult {

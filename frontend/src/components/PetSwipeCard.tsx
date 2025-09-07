@@ -1,11 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { PetCard } from './PetCard'
 import { SwipeIndicator } from './SwipeIndicator'
 import { Pet } from '@/types/pet'
-import { SwipeDirection } from '@/hooks/usePetSwipeState'
-import { useDragGesture } from '@/hooks/useDragGesture'
-import { useCardAnimation } from '@/hooks/useCardAnimation'
-import { useSwipeLogic } from '@/hooks/useSwipeLogic'
+import { SwipeDirection, useSwipeGesture } from '@/hooks/usePetSwipe'
 
 type PetSwipeCardProps = {
   pet: Pet
@@ -23,71 +20,158 @@ export function PetSwipeCard({
   onTap,
 }: PetSwipeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [isExiting, setIsExiting] = useState(false)
+  const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(null)
   
-  // スワイプ判定ロジック（方向判定、インジケーター表示）
-  const swipeDecisionLogic = useSwipeLogic()
+  const { getSwipeDirection, getIndicatorOpacity } = useSwipeGesture()
   
-  const { dragState, dragHandlers, resetDrag } = useDragGesture(
-    isTopCard,
-    (finalOffset) => {
-      const direction = swipeDecisionLogic.determineSwipeDirection(finalOffset)
-      if (direction) {
-        triggerExit(direction, () => onSwipe(direction))
-      }
-    }
-  )
-  
-  const { animationState, cardStyle, triggerExit, resetAnimation } = useCardAnimation(
-    dragState.dragOffset,
-    dragState.isDragging,
-    isTopCard
-  )
+  // ドラッグ操作のハンドラー
+  const handleDragStart = useCallback((_clientX: number, _clientY: number) => {
+    if (!isTopCard) return
+    setIsDragging(true)
+  }, [isTopCard])
 
-  // ペットが変更されたときにすべての状態をリセット
+  const handleDragMove = useCallback((clientX: number, clientY: number, startX: number, startY: number) => {
+    if (!isDragging || !isTopCard) return
+    
+    const newOffset = {
+      x: clientX - startX,
+      y: clientY - startY
+    }
+    setDragOffset(newOffset)
+  }, [isDragging, isTopCard])
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging || !isTopCard) return
+    
+    setIsDragging(false)
+    
+    const direction = getSwipeDirection(dragOffset.x, dragOffset.y)
+    if (direction) {
+      setIsExiting(true)
+      setExitDirection(direction)
+      setTimeout(() => {
+        onSwipe(direction)
+        setIsExiting(false)
+        setExitDirection(null)
+        setDragOffset({ x: 0, y: 0 })
+      }, 300)
+    } else {
+      // スワイプ閾値未満の場合は元に戻す
+      setDragOffset({ x: 0, y: 0 })
+    }
+  }, [isDragging, isTopCard, dragOffset, getSwipeDirection, onSwipe])
+
+  // マウスイベント
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
+  
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const startX = e.clientX
+    const startY = e.clientY
+    setStartPos({ x: startX, y: startY })
+    handleDragStart(startX, startY)
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDragMove(e.clientX, e.clientY, startX, startY)
+    }
+    
+    const handleMouseUp = () => {
+      handleDragEnd()
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [handleDragStart, handleDragMove, handleDragEnd])
+
+  // タッチイベント
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    if (!touch) return
+    const startX = touch.clientX
+    const startY = touch.clientY
+    setStartPos({ x: startX, y: startY })
+    handleDragStart(startX, startY)
+  }, [handleDragStart])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    if (!touch) return
+    handleDragMove(touch.clientX, touch.clientY, startPos.x, startPos.y)
+  }, [handleDragMove, startPos])
+
+  const handleTouchEnd = useCallback(() => {
+    handleDragEnd()
+  }, [handleDragEnd])
+
+  // ペットが変更されたときに状態をリセット
   useEffect(() => {
-    resetAnimation()
-    resetDrag()
-  }, [pet.id, isTopCard, resetAnimation, resetDrag])
+    setDragOffset({ x: 0, y: 0 })
+    setIsDragging(false)
+    setIsExiting(false)
+    setExitDirection(null)
+  }, [pet.id, isTopCard])
 
   // ボタンスワイプの処理
   useEffect(() => {
     if (buttonSwipeDirection && isTopCard) {
-      triggerExit(buttonSwipeDirection, () => onSwipe(buttonSwipeDirection))
+      setIsExiting(true)
+      setExitDirection(buttonSwipeDirection)
+      setTimeout(() => {
+        onSwipe(buttonSwipeDirection)
+        setIsExiting(false)
+        setExitDirection(null)
+        setDragOffset({ x: 0, y: 0 })
+      }, 300)
     }
-  }, [buttonSwipeDirection, isTopCard, triggerExit, onSwipe])
+  }, [buttonSwipeDirection, isTopCard, onSwipe])
 
-  // インジケーター表示の判定
-  const showIndicator = isTopCard && swipeDecisionLogic.shouldShowIndicator(
-    dragState.dragOffset,
-    animationState.isExiting
-  )
+  // カードのスタイル
+  const cardStyle: React.CSSProperties = {
+    transform: isExiting 
+      ? `translate(${exitDirection === 'like' ? '100vw' : exitDirection === 'pass' ? '-100vw' : '0'}, ${exitDirection === 'superLike' ? '-100vh' : '0'}) rotate(${exitDirection === 'like' ? '30deg' : exitDirection === 'pass' ? '-30deg' : '0'})`
+      : `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.1}deg)`,
+    transition: isExiting ? 'transform 0.3s ease-out' : isDragging ? 'none' : 'transform 0.3s ease-out',
+    position: 'absolute' as const,
+    zIndex: isTopCard ? 10 : 1,
+  }
 
-  const indicatorStyle = swipeDecisionLogic.getIndicatorStyle(
-    dragState.dragOffset,
-    animationState.isExiting,
-    animationState.exitDirection
-  )
-
-  const indicatorText = swipeDecisionLogic.getIndicatorText(
-    dragState.dragOffset,
-    animationState.isExiting,
-    animationState.exitDirection
-  )
+  // インジケーターの表示判定とスタイル
+  const opacity = getIndicatorOpacity(dragOffset.x, dragOffset.y)
+  const showIndicator = isTopCard && (isDragging || isExiting) && (opacity.like > 0 || opacity.pass > 0 || opacity.superLike > 0)
+  
+  const indicatorStyle = {
+    like: { opacity: opacity.like, color: '#22c55e' },
+    pass: { opacity: opacity.pass, color: '#ef4444' },
+    superLike: { opacity: opacity.superLike, color: '#3b82f6' }
+  }
+  
+  const indicatorText = {
+    like: 'LIKE',
+    pass: 'PASS', 
+    superLike: 'SUPER LIKE'
+  }
 
   return (
     <div
       ref={cardRef}
       style={cardStyle}
-      {...dragHandlers}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className="select-none touch-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
       <PetCard pet={pet} onTap={onTap} />
 
       {showIndicator && (
         <SwipeIndicator
-          dragOffset={dragState.dragOffset}
-          isExiting={animationState.isExiting}
-          exitDirection={animationState.exitDirection}
+          dragOffset={dragOffset}
+          isExiting={isExiting}
+          exitDirection={exitDirection}
           indicatorStyle={indicatorStyle}
           indicatorText={indicatorText}
         />

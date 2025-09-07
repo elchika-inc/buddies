@@ -158,7 +158,7 @@ app.get('/pets/:type?', async (c) => {
  * データベース初期化
  */
 async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
-  return Result.tryCatch(async () => {
+  try {
     const sql = `
       CREATE TABLE IF NOT EXISTS pets (
         id TEXT PRIMARY KEY,
@@ -194,7 +194,10 @@ async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
     `
 
     await env['DB'].exec(sql)
-  })
+    return Result.ok(undefined as void)
+  } catch (error) {
+    return Result.err(error instanceof Error ? error : new Error(String(error)))
+  }
 }
 
 /**
@@ -205,10 +208,13 @@ async function crawlPets(
   petType: 'dog' | 'cat',
   limit: number
 ): Promise<Result<CrawlResult, Error>> {
-  return Result.tryCatch(async () => {
+  try {
     const crawler = new PetHomeCrawler(env)
-    return await crawler.crawl(petType, limit)
-  })
+    const result = await crawler.crawl(petType, limit)
+    return Result.ok(result)
+  } catch (error) {
+    return Result.err(error instanceof Error ? error : new Error(String(error)))
+  }
 }
 
 /**
@@ -219,7 +225,7 @@ async function getCrawlStatus(
   sourceId?: string,
   petType?: string
 ): Promise<Result<CrawlerStateRecord[], Error>> {
-  return Result.tryCatch(async () => {
+  try {
     let query =
       'SELECT source_id, pet_type, checkpoint, total_processed, updated_at FROM crawler_states'
     const params: (string | number)[] = []
@@ -244,13 +250,14 @@ async function getCrawlStatus(
       .bind(...params)
       .all<CrawlerStateRecord>()
 
-    return (
-      result.results?.map((row) => ({
-        ...row,
-        checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null,
-      })) || []
-    )
-  })
+    const results = result.results?.map((row) => ({
+      ...row,
+      checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null,
+    })) || []
+    return Result.ok(results)
+  } catch (error) {
+    return Result.err(error instanceof Error ? error : new Error(String(error)))
+  }
 }
 
 /**
@@ -262,7 +269,7 @@ async function getPets(
   limit: number = 20,
   offset: number = 0
 ): Promise<Result<PetRecord[], Error>> {
-  return Result.tryCatch(async () => {
+  try {
     let query = 'SELECT * FROM pets'
     const params: (string | number)[] = []
 
@@ -278,8 +285,10 @@ async function getPets(
       .prepare(query)
       .bind(...params)
       .all<PetRecord>()
-    return result.results || []
-  })
+    return Result.ok(result.results || [])
+  } catch (error) {
+    return Result.err(error instanceof Error ? error : new Error(String(error)))
+  }
 }
 
 /**

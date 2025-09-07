@@ -11,29 +11,11 @@ import type { Context } from 'hono';
 import type { MessageBatch, ScheduledEvent } from '@cloudflare/workers-types';
 import { Result } from '../../shared/types/result';
 
-// 型定義
-export interface Env {
-  API_DISPATCHER_QUEUE: Queue;
-  DB?: D1Database;
-  QUEUE_TOKEN?: string;
-  MAX_BATCH_SIZE?: string;
-  FLUSH_INTERVAL?: string;
-  GITHUB_TOKEN: string;
-  GITHUB_OWNER: string;
-  GITHUB_REPO: string;
-  GITHUB_WORKFLOW_ID: string;
-  ALLOWED_ORIGIN?: string;
-}
-
-export interface DispatchMessage {
-  type: string;
-  payload: unknown;
-  timestamp: string;
-  retryCount?: number;
-}
+// types/indexから型定義をインポート（ローカル定義を削除）
 import { ApiService } from './services/api-service';
 import { QueueService } from './services/queue-service';
 import { QueueHandler } from './handlers/queue-handler';
+import type { Env, DispatchMessage, PetRecord } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -73,14 +55,14 @@ async function createAndSendBatch(
     // 画像がないペットを取得
     const result = await apiService.fetchPetsWithoutImages(limit);
     
-    if (isErr(result)) {
+    if (Result.isErr(result)) {
       return {
         success: false,
         error: result.error.message
       };
     }
     
-    const pets = result.data;
+    const pets = Result.isOk(result) ? result.data : [];
     
     if (pets.length === 0) {
       return {
@@ -111,7 +93,7 @@ async function createAndSendBatch(
       batchId,
       count: pets.length,
       message: 'Batch queued for processing',
-      pets: pets.map(p => ({ id: p.id, name: p.name }))
+      pets: pets.map((p: PetRecord) => ({ id: p.id, name: p.name }))
     };
     
   } catch (error) {

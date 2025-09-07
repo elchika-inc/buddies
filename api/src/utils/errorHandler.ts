@@ -20,7 +20,7 @@ export const ErrorHandler = SharedErrorHandler;
 // PawMatch固有のエラークラス（互換性維持）
 export class PawMatchError extends AppError {
   public readonly status: number;
-  public readonly code: string;
+  public override readonly code: string;
   
   constructor(message: string, status = 500, code = 'INTERNAL_ERROR') {
     super(message, ErrorCategory.INTERNAL, status, code);
