@@ -126,7 +126,7 @@ export class PetController {
       }
 
       // 型ガードで有効なペットデータのみフィルタリング
-      const validPets = ensureArray(dbPets.results).filter(isRawPetRecord);
+      const validPets = ensureArray(dbPets.results, isRawPetRecord);
       
       if (validPets.length === 0) {
         throw new ServiceUnavailableError('Invalid pet data format');
@@ -188,7 +188,7 @@ export class PetController {
     const total = isCountResult(countResult) ? (countResult['total'] as number || countResult['count'] as number) : 0;
     
     // 型ガードで有効なペットデータのみ取得
-    const validPets = ensureArray(petsResult.results).filter(isRawPetRecord);
+    const validPets = ensureArray(petsResult.results, isRawPetRecord);
     const pets = validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet));
 
     // タイプが指定されていない場合は犬猫を分離して返す

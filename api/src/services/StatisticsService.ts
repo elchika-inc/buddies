@@ -10,14 +10,11 @@ import type { PetStatistics } from '../types/services';
 import type { DetailedStatistics } from '../types/statistics';
 import { CONFIG } from '../utils/constants';
 import { 
-  isPrefectureStats, 
-  isAgeStats, 
-  isRecentPet, 
-  isCoverageTrend,
   ensureArray,
   safeGet,
   isNumber,
-  isString
+  isString,
+  isRecord
 } from '../utils/type-guards';
 
 // データベースクエリ結果の型定義
@@ -146,6 +143,7 @@ export class StatisticsService {
     // 型ガードを使用して安全にデータを変換
     const validPrefectureStats = ensureArray(prefectureStats.results, (item): item is Record<string, unknown> => {
       return (
+        isRecord(item) &&
         safeGet(item, 'prefecture', isString, '') !== '' &&
         safeGet(item, 'count', isNumber, 0) >= 0
       );
@@ -157,7 +155,7 @@ export class StatisticsService {
     }));
 
     const validAgeDistribution = ensureArray(ageDistribution.results, (item): item is Record<string, unknown> => {
-      return safeGet(item, 'age', isNumber, -1) >= 0;
+      return isRecord(item) && safeGet(item, 'age', isNumber, -1) >= 0;
     }).map(stat => ({
       age: safeGet(stat, 'age', isNumber, 0),
       count: safeGet(stat, 'count', isNumber, 0)
@@ -165,6 +163,7 @@ export class StatisticsService {
 
     const validRecentPets = ensureArray(recentPets.results, (item): item is Record<string, unknown> => {
       return (
+        isRecord(item) &&
         safeGet(item, 'id', isString, '') !== '' &&
         safeGet(item, 'name', isString, '') !== ''
       );
@@ -176,7 +175,7 @@ export class StatisticsService {
     }));
 
     const validCoverageTrend = ensureArray(coverageTrend.results, (item): item is Record<string, unknown> => {
-      return safeGet(item, 'date', isString, '') !== '';
+      return isRecord(item) && safeGet(item, 'date', isString, '') !== '';
     }).map(trend => ({
       date: safeGet(trend, 'date', isString, ''),
       checked: safeGet(trend, 'checked', isNumber, 0),

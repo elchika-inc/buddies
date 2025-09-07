@@ -9,8 +9,28 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Context } from 'hono';
 import type { MessageBatch, ScheduledEvent } from '@cloudflare/workers-types';
-import type { Env, DispatchMessage } from './types';
-import { isErr } from './types/result';
+import { Result } from '../../shared/types/result';
+
+// 型定義
+export interface Env {
+  API_DISPATCHER_QUEUE: Queue;
+  DB?: D1Database;
+  QUEUE_TOKEN?: string;
+  MAX_BATCH_SIZE?: string;
+  FLUSH_INTERVAL?: string;
+  GITHUB_TOKEN: string;
+  GITHUB_OWNER: string;
+  GITHUB_REPO: string;
+  GITHUB_WORKFLOW_ID: string;
+  ALLOWED_ORIGIN?: string;
+}
+
+export interface DispatchMessage {
+  type: string;
+  payload: unknown;
+  timestamp: string;
+  retryCount?: number;
+}
 import { ApiService } from './services/api-service';
 import { QueueService } from './services/queue-service';
 import { QueueHandler } from './handlers/queue-handler';
@@ -79,7 +99,7 @@ async function createAndSendBatch(
     // Queueにメッセージを送信
     const sendResult = await queueService.sendDispatchMessage(petDispatchData, batchId);
     
-    if (isErr(sendResult)) {
+    if (Result.isErr(sendResult)) {
       return {
         success: false,
         error: sendResult.error.message

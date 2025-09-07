@@ -13,7 +13,8 @@
     "check": "./scripts/check-api.sh production",
     "check:local": "./scripts/check-api.sh local",
     "check:workers": "./scripts/check-api.sh workers",
-    "check:all": "npm run check:workers && npm run check"
+    "check:all": "npm run check:workers && npm run check",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",

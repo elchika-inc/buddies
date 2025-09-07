@@ -138,7 +138,9 @@ export function MatchHeader({
                     <div key={`${activeTab}-${pet.id}-${index}`} className="border border-gray-200 rounded-lg p-4 flex gap-4">
                       <div className="relative w-20 h-20 rounded-lg overflow-hidden">
                         <Image
-                          src={pet.imageUrl}
+                          src={pet.imageUrl || (petType === 'dog' 
+                            ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+                            : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')}
                           alt={pet.name}
                           fill
                           className="object-cover"

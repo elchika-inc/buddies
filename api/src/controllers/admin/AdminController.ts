@@ -146,23 +146,25 @@ export class AdminController {
   /**
    * UpdateFlagsRequestの検証
    */
-  private validateUpdateFlagsRequest(body: any): body is UpdateFlagsRequest {
+  private validateUpdateFlagsRequest(body: unknown): body is UpdateFlagsRequest {
+    const b = body as any;
     return !!(
-      body?.petType &&
-      body?.petIds &&
-      Array.isArray(body.petIds) &&
-      body?.flags &&
-      typeof body.flags === 'object'
+      b?.petType &&
+      b?.petIds &&
+      Array.isArray(b.petIds) &&
+      b?.flags &&
+      typeof b.flags === 'object'
     );
   }
 
   /**
    * UpdateImagesRequestの検証
    */
-  private validateUpdateImagesRequest(body: any): body is UpdateImagesRequest {
+  private validateUpdateImagesRequest(body: unknown): body is UpdateImagesRequest {
+    const b = body as any;
     return !!(
-      body?.results &&
-      Array.isArray(body.results)
+      b?.results &&
+      Array.isArray(b.results)
     );
   }
 

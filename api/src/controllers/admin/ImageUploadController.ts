@@ -1,5 +1,7 @@
 import { Context } from 'hono';
 import type { Env } from '../../types';
+import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import { UPLOAD_CONFIG, IMAGE_PATHS, HTTP_STATUS } from '../../config/constants';
 
 // リクエスト/レスポンスの型定義
 interface UploadScreenshotRequest {
@@ -83,19 +85,19 @@ export class ImageUploadController {
         return c.json<UploadResponse>({
           success: false,
           error: 'Invalid request body'
-        }, 400);
+        }, HTTP_STATUS.BAD_REQUEST);
       }
 
       const { petId, petType, imageData, captureMethod, sourceUrl } = body;
       
       // Base64をBufferに変換
-      const buffer = Buffer.from(imageData, 'base64');
+      const buffer = Uint8Array.from(atob(imageData), c => c.charCodeAt(UPLOAD_CONFIG.BASE64_DECODE_RADIX));
       
       // R2にアップロード
-      const key = `pets/${petType}s/${petId}/screenshot.png`;
+      const key = IMAGE_PATHS.generatePath(petType, petId, 'SCREENSHOT');
       await this.r2.put(key, buffer, {
         httpMetadata: {
-          contentType: 'image/png'
+          contentType: UPLOAD_CONFIG.CONTENT_TYPES.PNG
         },
         customMetadata: {
           'pet-id': petId,
@@ -109,7 +111,7 @@ export class ImageUploadController {
       // D1を更新
       await this.updatePetScreenshotStatus(petId, petType);
 
-      const url = `https://${c.env.R2_PUBLIC_URL || 'pawmatch-images.r2.dev'}/${key}`;
+      const url = `https://${c.env.R2_PUBLIC_URL || UPLOAD_CONFIG.DEFAULT_R2_URL}/${key}`;
 
       return c.json<UploadResponse>({
         success: true,
@@ -125,7 +127,7 @@ export class ImageUploadController {
       return c.json<UploadResponse>({
         success: false,
         error: error instanceof Error ? error.message : 'Upload failed'
-      }, 500);
+      }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -140,7 +142,7 @@ export class ImageUploadController {
         return c.json<UploadResponse>({
           success: false,
           error: 'Invalid request body'
-        }, 400);
+        }, HTTP_STATUS.BAD_REQUEST);
       }
 
       const { petId, petType, targetFormats, imageData } = body;
@@ -148,7 +150,7 @@ export class ImageUploadController {
 
       // 各フォーマットに対してアップロード
       for (const format of targetFormats) {
-        const buffer = Buffer.from(imageData!, 'base64');
+        const buffer = Uint8Array.from(atob(imageData!), c => c.charCodeAt(0));
         
         const key = format === 'jpeg'
           ? `pets/${petType}s/${petId}/original.jpg`
@@ -183,7 +185,7 @@ export class ImageUploadController {
       return c.json<UploadResponse>({
         success: false,
         error: error instanceof Error ? error.message : 'Conversion failed'
-      }, 500);
+      }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -197,11 +199,11 @@ export class ImageUploadController {
       if (!this.validateBatchRequest(body)) {
         return c.json<BatchUploadResponse>({
           success: false,
-          batchId: body?.batchId || 'unknown',
+          batchId: 'unknown',
           processed: 0,
           successful: 0,
           failed: 0
-        }, 400);
+        }, HTTP_STATUS.BAD_REQUEST);
       }
 
       const { results, batchId } = body;
@@ -216,7 +218,7 @@ export class ImageUploadController {
           
           // スクリーンショットのアップロード
           if (pet.screenshot) {
-            const screenshotBuffer = Buffer.from(pet.screenshot.data, 'base64');
+            const screenshotBuffer = Uint8Array.from(atob(pet.screenshot.data), c => c.charCodeAt(0));
             const screenshotKey = `pets/${pet.petType}s/${pet.petId}/screenshot.png`;
             
             uploadTasks.push(
@@ -229,13 +231,13 @@ export class ImageUploadController {
                   'capture-method': pet.screenshot.captureMethod || 'unknown',
                   'captured-at': new Date().toISOString()
                 }
-              })
+              }).then(() => {})
             );
           }
 
           // JPEG画像のアップロード
           if (pet.jpeg) {
-            const jpegBuffer = Buffer.from(pet.jpeg.data, 'base64');
+            const jpegBuffer = Uint8Array.from(atob(pet.jpeg.data), c => c.charCodeAt(0));
             const jpegKey = `pets/${pet.petType}s/${pet.petId}/original.jpg`;
             
             uploadTasks.push(
@@ -247,13 +249,13 @@ export class ImageUploadController {
                   'batch-id': batchId,
                   'converted-at': new Date().toISOString()
                 }
-              })
+              }).then(() => {})
             );
           }
 
           // WebP画像のアップロード
           if (pet.webp) {
-            const webpBuffer = Buffer.from(pet.webp.data, 'base64');
+            const webpBuffer = Uint8Array.from(atob(pet.webp.data), c => c.charCodeAt(0));
             const webpKey = `pets/${pet.petType}s/${pet.petId}/optimized.webp`;
             
             uploadTasks.push(
@@ -265,7 +267,7 @@ export class ImageUploadController {
                   'batch-id': batchId,
                   'converted-at': new Date().toISOString()
                 }
-              })
+              }).then(() => {})
             );
           }
 
@@ -317,7 +319,7 @@ export class ImageUploadController {
         processed: 0,
         successful: 0,
         failed: 0
-      }, 500);
+      }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -357,33 +359,42 @@ export class ImageUploadController {
   /**
    * リクエストバリデーション
    */
-  private validateScreenshotRequest(body: any): body is UploadScreenshotRequest {
+  private validateScreenshotRequest(body: unknown): body is UploadScreenshotRequest {
     return !!(
-      body?.petId &&
-      body?.petType &&
-      (body.petType === 'dog' || body.petType === 'cat') &&
-      body?.imageData &&
-      typeof body.imageData === 'string'
+      typeof body === 'object' &&
+      body !== null &&
+      'petId' in body &&
+      'petType' in body &&
+      'imageData' in body &&
+      typeof (body as UploadScreenshotRequest).petId === 'string' &&
+      ((body as UploadScreenshotRequest).petType === 'dog' || (body as UploadScreenshotRequest).petType === 'cat') &&
+      typeof (body as UploadScreenshotRequest).imageData === 'string'
     );
   }
 
-  private validateConvertRequest(body: any): body is ConvertImageRequest {
+  private validateConvertRequest(body: unknown): body is ConvertImageRequest {
     return !!(
-      body?.petId &&
-      body?.petType &&
-      (body.petType === 'dog' || body.petType === 'cat') &&
-      body?.targetFormats &&
-      Array.isArray(body.targetFormats) &&
-      body.targetFormats.length > 0 &&
-      (body?.imageData || body?.sourceKey)
+      typeof body === 'object' &&
+      body !== null &&
+      'petId' in body &&
+      'petType' in body &&
+      'targetFormats' in body &&
+      typeof (body as ConvertImageRequest).petId === 'string' &&
+      ((body as ConvertImageRequest).petType === 'dog' || (body as ConvertImageRequest).petType === 'cat') &&
+      Array.isArray((body as ConvertImageRequest).targetFormats) &&
+      (body as ConvertImageRequest).targetFormats.length > 0 &&
+      ('imageData' in body || 'sourceKey' in body)
     );
   }
 
-  private validateBatchRequest(body: any): body is BatchUploadRequest {
+  private validateBatchRequest(body: unknown): body is BatchUploadRequest {
     return !!(
-      body?.results &&
-      Array.isArray(body.results) &&
-      body?.batchId
+      typeof body === 'object' &&
+      body !== null &&
+      'results' in body &&
+      'batchId' in body &&
+      Array.isArray((body as BatchUploadRequest).results) &&
+      typeof (body as BatchUploadRequest).batchId === 'string'
     );
   }
 }

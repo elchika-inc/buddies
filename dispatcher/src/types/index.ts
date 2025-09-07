@@ -2,9 +2,25 @@
  * Dispatcher モジュールの型定義
  */
 
-import type { Queue, R2Bucket } from '@cloudflare/workers-types';
+import type { Queue, R2Bucket, D1Database } from '@cloudflare/workers-types';
+
+// 共通の型定義を再エクスポート
+export type { 
+  Pet, 
+  PetRecord,
+  CrawlerState,
+  CrawlerStateRecord,
+} from '../../types.d'
+
+export {
+  petToRecord,
+  recordToPet,
+  isPet,
+  isPetRecord as isPetRecordType
+} from '../../types'
 
 export interface Env {
+  DB?: D1Database;  // D1データベースを追加
   PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>;
   PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>;
   GITHUB_TOKEN: string;
@@ -13,6 +29,7 @@ export interface Env {
   WORKFLOW_FILE: string;
   API_URL: string;
   API_KEY?: string;
+  PUBLIC_API_KEY?: string;  // APIキーを追加
   R2_BUCKET?: R2Bucket;
   [key: string]: unknown;
 }
@@ -38,14 +55,7 @@ export interface DLQMessage extends DispatchMessage {
   failedAt: string;
 }
 
-export interface PetRecord {
-  id: string;
-  type: 'dog' | 'cat';
-  name: string;
-  sourceUrl: string;
-  hasJpeg: number;
-  hasWebp: number;
-}
+// PetRecordは共通型定義から使用するため削除
 
 export interface DispatchHistoryRecord {
   batchId: string;
@@ -57,18 +67,7 @@ export interface DispatchHistoryRecord {
   notes?: string;
 }
 
-// 型ガード関数
-export function isPetRecord(obj: unknown): obj is PetRecord {
-  if (!obj || typeof obj !== 'object') return false;
-  
-  const record = obj as Record<string, unknown>;
-  return typeof record['id'] === 'string' &&
-         typeof record['name'] === 'string' &&
-         (record['type'] === 'dog' || record['type'] === 'cat') &&
-         typeof record['sourceUrl'] === 'string' &&
-         typeof record['hasJpeg'] === 'number' &&
-         typeof record['hasWebp'] === 'number';
-}
+// 型ガード関数（共通型定義のisPetRecordと重複しないよう削除）
 
 export function isPetDispatchData(obj: unknown): obj is PetDispatchData {
   if (!obj || typeof obj !== 'object') return false;

@@ -4,9 +4,23 @@ import { apiKeys } from '../../../database/schema/schema';
 import { ApiKey, convertDrizzleApiKey, toDrizzleApiKey, ApiKeyType, Permission } from '../types/api-keys-schema';
 import { API_CONFIG, isExpired } from '../config/api-keys';
 
+/**
+ * APIキー管理サービス
+ * 
+ * @class ApiKeyService
+ * @description APIキーの検証、作成、更新、削除を行うサービス
+ * 認証とアクセス制御を統一的に管理
+ */
 export class ApiKeyService {
+  /** Drizzle ORMインスタンス */
   private db;
   
+  /**
+   * コンストラクタ
+   * 
+   * @param d1Database - D1データベースインスタンス
+   * @param cache - KVキャッシュインスタンス
+   */
   constructor(
     private d1Database: D1Database,
     private cache: KVNamespace
@@ -16,9 +30,14 @@ export class ApiKeyService {
 
   /**
    * APIキーを検索して取得
+   * 
+   * @param key - APIキー文字列
+   * @returns 有効なAPIキーオブジェクトまたはnull
+   * @description キャッシュファーストの戦略でAPIキーを検索し、
+   * 有効かつアクティブなキーのみを返す
    */
   async findValidKey(key: string): Promise<ApiKey | null> {
-    // キャッシュから取得を試みる
+    // キャッシュから取得を試みる（高速化のため）
     const cacheKey = `key:${key}`;
     const cachedData = await this.cache.get(cacheKey, 'json') as ApiKey | null;
     
@@ -26,14 +45,14 @@ export class ApiKeyService {
       return cachedData;
     }
 
-    // データベースから取得
+    // データベースから取得（キャッシュミスの場合）
     const results = await this.db
       .select()
       .from(apiKeys)
       .where(
         and(
           eq(apiKeys.key, key),
-          eq(apiKeys.isActive, 1)
+          eq(apiKeys.isActive, 1) // アクティブなキーのみ
         )
       )
       .limit(1);
@@ -42,9 +61,9 @@ export class ApiKeyService {
       return null;
     }
 
-    const apiKey = convertDrizzleApiKey(results[0]);
+    const apiKey = convertDrizzleApiKey(results[0]!);
 
-    // キャッシュに保存
+    // キャッシュに保存（次回のアクセス高速化のため）
     await this.cache.put(cacheKey, JSON.stringify(apiKey), {
       expirationTtl: API_CONFIG.CACHE.TTL_SECONDS
     });
@@ -54,6 +73,10 @@ export class ApiKeyService {
 
   /**
    * APIキーの有効期限をチェック
+   * 
+   * @param apiKey - 検証対象のAPIキー
+   * @returns 検証結果（有効性とエラーメッセージ）
+   * @description APIキーの有効期限が切れていないかを確認
    */
   validateExpiration(apiKey: ApiKey): { isValid: boolean; error?: string } {
     if (isExpired(apiKey.expiresAt)) {
@@ -67,6 +90,12 @@ export class ApiKeyService {
 
   /**
    * 権限をチェック
+   * 
+   * @param apiKey - 検証対象のAPIキー
+   * @param resource - アクセス対象のリソース名
+   * @param action - 実行する操作名
+   * @returns 権限検証結果
+   * @description APIキーが指定されたリソース・操作に対する権限を持つかチェック
    */
   validatePermissions(
     apiKey: ApiKey, 
@@ -94,6 +123,10 @@ export class ApiKeyService {
 
   /**
    * 最終使用時刻を更新（非同期）
+   * 
+   * @param apiKeyId - 更新対象のAPIキーID
+   * @description APIキーの使用状況を記録するため最終使用時刻を更新
+   * エラーが発生してもメイン処理は継続する
    */
   async updateLastUsed(apiKeyId: string): Promise<void> {
     // エラーが発生しても処理を継続するため、try-catchで囲む
@@ -111,6 +144,10 @@ export class ApiKeyService {
 
   /**
    * APIキーをIDで取得
+   * 
+   * @param id - APIキーのID
+   * @returns APIキーオブジェクトまたはnull
+   * @description 指定されたIDのアクティブなAPIキーを取得
    */
   async findById(id: string): Promise<ApiKey | null> {
     const results = await this.db
@@ -128,11 +165,14 @@ export class ApiKeyService {
       return null;
     }
 
-    return convertDrizzleApiKey(results[0]);
+    return convertDrizzleApiKey(results[0]!);
   }
 
   /**
    * APIキーの作成
+   * 
+   * @param params - 作成するAPIキーのパラメータ
+   * @description 新しいAPIキーをデータベースに作成
    */
   async create(params: {
     id: string;
@@ -161,6 +201,10 @@ export class ApiKeyService {
 
   /**
    * APIキーの無効化
+   * 
+   * @param id - 無効化するAPIキーのID
+   * @returns 無効化されたAPIキーまたはnull
+   * @description 指定されたAPIキーを無効化しキャッシュをクリア
    */
   async deactivate(id: string): Promise<ApiKey | null> {
     // まずキー情報を取得
@@ -186,6 +230,11 @@ export class ApiKeyService {
 
   /**
    * APIキーのローテーション
+   * 
+   * @param id - ローテーションするAPIキーのID
+   * @param newKey - 新しいAPIキー文字列
+   * @returns 更新されたAPIキーまたはnull
+   * @description セキュリティ上の理由でAPIキーを新しいキーに置き換え
    */
   async rotate(id: string, newKey: string): Promise<ApiKey | null> {
     // 既存のキー情報を取得
@@ -216,6 +265,9 @@ export class ApiKeyService {
 
   /**
    * 全APIキーの一覧取得
+   * 
+   * @returns APIキーの配列
+   * @description すべてのAPIキーを作成日時の降順で取得
    */
   async listAll(): Promise<ApiKey[]> {
     const results = await this.db
@@ -228,6 +280,9 @@ export class ApiKeyService {
 
   /**
    * キャッシュをクリア
+   * 
+   * @param key - クリアするAPIキー文字列
+   * @description 指定されたAPIキーのKVキャッシュを削除
    */
   async clearCache(key: string): Promise<void> {
     await this.cache.delete(`key:${key}`);
@@ -235,6 +290,10 @@ export class ApiKeyService {
 
   /**
    * 指定タイプのAPIキー一覧を取得
+   * 
+   * @param type - 取得するAPIキーのタイプ
+   * @returns 指定タイプのAPIキー配列
+   * @description public/internal/adminのいずれかのタイプでフィルタリング
    */
   async listByType(type: ApiKeyType): Promise<ApiKey[]> {
     const results = await this.db
@@ -248,6 +307,9 @@ export class ApiKeyService {
 
   /**
    * 有効期限切れのAPIキーを取得
+   * 
+   * @returns 有効期限が切れたAPIキーの配列
+   * @description アクティブだが有効期限が切れているAPIキーを一覧取得
    */
   async listExpiredKeys(): Promise<ApiKey[]> {
     const results = await this.db
@@ -265,6 +327,9 @@ export class ApiKeyService {
 
   /**
    * 統計情報を取得
+   * 
+   * @returns APIキーの統計情報
+   * @description 全体数、タイプ別数、アクティブ数、有効期限切れ数の統計
    */
   async getStatistics(): Promise<{
     total: number;

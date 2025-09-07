@@ -8,9 +8,11 @@
     "dev": "wrangler dev --local",
     "build": "wrangler build",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "drizzle-orm": "^0.44.4",
     "hono": "^4.9.4"
   },
   "devDependencies": {

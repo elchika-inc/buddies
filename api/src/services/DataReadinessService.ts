@@ -13,7 +13,7 @@ export class DataReadinessService {
   private metadataService: MetadataService;
   private statisticsService: StatisticsService;
 
-  constructor(private readonly db: D1Database) {
+  constructor(db: D1Database) {
     this.metadataService = new MetadataService(db);
     this.statisticsService = new StatisticsService(db);
   }

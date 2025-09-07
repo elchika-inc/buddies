@@ -1,21 +1,72 @@
 /**
  * シンプル化されたペットホームクローラー
- * 単一サイト対応のため、不要な抽象化を除去
+ * 
+ * @description ペットホーム（pet-home.jp）から保護犬・保護猫の情報を取得するクローラー
+ * 単一サイト対応のため、不要な抽象化を除去し、高速で信頼性の高い処理を実現
+ * @site https://www.pet-home.jp
  */
-import { Env } from './types'
-import type { Pet, CrawlResult } from '../../types'
+import type { Pet, CrawlResult } from '../../shared/types/index'
+
+/**
+ * Cloudflare Workers環境変数の型定義
+ * 
+ * @interface Env
+ * @description クローラーが使用するCloudflareリソースの型定義
+ */
+export interface Env {
+  /** D1データベースインスタンス */
+  DB: D1Database;
+  /** R2ストレージバケット */
+  R2_BUCKET: R2Bucket;
+  /** APIディスパッチャーキュー */
+  API_DISPATCHER_QUEUE: Queue;
+  /** CORS許可オリジン */
+  ALLOWED_ORIGIN?: string;
+  /** ローカル画像使用フラグ */
+  USE_LOCAL_IMAGES?: string;
+}
 import * as cheerio from 'cheerio'
+import { drizzle } from 'drizzle-orm/d1'
+import { eq } from 'drizzle-orm'
+import { pets } from '../../database/schema/schema'
+import { FETCH_CONFIG, HTTP_CONFIG } from './config/constants'
 
+/**
+ * ペットホームクローラークラス
+ * 
+ * @class PetHomeCrawler
+ * @description ペットホームサイトから保護動物情報を取得し、D1データベースに保存するクローラー
+ * HTMLパース、データ変換、画像保存を一括で処理
+ */
 export class PetHomeCrawler {
+  /** ベースURL */
   private static readonly BASE_URL = 'https://www.pet-home.jp'
-  private static readonly PETS_PER_PAGE = 20
-  private static readonly MAX_PAGES = 10
-  private static readonly USER_AGENT = 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)'
+  /** 1ページあたりのペット数 */
+  private static readonly PETS_PER_PAGE = FETCH_CONFIG.PETS_PER_PAGE
+  /** 最大ページ数 */
+  private static readonly MAX_PAGES = FETCH_CONFIG.MAX_PAGES
+  /** HTTPリクエスト用ユーザーエージェント */
+  private static readonly USER_AGENT = HTTP_CONFIG.USER_AGENT
+  /** Drizzle ORMインスタンス */
+  private db: ReturnType<typeof drizzle>
 
-  constructor(private env: Env) {}
+  /**
+   * コンストラクタ
+   * 
+   * @param env - Cloudflare Workers環境変数
+   */
+  constructor(private env: Env) {
+    this.db = drizzle(this.env.DB)
+  }
 
   /**
    * メインクロール処理
+   * 
+   * @param petType - クロール対象のペットタイプ（'dog' | 'cat'）
+   * @param limit - 取得するペットの上限数（デフォルト: 10）
+   * @returns クロール結果
+   * @description 指定されたタイプのペット情報を取得し、データベースに保存
+   * 新規作成、更新、エラーの統計情報も返す
    */
   async crawl(petType: 'dog' | 'cat', limit: number = 10): Promise<CrawlResult> {
     const result: CrawlResult = {
@@ -58,6 +109,12 @@ export class PetHomeCrawler {
 
   /**
    * ペット情報を取得
+   * 
+   * @param petType - 取得対象のペットタイプ
+   * @param limit - 取得上限数
+   * @returns ペット情報の配列
+   * @description ペットホームの一覧ページからペット情報を収集し、
+   * 詳細ページをパースして完整なペットデータを構築
    */
   private async fetchPets(petType: 'dog' | 'cat', limit: number): Promise<Pet[]> {
     const pets: Pet[] = []
@@ -85,6 +142,11 @@ export class PetHomeCrawler {
 
   /**
    * ページを取得
+   * 
+   * @param url - 取得対象のURL
+   * @returns HTMLコンテンツ
+   * @throws HTTPエラーまたはタイムアウトの場合
+   * @description 指定されたURLからHTMLを取得。タイムアウトとUser-Agentを設定
    */
   private async fetchPage(url: string): Promise<string> {
     const response = await fetch(url, {
@@ -101,6 +163,12 @@ export class PetHomeCrawler {
 
   /**
    * ペットリストをパース
+   * 
+   * @param html - 一覧ページのHTML
+   * @param _petType - ペットタイプ（現在未使用）
+   * @returns ペットIDと詳細URLの配列
+   * @description 一覧ページからペットの基本情報を抽出。
+   * CSSセレクタで.contribute_resultを操作
    */
   private parsePetList(
     html: string,
@@ -129,6 +197,13 @@ export class PetHomeCrawler {
 
   /**
    * ペット詳細をパース
+   * 
+   * @param html - 詳細ページのHTML
+   * @param petInfo - ペットの基本情報
+   * @param petType - ペットタイプ
+   * @returns 完整なペット情報
+   * @description 詳細ページから名前、品種、年齢、性別、所在地、
+   * 説明文、画像などの詳細情報を抽出してPetオブジェクトを構築
    */
   private parsePetDetail(
     html: string,
@@ -201,6 +276,11 @@ export class PetHomeCrawler {
 
   /**
    * 所在地をパース
+   * 
+   * @param locationText - 所在地テキスト
+   * @returns [都道府県, 市区町村] のタプル
+   * @description 「東京都 渋谷区」のような所在地文字列をパースし、
+   * 都道府県と市区町村に分離。デフォルトは東京都
    */
   private parseLocation(locationText: string): [string, string] {
     const parts = locationText.split(/\s+/)
@@ -230,88 +310,95 @@ export class PetHomeCrawler {
 
   /**
    * 既存ペットをチェック
+   * 
+   * @param id - ペットID
+   * @returns 既存の場合true、新規の場合false
+   * @description 指定されたIDのペットがデータベースに存在するか確認
    */
   private async checkExistingPet(id: string): Promise<boolean> {
-    const stmt = this.env['DB'].prepare('SELECT id FROM pets WHERE id = ?')
-    const result = await stmt.bind(id).first()
-    return !!result
+    const result = await this.db.select({ id: pets.id })
+      .from(pets)
+      .where(eq(pets.id, id))
+      .limit(1)
+    return result.length > 0
   }
 
   /**
    * ペットを作成
+   * 
+   * @param pet - 作成するペット情報
+   * @description 新しいペット情報をデータベースに挿入。
+   * Pet型からデータベースレコード型に変換して保存
    */
   private async createPet(pet: Pet): Promise<void> {
-    const stmt = this.env['DB'].prepare(`
-      INSERT INTO pets (
-        id, type, name, breed, age, gender, prefecture, city, location,
-        description, personality, medical_info, care_requirements,
-        image_url, shelter_name, shelter_contact, source_url, 
-        adoption_fee, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-
-    await stmt
-      .bind(
-        pet.id,
-        pet.type,
-        pet.name,
-        pet.breed,
-        pet.age,
-        pet.gender,
-        pet.prefecture,
-        pet.city,
-        pet.location,
-        pet.description,
-        JSON.stringify(pet.personality),
-        pet.medicalInfo,
-        JSON.stringify(pet.careRequirements),
-        pet.imageUrl,
-        pet.shelterName,
-        pet.shelterContact,
-        pet.sourceUrl,
-        0,
-        pet.createdAt
-      )
-      .run()
+    const { petToRecord } = await import('./types')
+    const record = petToRecord(pet)
+    
+    await this.db.insert(pets).values({
+      id: record.id,
+      type: record.type,
+      name: record.name,
+      breed: record.breed,
+      age: record.age,
+      gender: record.gender,
+      prefecture: record.prefecture,
+      city: record.city,
+      location: record.location,
+      description: record.description,
+      personality: record.personality,
+      medicalInfo: record.medical_info,
+      careRequirements: record.care_requirements,
+      imageUrl: record.image_url,
+      shelterName: record.shelter_name,
+      shelterContact: record.shelter_contact,
+      sourceUrl: record.source_url,
+      sourceId: record.source_id || 'pet-home',
+      adoptionFee: record.adoption_fee || 0,
+      createdAt: record.created_at || new Date().toISOString(),
+      updatedAt: record.updated_at || new Date().toISOString()
+    })
   }
 
   /**
    * ペットを更新
+   * 
+   * @param pet - 更新するペット情報
+   * @description 既存のペット情報を最新のデータで更新。
+   * ID以外の全フィールドとupdated_atを更新
    */
   private async updatePet(pet: Pet): Promise<void> {
-    const stmt = this.env['DB'].prepare(`
-      UPDATE pets SET
-        name = ?, breed = ?, age = ?, gender = ?, prefecture = ?, city = ?,
-        location = ?, description = ?, personality = ?, medical_info = ?,
-        care_requirements = ?, image_url = ?, shelter_name = ?, shelter_contact = ?,
-        source_url = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `)
-
-    await stmt
-      .bind(
-        pet.name,
-        pet.breed,
-        pet.age,
-        pet.gender,
-        pet.prefecture,
-        pet.city,
-        pet.location,
-        pet.description,
-        JSON.stringify(pet.personality),
-        pet.medicalInfo,
-        JSON.stringify(pet.careRequirements),
-        pet.imageUrl,
-        pet.shelterName,
-        pet.shelterContact,
-        pet.sourceUrl,
-        pet.id
-      )
-      .run()
+    const { petToRecord } = await import('./types')
+    const record = petToRecord(pet)
+    
+    await this.db.update(pets)
+      .set({
+        name: record.name,
+        breed: record.breed,
+        age: record.age,
+        gender: record.gender,
+        prefecture: record.prefecture,
+        city: record.city,
+        location: record.location,
+        description: record.description,
+        personality: record.personality,
+        medicalInfo: record.medical_info,
+        careRequirements: record.care_requirements,
+        imageUrl: record.image_url,
+        shelterName: record.shelter_name,
+        shelterContact: record.shelter_contact,
+        sourceUrl: record.source_url,
+        sourceId: record.source_id || 'pet-home',
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(pets.id, record.id))
   }
 
   /**
    * 画像をR2に保存
+   * 
+   * @param pet - 画像を保存するペット情報
+   * @description ペットの画像URLから画像をダウンロードし、
+   * Cloudflare R2ストレージに保存。エラーが発生しても処理を継続
    */
   private async saveImageToR2(pet: Pet): Promise<void> {
     if (!pet.imageUrl || !pet.imageUrl.startsWith('http')) {

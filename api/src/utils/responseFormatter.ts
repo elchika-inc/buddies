@@ -44,7 +44,10 @@ export function convertKeysToCamelCase<T = JsonValue>(obj: T): T {
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
       const camelKey = snakeToCamel(key);
-      converted[camelKey] = convertKeysToCamelCase(source[key]);
+      const value = source[key];
+      if (value !== undefined) {
+        converted[camelKey] = convertKeysToCamelCase(value);
+      }
     }
   }
   return converted as T;

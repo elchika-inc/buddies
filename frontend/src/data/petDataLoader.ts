@@ -10,8 +10,17 @@ import petApi from '@/services/api'
 // APIレスポンスをPet型に変換（snake_case と camelCase の両方に対応）
 function transformApiPet(apiPet: unknown): Pet {
   const pet = apiPet as Record<string, unknown>;
-  return {
-    ...pet,
+  
+  // 必須フィールドを確認
+  if (!pet['id'] || !pet['type'] || !pet['name']) {
+    throw new Error('Invalid pet data: missing required fields');
+  }
+  
+  // 基本的なPetオブジェクトを構築
+  const result: Pet = {
+    id: pet['id'] as string,
+    type: pet['type'] as 'dog' | 'cat',
+    name: pet['name'] as string,
     imageUrl: (pet['image_url'] || pet['imageUrl'] || '') as string,
     medicalInfo: (pet['medical_info'] || pet['medicalInfo'] || '') as string,
     careRequirements: (pet['care_requirements'] || pet['careRequirements'] || []) as string[],
@@ -22,7 +31,23 @@ function transformApiPet(apiPet: unknown): Pet {
     isVaccinated: (pet['is_vaccinated'] ?? pet['isVaccinated'] ?? false) as boolean,
     createdAt: (pet['created_at'] || pet['createdAt'] || '') as string,
     sourceUrl: (pet['source_url'] || pet['sourceUrl']) as string
-  } as Pet
+  };
+  
+  // その他のフィールドをコピー
+  const additionalFields = [
+    'breed', 'age', 'gender', 'location', 'description', 
+    'personality', 'healthStatus', 'size', 'weight', 'color', 
+    'hasJpeg', 'hasWebp', 'screenshotCompletedAt', 'imageCheckedAt', 
+    'sourceId', 'updatedAt', 'crawledAt'
+  ];
+  
+  for (const field of additionalFields) {
+    if (pet[field] !== undefined) {
+      (result as unknown as Record<string, unknown>)[field] = pet[field];
+    }
+  }
+  
+  return result;
 }
 
 // ペットデータをインクリメンタルに読み込む（ページネーション対応）

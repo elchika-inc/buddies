@@ -10,6 +10,7 @@ import {
   PawMatchError
 } from '../utils/error-handler';
 import { errorResponse } from '../utils/response-formatter';
+import type { JsonValue } from '../types/common';
 
 /**
  * エラーの詳細情報を取得
@@ -31,7 +32,7 @@ function getErrorDetails(error: unknown): ErrorDetails {
       status: error.status,
       code: error.code,
       message: error.message,
-      details: (error as any).details
+      details: 'details' in error ? (error as PawMatchError & { details: unknown }).details : undefined
     };
   }
 
@@ -79,7 +80,7 @@ function logError(error: unknown, context: Context): void {
   const requestInfo = {
     method: context.req.method,
     url: context.req.url,
-    headers: Object.fromEntries(context.req.raw.headers.entries()),
+    headers: Object.fromEntries([...context.req.raw.headers] as any),
     timestamp: new Date().toISOString()
   };
 
@@ -103,9 +104,10 @@ function logError(error: unknown, context: Context): void {
  * 
  * @description 全てのルートでエラーをキャッチし、統一的なエラーレスポンスを返す
  */
-export async function errorHandlerMiddleware(c: Context, next: Next) {
+export async function errorHandlerMiddleware(c: Context, next: Next): Promise<Response> {
   try {
     await next();
+    return c.res;
   } catch (error) {
     // エラーログの出力
     logError(error, c);
@@ -114,7 +116,7 @@ export async function errorHandlerMiddleware(c: Context, next: Next) {
     const details = getErrorDetails(error);
 
     // エラーレスポンスの生成
-    const response = errorResponse(details.message, details.code, details.details);
+    const response = errorResponse(details.message, details.code, details.details as JsonValue);
 
     // レスポンスヘッダーの設定
     c.header('Content-Type', 'application/json');
@@ -127,7 +129,7 @@ export async function errorHandlerMiddleware(c: Context, next: Next) {
     c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     // エラーレスポンスを返す
-    return c.json(response, details.status);
+    return c.json(response, details.status as any);
   }
 }
 
@@ -142,7 +144,7 @@ export function notFoundHandler(c: Context) {
     'ROUTE_NOT_FOUND'
   );
 
-  return c.json(response, 404 as any);
+  return c.json(response, 404);
 }
 
 /**
@@ -156,7 +158,7 @@ export function methodNotAllowedHandler(c: Context): Response {
     'METHOD_NOT_ALLOWED'
   );
 
-  return c.json(response, 405 as any);
+  return c.json(response, 405);
 }
 
 /**
@@ -168,7 +170,7 @@ export function validationErrorHandler(errors: unknown[]): ReturnType<typeof err
   const response = errorResponse(
     'Validation failed',
     'VALIDATION_ERROR',
-    errors as any
+    errors as JsonValue
   );
 
   return response;

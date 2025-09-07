@@ -1,9 +1,18 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { MessageBatch, ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
-import { Env, CrawlResult, CrawlerStateRecord, PetRecord } from './types'
+import type { CrawlResult, CrawlerStateRecord, PetRecord } from '../../shared/types/index'
 import { PetHomeCrawler } from './crawler'
-import { Result } from './types/result'
+import { Result } from '../../shared/types/result'
+
+// Env型定義
+export interface Env {
+  DB: D1Database;
+  R2_BUCKET: R2Bucket;
+  API_DISPATCHER_QUEUE: Queue;
+  ALLOWED_ORIGIN?: string;
+  USE_LOCAL_IMAGES?: string;
+}
 
 const app = new Hono<{ Bindings: Env }>()
 

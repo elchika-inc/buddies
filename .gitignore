@@ -95,6 +95,9 @@ app/public/images/*.webp
 # Service Worker生成ファイル
 app/public/workbox-*.js
 app/public/fallback-*.js
+frontend/public/workbox-*.js
+frontend/public/fallback-*.js
+frontend/public/sw.js.map
 
 # =====================================
 # Testing & Coverage

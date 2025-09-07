@@ -8,32 +8,32 @@ const GENDER_PATTERNS = {
   female: ['♀', 'メス', '女の子', 'female', '女']
 } as const;
 
-export type NormalizedGender = '男の子' | '女の子' | '不明';
+export type NormalizedGender = 'male' | 'female' | 'unknown';
 
 /**
  * 性別文字列を正規化する
  * @param genderText 正規化する性別文字列
- * @returns 正規化された性別（'男の子' | '女の子' | '不明'）
+ * @returns 正規化された性別（'male' | 'female' | 'unknown'）
  */
-export function normalizeGender(genderText: string): NormalizedGender {
+export function normalizeGender(genderText: string | null | undefined): NormalizedGender {
   if (!genderText) {
-    return '不明';
+    return 'unknown';
   }
   
   const text = genderText.toLowerCase().trim();
   
   // 男の子のパターンチェック
   if (GENDER_PATTERNS.male.some(pattern => text.includes(pattern.toLowerCase()))) {
-    return '男の子';
+    return 'male';
   }
   
   // 女の子のパターンチェック
   if (GENDER_PATTERNS.female.some(pattern => text.includes(pattern.toLowerCase()))) {
-    return '女の子';
+    return 'female';
   }
   
   // 不明のパターン
-  return '不明';
+  return 'unknown';
 }
 
 /**
@@ -42,7 +42,7 @@ export function normalizeGender(genderText: string): NormalizedGender {
  * @returns 有効な性別かどうか
  */
 export function isValidGender(gender: string): gender is NormalizedGender {
-  return gender === '男の子' || gender === '女の子' || gender === '不明';
+  return gender === 'male' || gender === 'female' || gender === 'unknown';
 }
 
 /**

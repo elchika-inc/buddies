@@ -11,6 +11,7 @@ export interface Env {
   // R2 Storage
   R2_BUCKET: R2Bucket;
   IMAGES_BUCKET: R2Bucket;
+  R2_PUBLIC_URL?: string;
   
   // Image Worker
   IMAGE_WORKER?: {

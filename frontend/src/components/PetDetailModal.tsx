@@ -21,7 +21,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
         <div className="relative flex-1 overflow-y-auto pb-20 sm:pb-0">
           <div className="relative h-80 sm:h-96">
             <Image
-              src={pet.imageUrl}
+              src={pet.imageUrl || (pet.type === 'dog' 
+                ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+                : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')}
               alt={pet.name}
               fill
               className="object-cover sm:rounded-t-2xl"
@@ -49,10 +51,12 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
               </div>
               <div className="text-center p-2 sm:p-4 bg-green-50 rounded-lg">
                 <div className="text-lg sm:text-2xl mb-1 sm:mb-2">
-                  {pet.gender === '男の子' ? '♂️' : pet.gender === '女の子' ? '♀️' : '❓'}
+                  {pet.gender === 'male' ? '♂️' : pet.gender === 'female' ? '♀️' : '❓'}
                 </div>
                 <div className="font-semibold text-gray-800 text-xs sm:text-base">性別</div>
-                <div className="text-gray-600 text-xs sm:text-base">{pet.gender}</div>
+                <div className="text-gray-600 text-xs sm:text-base">
+                  {pet.gender === 'male' ? '男の子' : pet.gender === 'female' ? '女の子' : pet.gender || '不明'}
+                </div>
               </div>
               <div className="text-center p-2 sm:p-4 bg-yellow-50 rounded-lg">
                 <div className="text-lg sm:text-2xl mb-1 sm:mb-2">📍</div>

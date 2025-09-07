@@ -29,6 +29,13 @@ dead_letter_queue = "pawmatch-dispatch-dlq"
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
+# D1データベース設定（APIと共有）
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+migrations_dir = "../database/migrations"
+
 # R2バケット設定（オプション: R2から画像削除する場合）
 [[r2_buckets]]
 binding = "R2_BUCKET"
@@ -43,6 +50,21 @@ crons = [
 # Observability設定
 [observability.logs]
 enabled = true
+
+# 本番環境設定
+[env.production]
+name = "pawmatch-dispatcher"
+
+# Production環境でもD1とR2バインディングを追加
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
+migrations_dir = "../database/migrations"
+
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "pawmatch-images"
 
 # 開発環境設定
 [env.development]

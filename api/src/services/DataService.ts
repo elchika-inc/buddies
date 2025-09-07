@@ -26,8 +26,8 @@ export class DataService {
   private healthCheckService: HealthCheckService;
 
   constructor(
-    private readonly db: D1Database,
-    private readonly r2?: R2Bucket
+    db: D1Database,
+    r2?: R2Bucket
   ) {
     this.metadataService = new MetadataService(db);
     this.readinessService = new ReadinessService(db);

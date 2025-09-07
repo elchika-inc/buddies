@@ -25,7 +25,7 @@ const app = new Hono<{ Bindings: Env }>();
 /**
  * マスターキー認証ミドルウェア
  */
-const requireMasterKey = async (c: Context<{ Bindings: Env }>, next: Next) => {
+const requireMasterKey = async (c: Context<{ Bindings: Env }>, next: Next): Promise<Response | void> => {
   const masterSecret = c.req.header('X-Master-Secret');
   const expectedSecret = c.env.MASTER_SECRET;
   
@@ -81,8 +81,8 @@ app.post('/validate', async (c) => {
     const body = validateKeySchema.parse(await c.req.json());
     
     // サービスの初期化
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
-    const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
+    const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE as any);
     
     // APIキーの取得
     const apiKey = await apiKeyService.findValidKey(body.key);
@@ -183,7 +183,7 @@ app.post('/validate', async (c) => {
 app.post('/admin/keys', requireMasterKey, async (c) => {
   try {
     const body = createKeySchema.parse(await c.req.json());
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
     
     // APIキーとIDを生成
     const key = generateApiKey();
@@ -237,7 +237,7 @@ app.post('/admin/keys', requireMasterKey, async (c) => {
  */
 app.get('/admin/keys', requireMasterKey, async (c) => {
   try {
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
     const keys = await apiKeyService.listAll();
     
     // キー文字列を除外してレスポンス
@@ -266,7 +266,7 @@ app.get('/admin/keys', requireMasterKey, async (c) => {
 app.delete('/admin/keys/:id', requireMasterKey, async (c) => {
   try {
     const id = c.req.param('id');
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
     
     const deactivated = await apiKeyService.deactivate(id);
     
@@ -301,7 +301,7 @@ app.delete('/admin/keys/:id', requireMasterKey, async (c) => {
 app.post('/admin/keys/:id/rotate', requireMasterKey, async (c) => {
   try {
     const id = c.req.param('id');
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
     
     // 新しいキーを生成
     const newKey = generateApiKey();
@@ -340,8 +340,8 @@ app.post('/admin/keys/:id/rotate', requireMasterKey, async (c) => {
  */
 app.get('/admin/rate-limits', requireMasterKey, async (c) => {
   try {
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE);
-    const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE);
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any);
+    const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE as any);
     
     // 全APIキーを取得
     const keys = await apiKeyService.listAll();

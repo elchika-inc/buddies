@@ -50,7 +50,7 @@ crawler.post('/pets/bulk', async (c) => {
         results.success++;
       } catch (error) {
         results.failed++;
-        results.errors.push({
+        (results.errors as Array<{petId: string; error: string}>).push({
           petId: pet.id,
           error: error instanceof Error ? error.message : 'Unknown error'
         });
@@ -103,7 +103,7 @@ crawler.get('/state/:source/:type?', async (c) => {
     const petType = c.req.param('type');
     
     let query = 'SELECT * FROM crawler_states WHERE source_id = ?';
-    const params: any[] = [sourceId];
+    const params: Array<string> = [sourceId];
     
     if (petType) {
       query += ' AND pet_type = ?';
@@ -112,8 +112,8 @@ crawler.get('/state/:source/:type?', async (c) => {
     
     const result = await c.env.DB.prepare(query).bind(...params).first();
     
-    if (result && result.checkpoint) {
-      result.checkpoint = JSON.parse(result.checkpoint as string);
+    if (result && result['checkpoint']) {
+      result['checkpoint'] = JSON.parse(result['checkpoint'] as string);
     }
     
     return c.json(result || null);

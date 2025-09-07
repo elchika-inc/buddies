@@ -3,7 +3,7 @@ import { Prefecture } from '@/types/location';
 /**
  * 住所文字列を都道府県と市町村に分離する
  */
-export function parseLocation(location: string): { 
+export function parseLocation(location: string | null | undefined): { 
   prefecture: Prefecture | '不明', 
   city: string 
 } {

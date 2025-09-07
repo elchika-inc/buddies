@@ -15,7 +15,7 @@ export {
   NotFoundError,
   ServiceUnavailableError,
   handleError
-} from './error-handler';
+} from './errorHandler';
 
 // レスポンスフォーマッター
 export {
@@ -26,7 +26,7 @@ export {
   snakeToCamel,
   type ApiResponse,
   type ApiErrorResponse
-} from './response-formatter';
+} from './responseFormatter';
 
 // バリデーション
 export {
@@ -44,7 +44,7 @@ export {
   apiToDb,
   transformPetRecord,
   type ApiPetRecord
-} from './data-transformer';
+} from './dataTransformer';
 
 // 型ガード
 export {
@@ -53,30 +53,24 @@ export {
   isNumber,
   isBoolean,
   isObject,
+  isRecord,
   isArray,
+  isStringArray,
   isNullOrUndefined,
   isDefined,
   // 特定型チェック
   isPetType,
-  isGender,
-  isServiceStatus,
-  isSyncStatus,
+  isPetStatus,
+  isPet,
+  isImageFormat,
   // モデル型ガード
   isRawPetRecord,
   isCountResult,
-  isDataReadiness,
-  isPetStatistics,
-  isServiceHealth,
-  isServiceHealthArray,
-  isPrefectureStats,
-  isAgeStats,
-  isRecentPet,
-  isCoverageTrend,
-  isDetailedStatistics,
+  isApiResponse,
+  isStatisticsData,
   // ユーティリティ
-  isQueryResult,
-  safeCast,
-  combineGuards,
   ensureArray,
-  safeGet
-} from './type-guards';
+  safeGet,
+  safeJsonParse,
+  throwInvalidDataError
+} from './typeGuards';

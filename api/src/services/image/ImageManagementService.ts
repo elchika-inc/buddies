@@ -25,15 +25,13 @@ interface ImageStatus {
  */
 export class ImageManagementService {
   private storageService: ImageStorageService;
-  private processingService: ImageProcessingService;
 
   constructor(
     private readonly db: D1Database,
     storageService: ImageStorageService,
-    processingService: ImageProcessingService
+    _processingService: ImageProcessingService
   ) {
     this.storageService = storageService;
-    this.processingService = processingService;
   }
 
   /**
@@ -62,8 +60,8 @@ export class ImageManagementService {
 
       // 各ペットの画像ステータスを確認
       for (const pet of pets.results) {
-        const jpegPath = this.storageService.buildImagePath(petType, pet.id as string, 'jpeg');
-        const webpPath = this.storageService.buildImagePath(petType, pet.id as string, 'webp');
+        const jpegPath = this.storageService.buildImagePath(petType, pet['id'] as string, 'jpeg');
+        const webpPath = this.storageService.buildImagePath(petType, pet['id'] as string, 'webp');
 
         const [jpegExists, webpExists] = await Promise.all([
           this.storageService.exists(jpegPath),
@@ -74,8 +72,8 @@ export class ImageManagementService {
         const webpObject = webpExists ? await this.storageService.getImage(webpPath) : null;
 
         const detail: ImageStatusDetail = {
-          id: pet.id as string,
-          name: pet.name as string,
+          id: pet['id'] as string,
+          name: pet['name'] as string,
           hasJpeg: jpegExists,
           hasWebp: webpExists,
           jpegSize: jpegObject?.size || 0,
@@ -124,7 +122,7 @@ export class ImageManagementService {
       // バッチ処理で同期
       for (const pet of pets.results) {
         try {
-          const petId = pet.id as string;
+          const petId = pet['id'] as string;
           const jpegPath = this.storageService.buildImagePath(petType, petId, 'jpeg');
           const webpPath = this.storageService.buildImagePath(petType, petId, 'webp');
 
@@ -133,8 +131,8 @@ export class ImageManagementService {
             this.storageService.exists(webpPath)
           ]);
 
-          const currentHasJpeg = pet.has_jpeg === 1;
-          const currentHasWebp = pet.has_webp === 1;
+          const currentHasJpeg = pet['has_jpeg'] === 1;
+          const currentHasWebp = pet['has_webp'] === 1;
 
           // フラグが異なる場合は更新
           if (jpegExists !== currentHasJpeg || webpExists !== currentHasWebp) {
@@ -148,7 +146,7 @@ export class ImageManagementService {
             console.log(`[ImageManagementService] Updated flags for pet ${petId}`);
           }
         } catch (error) {
-          const errorMessage = `Failed to sync pet ${pet.id}: ${error}`;
+          const errorMessage = `Failed to sync pet ${pet['id']}: ${error}`;
           console.error(`[ImageManagementService] ${errorMessage}`);
           errors.push(errorMessage);
         }

@@ -86,15 +86,16 @@ export function dbToApi<T = unknown>(record: unknown): T {
   
   // boolean型への変換（DB: 0/1 → API: boolean）
   if (isRecord(transformed)) {
+    const mutableTransformed = transformed as any;
     // has_jpeg/has_webp のような boolean フィールドを変換
-    if ('hasJpeg' in transformed && typeof transformed.hasJpeg === 'number') {
-      transformed.hasJpeg = transformed.hasJpeg === 1;
+    if ('hasJpeg' in transformed && typeof transformed['hasJpeg'] === 'number') {
+      mutableTransformed.hasJpeg = transformed['hasJpeg'] === 1;
     }
-    if ('hasWebp' in transformed && typeof transformed.hasWebp === 'number') {
-      transformed.hasWebp = transformed.hasWebp === 1;
+    if ('hasWebp' in transformed && typeof transformed['hasWebp'] === 'number') {
+      mutableTransformed.hasWebp = transformed['hasWebp'] === 1;
     }
-    if ('isReady' in transformed && typeof transformed.isReady === 'number') {
-      transformed.isReady = transformed.isReady === 1;
+    if ('isReady' in transformed && typeof transformed['isReady'] === 'number') {
+      mutableTransformed.isReady = transformed['isReady'] === 1;
     }
   }
 
@@ -113,15 +114,16 @@ export function apiToDb<T = unknown>(data: unknown): T {
   
   // boolean型への変換（API: boolean → DB: 0/1）
   if (isRecord(transformed)) {
+    const mutableTransformed = transformed as any;
     // has_jpeg/has_webp のような boolean フィールドを変換
-    if ('has_jpeg' in transformed && typeof transformed.has_jpeg === 'boolean') {
-      transformed.has_jpeg = transformed.has_jpeg ? 1 : 0;
+    if ('has_jpeg' in transformed && typeof transformed['has_jpeg'] === 'boolean') {
+      mutableTransformed['has_jpeg'] = transformed['has_jpeg'] ? 1 : 0;
     }
-    if ('has_webp' in transformed && typeof transformed.has_webp === 'boolean') {
-      transformed.has_webp = transformed.has_webp ? 1 : 0;
+    if ('has_webp' in transformed && typeof transformed['has_webp'] === 'boolean') {
+      mutableTransformed['has_webp'] = transformed['has_webp'] ? 1 : 0;
     }
-    if ('is_ready' in transformed && typeof transformed.is_ready === 'boolean') {
-      transformed.is_ready = transformed.is_ready ? 1 : 0;
+    if ('is_ready' in transformed && typeof transformed['is_ready'] === 'boolean') {
+      mutableTransformed['is_ready'] = transformed['is_ready'] ? 1 : 0;
     }
   }
 

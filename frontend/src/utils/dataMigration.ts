@@ -54,7 +54,7 @@ export function migrateAllCatData(cats: Cat[]): Cat[] {
 /**
  * 地域フィルター機能
  */
-export function filterPetsByLocation<T extends { prefecture?: string; city?: string }>(
+export function filterPetsByLocation<T extends { prefecture?: string | null; city?: string | null }>(
   pets: T[], 
   filters: {
     prefecture?: string
@@ -75,7 +75,7 @@ export function filterPetsByLocation<T extends { prefecture?: string; city?: str
 /**
  * 都道府県別グルーピング
  */
-export function groupPetsByPrefecture<T extends { prefecture?: string }>(pets: T[]): Record<string, T[]> {
+export function groupPetsByPrefecture<T extends { prefecture?: string | null }>(pets: T[]): Record<string, T[]> {
   return pets.reduce((groups, pet) => {
     const key = pet.prefecture || GROUPING_KEYS.UNKNOWN
     groups[key] = groups[key] || []
@@ -87,7 +87,7 @@ export function groupPetsByPrefecture<T extends { prefecture?: string }>(pets: T
 /**
  * 市町村別グルーピング（都道府県内で）
  */
-export function groupPetsByCity<T extends { city?: string }>(pets: T[]): Record<string, T[]> {
+export function groupPetsByCity<T extends { city?: string | null }>(pets: T[]): Record<string, T[]> {
   return pets.reduce((groups, pet) => {
     const key = pet.city || GROUPING_KEYS.UNKNOWN
     groups[key] = groups[key] || []
@@ -99,7 +99,7 @@ export function groupPetsByCity<T extends { city?: string }>(pets: T[]): Record<
 /**
  * 都道府県一覧を取得（データから抽出）
  */
-export function getUniquePrefectures<T extends { prefecture?: string }>(pets: T[]): string[] {
+export function getUniquePrefectures<T extends { prefecture?: string | null }>(pets: T[]): string[] {
   const prefectures = pets
     .map(pet => pet.prefecture)
     .filter((prefecture): prefecture is string => Boolean(prefecture))
@@ -111,7 +111,7 @@ export function getUniquePrefectures<T extends { prefecture?: string }>(pets: T[
 /**
  * 市町村一覧を取得（指定した都道府県内で）
  */
-export function getUniqueCities<T extends { prefecture?: string; city?: string }>(
+export function getUniqueCities<T extends { prefecture?: string | null; city?: string | null }>(
   pets: T[], 
   targetPrefecture?: string
 ): string[] {

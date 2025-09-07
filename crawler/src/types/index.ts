@@ -7,14 +7,14 @@ export type {
   CrawlResult,
   CrawlerState,
   CrawlerStateRecord,
-} from '../../../types'
+} from '../../types.d'
 
 export {
   petToRecord,
   recordToPet,
   isPet,
   isPetRecord
-} from '../../../types'
+} from '../../types'
 
 export interface Env {
   IMAGES_BUCKET: R2Bucket;

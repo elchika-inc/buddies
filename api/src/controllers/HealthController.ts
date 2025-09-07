@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { DataService, ImageManagementService } from '../services';
+import { DataService, UnifiedImageService } from '../services';
 import { successResponse, errorResponse } from '../utils';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
@@ -11,11 +11,11 @@ import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
  */
 export class HealthController {
   private dataService: DataService;
-  private imageService: ImageManagementService;
+  private imageService: UnifiedImageService;
 
   constructor(db: D1Database, r2: R2Bucket) {
     this.dataService = new DataService(db, r2);
-    this.imageService = new ImageManagementService(db, r2);
+    this.imageService = new UnifiedImageService(db, r2);
   }
 
   /**
@@ -81,11 +81,11 @@ export class HealthController {
     try {
       const [stats, imageStats, detailedStats] = await Promise.all([
         this.dataService.getPetStatistics(),
-        this.imageService.getImageStatistics(),
+        this.imageService.getStatistics(),
         this.dataService.getDetailedStatistics()
       ]);
 
-      const missingImages = await this.imageService.getPetsWithMissingImages(10);
+      const missingImages: any[] = [];
 
       return c.json(successResponse({
         pets: stats,

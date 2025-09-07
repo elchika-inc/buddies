@@ -71,7 +71,7 @@ export interface ImageRequest {
  */
 export interface ImageResult {
   success: boolean;
-  body?: ArrayBuffer | ReadableStream;
+  body?: ArrayBuffer | ReadableStream<any>;
   contentType?: string;
   headers?: Record<string, string>;
   error?: string;

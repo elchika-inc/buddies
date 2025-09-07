@@ -93,7 +93,7 @@ interface DetailedStats {
 export class SyncStatusService {
   constructor(
     private readonly db: D1Database,
-    private readonly r2: R2Bucket
+    _r2: R2Bucket
   ) {}
 
   /**

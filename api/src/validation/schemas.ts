@@ -149,8 +149,8 @@ export class ValidationError extends Error {
 /**
  * 部分的なスキーマバリデーション
  */
-export function partialValidate<T>(
-  schema: z.ZodType<T>,
+export function partialValidate<T extends Record<string, any>>(
+  schema: z.ZodObject<any>,
   data: unknown
 ): Partial<T> | null {
   const partialSchema = schema.partial();
@@ -161,5 +161,5 @@ export function partialValidate<T>(
     return null;
   }
   
-  return result.data;
+  return result.data as Partial<T>;
 }

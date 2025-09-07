@@ -23,9 +23,9 @@ export class ImageStorageService {
   /**
    * 画像を保存
    */
-  async saveImage(key: string, data: ArrayBuffer | ReadableStream, contentType: string): Promise<void> {
+  async saveImage(key: string, data: ArrayBuffer | ReadableStream<any>, contentType: string): Promise<void> {
     try {
-      await this.r2.put(key, data, {
+      await this.r2.put(key, data as any, {
         httpMetadata: {
           contentType
         }

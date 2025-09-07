@@ -84,7 +84,7 @@ export class GitHubService {
     const petsData = pets.map(pet => ({
       id: pet.id,
       name: pet.name,
-      sourceUrl: pet.sourceUrl,
+      sourceUrl: pet.source_url || '',
       type: pet.type
     }));
 

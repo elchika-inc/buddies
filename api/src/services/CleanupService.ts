@@ -111,25 +111,25 @@ export class CleanupService {
       const totalResult = await this.db.prepare(`
         SELECT COUNT(*) as count FROM pets WHERE is_deleted = FALSE
       `).first();
-      stats.totalPets = totalResult?.count as number || 0;
+      stats.totalPets = totalResult?.['count'] as number || 0;
 
       const expiredResult = await this.db.prepare(`
         SELECT COUNT(*) as count FROM pets 
         WHERE expires_at < datetime('now') AND is_deleted = FALSE
       `).first();
-      stats.expiredPets = expiredResult?.count as number || 0;
+      stats.expiredPets = expiredResult?.['count'] as number || 0;
 
       const deletedResult = await this.db.prepare(`
         SELECT COUNT(*) as count FROM pets WHERE is_deleted = TRUE
       `).first();
-      stats.deletedPets = deletedResult?.count as number || 0;
+      stats.deletedPets = deletedResult?.['count'] as number || 0;
 
       const upcomingResult = await this.db.prepare(`
         SELECT COUNT(*) as count FROM pets 
         WHERE expires_at BETWEEN datetime('now') AND datetime('now', '+7 days')
         AND is_deleted = FALSE
       `).first();
-      stats.upcomingExpirations = upcomingResult?.count as number || 0;
+      stats.upcomingExpirations = upcomingResult?.['count'] as number || 0;
     } catch (error) {
       console.error('Failed to get cleanup stats:', error);
     }

@@ -35,6 +35,7 @@ enabled = true
 
 # カスタムドメイン設定
 [env.production]
+name = "pawmatch-api"
 vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }
 route = { pattern = "pawmatch-api.elchika.app/*", zone_name = "elchika.app" }
 

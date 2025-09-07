@@ -1,4 +1,26 @@
-import type { Pet, PetStatus, ApiResponse, StatisticsData } from '../types/api';
+import type { Pet } from '../types/models';
+
+// 型定義
+export type PetStatus = 'healthy' | 'medical_care' | 'special_needs';
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string | { message: string };
+}
+
+export interface StatisticsData {
+  totalPets: number;
+  totalDogs: number;
+  totalCats: number;
+  prefectureDistribution: Record<string, number>;
+  breedDistribution: Record<string, number>;
+  genderDistribution: Record<string, number>;
+  ageDistribution: Record<string, number>;
+  organizationDistribution: Record<string, number>;
+  storageUsage: Record<string, unknown>;
+  healthMetrics: Record<string, unknown>;
+}
 import type { PetType, ImageFormat } from './constants';
 import { PET_TYPES, IMAGE_FORMATS } from './constants';
 
@@ -36,7 +58,7 @@ export function isPet(value: unknown): value is Pet {
     (pet['jpegSize'] === undefined || typeof pet['jpegSize'] === 'number') &&
     (pet['webpSize'] === undefined || typeof pet['webpSize'] === 'number') &&
     (pet['status'] === undefined || isPetStatus(pet['status'])) &&
-    (pet['detailedInfo'] === undefined || isDetailedInfo(pet['detailedInfo'])) &&
+    (pet['medicalInfo'] === undefined || typeof pet['medicalInfo'] === 'string') &&
     (pet['updatedAt'] === undefined || typeof pet['updatedAt'] === 'string' || pet['updatedAt'] instanceof Date)
   );
 }
@@ -47,19 +69,6 @@ export function isPetStatus(value: unknown): value is PetStatus {
   return typeof value === 'string' && validStatuses.includes(value as PetStatus);
 }
 
-// 型ガード関数：DetailedInfo
-function isDetailedInfo(value: unknown): value is Pet['detailedInfo'] {
-  if (value === null) return true;
-  if (!value || typeof value !== 'object') return false;
-  
-  const info = value as Record<string, unknown>;
-  
-  return (
-    (info['personality'] === undefined || typeof info['personality'] === 'string') &&
-    (info['healthNotes'] === undefined || typeof info['healthNotes'] === 'string') &&
-    (info['requirements'] === undefined || typeof info['requirements'] === 'string')
-  );
-}
 
 // 型ガード関数：ApiResponse
 export function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
@@ -136,6 +145,21 @@ export function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
 }
 
+// 型ガード関数：オブジェクト
+export function isObject(value: unknown): value is object {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+// 型ガード関数：null or undefined
+export function isNullOrUndefined(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
+// 型ガード関数：defined (not null or undefined)
+export function isDefined<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
 // 安全なJSONパース
 export function safeJsonParse<T>(json: string, guard?: (value: unknown) => value is T): T | null {
   try {
@@ -170,9 +194,13 @@ export function isCountResult(value: unknown): value is { count: number; [key: s
   return typeof result['count'] === 'number' || typeof result['total'] === 'number';
 }
 
-// 配列を安全に確保する
-export function ensureArray<T>(value: T | T[]): T[] {
-  return Array.isArray(value) ? value : [value];
+// 配列を安全に確保し、フィルタリングする
+export function ensureArray<T>(
+  value: T[] | undefined | null, 
+  guard: (item: unknown) => item is T
+): T[] {
+  if (!value || !Array.isArray(value)) return [];
+  return value.filter((item): item is T => guard(item));
 }
 
 // オブジェクトから安全に値を取得する
@@ -184,4 +212,46 @@ export function safeGet<T>(
 ): T {
   const value = obj[key];
   return guard(value) ? value : defaultValue;
+}
+
+// 詳細統計用の型ガード関数
+export function isPrefectureStats(value: unknown): value is { prefecture: string; count: number; dogs: number; cats: number } {
+  if (!value || typeof value !== 'object') return false;
+  const stats = value as Record<string, unknown>;
+  return (
+    typeof stats['prefecture'] === 'string' &&
+    typeof stats['count'] === 'number' &&
+    typeof stats['dogs'] === 'number' &&
+    typeof stats['cats'] === 'number'
+  );
+}
+
+export function isAgeStats(value: unknown): value is { age: number; count: number } {
+  if (!value || typeof value !== 'object') return false;
+  const stats = value as Record<string, unknown>;
+  return (
+    typeof stats['age'] === 'number' &&
+    typeof stats['count'] === 'number'
+  );
+}
+
+export function isRecentPet(value: unknown): value is { id: string; type: 'dog' | 'cat'; name: string; created_at: string } {
+  if (!value || typeof value !== 'object') return false;
+  const pet = value as Record<string, unknown>;
+  return (
+    typeof pet['id'] === 'string' &&
+    (pet['type'] === 'dog' || pet['type'] === 'cat') &&
+    typeof pet['name'] === 'string' &&
+    typeof pet['created_at'] === 'string'
+  );
+}
+
+export function isCoverageTrend(value: unknown): value is { date: string; checked: number; with_images: number } {
+  if (!value || typeof value !== 'object') return false;
+  const trend = value as Record<string, unknown>;
+  return (
+    typeof trend['date'] === 'string' &&
+    typeof trend['checked'] === 'number' &&
+    typeof trend['with_images'] === 'number'
+  );
 }

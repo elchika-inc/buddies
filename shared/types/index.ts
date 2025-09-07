@@ -1,81 +1,147 @@
 /**
- * Shared type definitions for PawMatch
- * These types are derived from the Drizzle ORM schema defined in api/database/schema/schema.ts
+ * PawMatch 共通型定義
+ * 
+ * @description PawMatchアプリケーション全体で使用する共通の型定義
+ * api/database/schema/schema.tsのDrizzle ORMスキーマから派生した型
+ * @file shared/types/index.ts
  */
 
-// ============== Pet Related Types ==============
+// エラーとResult型の再エクスポート
+export * from './error';
+export * from './result';
 
+// ============== ペット関連型定義 ==============
+
+/**
+ * ペット情報の型定義
+ * 
+ * @interface Pet
+ * @description 保護犬・保護猫の情報を表すメインインターフェース
+ * フロントエンド表示用のcamelCase形式
+ */
 export interface Pet {
-  // Core fields
+  /** 基本フィールド */
+  /** ペットID（一意識別子） */
   id: string
+  /** ペットタイプ（犬または猫） */
   type: 'dog' | 'cat'
+  /** ペット名 */
   name: string
+  /** 品種 */
   breed?: string | null
+  /** 年齢 */
   age?: string | null
+  /** 性別 */
   gender?: 'male' | 'female' | 'unknown' | null
 
-  // Location fields
+  /** 位置情報 */
+  /** 都道府県 */
   prefecture?: string | null
+  /** 市区町村 */
   city?: string | null
+  /** 結合所在地 */
   location?: string | null
 
-  // Description fields
+  /** 説明情報 */
+  /** ペットの説明文 */
   description?: string | null
-  personality?: string[] | string | null // JSON array or string
+  /** 性格特徴（JSON配列または文字列） */
+  personality?: string[] | string | null
+  /** 医療情報 */
   medicalInfo?: string | null
-  careRequirements?: string[] | string | null // JSON array or string
+  /** ケア要件（JSON配列または文字列） */
+  careRequirements?: string[] | string | null
 
-  // Extended pet information
-  goodWith?: string[] | string | null // JSON array or string
-  healthNotes?: string[] | string | null // JSON array or string
+  /** 拡張ペット情報 */
+  /** 他の動物との相性（JSON配列または文字列） */
+  goodWith?: string[] | string | null
+  /** 健康ノート（JSON配列または文字列） */
+  healthNotes?: string[] | string | null
 
-  // Physical characteristics
+  /** 身体的特徴 */
+  /** 毛色 */
   color?: string | null
+  /** 体重 */
   weight?: number | null
+  /** サイズ */
   size?: string | null
+  /** 毛長 */
   coatLength?: string | null
 
-  // Health status
+  /** 健康状態 */
+  /** 去勢手術済みか */
   isNeutered?: boolean | number | null
+  /** ワクチン接種済みか */
   isVaccinated?: boolean | number | null
+  /** ワクチン接種状況 */
   vaccinationStatus?: string | null
+  /** 猫エイズ・猫白血病検査済みか */
   isFivFelvTested?: boolean | number | null
 
-  // Behavior characteristics
+  /** 行動特性 */
+  /** 運動レベル */
   exerciseLevel?: string | null
+  /** 訓練レベル */
   trainingLevel?: string | null
+  /** 社交レベル */
   socialLevel?: string | null
+  /** 室内外飼育適性 */
   indoorOutdoor?: string | null
+  /** グルーミング要件 */
   groomingRequirements?: string | null
 
-  // Compatibility flags
+  /** 相性フラグ */
+  /** 子供との相性 */
   goodWithKids?: boolean | number | null
+  /** 犬との相性 */
   goodWithDogs?: boolean | number | null
+  /** 猫との相性 */
   goodWithCats?: boolean | number | null
+  /** アパート適性 */
   apartmentFriendly?: boolean | number | null
+  /** 庭が必要か */
   needsYard?: boolean | number | null
 
-  // Image management
+  /** 画像管理 */
+  /** 画像URL */
   imageUrl?: string | null
+  /** JPEG形式の画像を持っているか */
   hasJpeg?: boolean | number | null
+  /** WebP形式の画像を持っているか */
   hasWebp?: boolean | number | null
+  /** 画像チェック日時 */
   imageCheckedAt?: string | null
+  /** スクリーンショットリクエスト日時 */
   screenshotRequestedAt?: string | null
+  /** スクリーンショット完了日時 */
   screenshotCompletedAt?: string | null
 
-  // Shelter information
+  /** 保護施設情報 */
+  /** 保護施設名 */
   shelterName?: string | null
+  /** 保護施設連絡先 */
   shelterContact?: string | null
+  /** ソースURL */
   sourceUrl?: string | null
+  /** ソースID */
   sourceId?: string | null
+  /** 譲渡手数料 */
   adoptionFee?: number | null
 
-  // Timestamps
+  /** タイムスタンプ */
+  /** 作成日時 */
   createdAt?: string | null
+  /** 更新日時 */
   updatedAt?: string | null
 }
 
-// Database record types (snake_case for DB compatibility)
+/**
+ * データベースレコード型（データベース互換性のためsnake_case）
+ * 
+ * @interface PetRecord
+ * @description データベースのペットテーブルと直接マッピングされる型
+ * Drizzle ORMで使用されるsnake_case形式
+ */
 export interface PetRecord {
   id: string
   type: 'dog' | 'cat'
@@ -125,8 +191,14 @@ export interface PetRecord {
   updated_at?: string | null
 }
 
-// ============== Crawler Related Types ==============
+// ============== クローラー関連型定義 ==============
 
+/**
+ * クローラー状態管理型
+ * 
+ * @interface CrawlerState
+ * @description クロール処理の進行状況やチェックポイントを管理
+ */
 export interface CrawlerState {
   id?: number
   sourceId: string
@@ -149,8 +221,14 @@ export interface CrawlerStateRecord {
   updated_at?: string | null
 }
 
-// ============== Sync Related Types ==============
+// ============== 同期関連型定義 ==============
 
+/**
+ * 同期状態管理型
+ * 
+ * @interface SyncStatus
+ * @description データ同期操作の状態や進行状況を記録
+ */
 export interface SyncStatus {
   id?: number
   syncType: string
@@ -197,33 +275,105 @@ export interface SyncMetadataRecord {
   updated_at?: string | null
 }
 
-// ============== Utility Types ==============
+// ============== 検索・フィルター型定義 ==============
 
+/**
+ * ペット検索フィルター
+ * 
+ * @interface PetSearchFilters
+ * @description ペット検索時のフィルタリング条件を定義
+ */
+export interface PetSearchFilters {
+  /** ペットタイプ */
+  petType?: 'dog' | 'cat';
+  /** 都道府県 */
+  prefecture?: string;
+  /** 市区町村 */
+  city?: string;
+  /** 最低年齢 */
+  minAge?: number;
+  /** 最高年齢 */
+  maxAge?: number;
+  /** 性別 */
+  gender?: 'male' | 'female' | 'unknown';
+  /** 品種 */
+  breed?: string;
+  /** 画像ありのみ */
+  hasImage?: boolean;
+}
+
+// ============== ユーティリティ型定義 ==============
+
+/**
+ * クロール結果
+ * 
+ * @interface CrawlResult
+ * @description クロール操作の結果と統計情報
+ */
 export interface CrawlResult {
+  /** 成功フラグ */
   success: boolean
+  /** 処理総数 */
   totalPets: number
+  /** 新規作成数 */
   newPets: number
+  /** 更新数 */
   updatedPets: number
+  /** エラーメッセージ一覧 */
   errors: string[]
 }
 
+/**
+ * クロールチェックポイント
+ * 
+ * @interface CrawlCheckpoint
+ * @description クロールの中断・再開のためのチェックポイント情報
+ */
 export interface CrawlCheckpoint {
+  /** ページ番号 */
   page?: number
+  /** 最後に処理したID */
   lastId?: string
+  /** タイムスタンプ */
   timestamp?: string
-  [key: string]: any
+  /** その他のカスタム情報 */
+  [key: string]: string | number | undefined
 }
 
-// Type guards
-export const isPet = (obj: any): obj is Pet => {
-  return obj && typeof obj.id === 'string' && (obj.type === 'dog' || obj.type === 'cat')
+// ============== 型ガード ==============
+
+/**
+ * Pet型の型ガード
+ * 
+ * @param obj - チェック対象のオブジェクト
+ * @returns Pet型かどうか
+ * @description オブジェクトがPetインターフェースに適合しているか検証
+ */
+export const isPet = (obj: unknown): obj is Pet => {
+  return !!obj && typeof (obj as Pet).id === 'string' && ((obj as Pet).type === 'dog' || (obj as Pet).type === 'cat')
 }
 
-export const isPetRecord = (obj: any): obj is PetRecord => {
-  return obj && typeof obj.id === 'string' && (obj.type === 'dog' || obj.type === 'cat')
+/**
+ * PetRecord型の型ガード
+ * 
+ * @param obj - チェック対象のオブジェクト
+ * @returns PetRecord型かどうか
+ * @description オブジェクトがPetRecordインターフェースに適合しているか検証
+ */
+export const isPetRecord = (obj: unknown): obj is PetRecord => {
+  return !!obj && typeof (obj as PetRecord).id === 'string' && ((obj as PetRecord).type === 'dog' || (obj as PetRecord).type === 'cat')
 }
 
-// Conversion helpers
+// ============== 変換ヘルパー ==============
+
+/**
+ * Pet型をPetRecord型に変換
+ * 
+ * @param pet - 変換元のPetオブジェクト
+ * @returns 変換後のPetRecordオブジェクト
+ * @description フロントエンド用のcamelCase型をデータベース用のsnake_case型に変換
+ * boolean値は0/1の数値に、配列はJSON文字列に変換
+ */
 export const petToRecord = (pet: Pet): PetRecord => {
   return {
     id: pet.id,
@@ -283,6 +433,14 @@ export const petToRecord = (pet: Pet): PetRecord => {
   }
 }
 
+/**
+ * PetRecord型をPet型に変換
+ * 
+ * @param record - 変換元のPetRecordオブジェクト
+ * @returns 変換後のPetオブジェクト
+ * @description データベース用のsnake_case型をフロントエンド用のcamelCase型に変換
+ * 0/1の数値はboolean値に、JSON文字列は配列に変換
+ */
 export const recordToPet = (record: PetRecord): Pet => {
   return {
     id: record.id,

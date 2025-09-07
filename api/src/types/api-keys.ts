@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ApiKey, ApiKeyType } from './api-keys-schema';
 
 // JSON型定義（api-keys-schemaから再エクスポート）
 export type { JsonValue, JsonObject, JsonArray } from './common';
@@ -12,10 +11,10 @@ export interface RateLimitResult {
 }
 
 // APIレスポンスの型定義
-export interface SuccessResponse<T = any> {
+export interface SuccessResponse<T = unknown> {
   success: true;
   data?: T;
-  [key: string]: any;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 export interface ErrorResponse {
@@ -24,10 +23,10 @@ export interface ErrorResponse {
   details?: string;
   documentation_url?: string;
   retry_after?: number;
-  [key: string]: any;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
-export type ApiResponse<T = any> = SuccessResponse<T> | ErrorResponse;
+export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
 
 // 検証レスポンスの型
 export interface ValidationResponse {
@@ -75,7 +74,7 @@ export const createKeySchema = z.object({
   permissions: z.array(z.string()).describe('権限のリスト（resource:action形式）'),
   rate_limit: z.number().default(100).describe('1分あたりのリクエスト上限'),
   expires_in_days: z.number().optional().describe('有効期限（日数）'),
-  metadata: z.record(z.any()).optional().describe('追加のメタデータ'),
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional().describe('追加のメタデータ'),
 });
 
 

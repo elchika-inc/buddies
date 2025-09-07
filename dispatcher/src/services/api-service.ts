@@ -5,22 +5,47 @@
 import type { Env, PetRecord } from '../types';
 import { Result, Ok, Err } from '../types/result';
 import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api';
+import { drizzle } from 'drizzle-orm/d1';
+import { eq, isNull, and, or } from 'drizzle-orm';
+import { pets as petsTable } from '../../../database/schema/schema';
 
 export class ApiService {
   private readonly apiUrl: string;
   private readonly apiKey: string | undefined;
+  private readonly db: ReturnType<typeof drizzle> | undefined;
 
   constructor(env: Env) {
     this.apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
-    this.apiKey = env.API_KEY || undefined;
+    this.apiKey = env.PUBLIC_API_KEY || env.API_KEY || undefined;
+    this.db = env.DB ? drizzle(env.DB) : undefined;
   }
 
   /**
-   * 画像がないペットを取得
+   * 画像がないペットを取得（D1データベースから直接取得）
    */
   async fetchPetsWithoutImages(limit = 30): Promise<Result<PetRecord[]>> {
     try {
-      // APIリクエストを実行
+      // D1データベースが使用可能な場合は直接クエリ
+      if (this.db) {
+        const petsWithoutImages = await this.db
+          .select()
+          .from(petsTable)
+          .where(
+            and(
+              or(
+                isNull(petsTable.imageUrl),
+                eq(petsTable.hasJpeg, 0),
+                eq(petsTable.hasWebp, 0)
+              ),
+              isNull(petsTable.screenshotRequestedAt)
+            )
+          )
+          .limit(limit);
+        
+        return Ok(petsWithoutImages as PetRecord[]);
+      }
+
+      // D1が使用できない場合はAPIにフォールバック
       const response = await this.makeApiRequest('/api/stats');
       
       if (!response.ok) {
@@ -100,15 +125,57 @@ export class ApiService {
 
   /**
    * 単一のAPIペットデータをPetRecord型に変換
+   * 注: 最小限のフィールドのみ設定（スクリーンショット処理に必要な情報）
    */
   private convertApiPetToPetRecord(apiPet: ApiPetData): PetRecord {
+    // 必須フィールドと画像関連フィールドのみ設定
     return {
       id: apiPet.id,
       type: apiPet.type,
       name: apiPet.name,
-      sourceUrl: apiPet.sourceUrl,
-      hasJpeg: apiPet.hasJpeg ? 1 : 0,
-      hasWebp: apiPet.hasWebp ? 1 : 0
+      breed: null,
+      age: null,
+      gender: null,
+      prefecture: null,
+      city: null,
+      location: null,
+      description: null,
+      personality: null,
+      medical_info: null,
+      care_requirements: null,
+      good_with: null,
+      health_notes: null,
+      color: null,
+      weight: null,
+      size: null,
+      coat_length: null,
+      is_neutered: null,
+      is_vaccinated: null,
+      vaccination_status: null,
+      is_fiv_felv_tested: null,
+      exercise_level: null,
+      training_level: null,
+      social_level: null,
+      indoor_outdoor: null,
+      grooming_requirements: null,
+      good_with_kids: null,
+      good_with_dogs: null,
+      good_with_cats: null,
+      apartment_friendly: null,
+      needs_yard: null,
+      image_url: null,
+      has_jpeg: apiPet.hasJpeg ? 1 : 0,
+      has_webp: apiPet.hasWebp ? 1 : 0,
+      image_checked_at: null,
+      screenshot_requested_at: null,
+      screenshot_completed_at: null,
+      shelter_name: null,
+      shelter_contact: null,
+      source_url: apiPet.sourceUrl,
+      source_id: null,
+      adoption_fee: null,
+      created_at: null,
+      updated_at: null,
     };
   }
 

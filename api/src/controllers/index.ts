@@ -5,6 +5,6 @@
  * @description APIエンドポイントのコントローラーを一元的にエクスポート
  */
 
-export { HealthController } from './health-controller';
-export { ImageController } from './image-controller';
-export { PetController } from './pet-controller';
+export { HealthController } from './HealthController';
+export { ImageController } from './ImageController';
+export { PetController } from './PetController';

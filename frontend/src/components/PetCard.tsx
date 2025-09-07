@@ -3,13 +3,24 @@ import { Pet } from '@/types/pet'
 import { useState } from 'react'
 import { getPetType } from '@/config/petConfig'
 
+/**
+ * ペットカードコンポーネントのプロパティ
+ */
 type PetCardProps = {
+  /** 表示するペット情報 */
   pet: Pet
+  /** カードタップ時のコールバック関数 */
   onTap?: (() => void) | undefined
 }
 
+/**
+ * ペット情報を表示するカードコンポーネント
+ * Tinder風のUIでペット情報を魅力的に表示
+ */
 export function PetCard({ pet, onTap }: PetCardProps) {
+  /** 画像読み込みエラー状態を管理 */
   const [imageError, setImageError] = useState(false)
+  /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
   
   // フォールバック画像URL（ペットタイプ別）
@@ -17,10 +28,14 @@ export function PetCard({ pet, onTap }: PetCardProps) {
     ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
     : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
   
-  // 画像URL決定：エラーが発生した場合はフォールバック画像を使用
-  // キャッシュバスティング：ペットの更新日時を使用
+  /**
+   * 画像URLにキャッシュバスター（バージョン番号）を追加
+   * ブラウザキャッシュを回避して最新画像を表示するため
+   */
   const addCacheBuster = (url: string) => {
+    // Unsplash画像またはURLが空の場合はそのまま返す
     if (!url || url.includes('unsplash.com')) return url
+    // URLパラメータ区切り文字を判定
     const separator = url.includes('?') ? '&' : '?'
     // ペットの作成時刻をバージョンとして使用
     const version = pet.createdAt || Date.now()
@@ -28,14 +43,17 @@ export function PetCard({ pet, onTap }: PetCardProps) {
     return `${url}${separator}v=${timestamp}`
   }
   
+  // 最終的な画像URL（エラー時はフォールバック画像を使用）
   const imageUrl = imageError 
     ? fallbackImage 
     : addCacheBuster(pet.imageUrl || fallbackImage)
   
+  /** 画像読み込みエラー時の処理 */
   const handleImageError = () => {
     setImageError(true)
   }
   
+  /** カードクリック時の処理 */
   const handleClick = () => {
     if (onTap) {
       onTap()

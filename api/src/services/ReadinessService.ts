@@ -109,15 +109,15 @@ export class ReadinessService {
     `).first();
 
     return {
-      totalPets: stats?.total_pets || 0,
-      totalDogs: stats?.total_dogs || 0,
-      totalCats: stats?.total_cats || 0,
-      petsWithJpeg: stats?.pets_with_jpeg || 0,
-      petsWithWebp: stats?.pets_with_webp || 0,
-      dogsWithJpeg: stats?.dogs_with_jpeg || 0,
-      dogsWithWebp: stats?.dogs_with_webp || 0,
-      catsWithJpeg: stats?.cats_with_jpeg || 0,
-      catsWithWebp: stats?.cats_with_webp || 0
+      totalPets: (stats?.['total_pets'] as number) || 0,
+      totalDogs: (stats?.['total_dogs'] as number) || 0,
+      totalCats: (stats?.['total_cats'] as number) || 0,
+      petsWithJpeg: (stats?.['pets_with_jpeg'] as number) || 0,
+      petsWithWebp: (stats?.['pets_with_webp'] as number) || 0,
+      dogsWithJpeg: (stats?.['dogs_with_jpeg'] as number) || 0,
+      dogsWithWebp: (stats?.['dogs_with_webp'] as number) || 0,
+      catsWithJpeg: (stats?.['cats_with_jpeg'] as number) || 0,
+      catsWithWebp: (stats?.['cats_with_webp'] as number) || 0
     };
   }
 }
