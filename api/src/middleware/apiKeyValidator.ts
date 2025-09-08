@@ -6,13 +6,6 @@ import { Context, Next } from 'hono'
 import type { Env } from '../types'
 
 // 型定義
-interface ValidationResponse {
-  success: boolean
-  valid: boolean
-  error?: string
-  key_info?: KeyInfo
-}
-
 interface KeyInfo {
   name: string
   type: string
@@ -91,7 +84,7 @@ function extractApiKey(c: Context<{ Bindings: Env }>): string | null {
  * APIキーを検証
  */
 async function validateKey(key: string, c: Context<{ Bindings: Env }>): Promise<ValidationResult> {
-  const { resource, action } = determinePermissions(c.req.path, c.req.method)
+  // const { resource, action } = determinePermissions(c.req.path, c.req.method)
 
   // 外部認証サービスを一時的に無効化し、フォールバック認証を使用
   // TODO: 外部認証サービスが復旧したら有効化する
@@ -156,34 +149,35 @@ function fallbackValidation(key: string, c: Context<{ Bindings: Env }>): Validat
 
 /**
  * 必要な権限を決定
+ * TODO: 外部認証サービス復旧時に有効化
  */
-function determinePermissions(path: string, method: string): { resource: string; action: string } {
-  // ペット関連
-  if (path.includes('/api/pets') || path.includes('/api/pet')) {
-    const action = method === 'GET' ? 'read' : method === 'DELETE' ? 'delete' : 'write'
-    return { resource: 'pets', action }
-  }
+// function determinePermissions(path: string, method: string): { resource: string; action: string } {
+//   // ペット関連
+//   if (path.includes('/api/pets') || path.includes('/api/pet')) {
+//     const action = method === 'GET' ? 'read' : method === 'DELETE' ? 'delete' : 'write'
+//     return { resource: 'pets', action }
+//   }
 
-  // 画像関連
-  if (path.includes('/api/images') || path.includes('/image')) {
-    const action = method === 'GET' ? 'read' : 'write'
-    return { resource: 'images', action }
-  }
+//   // 画像関連
+//   if (path.includes('/api/images') || path.includes('/image')) {
+//     const action = method === 'GET' ? 'read' : 'write'
+//     return { resource: 'images', action }
+//   }
 
-  // 管理関連
-  if (path.includes('/admin')) {
-    const action = method === 'GET' ? 'read' : 'write'
-    return { resource: 'admin', action }
-  }
+//   // 管理関連
+//   if (path.includes('/admin')) {
+//     const action = method === 'GET' ? 'read' : 'write'
+//     return { resource: 'admin', action }
+//   }
 
-  // クロール関連
-  if (path.includes('/crawl')) {
-    return { resource: 'crawl', action: 'execute' }
-  }
+//   // クロール関連
+//   if (path.includes('/crawl')) {
+//     return { resource: 'crawl', action: 'execute' }
+//   }
 
-  // デフォルト
-  return { resource: 'general', action: 'read' }
-}
+//   // デフォルト
+//   return { resource: 'general', action: 'read' }
+// }
 
 /**
  * 認証エラーレスポンスを作成

@@ -84,7 +84,7 @@ export class HealthController {
       ])
 
       // 画像がないペットを取得
-      let missingImages = []
+      let missingImages: Array<{ id: string; name: string; type: string; sourceUrl: string }> = []
       try {
         const petsWithoutImages = await this.db
           .prepare(
@@ -98,10 +98,10 @@ export class HealthController {
 
         missingImages =
           petsWithoutImages.results?.map((pet) => ({
-            id: pet.id,
-            name: pet.name,
-            type: pet.type,
-            sourceUrl: pet.source_url,
+            id: pet['id'] as string,
+            name: pet['name'] as string,
+            type: pet['type'] as string,
+            sourceUrl: pet['source_url'] as string,
           })) || []
       } catch (dbError) {
         console.error('Error fetching missing images:', dbError)
