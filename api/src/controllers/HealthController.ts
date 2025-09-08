@@ -81,7 +81,24 @@ export class HealthController {
         this.dataService.getDetailedStatistics(),
       ])
 
-      const missingImages: any[] = []
+      // 画像がないペットを取得
+      const petsWithoutImages = await this.db
+        .prepare(
+          `SELECT id, name, type, source_url 
+           FROM pets 
+           WHERE (jpeg_image_key IS NULL OR jpeg_image_key = '') 
+              OR (webp_image_key IS NULL OR webp_image_key = '')
+           LIMIT 50`
+        )
+        .all()
+
+      const missingImages =
+        petsWithoutImages.results?.map((pet) => ({
+          id: pet.id,
+          name: pet.name,
+          type: pet.type,
+          sourceUrl: pet.source_url,
+        })) || []
 
       return c.json(
         successResponse({
