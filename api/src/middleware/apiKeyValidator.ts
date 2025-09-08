@@ -24,7 +24,7 @@ interface KeyInfo {
 type ValidationResult = { success: true; keyInfo: KeyInfo } | { success: false; error: string }
 
 // 定数
-const PUBLIC_PATHS = ['/', '/health', '/health/ready'] as const
+const PUBLIC_PATHS = ['/', '/health', '/health/ready', '/api/stats'] as const
 const ALLOWED_ORIGINS = [
   'https://pawmatch-dogs.elchika.app',
   'https://pawmatch-cats.elchika.app',
@@ -93,6 +93,9 @@ function extractApiKey(c: Context<{ Bindings: Env }>): string | null {
 async function validateKey(key: string, c: Context<{ Bindings: Env }>): Promise<ValidationResult> {
   const { resource, action } = determinePermissions(c.req.path, c.req.method)
 
+  // 外部認証サービスを一時的に無効化し、フォールバック認証を使用
+  // TODO: 外部認証サービスが復旧したら有効化する
+  /*
   try {
     const response = await fetch('https://pawmatch-api-keys.naoto24kawa.workers.dev/validate', {
       method: 'POST',
@@ -121,6 +124,10 @@ async function validateKey(key: string, c: Context<{ Bindings: Env }>): Promise<
     // フォールバック: 環境変数のキーで検証
     return fallbackValidation(key, c)
   }
+  */
+
+  // フォールバック認証を直接使用
+  return fallbackValidation(key, c)
 }
 
 /**
