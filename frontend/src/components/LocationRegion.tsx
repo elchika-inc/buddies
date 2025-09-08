@@ -42,24 +42,19 @@ export function LocationRegion({
             onChange={onToggleRegionAll}
             className="mr-3"
           />
-          <button
-            onClick={onToggleRegion}
-            className="font-bold text-lg flex items-center"
-          >
+          <button onClick={onToggleRegion} className="font-bold text-lg flex items-center">
             {region}
-            <span className="ml-2 text-gray-500">
-              {isExpanded ? '▼' : '▶'}
-            </span>
+            <span className="ml-2 text-gray-500">{isExpanded ? '▼' : '▶'}</span>
           </button>
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="pl-4">
-          {prefectures.map(prefecture => {
+          {prefectures.map((prefecture) => {
             const cities = locations[prefecture as keyof typeof locations]
             if (!cities) return null
-            
+
             return (
               <div key={prefecture} className="border-b">
                 <div className="flex items-center px-3 py-2 hover:bg-gray-50 transition-colors">
@@ -79,7 +74,7 @@ export function LocationRegion({
                     </span>
                   </button>
                 </div>
-                
+
                 {expandedPrefectures.includes(prefecture) && (
                   <div className="pl-12">
                     <label className="flex items-center px-3 py-1 hover:bg-gray-50 cursor-pointer">

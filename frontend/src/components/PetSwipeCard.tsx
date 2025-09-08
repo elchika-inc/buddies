@@ -24,30 +24,36 @@ export function PetSwipeCard({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isExiting, setIsExiting] = useState(false)
   const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(null)
-  
-  const { getSwipeDirection, getIndicatorOpacity } = useSwipeGesture()
-  
-  // ドラッグ操作のハンドラー
-  const handleDragStart = useCallback((_clientX: number, _clientY: number) => {
-    if (!isTopCard) return
-    setIsDragging(true)
-  }, [isTopCard])
 
-  const handleDragMove = useCallback((clientX: number, clientY: number, startX: number, startY: number) => {
-    if (!isDragging || !isTopCard) return
-    
-    const newOffset = {
-      x: clientX - startX,
-      y: clientY - startY
-    }
-    setDragOffset(newOffset)
-  }, [isDragging, isTopCard])
+  const { getSwipeDirection, getIndicatorOpacity } = useSwipeGesture()
+
+  // ドラッグ操作のハンドラー
+  const handleDragStart = useCallback(
+    (_clientX: number, _clientY: number) => {
+      if (!isTopCard) return
+      setIsDragging(true)
+    },
+    [isTopCard]
+  )
+
+  const handleDragMove = useCallback(
+    (clientX: number, clientY: number, startX: number, startY: number) => {
+      if (!isDragging || !isTopCard) return
+
+      const newOffset = {
+        x: clientX - startX,
+        y: clientY - startY,
+      }
+      setDragOffset(newOffset)
+    },
+    [isDragging, isTopCard]
+  )
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging || !isTopCard) return
-    
+
     setIsDragging(false)
-    
+
     const direction = getSwipeDirection(dragOffset.x, dragOffset.y)
     if (direction) {
       setIsExiting(true)
@@ -66,42 +72,51 @@ export function PetSwipeCard({
 
   // マウスイベント
   const [startPos, setStartPos] = useState({ x: 0, y: 0 })
-  
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    const startX = e.clientX
-    const startY = e.clientY
-    setStartPos({ x: startX, y: startY })
-    handleDragStart(startX, startY)
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      handleDragMove(e.clientX, e.clientY, startX, startY)
-    }
-    
-    const handleMouseUp = () => {
-      handleDragEnd()
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-    
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [handleDragStart, handleDragMove, handleDragEnd])
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      const startX = e.clientX
+      const startY = e.clientY
+      setStartPos({ x: startX, y: startY })
+      handleDragStart(startX, startY)
+
+      const handleMouseMove = (e: MouseEvent) => {
+        handleDragMove(e.clientX, e.clientY, startX, startY)
+      }
+
+      const handleMouseUp = () => {
+        handleDragEnd()
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    },
+    [handleDragStart, handleDragMove, handleDragEnd]
+  )
 
   // タッチイベント
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    if (!touch) return
-    const startX = touch.clientX
-    const startY = touch.clientY
-    setStartPos({ x: startX, y: startY })
-    handleDragStart(startX, startY)
-  }, [handleDragStart])
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0]
+      if (!touch) return
+      const startX = touch.clientX
+      const startY = touch.clientY
+      setStartPos({ x: startX, y: startY })
+      handleDragStart(startX, startY)
+    },
+    [handleDragStart]
+  )
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    if (!touch) return
-    handleDragMove(touch.clientX, touch.clientY, startPos.x, startPos.y)
-  }, [handleDragMove, startPos])
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0]
+      if (!touch) return
+      handleDragMove(touch.clientX, touch.clientY, startPos.x, startPos.y)
+    },
+    [handleDragMove, startPos]
+  )
 
   const handleTouchEnd = useCallback(() => {
     handleDragEnd()
@@ -131,28 +146,35 @@ export function PetSwipeCard({
 
   // カードのスタイル
   const cardStyle: React.CSSProperties = {
-    transform: isExiting 
+    transform: isExiting
       ? `translate(${exitDirection === 'like' ? '100vw' : exitDirection === 'pass' ? '-100vw' : '0'}, ${exitDirection === 'superLike' ? '-100vh' : '0'}) rotate(${exitDirection === 'like' ? '30deg' : exitDirection === 'pass' ? '-30deg' : '0'})`
       : `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${dragOffset.x * 0.1}deg)`,
-    transition: isExiting ? 'transform 0.3s ease-out' : isDragging ? 'none' : 'transform 0.3s ease-out',
+    transition: isExiting
+      ? 'transform 0.3s ease-out'
+      : isDragging
+        ? 'none'
+        : 'transform 0.3s ease-out',
     position: 'absolute' as const,
     zIndex: isTopCard ? 10 : 1,
   }
 
   // インジケーターの表示判定とスタイル
   const opacity = getIndicatorOpacity(dragOffset.x, dragOffset.y)
-  const showIndicator = isTopCard && (isDragging || isExiting) && (opacity.like > 0 || opacity.pass > 0 || opacity.superLike > 0)
-  
+  const showIndicator =
+    isTopCard &&
+    (isDragging || isExiting) &&
+    (opacity.like > 0 || opacity.pass > 0 || opacity.superLike > 0)
+
   const indicatorStyle = {
     like: { opacity: opacity.like, color: '#22c55e' },
     pass: { opacity: opacity.pass, color: '#ef4444' },
-    superLike: { opacity: opacity.superLike, color: '#3b82f6' }
+    superLike: { opacity: opacity.superLike, color: '#3b82f6' },
   }
-  
+
   const indicatorText = {
     like: 'LIKE',
-    pass: 'PASS', 
-    superLike: 'SUPER LIKE'
+    pass: 'PASS',
+    superLike: 'SUPER LIKE',
   }
 
   return (

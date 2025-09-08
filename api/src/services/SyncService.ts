@@ -1,33 +1,33 @@
 /**
  * 同期サービス
- * 
+ *
  * シンプルな2層構造：
  * - SyncService → SyncJob
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database } from '@cloudflare/workers-types'
 
 export interface SyncJob {
-  id: string;
-  petType?: 'dog' | 'cat';
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
-  total: number;
-  errors: string[];
-  startedAt: string;
-  completedAt?: string;
+  id: string
+  petType?: 'dog' | 'cat'
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  progress: number
+  total: number
+  errors: string[]
+  startedAt: string
+  completedAt?: string
 }
 
 export interface SyncResult {
-  success: boolean;
-  jobId: string;
-  synced: number;
-  failed: number;
-  errors: string[];
+  success: boolean
+  jobId: string
+  synced: number
+  failed: number
+  errors: string[]
 }
 
 export class SyncService {
-  private activeJobs = new Map<string, SyncJob>();
+  private activeJobs = new Map<string, SyncJob>()
 
   constructor(private readonly db: D1Database) {}
 
@@ -35,7 +35,7 @@ export class SyncService {
    * 同期ジョブを開始
    */
   async startSync(petType?: 'dog' | 'cat'): Promise<SyncJob> {
-    const jobId = `sync_${Date.now()}`;
+    const jobId = `sync_${Date.now()}`
     const job: SyncJob = {
       id: jobId,
       petType,
@@ -43,18 +43,18 @@ export class SyncService {
       progress: 0,
       total: 0,
       errors: [],
-      startedAt: new Date().toISOString()
-    };
+      startedAt: new Date().toISOString(),
+    }
 
-    this.activeJobs.set(jobId, job);
+    this.activeJobs.set(jobId, job)
 
     // 非同期で同期を実行
-    this.executeSyncJob(job).catch(error => {
-      job.status = 'failed';
-      job.errors.push(error.message);
-    });
+    this.executeSyncJob(job).catch((error) => {
+      job.status = 'failed'
+      job.errors.push(error.message)
+    })
 
-    return job;
+    return job
   }
 
   /**
@@ -63,38 +63,38 @@ export class SyncService {
   private async executeSyncJob(job: SyncJob): Promise<void> {
     try {
       // ペットを取得
-      const whereClause = job.petType ? `WHERE type = '${job.petType}'` : '';
-      const result = await this.db
-        .prepare(`SELECT * FROM pets ${whereClause}`)
-        .all();
+      const whereClause = job.petType ? `WHERE type = '${job.petType}'` : ''
+      const result = await this.db.prepare(`SELECT * FROM pets ${whereClause}`).all()
 
-      const pets = result.results || [];
-      job.total = pets.length;
+      const pets = result.results || []
+      job.total = pets.length
 
       // バッチで処理
-      const batchSize = 10;
+      const batchSize = 10
       for (let i = 0; i < pets.length; i += batchSize) {
-        const batch = pets.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async (pet) => {
-          try {
-            await this.syncPet(pet);
-            job.progress++;
-          } catch (error) {
-            job.errors.push(`Failed to sync ${(pet as any)['id']}: ${error}`);
-          }
-        }));
+        const batch = pets.slice(i, i + batchSize)
+
+        await Promise.all(
+          batch.map(async (pet) => {
+            try {
+              await this.syncPet(pet)
+              job.progress++
+            } catch (error) {
+              job.errors.push(`Failed to sync ${(pet as any)['id']}: ${error}`)
+            }
+          })
+        )
 
         // 進捗を更新
-        await this.updateJobProgress(job.id, job.progress, job.total);
+        await this.updateJobProgress(job.id, job.progress, job.total)
       }
 
-      job.status = 'completed';
-      job.completedAt = new Date().toISOString();
+      job.status = 'completed'
+      job.completedAt = new Date().toISOString()
     } catch (error) {
-      job.status = 'failed';
-      job.errors.push(error instanceof Error ? error.message : 'Unknown error');
-      throw error;
+      job.status = 'failed'
+      job.errors.push(error instanceof Error ? error.message : 'Unknown error')
+      throw error
     }
   }
 
@@ -102,14 +102,14 @@ export class SyncService {
    * 単一ペットを同期
    */
   private async syncPet(pet: unknown): Promise<void> {
-    const petData = pet as { id: string; [key: string]: unknown };
-    
+    const petData = pet as { id: string; [key: string]: unknown }
+
     // ここで実際の同期処理を実装
     // 例: 画像チェック、データ検証など
     await this.db
       .prepare('UPDATE pets SET last_synced_at = ? WHERE id = ?')
       .bind(new Date().toISOString(), petData.id)
-      .run();
+      .run()
   }
 
   /**
@@ -118,91 +118,94 @@ export class SyncService {
   private async updateJobProgress(jobId: string, progress: number, total: number): Promise<void> {
     // DBに進捗を保存（オプション）
     await this.db
-      .prepare(`
+      .prepare(
+        `
         INSERT OR REPLACE INTO sync_jobs (id, progress, total, updated_at)
         VALUES (?, ?, ?, ?)
-      `)
+      `
+      )
       .bind(jobId, progress, total, new Date().toISOString())
       .run()
       .catch(() => {
         // テーブルがない場合は無視
-      });
+      })
   }
 
   /**
    * ジョブのステータスを取得
    */
   async getJobStatus(jobId: string): Promise<SyncJob | null> {
-    return this.activeJobs.get(jobId) || null;
+    return this.activeJobs.get(jobId) || null
   }
 
   /**
    * アクティブなジョブを取得
    */
   async getActiveJobs(): Promise<SyncJob[]> {
-    return Array.from(this.activeJobs.values())
-      .filter(job => job.status === 'running');
+    return Array.from(this.activeJobs.values()).filter((job) => job.status === 'running')
   }
 
   /**
    * データ整合性チェック
    */
   async checkIntegrity(): Promise<{
-    valid: boolean;
-    issues: string[];
+    valid: boolean
+    issues: string[]
   }> {
-    const issues: string[] = [];
+    const issues: string[] = []
 
     // 画像なしペットをチェック
     const noImageResult = await this.db
       .prepare('SELECT COUNT(*) as count FROM pets WHERE has_jpeg = 0 AND has_webp = 0')
-      .first<{ count: number }>();
+      .first<{ count: number }>()
 
     if (noImageResult && noImageResult.count > 0) {
-      issues.push(`${noImageResult.count} pets without images`);
+      issues.push(`${noImageResult.count} pets without images`)
     }
 
     // 重複IDチェック
     const duplicateResult = await this.db
       .prepare('SELECT id, COUNT(*) as count FROM pets GROUP BY id HAVING count > 1')
-      .all();
+      .all()
 
     if (duplicateResult.results.length > 0) {
-      issues.push(`${duplicateResult.results.length} duplicate pet IDs found`);
+      issues.push(`${duplicateResult.results.length} duplicate pet IDs found`)
     }
 
     return {
       valid: issues.length === 0,
-      issues
-    };
+      issues,
+    }
   }
 
   /**
    * 同期統計を取得
    */
   async getStatistics(): Promise<{
-    totalSynced: number;
-    lastSyncTime?: string;
-    pendingSync: number;
+    totalSynced: number
+    lastSyncTime?: string
+    pendingSync: number
   }> {
     const stats = await this.db
-      .prepare(`
+      .prepare(
+        `
         SELECT 
           COUNT(CASE WHEN last_synced_at IS NOT NULL THEN 1 END) as synced,
           MAX(last_synced_at) as last_sync,
           COUNT(CASE WHEN last_synced_at IS NULL THEN 1 END) as pending
         FROM pets
-      `)
+      `
+      )
       .first<{
-        synced: number;
-        last_sync: string;
-        pending: number;
-      }>();
+        synced: number
+        last_sync: string
+        pending: number
+      }>()
 
     return {
       totalSynced: stats?.synced || 0,
       lastSyncTime: stats?.last_sync,
-      pendingSync: stats?.pending || 0
-    };
+      pendingSync: stats?.pending || 0,
+    }
   }
 }

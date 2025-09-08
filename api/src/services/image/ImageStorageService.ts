@@ -1,5 +1,5 @@
-import type { R2Bucket, R2Object } from '@cloudflare/workers-types';
-import { AppConfig } from '../../config';
+import type { R2Bucket, R2Object } from '@cloudflare/workers-types'
+import { AppConfig } from '../../config'
 
 /**
  * 画像ストレージサービス
@@ -13,26 +13,30 @@ export class ImageStorageService {
    */
   async getImage(key: string): Promise<R2Object | null> {
     try {
-      return await this.r2.get(key);
+      return await this.r2.get(key)
     } catch (error) {
-      console.error(`[ImageStorageService] Failed to get image: ${key}`, error);
-      return null;
+      console.error(`[ImageStorageService] Failed to get image: ${key}`, error)
+      return null
     }
   }
 
   /**
    * 画像を保存
    */
-  async saveImage(key: string, data: ArrayBuffer | ReadableStream<any>, contentType: string): Promise<void> {
+  async saveImage(
+    key: string,
+    data: ArrayBuffer | ReadableStream<any>,
+    contentType: string
+  ): Promise<void> {
     try {
       await this.r2.put(key, data as any, {
         httpMetadata: {
-          contentType
-        }
-      });
+          contentType,
+        },
+      })
     } catch (error) {
-      console.error(`[ImageStorageService] Failed to save image: ${key}`, error);
-      throw error;
+      console.error(`[ImageStorageService] Failed to save image: ${key}`, error)
+      throw error
     }
   }
 
@@ -41,10 +45,10 @@ export class ImageStorageService {
    */
   async deleteImage(key: string): Promise<void> {
     try {
-      await this.r2.delete(key);
+      await this.r2.delete(key)
     } catch (error) {
-      console.error(`[ImageStorageService] Failed to delete image: ${key}`, error);
-      throw error;
+      console.error(`[ImageStorageService] Failed to delete image: ${key}`, error)
+      throw error
     }
   }
 
@@ -53,11 +57,11 @@ export class ImageStorageService {
    */
   async exists(key: string): Promise<boolean> {
     try {
-      const object = await this.r2.head(key);
-      return object !== null;
+      const object = await this.r2.head(key)
+      return object !== null
     } catch (error) {
-      console.error(`[ImageStorageService] Failed to check image existence: ${key}`, error);
-      return false;
+      console.error(`[ImageStorageService] Failed to check image existence: ${key}`, error)
+      return false
     }
   }
 
@@ -65,30 +69,32 @@ export class ImageStorageService {
    * 画像パスを構築
    */
   buildImagePath(petType: 'dog' | 'cat', petId: string, format: 'jpeg' | 'webp'): string {
-    const folder = petType === 'dog' 
-      ? AppConfig.images.storage.folders.dogs 
-      : AppConfig.images.storage.folders.cats;
-    
-    const extension = format === 'jpeg' 
-      ? AppConfig.images.formats.jpeg.extension
-      : AppConfig.images.formats.webp.extension;
-    
-    return `${AppConfig.images.storage.basePath}/${folder}/${petId}/optimized${extension}`;
+    const folder =
+      petType === 'dog'
+        ? AppConfig.images.storage.folders.dogs
+        : AppConfig.images.storage.folders.cats
+
+    const extension =
+      format === 'jpeg'
+        ? AppConfig.images.formats.jpeg.extension
+        : AppConfig.images.formats.webp.extension
+
+    return `${AppConfig.images.storage.basePath}/${folder}/${petId}/optimized${extension}`
   }
 
   /**
    * バッチで画像を取得
    */
   async getBatchImages(keys: string[]): Promise<Map<string, R2Object | null>> {
-    const results = new Map<string, R2Object | null>();
-    
+    const results = new Map<string, R2Object | null>()
+
     // 並列で取得
     const promises = keys.map(async (key) => {
-      const object = await this.getImage(key);
-      results.set(key, object);
-    });
-    
-    await Promise.all(promises);
-    return results;
+      const object = await this.getImage(key)
+      results.set(key, object)
+    })
+
+    await Promise.all(promises)
+    return results
   }
 }

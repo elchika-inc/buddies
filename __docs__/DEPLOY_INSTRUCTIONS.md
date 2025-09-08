@@ -37,7 +37,7 @@ npx wrangler whoami
 # API Worker
 npm run deploy:api
 
-# Crawler Worker  
+# Crawler Worker
 npm run deploy:crawler
 
 # Dispatcher Worker
@@ -82,6 +82,7 @@ bun run deploy:all
 ```
 
 **解決方法:**
+
 ```bash
 export CLOUDFLARE_API_TOKEN="your-cloudflare-api-token"
 ```
@@ -94,6 +95,7 @@ export CLOUDFLARE_API_TOKEN="your-cloudflare-api-token"
 
 **解決方法:**
 本番環境へのデプロイを明示的に指定：
+
 ```bash
 cd api && wrangler deploy --env production
 ```

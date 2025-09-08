@@ -2,7 +2,7 @@ export type PetType = 'dog' | 'cat'
 
 // 型ガード関数
 function isPetType(value: string): value is PetType {
-  return value === 'dog' || value === 'cat';
+  return value === 'dog' || value === 'cat'
 }
 
 export const getPetType = (): PetType => {
@@ -21,7 +21,7 @@ export const petConfig = {
     primaryColor: 'orange',
     primaryColorHex: '#FFA500',
     storageKey: 'dogSwipeState',
-    detailRoute: 'dog-detail'
+    detailRoute: 'dog-detail',
   },
   cat: {
     title: 'CatMatch',
@@ -29,8 +29,8 @@ export const petConfig = {
     primaryColor: 'purple',
     primaryColorHex: '#9333EA',
     storageKey: 'catSwipeState',
-    detailRoute: 'cat-detail'
-  }
+    detailRoute: 'cat-detail',
+  },
 }
 
 export const getCurrentPetConfig = () => {

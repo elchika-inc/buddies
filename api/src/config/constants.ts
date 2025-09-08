@@ -19,7 +19,7 @@ export const HTTP_STATUS = {
   UNPROCESSABLE_ENTITY: 422,
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
-} as const;
+} as const
 
 /**
  * 画像アップロード設定
@@ -43,7 +43,7 @@ export const UPLOAD_CONFIG = {
   } as const,
   /** デフォルトR2公開URL */
   DEFAULT_R2_URL: 'pawmatch-images.r2.dev',
-} as const;
+} as const
 
 /**
  * データベース設定
@@ -55,7 +55,7 @@ export const DB_CONFIG = {
   CONNECTION_TIMEOUT: 5000,
   /** クエリタイムアウト（ミリ秒） */
   QUERY_TIMEOUT: 30000,
-} as const;
+} as const
 
 /**
  * 画像パス設定
@@ -64,7 +64,7 @@ const IMAGE_FILE_NAMES = {
   SCREENSHOT: 'screenshot.png',
   ORIGINAL: 'original.jpg',
   OPTIMIZED: 'optimized.webp',
-} as const;
+} as const
 
 export const IMAGE_PATHS = {
   /** 画像のベースパス */
@@ -73,9 +73,9 @@ export const IMAGE_PATHS = {
   FILE_NAMES: IMAGE_FILE_NAMES,
   /** パス生成関数 */
   generatePath: (petType: 'dog' | 'cat', petId: string, format: keyof typeof IMAGE_FILE_NAMES) => {
-    return `pets/${petType}s/${petId}/${IMAGE_FILE_NAMES[format]}`;
+    return `pets/${petType}s/${petId}/${IMAGE_FILE_NAMES[format]}`
   },
-} as const;
+} as const
 
 /**
  * APIキー設定
@@ -87,7 +87,7 @@ export const API_KEY_CONFIG = {
   HASH_ALGORITHM: 'SHA-256',
   /** 公開開発用キー */
   PUBLIC_DEV_KEY: 'b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb',
-} as const;
+} as const
 
 /**
  * CORS設定
@@ -99,7 +99,7 @@ export const CORS_CONFIG = {
   ALLOWED_HEADERS: 'Content-Type, Authorization, X-API-Key',
   /** デフォルトオリジン */
   DEFAULT_ORIGIN: '*',
-} as const;
+} as const
 
 /**
  * エラーコード定数
@@ -112,7 +112,7 @@ export const ERROR_CODES = {
   ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
   METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
-} as const;
+} as const
 
 /**
  * タイミング定数
@@ -126,4 +126,4 @@ export const TIMING = {
   RETRY_DELAY: 1000,
   /** 最大リトライ回数 */
   MAX_RETRIES: 3,
-} as const;
+} as const

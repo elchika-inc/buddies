@@ -1,20 +1,20 @@
 /**
  * PawMatch 共通型定義
- * 
+ *
  * @description PawMatchアプリケーション全体で使用する共通の型定義
  * api/database/schema/schema.tsのDrizzle ORMスキーマから派生した型
  * @file shared/types/index.ts
  */
 
 // エラーとResult型の再エクスポート
-export * from './error';
-export * from './result';
+export * from './error'
+export * from './result'
 
 // ============== ペット関連型定義 ==============
 
 /**
  * ペット情報の型定義
- * 
+ *
  * @interface Pet
  * @description 保護犬・保護猫の情報を表すメインインターフェース
  * フロントエンド表示用のcamelCase形式
@@ -137,7 +137,7 @@ export interface Pet {
 
 /**
  * データベースレコード型（データベース互換性のためsnake_case）
- * 
+ *
  * @interface PetRecord
  * @description データベースのペットテーブルと直接マッピングされる型
  * Drizzle ORMで使用されるsnake_case形式
@@ -195,7 +195,7 @@ export interface PetRecord {
 
 /**
  * クローラー状態管理型
- * 
+ *
  * @interface CrawlerState
  * @description クロール処理の進行状況やチェックポイントを管理
  */
@@ -225,7 +225,7 @@ export interface CrawlerStateRecord {
 
 /**
  * 同期状態管理型
- * 
+ *
  * @interface SyncStatus
  * @description データ同期操作の状態や進行状況を記録
  */
@@ -279,34 +279,34 @@ export interface SyncMetadataRecord {
 
 /**
  * ペット検索フィルター
- * 
+ *
  * @interface PetSearchFilters
  * @description ペット検索時のフィルタリング条件を定義
  */
 export interface PetSearchFilters {
   /** ペットタイプ */
-  petType?: 'dog' | 'cat';
+  petType?: 'dog' | 'cat'
   /** 都道府県 */
-  prefecture?: string;
+  prefecture?: string
   /** 市区町村 */
-  city?: string;
+  city?: string
   /** 最低年齢 */
-  minAge?: number;
+  minAge?: number
   /** 最高年齢 */
-  maxAge?: number;
+  maxAge?: number
   /** 性別 */
-  gender?: 'male' | 'female' | 'unknown';
+  gender?: 'male' | 'female' | 'unknown'
   /** 品種 */
-  breed?: string;
+  breed?: string
   /** 画像ありのみ */
-  hasImage?: boolean;
+  hasImage?: boolean
 }
 
 // ============== ユーティリティ型定義 ==============
 
 /**
  * クロール結果
- * 
+ *
  * @interface CrawlResult
  * @description クロール操作の結果と統計情報
  */
@@ -325,7 +325,7 @@ export interface CrawlResult {
 
 /**
  * クロールチェックポイント
- * 
+ *
  * @interface CrawlCheckpoint
  * @description クロールの中断・再開のためのチェックポイント情報
  */
@@ -344,31 +344,39 @@ export interface CrawlCheckpoint {
 
 /**
  * Pet型の型ガード
- * 
+ *
  * @param obj - チェック対象のオブジェクト
  * @returns Pet型かどうか
  * @description オブジェクトがPetインターフェースに適合しているか検証
  */
 export const isPet = (obj: unknown): obj is Pet => {
-  return !!obj && typeof (obj as Pet).id === 'string' && ((obj as Pet).type === 'dog' || (obj as Pet).type === 'cat')
+  return (
+    !!obj &&
+    typeof (obj as Pet).id === 'string' &&
+    ((obj as Pet).type === 'dog' || (obj as Pet).type === 'cat')
+  )
 }
 
 /**
  * PetRecord型の型ガード
- * 
+ *
  * @param obj - チェック対象のオブジェクト
  * @returns PetRecord型かどうか
  * @description オブジェクトがPetRecordインターフェースに適合しているか検証
  */
 export const isPetRecord = (obj: unknown): obj is PetRecord => {
-  return !!obj && typeof (obj as PetRecord).id === 'string' && ((obj as PetRecord).type === 'dog' || (obj as PetRecord).type === 'cat')
+  return (
+    !!obj &&
+    typeof (obj as PetRecord).id === 'string' &&
+    ((obj as PetRecord).type === 'dog' || (obj as PetRecord).type === 'cat')
+  )
 }
 
 // ============== 変換ヘルパー ==============
 
 /**
  * Pet型をPetRecord型に変換
- * 
+ *
  * @param pet - 変換元のPetオブジェクト
  * @returns 変換後のPetRecordオブジェクト
  * @description フロントエンド用のcamelCase型をデータベース用のsnake_case型に変換
@@ -386,40 +394,84 @@ export const petToRecord = (pet: Pet): PetRecord => {
     city: pet.city ?? null,
     location: pet.location ?? null,
     description: pet.description ?? null,
-    personality: typeof pet.personality === 'string' 
-      ? pet.personality 
-      : pet.personality ? JSON.stringify(pet.personality) : null,
+    personality:
+      typeof pet.personality === 'string'
+        ? pet.personality
+        : pet.personality
+          ? JSON.stringify(pet.personality)
+          : null,
     medical_info: pet.medicalInfo ?? null,
-    care_requirements: typeof pet.careRequirements === 'string'
-      ? pet.careRequirements
-      : pet.careRequirements ? JSON.stringify(pet.careRequirements) : null,
-    good_with: typeof pet.goodWith === 'string'
-      ? pet.goodWith
-      : pet.goodWith ? JSON.stringify(pet.goodWith) : null,
-    health_notes: typeof pet.healthNotes === 'string'
-      ? pet.healthNotes
-      : pet.healthNotes ? JSON.stringify(pet.healthNotes) : null,
+    care_requirements:
+      typeof pet.careRequirements === 'string'
+        ? pet.careRequirements
+        : pet.careRequirements
+          ? JSON.stringify(pet.careRequirements)
+          : null,
+    good_with:
+      typeof pet.goodWith === 'string'
+        ? pet.goodWith
+        : pet.goodWith
+          ? JSON.stringify(pet.goodWith)
+          : null,
+    health_notes:
+      typeof pet.healthNotes === 'string'
+        ? pet.healthNotes
+        : pet.healthNotes
+          ? JSON.stringify(pet.healthNotes)
+          : null,
     color: pet.color ?? null,
     weight: pet.weight ?? null,
     size: pet.size ?? null,
     coat_length: pet.coatLength ?? null,
-    is_neutered: typeof pet.isNeutered === 'boolean' ? (pet.isNeutered ? 1 : 0) : pet.isNeutered ?? null,
-    is_vaccinated: typeof pet.isVaccinated === 'boolean' ? (pet.isVaccinated ? 1 : 0) : pet.isVaccinated ?? null,
+    is_neutered:
+      typeof pet.isNeutered === 'boolean' ? (pet.isNeutered ? 1 : 0) : (pet.isNeutered ?? null),
+    is_vaccinated:
+      typeof pet.isVaccinated === 'boolean'
+        ? pet.isVaccinated
+          ? 1
+          : 0
+        : (pet.isVaccinated ?? null),
     vaccination_status: pet.vaccinationStatus ?? null,
-    is_fiv_felv_tested: typeof pet.isFivFelvTested === 'boolean' ? (pet.isFivFelvTested ? 1 : 0) : pet.isFivFelvTested ?? null,
+    is_fiv_felv_tested:
+      typeof pet.isFivFelvTested === 'boolean'
+        ? pet.isFivFelvTested
+          ? 1
+          : 0
+        : (pet.isFivFelvTested ?? null),
     exercise_level: pet.exerciseLevel ?? null,
     training_level: pet.trainingLevel ?? null,
     social_level: pet.socialLevel ?? null,
     indoor_outdoor: pet.indoorOutdoor ?? null,
     grooming_requirements: pet.groomingRequirements ?? null,
-    good_with_kids: typeof pet.goodWithKids === 'boolean' ? (pet.goodWithKids ? 1 : 0) : pet.goodWithKids ?? null,
-    good_with_dogs: typeof pet.goodWithDogs === 'boolean' ? (pet.goodWithDogs ? 1 : 0) : pet.goodWithDogs ?? null,
-    good_with_cats: typeof pet.goodWithCats === 'boolean' ? (pet.goodWithCats ? 1 : 0) : pet.goodWithCats ?? null,
-    apartment_friendly: typeof pet.apartmentFriendly === 'boolean' ? (pet.apartmentFriendly ? 1 : 0) : pet.apartmentFriendly ?? null,
-    needs_yard: typeof pet.needsYard === 'boolean' ? (pet.needsYard ? 1 : 0) : pet.needsYard ?? null,
+    good_with_kids:
+      typeof pet.goodWithKids === 'boolean'
+        ? pet.goodWithKids
+          ? 1
+          : 0
+        : (pet.goodWithKids ?? null),
+    good_with_dogs:
+      typeof pet.goodWithDogs === 'boolean'
+        ? pet.goodWithDogs
+          ? 1
+          : 0
+        : (pet.goodWithDogs ?? null),
+    good_with_cats:
+      typeof pet.goodWithCats === 'boolean'
+        ? pet.goodWithCats
+          ? 1
+          : 0
+        : (pet.goodWithCats ?? null),
+    apartment_friendly:
+      typeof pet.apartmentFriendly === 'boolean'
+        ? pet.apartmentFriendly
+          ? 1
+          : 0
+        : (pet.apartmentFriendly ?? null),
+    needs_yard:
+      typeof pet.needsYard === 'boolean' ? (pet.needsYard ? 1 : 0) : (pet.needsYard ?? null),
     image_url: pet.imageUrl ?? null,
-    has_jpeg: typeof pet.hasJpeg === 'boolean' ? (pet.hasJpeg ? 1 : 0) : pet.hasJpeg ?? null,
-    has_webp: typeof pet.hasWebp === 'boolean' ? (pet.hasWebp ? 1 : 0) : pet.hasWebp ?? null,
+    has_jpeg: typeof pet.hasJpeg === 'boolean' ? (pet.hasJpeg ? 1 : 0) : (pet.hasJpeg ?? null),
+    has_webp: typeof pet.hasWebp === 'boolean' ? (pet.hasWebp ? 1 : 0) : (pet.hasWebp ?? null),
     image_checked_at: pet.imageCheckedAt ?? null,
     screenshot_requested_at: pet.screenshotRequestedAt ?? null,
     screenshot_completed_at: pet.screenshotCompletedAt ?? null,
@@ -435,7 +487,7 @@ export const petToRecord = (pet: Pet): PetRecord => {
 
 /**
  * PetRecord型をPet型に変換
- * 
+ *
  * @param record - 変換元のPetRecordオブジェクト
  * @returns 変換後のPetオブジェクト
  * @description データベース用のsnake_case型をフロントエンド用のcamelCase型に変換

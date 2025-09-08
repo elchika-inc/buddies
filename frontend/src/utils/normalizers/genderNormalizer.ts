@@ -5,10 +5,10 @@
 // 性別パターンの設定
 const GENDER_PATTERNS = {
   male: ['♂', 'オス', '男の子', 'male', '男'],
-  female: ['♀', 'メス', '女の子', 'female', '女']
-} as const;
+  female: ['♀', 'メス', '女の子', 'female', '女'],
+} as const
 
-export type NormalizedGender = 'male' | 'female' | 'unknown';
+export type NormalizedGender = 'male' | 'female' | 'unknown'
 
 /**
  * 性別文字列を正規化する
@@ -17,23 +17,23 @@ export type NormalizedGender = 'male' | 'female' | 'unknown';
  */
 export function normalizeGender(genderText: string | null | undefined): NormalizedGender {
   if (!genderText) {
-    return 'unknown';
+    return 'unknown'
   }
-  
-  const text = genderText.toLowerCase().trim();
-  
+
+  const text = genderText.toLowerCase().trim()
+
   // 男の子のパターンチェック
-  if (GENDER_PATTERNS.male.some(pattern => text.includes(pattern.toLowerCase()))) {
-    return 'male';
+  if (GENDER_PATTERNS.male.some((pattern) => text.includes(pattern.toLowerCase()))) {
+    return 'male'
   }
-  
+
   // 女の子のパターンチェック
-  if (GENDER_PATTERNS.female.some(pattern => text.includes(pattern.toLowerCase()))) {
-    return 'female';
+  if (GENDER_PATTERNS.female.some((pattern) => text.includes(pattern.toLowerCase()))) {
+    return 'female'
   }
-  
+
   // 不明のパターン
-  return 'unknown';
+  return 'unknown'
 }
 
 /**
@@ -42,7 +42,7 @@ export function normalizeGender(genderText: string | null | undefined): Normaliz
  * @returns 有効な性別かどうか
  */
 export function isValidGender(gender: string): gender is NormalizedGender {
-  return gender === 'male' || gender === 'female' || gender === 'unknown';
+  return gender === 'male' || gender === 'female' || gender === 'unknown'
 }
 
 /**
@@ -50,5 +50,5 @@ export function isValidGender(gender: string): gender is NormalizedGender {
  * @returns 性別パターンの設定
  */
 export function getGenderPatterns(): typeof GENDER_PATTERNS {
-  return GENDER_PATTERNS;
+  return GENDER_PATTERNS
 }

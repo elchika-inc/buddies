@@ -34,7 +34,7 @@ const mockPet: Pet = {
 describe('PetCard', () => {
   it('ペットカードがレンダリングされる', () => {
     render(<PetCard pet={mockPet} />)
-    
+
     // PetCardは基本的にカード要素として表示される
     const container = screen.getByRole('generic')
     expect(container).toBeInTheDocument()
@@ -42,5 +42,4 @@ describe('PetCard', () => {
 
   // PetCardは基本情報のみを表示するカードコンポーネント
   // 詳細情報はPetDetailModalで表示される
-
 })

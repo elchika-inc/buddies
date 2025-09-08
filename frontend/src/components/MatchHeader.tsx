@@ -31,25 +31,26 @@ export function MatchHeader({
 
   const safeLikedPets = Array.isArray(likedPets) ? likedPets : []
   const safeSuperLikedPets = Array.isArray(superLikedPets) ? superLikedPets : []
-  
+
   // 重複を排除
-  const uniqueLikedPets = safeLikedPets.filter((pet, index, arr) => 
-    arr.findIndex(p => p.id === pet.id) === index
+  const uniqueLikedPets = safeLikedPets.filter(
+    (pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index
   )
-  const uniqueSuperLikedPets = safeSuperLikedPets.filter((pet, index, arr) => 
-    arr.findIndex(p => p.id === pet.id) === index
+  const uniqueSuperLikedPets = safeSuperLikedPets.filter(
+    (pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index
   )
-  
+
   // すべてのお気に入りを合わせたリスト（重複排除）
   const allFavorites = [...uniqueLikedPets, ...uniqueSuperLikedPets]
-    .filter((pet, index, arr) => arr.findIndex(p => p.id === pet.id) === index)
+    .filter((pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index)
     .sort((a, b) => b.name.localeCompare(a.name)) // 名前でソート
-  
-  const currentList = activeTab === 'all' 
-    ? allFavorites 
-    : activeTab === 'like' 
-      ? uniqueLikedPets 
-      : uniqueSuperLikedPets
+
+  const currentList =
+    activeTab === 'all'
+      ? allFavorites
+      : activeTab === 'like'
+        ? uniqueLikedPets
+        : uniqueSuperLikedPets
   const currentRemoveFunction = activeTab === 'like' ? onRemoveLike : onRemoveSuperLike
   const petEmoji = petType === 'dog' ? '🐶' : '🐱'
   const title = petType === 'dog' ? 'DogMatch' : 'CatMatch'
@@ -58,7 +59,9 @@ export function MatchHeader({
     <>
       <header className="bg-white border-b border-gray-200 p-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800">{petEmoji} {title}</h1>
+          <h1 className="text-xl font-bold text-gray-800">
+            {petEmoji} {title}
+          </h1>
           <div className="flex items-center gap-2">
             <button
               onClick={onLocationClick}
@@ -134,51 +137,58 @@ export function MatchHeader({
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {Array.isArray(currentList) && currentList.map((pet, index) => (
-                    <div key={`${activeTab}-${pet.id}-${index}`} className="border border-gray-200 rounded-lg p-4 flex gap-4">
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden">
-                        <Image
-                          src={pet.imageUrl || (petType === 'dog' 
-                            ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
-                            : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')}
-                          alt={pet.name}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
-                      </div>
+                  {Array.isArray(currentList) &&
+                    currentList.map((pet, index) => (
                       <div
-                        className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
-                        onClick={() => setSelectedPet(pet)}
+                        key={`${activeTab}-${pet.id}-${index}`}
+                        className="border border-gray-200 rounded-lg p-4 flex gap-4"
                       >
-                        <h3 className="font-bold text-lg text-gray-800">{pet.name}</h3>
-                        <p className="text-gray-600">
-                          {pet.breed} • {pet.age}歳 • {pet.gender}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-1">{pet.location}</p>
-                        <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る</p>
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                          <Image
+                            src={
+                              pet.imageUrl ||
+                              (petType === 'dog'
+                                ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+                                : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')
+                            }
+                            alt={pet.name}
+                            fill
+                            className="object-cover"
+                            sizes="80px"
+                          />
+                        </div>
+                        <div
+                          className="flex-1 cursor-pointer hover:bg-gray-50 -m-2 p-2 rounded"
+                          onClick={() => setSelectedPet(pet)}
+                        >
+                          <h3 className="font-bold text-lg text-gray-800">{pet.name}</h3>
+                          <p className="text-gray-600">
+                            {pet.breed} • {pet.age}歳 • {pet.gender}
+                          </p>
+                          <p className="text-gray-500 text-sm mt-1">{pet.location}</p>
+                          <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (activeTab === 'all') {
+                              // すべてタブの場合、どちらのリストに含まれているかを判定
+                              if (uniqueLikedPets.some((p) => p.id === pet.id)) {
+                                onRemoveLike(pet.id)
+                              }
+                              if (uniqueSuperLikedPets.some((p) => p.id === pet.id)) {
+                                onRemoveSuperLike(pet.id)
+                              }
+                            } else {
+                              currentRemoveFunction(pet.id)
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-700 px-2"
+                          title="お気に入りから削除"
+                        >
+                          削除
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          if (activeTab === 'all') {
-                            // すべてタブの場合、どちらのリストに含まれているかを判定
-                            if (uniqueLikedPets.some(p => p.id === pet.id)) {
-                              onRemoveLike(pet.id)
-                            }
-                            if (uniqueSuperLikedPets.some(p => p.id === pet.id)) {
-                              onRemoveSuperLike(pet.id)
-                            }
-                          } else {
-                            currentRemoveFunction(pet.id)
-                          }
-                        }}
-                        className="text-red-500 hover:text-red-700 px-2"
-                        title="お気に入りから削除"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>

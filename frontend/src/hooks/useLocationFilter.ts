@@ -15,7 +15,7 @@ export function useLocationFilter(pets: Pet[], filter: LocationFilter) {
     if (!filter.prefecture && !filter.city) {
       return pets
     }
-    
+
     return filterPetsByLocation(pets, filter)
   }, [pets, filter])
 
@@ -30,7 +30,7 @@ export function useLocationFilter(pets: Pet[], filter: LocationFilter) {
   return {
     filteredPets,
     availablePrefectures,
-    availableCities
+    availableCities,
   }
 }
 
@@ -41,26 +41,26 @@ export function useLocationStats(pets: Pet[]) {
   const stats = useMemo(() => {
     const prefectureCount: Record<string, number> = {}
     const cityCount: Record<string, number> = {}
-    
-    pets.forEach(pet => {
+
+    pets.forEach((pet) => {
       if (pet.prefecture) {
         prefectureCount[pet.prefecture] = (prefectureCount[pet.prefecture] || 0) + 1
       }
-      
+
       if (pet.city) {
         const cityKey = pet.prefecture ? `${pet.prefecture}_${pet.city}` : pet.city
         cityCount[cityKey] = (cityCount[cityKey] || 0) + 1
       }
     })
-    
+
     return {
       prefectureCount,
       cityCount,
       totalCount: pets.length,
       uniquePrefectures: Object.keys(prefectureCount).length,
-      uniqueCities: Object.keys(cityCount).length
+      uniqueCities: Object.keys(cityCount).length,
     }
   }, [pets])
-  
+
   return stats
 }

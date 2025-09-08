@@ -2,22 +2,22 @@
  * API通信を管理するサービス
  */
 
-import type { Env, PetRecord } from '../types';
-import { Result, Ok, Err } from '../types/result';
-import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api';
-import { drizzle } from 'drizzle-orm/d1';
-import { eq, isNull, and, or } from 'drizzle-orm';
-import { pets as petsTable } from '../../../database/schema/schema';
+import type { Env, PetRecord } from '../types'
+import { Result, Ok, Err } from '../types/result'
+import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api'
+import { drizzle } from 'drizzle-orm/d1'
+import { eq, isNull, and, or } from 'drizzle-orm'
+import { pets as petsTable } from '../../../database/schema/schema'
 
 export class ApiService {
-  private readonly apiUrl: string;
-  private readonly apiKey: string | undefined;
-  private readonly db: ReturnType<typeof drizzle> | undefined;
+  private readonly apiUrl: string
+  private readonly apiKey: string | undefined
+  private readonly db: ReturnType<typeof drizzle> | undefined
 
   constructor(env: Env) {
-    this.apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app';
-    this.apiKey = env.PUBLIC_API_KEY || env.API_KEY || undefined;
-    this.db = env.DB ? drizzle(env.DB) : undefined;
+    this.apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app'
+    this.apiKey = env.PUBLIC_API_KEY || env.API_KEY || undefined
+    this.db = env.DB ? drizzle(env.DB) : undefined
   }
 
   /**
@@ -32,49 +32,44 @@ export class ApiService {
           .from(petsTable)
           .where(
             and(
-              or(
-                isNull(petsTable.imageUrl),
-                eq(petsTable.hasJpeg, 0),
-                eq(petsTable.hasWebp, 0)
-              ),
+              or(isNull(petsTable.imageUrl), eq(petsTable.hasJpeg, 0), eq(petsTable.hasWebp, 0)),
               isNull(petsTable.screenshotRequestedAt)
             )
           )
-          .limit(limit);
-        
-        return Ok(petsWithoutImages as PetRecord[]);
+          .limit(limit)
+
+        return Ok(petsWithoutImages as PetRecord[])
       }
 
       // D1が使用できない場合はAPIにフォールバック
-      const response = await this.makeApiRequest('/api/stats');
-      
+      const response = await this.makeApiRequest('/api/stats')
+
       if (!response.ok) {
-        return Err(new Error(`API request failed with status: ${response.status}`));
+        return Err(new Error(`API request failed with status: ${response.status}`))
       }
 
       // レスポンスをJSONとしてパース
-      const data = await response.json();
-      
+      const data = await response.json()
+
       // 型検証
       if (!isApiStatsResponse(data)) {
-        return Err(new Error('Invalid API response structure'));
+        return Err(new Error('Invalid API response structure'))
       }
 
       if (!data.success) {
-        return Err(new Error(data.error || 'API request was not successful'));
+        return Err(new Error(data.error || 'API request was not successful'))
       }
 
       if (!data.data?.missingImages) {
-        return Ok([]); // データがない場合は空配列を返す
+        return Ok([]) // データがない場合は空配列を返す
       }
 
       // ペットデータを変換
-      const pets = this.convertApiPetsToPetRecords(data.data.missingImages, limit);
-      return Ok(pets);
-
+      const pets = this.convertApiPetsToPetRecords(data.data.missingImages, limit)
+      return Ok(pets)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown API error';
-      return Err(new Error(`Failed to fetch pets: ${errorMessage}`));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown API error'
+      return Err(new Error(`Failed to fetch pets: ${errorMessage}`))
     }
   }
 
@@ -82,12 +77,12 @@ export class ApiService {
    * APIリクエストを実行
    */
   private async makeApiRequest(endpoint: string): Promise<Response> {
-    const url = `${this.apiUrl}${endpoint}`;
-    
+    const url = `${this.apiUrl}${endpoint}`
+
     return await fetch(url, {
       method: 'GET',
-      headers: this.buildApiHeaders()
-    });
+      headers: this.buildApiHeaders(),
+    })
   }
 
   /**
@@ -95,32 +90,32 @@ export class ApiService {
    */
   private buildApiHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-
-    if (this.apiKey) {
-      headers['X-API-Key'] = this.apiKey;
+      'Content-Type': 'application/json',
     }
 
-    return headers;
+    if (this.apiKey) {
+      headers['X-API-Key'] = this.apiKey
+    }
+
+    return headers
   }
 
   /**
    * APIのペットデータをPetRecord型に変換
    */
   private convertApiPetsToPetRecords(apiPets: ApiPetData[], limit: number): PetRecord[] {
-    const records: PetRecord[] = [];
-    const petsToProcess = apiPets.slice(0, limit);
+    const records: PetRecord[] = []
+    const petsToProcess = apiPets.slice(0, limit)
 
     for (const apiPet of petsToProcess) {
       if (isApiPetData(apiPet)) {
-        records.push(this.convertApiPetToPetRecord(apiPet));
+        records.push(this.convertApiPetToPetRecord(apiPet))
       } else {
-        console.warn('Invalid pet data skipped:', apiPet);
+        console.warn('Invalid pet data skipped:', apiPet)
       }
     }
 
-    return records;
+    return records
   }
 
   /**
@@ -176,7 +171,7 @@ export class ApiService {
       adoption_fee: null,
       created_at: null,
       updated_at: null,
-    };
+    }
   }
 
   /**
@@ -188,7 +183,7 @@ export class ApiService {
     status: string
   ): Promise<Result<void>> {
     // TODO: 履歴記録APIが実装されたら追加
-    console.log(`Dispatch history recorded: ${batchId}, count: ${petCount}, status: ${status}`);
-    return Ok(undefined);
+    console.log(`Dispatch history recorded: ${batchId}, count: ${petCount}, status: ${status}`)
+    return Ok(undefined)
   }
 }

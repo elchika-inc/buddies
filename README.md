@@ -27,9 +27,11 @@ PawMatch is a Tinder-style web application designed to revolutionize pet adoptio
 PawMatch is available in two specialized versions:
 
 #### 🐕 DogMatch
+
 Visit our dog adoption platform to find your perfect canine companion.
 
-#### 🐱 CatMatch  
+#### 🐱 CatMatch
+
 Explore our cat adoption platform to meet your future feline friend.
 
 ### How It Works
@@ -43,6 +45,7 @@ Explore our cat adoption platform to meet your future feline friend.
 ## 📱 Features
 
 ### Pet Profiles Include
+
 - High-quality photos
 - Name, age, and breed information
 - Personality traits and temperament
@@ -52,6 +55,7 @@ Explore our cat adoption platform to meet your future feline friend.
 - Adoption fees
 
 ### Search & Filter Options
+
 - **Location** - Find pets near you
 - **Size** - Small, medium, or large
 - **Age** - Puppies/kittens to seniors
@@ -61,13 +65,14 @@ Explore our cat adoption platform to meet your future feline friend.
 ## 🌍 Supported Regions
 
 Currently available in:
+
 - Tokyo Metropolitan Area
-- Kansai Region  
+- Kansai Region
 - Chubu Region
 - Kyushu Region
 - Tohoku Region
 
-*More regions coming soon!*
+_More regions coming soon!_
 
 ## 💝 Why Choose PawMatch?
 
@@ -126,12 +131,14 @@ npm run dev:all
 ### 環境変数設定
 
 #### app/.env.local
+
 ```env
 NEXT_PUBLIC_PET_TYPE=dog  # または cat
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8787
 ```
 
 #### api/.dev.vars
+
 ```env
 ALLOWED_ORIGIN=http://localhost:3004
 USE_LOCAL_IMAGES=true
@@ -190,4 +197,4 @@ PawMatch is open source software licensed under the MIT license.
 
 ---
 
-*Made with ❤️ for rescue animals everywhere*
+_Made with ❤️ for rescue animals everywhere_

@@ -36,26 +36,29 @@ const nextConfig = {
 
 // PWAを最小限の機能に制限
 // 本番環境でのみ有効化、開発環境では完全に無効
-const pwaConfig = process.env.NODE_ENV === 'production' && process.env.DISABLE_PWA !== 'true' ? withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: false,
-  // Service Workerを最小限に
-  sw: 'sw.js',
-  // プリキャッシュを無効化
-  cacheOnFrontEndNav: false,
-  // フォールバックページのみ設定（オフライン時に表示）
-  fallbacks: {
-    document: '/_offline',
-  },
-  // ランタイムキャッシュを完全に無効化
-  runtimeCaching: [],
-  // Workboxオプション
-  buildExcludes: [/.*\.map$/, /.*\.LICENSE\.txt$/],
-  // キャッシュを使用しない
-  cacheId: 'pawmatch-minimal',
-  cleanupOutdatedCaches: true,
-}) : (config) => config;
+const pwaConfig =
+  process.env.NODE_ENV === 'production' && process.env.DISABLE_PWA !== 'true'
+    ? withPWA({
+        dest: 'public',
+        register: true,
+        skipWaiting: true,
+        disable: false,
+        // Service Workerを最小限に
+        sw: 'sw.js',
+        // プリキャッシュを無効化
+        cacheOnFrontEndNav: false,
+        // フォールバックページのみ設定（オフライン時に表示）
+        fallbacks: {
+          document: '/_offline',
+        },
+        // ランタイムキャッシュを完全に無効化
+        runtimeCaching: [],
+        // Workboxオプション
+        buildExcludes: [/.*\.map$/, /.*\.LICENSE\.txt$/],
+        // キャッシュを使用しない
+        cacheId: 'pawmatch-minimal',
+        cleanupOutdatedCaches: true,
+      })
+    : (config) => config
 
 export default pwaConfig(nextConfig)

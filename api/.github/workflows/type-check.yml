@@ -1,0 +1,138 @@
+name: Type Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run type check
+        run: npm run type-check
+        
+      - name: Upload type check results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: type-check-results
+          path: |
+            **/tsconfig.tsbuildinfo
+            **/*.log
+          retention-days: 7
+          
+  type-check-frontend:
+    name: Frontend Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check frontend
+        run: npm run type-check:app
+        continue-on-error: false
+        
+  type-check-api:
+    name: API Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check API
+        run: npm run -w @pawmatch/api type-check
+        continue-on-error: false
+        
+  type-check-workers:
+    name: Workers Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Type check Crawler
+        run: npm run -w @pawmatch/crawler type-check
+        continue-on-error: false
+        
+      - name: Type check Dispatcher
+        run: npm run -w @pawmatch/dispatcher type-check
+        continue-on-error: false
+
+  report-status:
+    name: Report Type Check Status
+    needs: [type-check, type-check-frontend, type-check-api, type-check-workers]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check job statuses
+        run: |
+          echo "Type Check Results:"
+          echo "==================="
+          echo "Overall: ${{ needs.type-check.result }}"
+          echo "Frontend: ${{ needs.type-check-frontend.result }}"
+          echo "API: ${{ needs.type-check-api.result }}"
+          echo "Workers: ${{ needs.type-check-workers.result }}"
+          
+      - name: Set exit code
+        run: |
+          if [[ "${{ needs.type-check.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-check-frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-check-api.result }}" == "failure" ]] || \
+             [[ "${{ needs.type-check-workers.result }}" == "failure" ]]; then
+            echo "❌ Type check failed!"
+            exit 1
+          else
+            echo "✅ All type checks passed!"
+          fi

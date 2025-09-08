@@ -1,30 +1,30 @@
-import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import { apiKeys } from '../../../database/schema/schema';
+import { InferSelectModel, InferInsertModel } from 'drizzle-orm'
+import { apiKeys } from '../../../database/schema/schema'
 
 // Drizzleスキーマから推論される型
-export type ApiKeySelect = InferSelectModel<typeof apiKeys>;
-export type ApiKeyInsert = InferInsertModel<typeof apiKeys>;
+export type ApiKeySelect = InferSelectModel<typeof apiKeys>
+export type ApiKeyInsert = InferInsertModel<typeof apiKeys>
 
 // APIキーのタイプ
-export type ApiKeyType = 'public' | 'internal' | 'admin';
+export type ApiKeyType = 'public' | 'internal' | 'admin'
 
 // 権限の型
-export type Permission = string;
+export type Permission = string
 
 // APIキーの型（アプリケーション用）
 export interface ApiKey {
-  id: string;
-  key: string;
-  name: string;
-  type: ApiKeyType;
-  permissions: Permission[];
-  rateLimit: number;
-  expiresAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  lastUsedAt: string | null;
-  isActive: boolean;
-  metadata?: Record<string, any> | null;
+  id: string
+  key: string
+  name: string
+  type: ApiKeyType
+  permissions: Permission[]
+  rateLimit: number
+  expiresAt: string | null
+  createdAt: string
+  updatedAt: string
+  lastUsedAt: string | null
+  isActive: boolean
+  metadata?: Record<string, any> | null
 }
 
 // Drizzleのレコードをアプリケーション型に変換
@@ -42,7 +42,7 @@ export function convertDrizzleApiKey(row: ApiKeySelect): ApiKey {
     lastUsedAt: row.lastUsedAt,
     isActive: row.isActive === 1,
     metadata: row.metadata ? JSON.parse(row.metadata) : null,
-  };
+  }
 }
 
 // アプリケーション型をDrizzleのレコードに変換
@@ -58,5 +58,5 @@ export function toDrizzleApiKey(apiKey: Partial<ApiKey>): Partial<ApiKeyInsert> 
     lastUsedAt: apiKey.lastUsedAt,
     isActive: apiKey.isActive !== undefined ? (apiKey.isActive ? 1 : 0) : undefined,
     metadata: apiKey.metadata ? JSON.stringify(apiKey.metadata) : undefined,
-  };
+  }
 }

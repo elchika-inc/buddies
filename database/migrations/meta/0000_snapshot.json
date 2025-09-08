@@ -99,37 +99,27 @@
       "indexes": {
         "api_keys_key_unique": {
           "name": "api_keys_key_unique",
-          "columns": [
-            "key"
-          ],
+          "columns": ["key"],
           "isUnique": true
         },
         "idx_api_keys_key": {
           "name": "idx_api_keys_key",
-          "columns": [
-            "key"
-          ],
+          "columns": ["key"],
           "isUnique": false
         },
         "idx_api_keys_type": {
           "name": "idx_api_keys_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         },
         "idx_api_keys_is_active": {
           "name": "idx_api_keys_is_active",
-          "columns": [
-            "is_active"
-          ],
+          "columns": ["is_active"],
           "isUnique": false
         },
         "idx_api_keys_expires_at": {
           "name": "idx_api_keys_expires_at",
-          "columns": [
-            "expires_at"
-          ],
+          "columns": ["expires_at"],
           "isUnique": false
         }
       },
@@ -204,10 +194,7 @@
       "indexes": {
         "idx_crawler_states_source_type": {
           "name": "idx_crawler_states_source_type",
-          "columns": [
-            "source_id",
-            "pet_type"
-          ],
+          "columns": ["source_id", "pet_type"],
           "isUnique": false
         }
       },
@@ -559,45 +546,32 @@
       "indexes": {
         "idx_pets_type": {
           "name": "idx_pets_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         },
         "idx_pets_prefecture": {
           "name": "idx_pets_prefecture",
-          "columns": [
-            "prefecture"
-          ],
+          "columns": ["prefecture"],
           "isUnique": false
         },
         "idx_pets_created_at": {
           "name": "idx_pets_created_at",
-          "columns": [
-            "created_at"
-          ],
+          "columns": ["created_at"],
           "isUnique": false
         },
         "idx_pets_has_jpeg": {
           "name": "idx_pets_has_jpeg",
-          "columns": [
-            "has_jpeg"
-          ],
+          "columns": ["has_jpeg"],
           "isUnique": false
         },
         "idx_pets_has_webp": {
           "name": "idx_pets_has_webp",
-          "columns": [
-            "has_webp"
-          ],
+          "columns": ["has_webp"],
           "isUnique": false
         },
         "idx_pets_type_created": {
           "name": "idx_pets_type_created",
-          "columns": [
-            "type",
-            "created_at"
-          ],
+          "columns": ["type", "created_at"],
           "isUnique": false
         }
       },
@@ -665,16 +639,12 @@
       "indexes": {
         "sync_metadata_key_unique": {
           "name": "sync_metadata_key_unique",
-          "columns": [
-            "key"
-          ],
+          "columns": ["key"],
           "isUnique": true
         },
         "idx_sync_metadata_key": {
           "name": "idx_sync_metadata_key",
-          "columns": [
-            "key"
-          ],
+          "columns": ["key"],
           "isUnique": false
         }
       },
@@ -764,23 +734,17 @@
       "indexes": {
         "idx_sync_status_type": {
           "name": "idx_sync_status_type",
-          "columns": [
-            "sync_type"
-          ],
+          "columns": ["sync_type"],
           "isUnique": false
         },
         "idx_sync_status_status": {
           "name": "idx_sync_status_status",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         },
         "idx_sync_status_created": {
           "name": "idx_sync_status_created",
-          "columns": [
-            "created_at"
-          ],
+          "columns": ["created_at"],
           "isUnique": false
         }
       },

@@ -7,6 +7,7 @@
 Cloudflare Dashboard → Pages → pawmatch-dogs → Settings → Environment variables から以下を設定：
 
 #### Production環境
+
 ```
 NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://pawmatch-dogs.elchika.app
@@ -17,6 +18,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 ```
 
 #### Preview環境
+
 ```
 NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://dogmatch-16r.pages.dev
@@ -31,6 +33,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 Cloudflare Dashboard → Pages → pawmatch-cats → Settings → Environment variables から以下を設定：
 
 #### Production環境
+
 ```
 NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://pawmatch-cats.elchika.app
@@ -41,6 +44,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 ```
 
 #### Preview環境
+
 ```
 NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://catmatch.pages.dev
@@ -53,6 +57,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 ## ✅ 設定済みのシークレット
 
 以下のシークレットはすでにwranglerコマンドで設定済みです：
+
 - `NEXT_PUBLIC_API_KEY` (両プロジェクトに設定済み)
 
 ## 📝 設定手順

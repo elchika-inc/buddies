@@ -26,7 +26,7 @@ export function SwipeIndicator({
   let activeIndicator: SwipeDirection | null = null
   let activeStyle = { opacity: 0, color: '#000' }
   let activeText = ''
-  
+
   if (isExiting && exitDirection) {
     activeIndicator = exitDirection
     activeStyle = indicatorStyle[exitDirection]
@@ -38,8 +38,9 @@ export function SwipeIndicator({
       indicatorStyle.pass.opacity,
       indicatorStyle.superLike.opacity
     )
-    
-    if (maxOpacity > 0.3) { // 閾値以上の場合のみ表示
+
+    if (maxOpacity > 0.3) {
+      // 閾値以上の場合のみ表示
       if (indicatorStyle.like.opacity === maxOpacity) {
         activeIndicator = 'like'
         activeStyle = indicatorStyle.like
@@ -55,20 +56,20 @@ export function SwipeIndicator({
       }
     }
   }
-  
+
   if (!activeIndicator || activeStyle.opacity === 0) {
     return null
   }
-  
+
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div 
+      <div
         className="text-4xl font-bold border-4 px-8 py-4 rounded-2xl transform rotate-12"
         style={{
           opacity: activeStyle.opacity,
           color: activeStyle.color,
           borderColor: activeStyle.color,
-          backgroundColor: `${activeStyle.color}20`
+          backgroundColor: `${activeStyle.color}20`,
         }}
       >
         {activeText}

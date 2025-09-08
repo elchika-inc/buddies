@@ -10,5 +10,5 @@ export {
   isPet,
   isPrefecturesData,
   isStatsData,
-  isPartialStatsData
-} from './typeGuards';
+  isPartialStatsData,
+} from './typeGuards'

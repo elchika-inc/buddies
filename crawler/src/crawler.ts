@@ -1,6 +1,6 @@
 /**
  * シンプル化されたペットホームクローラー
- * 
+ *
  * @description ペットホーム（pet-home.jp）から保護犬・保護猫の情報を取得するクローラー
  * 単一サイト対応のため、不要な抽象化を除去し、高速で信頼性の高い処理を実現
  * @site https://www.pet-home.jp
@@ -9,21 +9,21 @@ import type { Pet, CrawlResult } from '../../shared/types/index'
 
 /**
  * Cloudflare Workers環境変数の型定義
- * 
+ *
  * @interface Env
  * @description クローラーが使用するCloudflareリソースの型定義
  */
 export interface Env {
   /** D1データベースインスタンス */
-  DB: D1Database;
+  DB: D1Database
   /** R2ストレージバケット */
-  R2_BUCKET: R2Bucket;
+  R2_BUCKET: R2Bucket
   /** APIディスパッチャーキュー */
-  API_DISPATCHER_QUEUE: Queue;
+  API_DISPATCHER_QUEUE: Queue
   /** CORS許可オリジン */
-  ALLOWED_ORIGIN?: string;
+  ALLOWED_ORIGIN?: string
   /** ローカル画像使用フラグ */
-  USE_LOCAL_IMAGES?: string;
+  USE_LOCAL_IMAGES?: string
 }
 import * as cheerio from 'cheerio'
 import { drizzle } from 'drizzle-orm/d1'
@@ -33,7 +33,7 @@ import { FETCH_CONFIG, HTTP_CONFIG } from './config/constants'
 
 /**
  * ペットホームクローラークラス
- * 
+ *
  * @class PetHomeCrawler
  * @description ペットホームサイトから保護動物情報を取得し、D1データベースに保存するクローラー
  * HTMLパース、データ変換、画像保存を一括で処理
@@ -52,7 +52,7 @@ export class PetHomeCrawler {
 
   /**
    * コンストラクタ
-   * 
+   *
    * @param env - Cloudflare Workers環境変数
    */
   constructor(private env: Env) {
@@ -61,7 +61,7 @@ export class PetHomeCrawler {
 
   /**
    * メインクロール処理
-   * 
+   *
    * @param petType - クロール対象のペットタイプ（'dog' | 'cat'）
    * @param limit - 取得するペットの上限数（デフォルト: 10）
    * @returns クロール結果
@@ -109,7 +109,7 @@ export class PetHomeCrawler {
 
   /**
    * ペット情報を取得
-   * 
+   *
    * @param petType - 取得対象のペットタイプ
    * @param limit - 取得上限数
    * @returns ペット情報の配列
@@ -142,7 +142,7 @@ export class PetHomeCrawler {
 
   /**
    * ページを取得
-   * 
+   *
    * @param url - 取得対象のURL
    * @returns HTMLコンテンツ
    * @throws HTTPエラーまたはタイムアウトの場合
@@ -163,7 +163,7 @@ export class PetHomeCrawler {
 
   /**
    * ペットリストをパース
-   * 
+   *
    * @param html - 一覧ページのHTML
    * @param _petType - ペットタイプ（現在未使用）
    * @returns ペットIDと詳細URLの配列
@@ -197,7 +197,7 @@ export class PetHomeCrawler {
 
   /**
    * ペット詳細をパース
-   * 
+   *
    * @param html - 詳細ページのHTML
    * @param petInfo - ペットの基本情報
    * @param petType - ペットタイプ
@@ -276,7 +276,7 @@ export class PetHomeCrawler {
 
   /**
    * 所在地をパース
-   * 
+   *
    * @param locationText - 所在地テキスト
    * @returns [都道府県, 市区町村] のタプル
    * @description 「東京都 渋谷区」のような所在地文字列をパースし、
@@ -310,22 +310,19 @@ export class PetHomeCrawler {
 
   /**
    * 既存ペットをチェック
-   * 
+   *
    * @param id - ペットID
    * @returns 既存の場合true、新規の場合false
    * @description 指定されたIDのペットがデータベースに存在するか確認
    */
   private async checkExistingPet(id: string): Promise<boolean> {
-    const result = await this.db.select({ id: pets.id })
-      .from(pets)
-      .where(eq(pets.id, id))
-      .limit(1)
+    const result = await this.db.select({ id: pets.id }).from(pets).where(eq(pets.id, id)).limit(1)
     return result.length > 0
   }
 
   /**
    * ペットを作成
-   * 
+   *
    * @param pet - 作成するペット情報
    * @description 新しいペット情報をデータベースに挿入。
    * Pet型からデータベースレコード型に変換して保存
@@ -333,7 +330,7 @@ export class PetHomeCrawler {
   private async createPet(pet: Pet): Promise<void> {
     const { petToRecord } = await import('./types')
     const record = petToRecord(pet)
-    
+
     await this.db.insert(pets).values({
       id: record.id,
       type: record.type,
@@ -355,13 +352,13 @@ export class PetHomeCrawler {
       sourceId: record.source_id || 'pet-home',
       adoptionFee: record.adoption_fee || 0,
       createdAt: record.created_at || new Date().toISOString(),
-      updatedAt: record.updated_at || new Date().toISOString()
+      updatedAt: record.updated_at || new Date().toISOString(),
     })
   }
 
   /**
    * ペットを更新
-   * 
+   *
    * @param pet - 更新するペット情報
    * @description 既存のペット情報を最新のデータで更新。
    * ID以外の全フィールドとupdated_atを更新
@@ -369,8 +366,9 @@ export class PetHomeCrawler {
   private async updatePet(pet: Pet): Promise<void> {
     const { petToRecord } = await import('./types')
     const record = petToRecord(pet)
-    
-    await this.db.update(pets)
+
+    await this.db
+      .update(pets)
       .set({
         name: record.name,
         breed: record.breed,
@@ -388,14 +386,14 @@ export class PetHomeCrawler {
         shelterContact: record.shelter_contact,
         sourceUrl: record.source_url,
         sourceId: record.source_id || 'pet-home',
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(pets.id, record.id))
   }
 
   /**
    * 画像をR2に保存
-   * 
+   *
    * @param pet - 画像を保存するペット情報
    * @description ペットの画像URLから画像をダウンロードし、
    * Cloudflare R2ストレージに保存。エラーが発生しても処理を継続

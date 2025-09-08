@@ -12,42 +12,35 @@ export function useLocationSelection(
 
   const toggleRegion = (region: string) => {
     setExpandedRegions((prev) =>
-      prev.includes(region)
-        ? prev.filter((r) => r !== region)
-        : [...prev, region]
+      prev.includes(region) ? prev.filter((r) => r !== region) : [...prev, region]
     )
   }
 
   const togglePrefecture = (prefecture: string) => {
     setExpandedPrefectures((prev) =>
-      prev.includes(prefecture)
-        ? prev.filter((p) => p !== prefecture)
-        : [...prev, prefecture]
+      prev.includes(prefecture) ? prev.filter((p) => p !== prefecture) : [...prev, prefecture]
     )
   }
 
   const getAllLocationsInRegion = (region: string): Location[] => {
     const prefecturesInRegion = regions[region as keyof typeof regions]
     const allLocations: Location[] = []
-    
-    prefecturesInRegion.forEach(prefecture => {
+
+    prefecturesInRegion.forEach((prefecture) => {
       if (locations[prefecture as keyof typeof locations]) {
         allLocations.push({ prefecture, city: 'すべて' })
-        locations[prefecture as keyof typeof locations].forEach(city => {
+        locations[prefecture as keyof typeof locations].forEach((city) => {
           allLocations.push({ prefecture, city })
         })
       }
     })
-    
+
     return allLocations
   }
 
   const getAllLocationsInPrefecture = (prefecture: string): Location[] => {
     const cities = locations[prefecture as keyof typeof locations] || []
-    return [
-      { prefecture, city: 'すべて' },
-      ...cities.map(city => ({ prefecture, city }))
-    ]
+    return [{ prefecture, city: 'すべて' }, ...cities.map((city) => ({ prefecture, city }))]
   }
 
   const isLocationSelected = (location: Location): boolean => {
@@ -58,18 +51,21 @@ export function useLocationSelection(
 
   const isRegionAllSelected = (region: string): boolean => {
     const allLocationsInRegion = getAllLocationsInRegion(region)
-    return allLocationsInRegion.length > 0 && allLocationsInRegion.every(location =>
-      selectedLocations.some(
-        l => l.prefecture === location.prefecture && l.city === location.city
+    return (
+      allLocationsInRegion.length > 0 &&
+      allLocationsInRegion.every((location) =>
+        selectedLocations.some(
+          (l) => l.prefecture === location.prefecture && l.city === location.city
+        )
       )
     )
   }
 
   const isPrefectureAllSelected = (prefecture: string): boolean => {
     const allLocationsInPrefecture = getAllLocationsInPrefecture(prefecture)
-    return allLocationsInPrefecture.every(location =>
+    return allLocationsInPrefecture.every((location) =>
       selectedLocations.some(
-        l => l.prefecture === location.prefecture && l.city === location.city
+        (l) => l.prefecture === location.prefecture && l.city === location.city
       )
     )
   }
@@ -82,13 +78,15 @@ export function useLocationSelection(
       const prefecturesInRegion = regions[region as keyof typeof regions]
       const prefecturesSet = new Set(prefecturesInRegion)
       onLocationsChange(
-        selectedLocations.filter(l => !prefecturesSet.has(l.prefecture as typeof prefecturesInRegion[number]))
+        selectedLocations.filter(
+          (l) => !prefecturesSet.has(l.prefecture as (typeof prefecturesInRegion)[number])
+        )
       )
     } else {
       const prefecturesInRegion = regions[region as keyof typeof regions]
       const prefecturesSet = new Set(prefecturesInRegion)
       const otherLocations = selectedLocations.filter(
-        l => !prefecturesSet.has(l.prefecture as typeof prefecturesInRegion[number])
+        (l) => !prefecturesSet.has(l.prefecture as (typeof prefecturesInRegion)[number])
       )
       onLocationsChange([...otherLocations, ...allLocationsInRegion])
     }
@@ -99,13 +97,9 @@ export function useLocationSelection(
     const isAllSelected = isPrefectureAllSelected(prefecture)
 
     if (isAllSelected) {
-      onLocationsChange(
-        selectedLocations.filter(l => l.prefecture !== prefecture)
-      )
+      onLocationsChange(selectedLocations.filter((l) => l.prefecture !== prefecture))
     } else {
-      const otherLocations = selectedLocations.filter(
-        l => l.prefecture !== prefecture
-      )
+      const otherLocations = selectedLocations.filter((l) => l.prefecture !== prefecture)
       onLocationsChange([...otherLocations, ...allLocationsInPrefecture])
     }
   }
@@ -117,11 +111,7 @@ export function useLocationSelection(
       const allCitiesInPrefecture = getAllLocationsInPrefecture(location.prefecture)
 
       if (isSelected) {
-        onLocationsChange(
-          selectedLocations.filter(
-            (l) => l.prefecture !== location.prefecture
-          )
-        )
+        onLocationsChange(selectedLocations.filter((l) => l.prefecture !== location.prefecture))
       } else {
         const otherPrefectureLocations = selectedLocations.filter(
           (l) => l.prefecture !== location.prefecture
@@ -132,10 +122,11 @@ export function useLocationSelection(
       if (isSelected) {
         onLocationsChange(
           selectedLocations.filter(
-            (l) => !(
-              (l.prefecture === location.prefecture && l.city === location.city) ||
-              (l.prefecture === location.prefecture && l.city === 'すべて')
-            )
+            (l) =>
+              !(
+                (l.prefecture === location.prefecture && l.city === location.city) ||
+                (l.prefecture === location.prefecture && l.city === 'すべて')
+              )
           )
         )
       } else {

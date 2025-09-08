@@ -1,45 +1,48 @@
-import { Hono } from 'hono';
-import { setupMiddleware } from './middleware/setup';
-import { withEnv } from './middleware/env-middleware';
-import { HealthController } from './controllers';
-import healthRoutes from './routes/health';
-import petRoutes from './routes/pets';
-import imageRoutes from './routes/images';
-import adminRoutes from './routes/admin';
-import statsRoutes from './routes/stats';
-import crawlerRoutes from './routes/crawler';
-import apiKeysRoutes from './routes/api-keys';
-import type { Env } from './types';
+import { Hono } from 'hono'
+import { setupMiddleware } from './middleware/setup'
+import { withEnv } from './middleware/envMiddleware'
+import { HealthController } from './controllers'
+import healthRoutes from './routes/health'
+import petRoutes from './routes/pets'
+import imageRoutes from './routes/images'
+import adminRoutes from './routes/admin'
+import statsRoutes from './routes/stats'
+import crawlerRoutes from './routes/crawler'
+import apiKeysRoutes from './routes/apiKeys'
+import type { Env } from './types'
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>()
 
 // ミドルウェア設定を適用
-setupMiddleware(app);
+setupMiddleware(app)
 
 // ========================================
 // ルート定義
 // ========================================
 
 // ルートパスのヘルスチェック
-app.get('/', withEnv(async (c) => {
-  const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET);
-  return healthController.getHealthStatus(c);
-}));
+app.get(
+  '/',
+  withEnv(async (c) => {
+    const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET)
+    return healthController.getHealthStatus(c)
+  })
+)
 
 // ヘルスチェックルート
-app.route('/health', healthRoutes);
+app.route('/health', healthRoutes)
 
 // APIルート
-app.route('/api/stats', statsRoutes);
-app.route('/api/pets', petRoutes);
-app.route('/api/images', imageRoutes);
-app.route('/api/admin', adminRoutes);
+app.route('/api/stats', statsRoutes)
+app.route('/api/pets', petRoutes)
+app.route('/api/images', imageRoutes)
+app.route('/api/admin', adminRoutes)
 
 // APIキー管理ルート
-app.route('/api/keys', apiKeysRoutes);
+app.route('/api/keys', apiKeysRoutes)
 
 // 内部APIルート
-app.route('/crawler', crawlerRoutes);
+app.route('/crawler', crawlerRoutes)
 
 // ========================================
 // エラーハンドリング
@@ -47,28 +50,34 @@ app.route('/crawler', crawlerRoutes);
 
 // 404 handler
 app.notFound((c) => {
-  return c.json({
-    success: false,
-    error: {
-      message: 'Not Found',
-      code: 'ROUTE_NOT_FOUND',
-      path: c.req.path
+  return c.json(
+    {
+      success: false,
+      error: {
+        message: 'Not Found',
+        code: 'ROUTE_NOT_FOUND',
+        path: c.req.path,
+      },
+      timestamp: new Date().toISOString(),
     },
-    timestamp: new Date().toISOString()
-  }, 404);
-});
+    404
+  )
+})
 
 // Error handler
 app.onError((err, c) => {
-  console.error('Application error:', err);
-  return c.json({
-    success: false,
-    error: {
-      message: err.message || 'Internal Server Error',
-      code: 'INTERNAL_ERROR'
+  console.error('Application error:', err)
+  return c.json(
+    {
+      success: false,
+      error: {
+        message: err.message || 'Internal Server Error',
+        code: 'INTERNAL_ERROR',
+      },
+      timestamp: new Date().toISOString(),
     },
-    timestamp: new Date().toISOString()
-  }, 500);
-});
+    500
+  )
+})
 
-export default app;
+export default app

@@ -2,33 +2,33 @@
  * GitHub Actionsワークフローを制御するサービス
  */
 
-import type { Env, PetRecord } from '../types';
-import { Result, Ok, Err } from '../types/result';
+import type { Env, PetRecord } from '../types'
+import { Result, Ok, Err } from '../types/result'
 
 export class RateLimitError extends Error {
   constructor(public retryAfter: number) {
-    super(`Rate limit exceeded. Retry after ${retryAfter} seconds`);
-    this.name = 'RateLimitError';
+    super(`Rate limit exceeded. Retry after ${retryAfter} seconds`)
+    this.name = 'RateLimitError'
   }
 }
 
 export interface WorkflowInputs {
-  batchData: string;
-  batchId: string;
-  limit: string;
+  batchData: string
+  batchId: string
+  limit: string
 }
 
 export class GitHubService {
-  private readonly githubToken: string;
-  private readonly githubOwner: string;
-  private readonly githubRepo: string;
-  private readonly workflowFile: string;
+  private readonly githubToken: string
+  private readonly githubOwner: string
+  private readonly githubRepo: string
+  private readonly workflowFile: string
 
   constructor(env: Env) {
-    this.githubToken = env.GITHUB_TOKEN;
-    this.githubOwner = env.GITHUB_OWNER;
-    this.githubRepo = env.GITHUB_REPO;
-    this.workflowFile = env.WORKFLOW_FILE;
+    this.githubToken = env.GITHUB_TOKEN
+    this.githubOwner = env.GITHUB_OWNER
+    this.githubRepo = env.GITHUB_REPO
+    this.workflowFile = env.WORKFLOW_FILE
   }
 
   /**
@@ -36,25 +36,24 @@ export class GitHubService {
    */
   async triggerWorkflow(pets: PetRecord[], batchId: string): Promise<Result<void>> {
     try {
-      const url = this.buildWorkflowUrl();
-      const payload = this.buildWorkflowPayload(pets, batchId);
-      
+      const url = this.buildWorkflowUrl()
+      const payload = this.buildWorkflowPayload(pets, batchId)
+
       const response = await fetch(url, {
         method: 'POST',
         headers: this.buildHeaders(),
-        body: JSON.stringify(payload)
-      });
-      
+        body: JSON.stringify(payload),
+      })
+
       if (!response.ok) {
-        return this.handleErrorResponse(response);
+        return this.handleErrorResponse(response)
       }
-      
-      console.log(`GitHub workflow triggered successfully for batch: ${batchId}`);
-      return Ok(undefined);
-      
+
+      console.log(`GitHub workflow triggered successfully for batch: ${batchId}`)
+      return Ok(undefined)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      return Err(new Error(`GitHub workflow trigger failed: ${errorMessage}`));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`GitHub workflow trigger failed: ${errorMessage}`))
     }
   }
 
@@ -62,7 +61,7 @@ export class GitHubService {
    * ワークフローAPIのURLを構築
    */
   private buildWorkflowUrl(): string {
-    return `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${this.workflowFile}/dispatches`;
+    return `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${this.workflowFile}/dispatches`
   }
 
   /**
@@ -70,10 +69,10 @@ export class GitHubService {
    */
   private buildHeaders(): Record<string, string> {
     return {
-      'Accept': 'application/vnd.github.v3+json',
-      'Authorization': `token ${this.githubToken}`,
-      'Content-Type': 'application/json'
-    };
+      Accept: 'application/vnd.github.v3+json',
+      Authorization: `token ${this.githubToken}`,
+      'Content-Type': 'application/json',
+    }
   }
 
   /**
@@ -81,21 +80,21 @@ export class GitHubService {
    */
   private buildWorkflowPayload(pets: PetRecord[], batchId: string) {
     // PetRecordをJSONファイル形式に変換
-    const petsData = pets.map(pet => ({
+    const petsData = pets.map((pet) => ({
       id: pet.id,
       name: pet.name,
       sourceUrl: pet.source_url || '',
-      type: pet.type
-    }));
+      type: pet.type,
+    }))
 
     return {
       ref: 'main',
       inputs: {
         batch_data: JSON.stringify(petsData),
         batch_id: batchId,
-        limit: String(pets.length)
-      }
-    };
+        limit: String(pets.length),
+      },
+    }
   }
 
   /**
@@ -104,44 +103,44 @@ export class GitHubService {
   private handleErrorResponse(response: Response): Result<void> {
     // Rate Limitエラーの場合
     if (response.status === 429) {
-      const retryAfter = this.extractRetryAfter(response);
-      return Err(new RateLimitError(retryAfter));
+      const retryAfter = this.extractRetryAfter(response)
+      return Err(new RateLimitError(retryAfter))
     }
-    
+
     // 認証エラー
     if (response.status === 401) {
-      return Err(new Error('GitHub authentication failed. Please check your token.'));
+      return Err(new Error('GitHub authentication failed. Please check your token.'))
     }
-    
+
     // 権限エラー
     if (response.status === 403) {
-      return Err(new Error('GitHub permission denied. Please check your repository permissions.'));
+      return Err(new Error('GitHub permission denied. Please check your repository permissions.'))
     }
-    
+
     // Not Found
     if (response.status === 404) {
-      return Err(new Error('GitHub workflow not found. Please check your workflow file path.'));
+      return Err(new Error('GitHub workflow not found. Please check your workflow file path.'))
     }
-    
+
     // その他のエラー
-    return Err(new Error(`GitHub API error: ${response.status} ${response.statusText}`));
+    return Err(new Error(`GitHub API error: ${response.status} ${response.statusText}`))
   }
 
   /**
    * Retry-Afterヘッダーから待機時間を抽出
    */
   private extractRetryAfter(response: Response): number {
-    const retryAfterHeader = response.headers.get('Retry-After');
-    
+    const retryAfterHeader = response.headers.get('Retry-After')
+
     if (retryAfterHeader) {
-      const seconds = parseInt(retryAfterHeader, 10);
+      const seconds = parseInt(retryAfterHeader, 10)
       if (!isNaN(seconds)) {
-        return seconds;
+        return seconds
       }
     }
-    
+
     // デフォルトは60秒
-    return 60;
+    return 60
   }
 
   /**
@@ -149,26 +148,25 @@ export class GitHubService {
    */
   async checkWorkflowStatus(runId: string): Promise<Result<string>> {
     try {
-      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/runs/${runId}`;
-      
+      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/runs/${runId}`
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `token ${this.githubToken}`
-        }
-      });
-      
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `token ${this.githubToken}`,
+        },
+      })
+
       if (!response.ok) {
-        return Err(new Error(`Failed to check workflow status: ${response.status}`));
+        return Err(new Error(`Failed to check workflow status: ${response.status}`))
       }
-      
-      const data = await response.json() as { status?: string };
-      return Ok(data.status || 'unknown');
-      
+
+      const data = (await response.json()) as { status?: string }
+      return Ok(data.status || 'unknown')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      return Err(new Error(`Failed to check workflow status: ${errorMessage}`));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`Failed to check workflow status: ${errorMessage}`))
     }
   }
 }

@@ -4,46 +4,38 @@
  */
 
 // 共通型をインポート
-import type {
-  Pet,
-  PetRecord,
-  PetSearchFilters
-} from '../../../shared/types/index';
+import type { Pet, PetRecord, PetSearchFilters } from '../../../shared/types/index'
 
 // 再エクスポート
-export type {
-  Pet,
-  PetRecord,
-  PetSearchFilters
-};
+export type { Pet, PetRecord, PetSearchFilters }
 
 /**
  * フロントエンド固有の型
  */
 export interface SwipeAction {
-  petId: string;
-  action: 'like' | 'pass';
-  timestamp: string;
+  petId: string
+  action: 'like' | 'pass'
+  timestamp: string
 }
 
 export interface SwipeHistory {
-  liked: Pet[];
-  passed: Pet[];
-  lastSwipeAt?: string;
+  liked: Pet[]
+  passed: Pet[]
+  lastSwipeAt?: string
 }
 
 export interface UserPreferences {
-  petType: 'dog' | 'cat';
-  filters: PetSearchFilters;
-  notifications: boolean;
-  theme: 'light' | 'dark' | 'auto';
+  petType: 'dog' | 'cat'
+  filters: PetSearchFilters
+  notifications: boolean
+  theme: 'light' | 'dark' | 'auto'
 }
 
 export interface AppState {
-  currentPet: Pet | null;
-  nextPet: Pet | null;
-  swipeHistory: SwipeHistory;
-  preferences: UserPreferences;
-  isLoading: boolean;
-  error: string | null;
+  currentPet: Pet | null
+  nextPet: Pet | null
+  swipeHistory: SwipeHistory
+  preferences: UserPreferences
+  isLoading: boolean
+  error: string | null
 }

@@ -10,5 +10,5 @@ export {
   transformPrefecturesResponse,
   transformStatsResponse,
   validateLegacyResponse,
-  handleApiError
-} from './responseTransformer';
+  handleApiError,
+} from './responseTransformer'

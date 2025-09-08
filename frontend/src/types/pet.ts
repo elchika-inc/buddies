@@ -19,7 +19,7 @@ export interface BasePet {
   medicalInfo?: string | null
   careRequirements: string[]
   imageUrl?: string | null
-  localImagePath?: string  // ローカル開発用画像パス
+  localImagePath?: string // ローカル開発用画像パス
   shelterName?: string | null
   shelterContact?: string | null
   sourceUrl?: string | null
@@ -49,11 +49,11 @@ export interface Cat extends BasePet {
   type: 'cat'
   coatLength: string
   isFivFelvTested?: boolean
-  isFIVFeLVTested?: boolean  // 後方互換性のため
+  isFIVFeLVTested?: boolean // 後方互換性のため
   socialLevel: string
   indoorOutdoor: string
   goodWithCats?: boolean
-  goodWithMultipleCats?: boolean  // 後方互換性のため
+  goodWithMultipleCats?: boolean // 後方互換性のため
   groomingRequirements: string
   vocalizationLevel?: string
   activityTime?: string
@@ -76,17 +76,17 @@ export const isCat = (pet: FrontendPet | SharedPet): pet is Cat => {
 export const toFrontendPet = (pet: SharedPet): FrontendPet => {
   // JSON文字列のパースヘルパー
   const parseJsonArray = (value: unknown): string[] => {
-    if (Array.isArray(value)) return value;
+    if (Array.isArray(value)) return value
     if (typeof value === 'string') {
       try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed : []
       } catch {
-        return [];
+        return []
       }
     }
-    return [];
-  };
+    return []
+  }
 
   const basePet: BasePet = {
     id: pet.id,
@@ -113,7 +113,7 @@ export const toFrontendPet = (pet: SharedPet): FrontendPet => {
     isVaccinated: Boolean(pet.isVaccinated),
     createdAt: pet.createdAt ?? null,
     updatedAt: pet.updatedAt ?? null,
-  };
+  }
 
   if (pet.type === 'dog') {
     return {
@@ -127,22 +127,22 @@ export const toFrontendPet = (pet: SharedPet): FrontendPet => {
       walkFrequency: '',
       needsYard: Boolean(pet.needsYard),
       apartmentFriendly: Boolean(pet.apartmentFriendly),
-    } as Dog;
+    } as Dog
   } else {
     return {
       ...basePet,
       type: 'cat',
       coatLength: pet.coatLength || '',
       isFivFelvTested: Boolean(pet.isFivFelvTested),
-      isFIVFeLVTested: Boolean(pet.isFivFelvTested),  // 後方互換性
+      isFIVFeLVTested: Boolean(pet.isFivFelvTested), // 後方互換性
       socialLevel: pet.socialLevel || '',
       indoorOutdoor: pet.indoorOutdoor || '',
       goodWithCats: Boolean(pet.goodWithCats),
-      goodWithMultipleCats: Boolean(pet.goodWithCats),  // 後方互換性
+      goodWithMultipleCats: Boolean(pet.goodWithCats), // 後方互換性
       groomingRequirements: pet.groomingRequirements || '',
       vocalizationLevel: '',
       activityTime: '',
       playfulness: '',
-    } as Cat;
+    } as Cat
   }
 }

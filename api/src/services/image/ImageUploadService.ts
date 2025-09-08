@@ -3,21 +3,21 @@
  * 単一責任: R2への画像アップロード処理
  */
 
-import type { R2Bucket } from '@cloudflare/workers-types';
-import { Result } from '../../types/result';
-import { UPLOAD_CONFIG, IMAGE_PATHS } from '../../config/constants';
+import type { R2Bucket } from '@cloudflare/workers-types'
+import { Result } from '../../types/result'
+import { UPLOAD_CONFIG, IMAGE_PATHS } from '../../config/constants'
 
 export interface ImageMetadata {
-  petId: string;
-  petType: 'dog' | 'cat';
-  captureMethod?: string;
-  sourceUrl?: string;
-  batchId?: string;
+  petId: string
+  petType: 'dog' | 'cat'
+  captureMethod?: string
+  sourceUrl?: string
+  batchId?: string
 }
 
 export interface UploadResult {
-  key: string;
-  url: string;
+  key: string
+  url: string
 }
 
 export class ImageUploadService {
@@ -36,22 +36,22 @@ export class ImageUploadService {
     metadata?: Partial<ImageMetadata>
   ): Promise<Result<UploadResult>> {
     try {
-      const buffer = this.decodeBase64(imageData);
-      const key = IMAGE_PATHS.generatePath(petType, petId, 'SCREENSHOT');
-      
+      const buffer = this.decodeBase64(imageData)
+      const key = IMAGE_PATHS.generatePath(petType, petId, 'SCREENSHOT')
+
       await this.r2.put(key, buffer, {
         httpMetadata: {
-          contentType: UPLOAD_CONFIG.CONTENT_TYPES.PNG
+          contentType: UPLOAD_CONFIG.CONTENT_TYPES.PNG,
         },
-        customMetadata: this.buildCustomMetadata(petId, petType, metadata)
-      });
+        customMetadata: this.buildCustomMetadata(petId, petType, metadata),
+      })
 
       return Result.ok({
         key,
-        url: this.generatePublicUrl(key)
-      });
+        url: this.generatePublicUrl(key),
+      })
     } catch (error) {
-      return Result.err(error instanceof Error ? error : new Error('Screenshot upload failed'));
+      return Result.err(error instanceof Error ? error : new Error('Screenshot upload failed'))
     }
   }
 
@@ -65,22 +65,22 @@ export class ImageUploadService {
     batchId?: string
   ): Promise<Result<UploadResult>> {
     try {
-      const buffer = this.decodeBase64(imageData);
-      const key = IMAGE_PATHS.generatePath(petType, petId, 'ORIGINAL');
-      
+      const buffer = this.decodeBase64(imageData)
+      const key = IMAGE_PATHS.generatePath(petType, petId, 'ORIGINAL')
+
       await this.r2.put(key, buffer, {
         httpMetadata: {
-          contentType: UPLOAD_CONFIG.CONTENT_TYPES.JPEG
+          contentType: UPLOAD_CONFIG.CONTENT_TYPES.JPEG,
         },
-        customMetadata: this.buildCustomMetadata(petId, petType, { batchId })
-      });
+        customMetadata: this.buildCustomMetadata(petId, petType, { batchId }),
+      })
 
       return Result.ok({
         key,
-        url: this.generatePublicUrl(key)
-      });
+        url: this.generatePublicUrl(key),
+      })
     } catch (error) {
-      return Result.err(error instanceof Error ? error : new Error('JPEG upload failed'));
+      return Result.err(error instanceof Error ? error : new Error('JPEG upload failed'))
     }
   }
 
@@ -94,22 +94,22 @@ export class ImageUploadService {
     batchId?: string
   ): Promise<Result<UploadResult>> {
     try {
-      const buffer = this.decodeBase64(imageData);
-      const key = IMAGE_PATHS.generatePath(petType, petId, 'OPTIMIZED');
-      
+      const buffer = this.decodeBase64(imageData)
+      const key = IMAGE_PATHS.generatePath(petType, petId, 'OPTIMIZED')
+
       await this.r2.put(key, buffer, {
         httpMetadata: {
-          contentType: UPLOAD_CONFIG.CONTENT_TYPES.WEBP
+          contentType: UPLOAD_CONFIG.CONTENT_TYPES.WEBP,
         },
-        customMetadata: this.buildCustomMetadata(petId, petType, { batchId })
-      });
+        customMetadata: this.buildCustomMetadata(petId, petType, { batchId }),
+      })
 
       return Result.ok({
         key,
-        url: this.generatePublicUrl(key)
-      });
+        url: this.generatePublicUrl(key),
+      })
     } catch (error) {
-      return Result.err(error instanceof Error ? error : new Error('WebP upload failed'));
+      return Result.err(error instanceof Error ? error : new Error('WebP upload failed'))
     }
   }
 
@@ -117,10 +117,7 @@ export class ImageUploadService {
    * Base64デコード
    */
   private decodeBase64(imageData: string): Uint8Array {
-    return Uint8Array.from(
-      atob(imageData),
-      c => c.charCodeAt(UPLOAD_CONFIG.BASE64_DECODE_RADIX)
-    );
+    return Uint8Array.from(atob(imageData), (c) => c.charCodeAt(UPLOAD_CONFIG.BASE64_DECODE_RADIX))
   }
 
   /**
@@ -137,14 +134,14 @@ export class ImageUploadService {
       'capture-method': metadata?.captureMethod || 'unknown',
       'captured-at': new Date().toISOString(),
       'source-url': metadata?.sourceUrl || '',
-      'batch-id': metadata?.batchId || ''
-    };
+      'batch-id': metadata?.batchId || '',
+    }
   }
 
   /**
    * 公開URL生成
    */
   private generatePublicUrl(key: string): string {
-    return `https://${this.publicUrl}/${key}`;
+    return `https://${this.publicUrl}/${key}`
   }
 }

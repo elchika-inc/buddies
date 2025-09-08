@@ -8,7 +8,8 @@ import type { Pet as SharedPet } from '../../../shared/types'
 import { getPetType } from '@/config/petConfig'
 
 /** APIのベースURL（環境変数から取得、デフォルトは本番環境） */
-const API_BASE_URL = process.env['NEXT_PUBLIC_PAWMATCH_API_URL'] || 'https://pawmatch-api.elchika.app'
+const API_BASE_URL =
+  process.env['NEXT_PUBLIC_PAWMATCH_API_URL'] || 'https://pawmatch-api.elchika.app'
 
 /** API共通レスポンス型 */
 interface ApiResponse<T> {
@@ -70,18 +71,18 @@ class PetApi {
       // APIリクエスト（APIキー認証付き）
       const response = await fetch(url, {
         headers: {
-          'X-API-Key': process.env['NEXT_PUBLIC_API_KEY'] || ''
-        }
+          'X-API-Key': process.env['NEXT_PUBLIC_API_KEY'] || '',
+        },
       })
-      
+
       // HTTPステータスチェック
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       // レスポンスJSONをパース
-      const data = await response.json() as ApiResponse<PetsResponse>
-      
+      const data = (await response.json()) as ApiResponse<PetsResponse>
+
       // APIレスポンスの成功チェック
       if (!data.success || !data.data) {
         throw new Error(data.error || 'Failed to fetch pets')
@@ -92,7 +93,7 @@ class PetApi {
 
       return {
         ...data.data,
-        pets: frontendPets
+        pets: frontendPets,
       }
     } catch (error) {
       console.error('Error fetching pets:', error)
@@ -106,7 +107,7 @@ class PetApi {
    */
   async fetchAllPets(): Promise<FrontendPet[]> {
     const allPets: FrontendPet[] = []
-    const limit = 100  // 1回あたりの取得件数
+    const limit = 100 // 1回あたりの取得件数
     let offset = 0
     let hasMore = true
 
@@ -114,7 +115,7 @@ class PetApi {
     while (hasMore) {
       const response = await this.fetchPets(offset, limit)
       allPets.push(...response.pets)
-      
+
       // 取得件数がlimitと同じならまだデータがある可能性
       hasMore = response.pets.length === limit
       offset += limit

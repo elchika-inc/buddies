@@ -23,29 +23,29 @@ export const API_CONFIG = {
     LIST_FAILED: 'APIキーの一覧取得に失敗しました。',
   },
   DOCUMENTATION_URL: 'https://docs.pawmatch.com/api-keys',
-} as const;
+} as const
 
 // レート制限ウィンドウの計算
 export const getRateLimitWindow = (timestamp: number = Date.now()): string => {
-  return Math.floor(timestamp / (API_CONFIG.RATE_LIMIT.WINDOW_SECONDS * 1000)).toString();
-};
+  return Math.floor(timestamp / (API_CONFIG.RATE_LIMIT.WINDOW_SECONDS * 1000)).toString()
+}
 
 // APIキー生成
 export const generateApiKey = (): string => {
-  const uuid1 = crypto.randomUUID().replace(/-/g, '');
-  const uuid2 = crypto.randomUUID().replace(/-/g, '');
-  return uuid1 + uuid2;
-};
+  const uuid1 = crypto.randomUUID().replace(/-/g, '')
+  const uuid2 = crypto.randomUUID().replace(/-/g, '')
+  return uuid1 + uuid2
+}
 
 // 有効期限の計算
 export const calculateExpiryDate = (daysFromNow: number): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  return date.toISOString();
-};
+  const date = new Date()
+  date.setDate(date.getDate() + daysFromNow)
+  return date.toISOString()
+}
 
 // 有効期限チェック
 export const isExpired = (expiresAt?: string | null): boolean => {
-  if (!expiresAt) return false;
-  return new Date(expiresAt) < new Date();
-};
+  if (!expiresAt) return false
+  return new Date(expiresAt) < new Date()
+}

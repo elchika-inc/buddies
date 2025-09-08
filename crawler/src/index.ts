@@ -7,11 +7,11 @@ import { Result } from '../../shared/types/result'
 
 // Env型定義
 export interface Env {
-  DB: D1Database;
-  R2_BUCKET: R2Bucket;
-  API_DISPATCHER_QUEUE: Queue;
-  ALLOWED_ORIGIN?: string;
-  USE_LOCAL_IMAGES?: string;
+  DB: D1Database
+  R2_BUCKET: R2Bucket
+  API_DISPATCHER_QUEUE: Queue
+  ALLOWED_ORIGIN?: string
+  USE_LOCAL_IMAGES?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -250,10 +250,11 @@ async function getCrawlStatus(
       .bind(...params)
       .all<CrawlerStateRecord>()
 
-    const results = result.results?.map((row) => ({
-      ...row,
-      checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null,
-    })) || []
+    const results =
+      result.results?.map((row) => ({
+        ...row,
+        checkpoint: row.checkpoint ? JSON.parse(row.checkpoint) : null,
+      })) || []
     return Result.ok(results)
   } catch (error) {
     return Result.err(error instanceof Error ? error : new Error(String(error)))

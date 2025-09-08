@@ -25,7 +25,7 @@ export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
     currentIndex: 0,
     likes: [],
     passes: [],
-    superLikes: []
+    superLikes: [],
   })
 
   /** 現在表示中のペット */
@@ -37,30 +37,33 @@ export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
    * スワイプ処理を実行
    * @param direction スワイプ方向（like/pass/superLike）
    */
-  const handleSwipe = useCallback((direction: SwipeDirection) => {
-    if (!currentPet) return
+  const handleSwipe = useCallback(
+    (direction: SwipeDirection) => {
+      if (!currentPet) return
 
-    setState(prev => {
-      const newState = { ...prev }
-      
-      // スワイプ方向に応じて適切なリストに追加
-      switch (direction) {
-        case 'like':
-          newState.likes = [...prev.likes, currentPet.id]
-          break
-        case 'pass':
-          newState.passes = [...prev.passes, currentPet.id]
-          break
-        case 'superLike':
-          newState.superLikes = [...prev.superLikes, currentPet.id]
-          break
-      }
-      
-      // 次のペットへ進む
-      newState.currentIndex = prev.currentIndex + 1
-      return newState
-    })
-  }, [currentPet])
+      setState((prev) => {
+        const newState = { ...prev }
+
+        // スワイプ方向に応じて適切なリストに追加
+        switch (direction) {
+          case 'like':
+            newState.likes = [...prev.likes, currentPet.id]
+            break
+          case 'pass':
+            newState.passes = [...prev.passes, currentPet.id]
+            break
+          case 'superLike':
+            newState.superLikes = [...prev.superLikes, currentPet.id]
+            break
+        }
+
+        // 次のペットへ進む
+        newState.currentIndex = prev.currentIndex + 1
+        return newState
+      })
+    },
+    [currentPet]
+  )
 
   /** スワイプ状態を初期化 */
   const reset = useCallback(() => {
@@ -68,29 +71,29 @@ export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
       currentIndex: 0,
       likes: [],
       passes: [],
-      superLikes: []
+      superLikes: [],
     })
   }, [])
 
   /** 直前のスワイプ操作を取り消し */
   const undo = useCallback(() => {
-    setState(prev => {
+    setState((prev) => {
       // 最初のペットの場合は何もしない
       if (prev.currentIndex === 0) return prev
-      
+
       const newState = { ...prev }
       // インデックスを1つ戻す
       newState.currentIndex = prev.currentIndex - 1
-      
+
       // 最後のアクションを取り消す
       const lastPetId = pets[newState.currentIndex]?.id
       if (lastPetId) {
         // 各リストから該当ペットIDを削除
-        newState.likes = prev.likes.filter(id => id !== lastPetId)
-        newState.passes = prev.passes.filter(id => id !== lastPetId)
-        newState.superLikes = prev.superLikes.filter(id => id !== lastPetId)
+        newState.likes = prev.likes.filter((id) => id !== lastPetId)
+        newState.passes = prev.passes.filter((id) => id !== lastPetId)
+        newState.superLikes = prev.superLikes.filter((id) => id !== lastPetId)
       }
-      
+
       return newState
     })
   }, [pets])
@@ -104,7 +107,7 @@ export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
     superLikes: state.superLikes,
     handleSwipe,
     reset,
-    undo
+    undo,
   }
 }
 
@@ -129,17 +132,17 @@ export function useSwipeGesture() {
     if (y < -SUPER_LIKE_THRESHOLD) {
       return 'superLike'
     }
-    
+
     // 右スワイプ（ライク）
     if (x > SWIPE_THRESHOLD) {
       return 'like'
     }
-    
+
     // 左スワイプ（パス）
     if (x < -SWIPE_THRESHOLD) {
       return 'pass'
     }
-    
+
     return null
   }, [])
 
@@ -149,26 +152,32 @@ export function useSwipeGesture() {
    * @param y Y軸方向の移動量
    * @returns 各インジケーターの透明度（0〜1）
    */
-  const getIndicatorOpacity = useCallback((x: number, y: number): {
-    like: number
-    pass: number
-    superLike: number
-  } => {
-    return {
-      // 右スワイプ：移動量に比例して不透明に
-      like: Math.max(0, Math.min(1, x / SWIPE_THRESHOLD)),
-      // 左スワイプ：移動量に比例して不透明に
-      pass: Math.max(0, Math.min(1, -x / SWIPE_THRESHOLD)),
-      // 上スワイプ：移動量に比例して不透明に
-      superLike: Math.max(0, Math.min(1, -y / SUPER_LIKE_THRESHOLD))
-    }
-  }, [])
+  const getIndicatorOpacity = useCallback(
+    (
+      x: number,
+      y: number
+    ): {
+      like: number
+      pass: number
+      superLike: number
+    } => {
+      return {
+        // 右スワイプ：移動量に比例して不透明に
+        like: Math.max(0, Math.min(1, x / SWIPE_THRESHOLD)),
+        // 左スワイプ：移動量に比例して不透明に
+        pass: Math.max(0, Math.min(1, -x / SWIPE_THRESHOLD)),
+        // 上スワイプ：移動量に比例して不透明に
+        superLike: Math.max(0, Math.min(1, -y / SUPER_LIKE_THRESHOLD)),
+      }
+    },
+    []
+  )
 
   return {
     getSwipeDirection,
     getIndicatorOpacity,
     SWIPE_THRESHOLD,
-    SUPER_LIKE_THRESHOLD
+    SUPER_LIKE_THRESHOLD,
   }
 }
 
@@ -181,19 +190,21 @@ export function useSwipeHistory(key: string) {
   const [history, setHistory] = useState<SwipeState>(() => {
     try {
       const saved = localStorage.getItem(key)
-      return saved ? JSON.parse(saved) : {
-        currentIndex: 0,
-        likes: [],
-        passes: [],
-        superLikes: []
-      }
+      return saved
+        ? JSON.parse(saved)
+        : {
+            currentIndex: 0,
+            likes: [],
+            passes: [],
+            superLikes: [],
+          }
     } catch {
       // パースエラー時は初期状態を返す
       return {
         currentIndex: 0,
         likes: [],
         passes: [],
-        superLikes: []
+        superLikes: [],
       }
     }
   })
@@ -202,14 +213,17 @@ export function useSwipeHistory(key: string) {
    * 履歴をローカルストレージに保存
    * @param state 保存するスワイプ状態
    */
-  const saveHistory = useCallback((state: SwipeState) => {
-    try {
-      localStorage.setItem(key, JSON.stringify(state))
-      setHistory(state)
-    } catch (error) {
-      console.error('Failed to save history:', error)
-    }
-  }, [key])
+  const saveHistory = useCallback(
+    (state: SwipeState) => {
+      try {
+        localStorage.setItem(key, JSON.stringify(state))
+        setHistory(state)
+      } catch (error) {
+        console.error('Failed to save history:', error)
+      }
+    },
+    [key]
+  )
 
   /** 履歴をクリア（初期状態に戻す） */
   const clearHistory = useCallback(() => {
@@ -219,7 +233,7 @@ export function useSwipeHistory(key: string) {
         currentIndex: 0,
         likes: [],
         passes: [],
-        superLikes: []
+        superLikes: [],
       })
     } catch (error) {
       console.error('Failed to clear history:', error)
@@ -229,6 +243,6 @@ export function useSwipeHistory(key: string) {
   return {
     history,
     saveHistory,
-    clearHistory
+    clearHistory,
   }
 }

@@ -22,12 +22,13 @@ export function PetCard({ pet, onTap }: PetCardProps) {
   const [imageError, setImageError] = useState(false)
   /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
-  
+
   // フォールバック画像URL（ペットタイプ別）
-  const fallbackImage = petType === 'dog' 
-    ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
-    : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
-  
+  const fallbackImage =
+    petType === 'dog'
+      ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+      : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
+
   /**
    * 画像URLにキャッシュバスター（バージョン番号）を追加
    * ブラウザキャッシュを回避して最新画像を表示するため
@@ -42,26 +43,24 @@ export function PetCard({ pet, onTap }: PetCardProps) {
     const timestamp = new Date(version).getTime()
     return `${url}${separator}v=${timestamp}`
   }
-  
+
   // 最終的な画像URL（エラー時はフォールバック画像を使用）
-  const imageUrl = imageError 
-    ? fallbackImage 
-    : addCacheBuster(pet.imageUrl || fallbackImage)
-  
+  const imageUrl = imageError ? fallbackImage : addCacheBuster(pet.imageUrl || fallbackImage)
+
   /** 画像読み込みエラー時の処理 */
   const handleImageError = () => {
     setImageError(true)
   }
-  
+
   /** カードクリック時の処理 */
   const handleClick = () => {
     if (onTap) {
       onTap()
     }
   }
-  
+
   return (
-    <div 
+    <div
       className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer"
       onClick={handleClick}
     >

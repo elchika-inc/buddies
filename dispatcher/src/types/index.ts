@@ -2,79 +2,82 @@
  * Dispatcher モジュールの型定義
  */
 
-import type { Queue, R2Bucket, D1Database } from '@cloudflare/workers-types';
+import type { Queue, R2Bucket, D1Database } from '@cloudflare/workers-types'
 
 // 共通の型定義を再エクスポート
-export type { 
-  Pet, 
-  PetRecord,
-  CrawlerState,
-  CrawlerStateRecord,
-} from '../../../shared/types'
+export type { Pet, PetRecord, CrawlerState, CrawlerStateRecord } from '../../../shared/types'
 
 export {
   petToRecord,
   recordToPet,
   isPet,
-  isPetRecord as isPetRecordType
+  isPetRecord as isPetRecordType,
 } from '../../../shared/types'
 
 export interface Env {
-  DB?: D1Database;  // D1データベースを追加
-  PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>;
-  PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>;
-  GITHUB_TOKEN: string;
-  GITHUB_OWNER: string;
-  GITHUB_REPO: string;
-  WORKFLOW_FILE: string;
-  API_URL: string;
-  API_KEY?: string;
-  PUBLIC_API_KEY?: string;  // APIキーを追加
-  R2_BUCKET?: R2Bucket;
-  [key: string]: unknown;
+  DB?: D1Database // D1データベースを追加
+  PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>
+  PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>
+  GITHUB_TOKEN: string
+  GITHUB_OWNER: string
+  GITHUB_REPO: string
+  WORKFLOW_FILE: string
+  API_URL: string
+  API_KEY?: string
+  PUBLIC_API_KEY?: string // APIキーを追加
+  R2_BUCKET?: R2Bucket
+  [key: string]: unknown
 }
 
 export interface DispatchMessage {
-  type: 'screenshot' | 'crawl' | 'convert' | 'cleanup';
-  pets?: PetDispatchData[];
-  batchId: string;
-  retryCount?: number;
-  timestamp: string;
-  cleanupType?: 'expired' | 'all';
+  type: 'screenshot' | 'crawl' | 'convert' | 'cleanup'
+  pets?: PetDispatchData[]
+  batchId: string
+  retryCount?: number
+  timestamp: string
+  cleanupType?: 'expired' | 'all'
 }
 
 export interface PetDispatchData {
-  id: string;
-  name: string;
-  type: 'dog' | 'cat';
-  sourceUrl: string;
+  id: string
+  name: string
+  type: 'dog' | 'cat'
+  sourceUrl: string
 }
 
 export interface DLQMessage extends DispatchMessage {
-  error: string;
-  failedAt: string;
+  error: string
+  failedAt: string
 }
 
 // PetRecordは共通型定義から使用するため削除
 
 export interface DispatchHistoryRecord {
-  batchId: string;
-  petCount: number;
-  status: 'queued' | 'scheduled_queued' | 'completed' | 'failed' | 'cleanup_completed' | 'cleanup_failed';
-  error?: string;
-  createdAt: string;
-  completedAt?: string;
-  notes?: string;
+  batchId: string
+  petCount: number
+  status:
+    | 'queued'
+    | 'scheduled_queued'
+    | 'completed'
+    | 'failed'
+    | 'cleanup_completed'
+    | 'cleanup_failed'
+  error?: string
+  createdAt: string
+  completedAt?: string
+  notes?: string
 }
 
 // 型ガード関数（共通型定義のisPetRecordと重複しないよう削除）
 
 export function isPetDispatchData(obj: unknown): obj is PetDispatchData {
-  if (!obj || typeof obj !== 'object') return false;
-  
-  const record = obj as Record<string, unknown>;
-  return typeof record['id'] === 'string' &&
-         typeof record['name'] === 'string' &&
-         (record['type'] === 'dog' || record['type'] === 'cat') &&
-         typeof record['sourceUrl'] === 'string';
+  if (!obj || typeof obj !== 'object') return false
+
+  const record = obj as Record<string, unknown>
+  return (
+    typeof record['id'] === 'string' &&
+    typeof record['name'] === 'string' &&
+    (record['type'] === 'dog' || record['type'] === 'cat') &&
+    typeof record['sourceUrl'] === 'string'
+  )
 }

@@ -10,10 +10,7 @@ interface LocationSelectorProps {
   onLocationsChange: (locations: Location[]) => void
 }
 
-export function LocationSelector({
-  selectedLocations,
-  onLocationsChange,
-}: LocationSelectorProps) {
+export function LocationSelector({ selectedLocations, onLocationsChange }: LocationSelectorProps) {
   const {
     expandedRegions,
     expandedPrefectures,

@@ -14,7 +14,8 @@
     "check:local": "./scripts/check-api.sh local",
     "check:workers": "./scripts/check-api.sh workers",
     "check:all": "npm run check:workers && npm run check",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
@@ -27,6 +28,8 @@
     "@types/node": "^20.16.0",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.31.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typescript": "^5.6.0",

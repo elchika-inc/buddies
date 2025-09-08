@@ -1,10 +1,10 @@
 /**
  * メタデータ管理サービス
- * 
+ *
  * sync_metadataテーブルのキー/バリューペアの管理に特化
  */
 
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database } from '@cloudflare/workers-types'
 
 export class MetadataService {
   constructor(private readonly db: D1Database) {}
@@ -16,22 +16,27 @@ export class MetadataService {
     const result = await this.db
       .prepare('SELECT value FROM sync_metadata WHERE key = ?')
       .bind(key)
-      .first<{ value: string }>();
-    
-    return result?.value || defaultValue;
+      .first<{ value: string }>()
+
+    return result?.value || defaultValue
   }
 
   /**
    * メタデータ値を設定
    */
   async setMetadata(key: string, value: string): Promise<void> {
-    await this.db.prepare(`
+    await this.db
+      .prepare(
+        `
       INSERT INTO sync_metadata (key, value, updated_at) 
       VALUES (?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(key) DO UPDATE SET 
         value = excluded.value,
         updated_at = CURRENT_TIMESTAMP
-    `).bind(key, value.toString()).run();
+    `
+      )
+      .bind(key, value.toString())
+      .run()
   }
 
   /**
@@ -39,7 +44,7 @@ export class MetadataService {
    */
   async setMultipleMetadata(entries: [string, string][]): Promise<void> {
     for (const [key, value] of entries) {
-      await this.setMetadata(key, value);
+      await this.setMetadata(key, value)
     }
   }
 
@@ -47,16 +52,16 @@ export class MetadataService {
    * 設定値を取得（数値）
    */
   async getNumberMetadata(key: string, defaultValue: number): Promise<number> {
-    const value = await this.getMetadata(key, defaultValue.toString());
-    return parseInt(value || defaultValue.toString());
+    const value = await this.getMetadata(key, defaultValue.toString())
+    return parseInt(value || defaultValue.toString())
   }
 
   /**
    * 設定値を取得（真偽値）
    */
   async getBooleanMetadata(key: string, defaultValue: boolean = false): Promise<boolean> {
-    const value = await this.getMetadata(key, defaultValue.toString());
-    return value === 'true';
+    const value = await this.getMetadata(key, defaultValue.toString())
+    return value === 'true'
   }
 
   /**
@@ -65,22 +70,19 @@ export class MetadataService {
   async getAllMetadata(): Promise<Record<string, string>> {
     const results = await this.db
       .prepare('SELECT key, value FROM sync_metadata')
-      .all<{ key: string; value: string }>();
-    
-    const metadata: Record<string, string> = {};
+      .all<{ key: string; value: string }>()
+
+    const metadata: Record<string, string> = {}
     for (const row of results.results || []) {
-      metadata[row.key] = row.value;
+      metadata[row.key] = row.value
     }
-    return metadata;
+    return metadata
   }
 
   /**
    * メタデータを削除
    */
   async deleteMetadata(key: string): Promise<void> {
-    await this.db
-      .prepare('DELETE FROM sync_metadata WHERE key = ?')
-      .bind(key)
-      .run();
+    await this.db.prepare('DELETE FROM sync_metadata WHERE key = ?').bind(key).run()
   }
 }

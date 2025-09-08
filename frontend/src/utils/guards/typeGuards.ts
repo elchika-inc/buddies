@@ -1,6 +1,6 @@
 // 型ガード関数群
-import { Pet, Dog, Cat } from '@/types/pet';
-import { StatsData } from '@/types/api';
+import { Pet, Dog, Cat } from '@/types/pet'
+import { StatsData } from '@/types/api'
 
 /**
  * Dog型の型ガード
@@ -13,7 +13,7 @@ export function isDog(pet: Pet): pet is Dog {
     typeof (pet as Dog).size === 'string' &&
     typeof (pet as Dog).exerciseLevel === 'string' &&
     typeof (pet as Dog).goodWithKids === 'boolean'
-  );
+  )
 }
 
 /**
@@ -27,21 +27,23 @@ export function isCat(pet: Pet): pet is Cat {
     typeof (pet as Cat).coatLength === 'string' &&
     typeof (pet as Cat).socialLevel === 'string' &&
     typeof (pet as Cat).indoorOutdoor === 'string'
-  );
+  )
 }
 
 /**
  * ペットリストデータの型ガード
  */
 export function isPetListData(obj: Record<string, unknown>): obj is { pets: Pet[] } {
-  return Array.isArray(obj['pets']) && (obj['pets'].length === 0 || isPet(obj['pets'][0]));
+  return Array.isArray(obj['pets']) && (obj['pets'].length === 0 || isPet(obj['pets'][0]))
 }
 
 /**
  * 単一ペットデータの型ガード
  */
-export function isSinglePetData(obj: Record<string, unknown>): obj is Record<string, unknown> & Pet {
-  return isPet(obj);
+export function isSinglePetData(
+  obj: Record<string, unknown>
+): obj is Record<string, unknown> & Pet {
+  return isPet(obj)
 }
 
 /**
@@ -49,11 +51,11 @@ export function isSinglePetData(obj: Record<string, unknown>): obj is Record<str
  */
 export function isPet(obj: unknown): obj is Pet {
   if (!obj || typeof obj !== 'object') {
-    return false;
+    return false
   }
-  
-  const pet = obj as Record<string, unknown>;
-  
+
+  const pet = obj as Record<string, unknown>
+
   // 基本的なPetプロパティの検証
   return (
     typeof pet['id'] === 'string' &&
@@ -64,31 +66,31 @@ export function isPet(obj: unknown): obj is Pet {
     typeof pet['location'] === 'string' &&
     Array.isArray(pet['photos']) &&
     typeof pet['description'] === 'string'
-  );
+  )
 }
 
 /**
  * 都道府県データの型ガード
  */
-export function isPrefecturesData(
-  obj: Record<string, unknown>
-): obj is { prefectures: string[] } {
+export function isPrefecturesData(obj: Record<string, unknown>): obj is { prefectures: string[] } {
   return (
     Array.isArray(obj['prefectures']) &&
-    obj['prefectures'].every(item => typeof item === 'string')
-  );
+    obj['prefectures'].every((item) => typeof item === 'string')
+  )
 }
 
 /**
  * 統計データの型ガード
  */
-export function isStatsData(obj: Record<string, unknown>): obj is Record<string, unknown> & StatsData {
+export function isStatsData(
+  obj: Record<string, unknown>
+): obj is Record<string, unknown> & StatsData {
   return (
     typeof obj['total'] === 'number' &&
     typeof obj['cats'] === 'number' &&
     typeof obj['dogs'] === 'number' &&
     typeof obj['last_updated'] === 'string'
-  );
+  )
 }
 
 /**
@@ -102,5 +104,5 @@ export function isPartialStatsData(
     typeof obj['cats'] === 'number' &&
     typeof obj['dogs'] === 'number' &&
     (obj['last_updated'] === undefined || typeof obj['last_updated'] === 'string')
-  );
+  )
 }

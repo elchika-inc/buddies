@@ -9,13 +9,13 @@ import petApi from '@/services/api'
 
 // APIレスポンスをPet型に変換（snake_case と camelCase の両方に対応）
 function transformApiPet(apiPet: unknown): Pet {
-  const pet = apiPet as Record<string, unknown>;
-  
+  const pet = apiPet as Record<string, unknown>
+
   // 必須フィールドを確認
   if (!pet['id'] || !pet['type'] || !pet['name']) {
-    throw new Error('Invalid pet data: missing required fields');
+    throw new Error('Invalid pet data: missing required fields')
   }
-  
+
   // 基本的なPetオブジェクトを構築
   const result: Pet = {
     id: pet['id'] as string,
@@ -30,56 +30,71 @@ function transformApiPet(apiPet: unknown): Pet {
     isNeutered: (pet['is_neutered'] ?? pet['isNeutered'] ?? false) as boolean,
     isVaccinated: (pet['is_vaccinated'] ?? pet['isVaccinated'] ?? false) as boolean,
     createdAt: (pet['created_at'] || pet['createdAt'] || '') as string,
-    sourceUrl: (pet['source_url'] || pet['sourceUrl']) as string
-  };
-  
+    sourceUrl: (pet['source_url'] || pet['sourceUrl']) as string,
+  }
+
   // その他のフィールドをコピー
   const additionalFields = [
-    'breed', 'age', 'gender', 'location', 'description', 
-    'personality', 'healthStatus', 'size', 'weight', 'color', 
-    'hasJpeg', 'hasWebp', 'screenshotCompletedAt', 'imageCheckedAt', 
-    'sourceId', 'updatedAt', 'crawledAt'
-  ];
-  
+    'breed',
+    'age',
+    'gender',
+    'location',
+    'description',
+    'personality',
+    'healthStatus',
+    'size',
+    'weight',
+    'color',
+    'hasJpeg',
+    'hasWebp',
+    'screenshotCompletedAt',
+    'imageCheckedAt',
+    'sourceId',
+    'updatedAt',
+    'crawledAt',
+  ]
+
   for (const field of additionalFields) {
     if (pet[field] !== undefined) {
-      (result as unknown as Record<string, unknown>)[field] = pet[field];
+      ;(result as unknown as Record<string, unknown>)[field] = pet[field]
     }
   }
-  
-  return result;
+
+  return result
 }
 
 // ペットデータをインクリメンタルに読み込む（ページネーション対応）
-export const loadPetDataIncremental = async (offset: number = 0, limit: number = 10): Promise<{
-  pets: Pet[];
-  hasMore: boolean;
-  total: number;
+export const loadPetDataIncremental = async (
+  offset: number = 0,
+  limit: number = 10
+): Promise<{
+  pets: Pet[]
+  hasMore: boolean
+  total: number
 }> => {
   // const petType = getPetType()
-  
+
   try {
     // API経由でデータを取得
     const response = await petApi.fetchPets(offset, limit)
-    
+
     // レスポンスデータの変換
     const pets = (response.pets || []).map(transformApiPet)
-    
+
     return {
       pets,
       hasMore: pets.length === limit,
-      total: response.total || pets.length
+      total: response.total || pets.length,
     }
   } catch (error) {
     console.error('Failed to load pet data:', error)
     return {
       pets: [],
       hasMore: false,
-      total: 0
+      total: 0,
     }
   }
 }
-
 
 // 既存のloadPetData関数（互換性のために残す）
 export const loadPetData = async (): Promise<Pet[]> => {
@@ -90,7 +105,7 @@ export const loadPetData = async (): Promise<Pet[]> => {
 // 地域データの読み込み
 export const loadLocations = async () => {
   const petType = getPetType()
-  
+
   if (petType === 'dog') {
     const { locations } = await import('./dog/locations')
     return locations
@@ -103,7 +118,7 @@ export const loadLocations = async () => {
 // 地域データの読み込み
 export const loadRegions = async () => {
   const petType = getPetType()
-  
+
   if (petType === 'dog') {
     const { regions } = await import('./dog/regions')
     return regions

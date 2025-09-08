@@ -21,9 +21,12 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
         <div className="relative flex-1 overflow-y-auto pb-20 sm:pb-0">
           <div className="relative h-80 sm:h-96">
             <Image
-              src={pet.imageUrl || (pet.type === 'dog' 
-                ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
-                : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')}
+              src={
+                pet.imageUrl ||
+                (pet.type === 'dog'
+                  ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+                  : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')
+              }
               alt={pet.name}
               fill
               className="object-cover sm:rounded-t-2xl"
@@ -55,7 +58,11 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
                 </div>
                 <div className="font-semibold text-gray-800 text-xs sm:text-base">性別</div>
                 <div className="text-gray-600 text-xs sm:text-base">
-                  {pet.gender === 'male' ? '男の子' : pet.gender === 'female' ? '女の子' : pet.gender || '不明'}
+                  {pet.gender === 'male'
+                    ? '男の子'
+                    : pet.gender === 'female'
+                      ? '女の子'
+                      : pet.gender || '不明'}
                 </div>
               </div>
               <div className="text-center p-2 sm:p-4 bg-yellow-50 rounded-lg">
@@ -68,7 +75,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
             {/* 犬固有の情報 */}
             {isDog(pet) && (
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">犬の特性</h2>
+                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
+                  犬の特性
+                </h2>
                 <div className="grid grid-cols-1 gap-2 sm:gap-3">
                   <div className="text-sm sm:text-base">
                     <span className="font-semibold">サイズ:</span> {pet.size}
@@ -80,7 +89,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
             {/* 猫固有の情報 */}
             {isCat(pet) && (
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">猫の特性</h2>
+                <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
+                  猫の特性
+                </h2>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="text-sm sm:text-base">
                     <span className="font-semibold">毛の長さ:</span> {pet.coatLength}
@@ -99,12 +110,13 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
             )}
 
             <div className="mb-4 sm:mb-6">
-              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">性格・特徴</h2>
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">
+                性格・特徴
+              </h2>
               <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
                 {pet.description}
               </p>
             </div>
-
 
             {/* PC表示時のボタン（カード内） */}
             <div className="hidden sm:block mt-6 space-y-3">
@@ -125,10 +137,9 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
                 閉じる
               </button>
             </div>
-
           </div>
         </div>
-        
+
         {/* モバイル表示時のボタン（下部固定） */}
         <div className="sm:hidden absolute bottom-0 left-0 right-0 bg-white border-t p-4 space-y-3">
           {pet.sourceUrl && (

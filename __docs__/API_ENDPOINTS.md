@@ -2,7 +2,7 @@
 
 ## 基本情報
 
-- **ベースURL**: 
+- **ベースURL**:
   - 本番環境: `https://pawmatch-api.elchika.app`
   - 開発環境: `http://localhost:9789`
 - **認証**: APIキー認証（有効化済み）
@@ -12,6 +12,7 @@
 ## 共通レスポンス形式
 
 ### 成功時
+
 ```json
 {
   "success": true,
@@ -21,6 +22,7 @@
 ```
 
 ### エラー時
+
 ```json
 {
   "success": false,
@@ -39,22 +41,24 @@
 
 ### 認証要件の概要
 
-| 認証レベル | 説明 | 必要なヘッダー |
-|------------|------|---------------|
-| **不要** | パブリックアクセス | なし |
-| **APIキー** | 通常のAPIアクセス | `X-API-Key` または `Authorization: Bearer` |
-| **管理者** | 管理機能へのアクセス | `Authorization: Bearer` （管理者キー） |
-| **マスター** | システム管理 | `X-Master-Secret` |
+| 認証レベル   | 説明                 | 必要なヘッダー                             |
+| ------------ | -------------------- | ------------------------------------------ |
+| **不要**     | パブリックアクセス   | なし                                       |
+| **APIキー**  | 通常のAPIアクセス    | `X-API-Key` または `Authorization: Bearer` |
+| **管理者**   | 管理機能へのアクセス | `Authorization: Bearer` （管理者キー）     |
+| **マスター** | システム管理         | `X-Master-Secret`                          |
 
 ## 1. ヘルスチェック
 
 ### GET `/`
+
 ルートパスでのヘルスチェック
 
 - **認証**: 不要（パブリック）
 - **実装**: `/api/src/index.ts` (HealthController使用)
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -68,12 +72,14 @@
 ```
 
 ### GET `/health`
+
 詳細なヘルスチェック
 
 - **認証**: 不要（パブリック）
 - **実装**: `/api/src/routes/health.ts`
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -87,12 +93,14 @@
 ```
 
 ### GET `/health/ready`
+
 レディネスチェック（準備状態の確認）
 
 - **認証**: 不要（パブリック）
 - **実装**: `/api/src/routes/health.ts`
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -111,18 +119,21 @@
 ## 2. ペットAPI
 
 ### GET `/api/pets`
+
 全ペット一覧取得
 
 - **認証**: APIキー必須
 - **実装**: `/api/src/routes/pets.ts` (PetController使用)
 
 **クエリパラメータ**
+
 - `limit`: 取得件数（デフォルト: 20、最大: 100）
 - `offset`: オフセット（ページネーション用）
 - `prefecture`: 都道府県フィルタ
 - `hasImage`: 画像ありフィルタ（true/false）
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -151,32 +162,39 @@
 ```
 
 ### GET `/api/pets/:type`
+
 タイプ別ペット一覧取得
 
 - **認証**: APIキー必須
 - **実装**: `/api/src/routes/pets.ts` (PetController使用)
 
 **パラメータ**
+
 - `type`: `dog` または `cat`
 
 **クエリパラメータ**
+
 - 上記と同じ
 
 ### GET `/api/pets/:type/random`
+
 ランダムペット取得
 
 - **認証**: APIキー必須
 - **実装**: `/api/src/routes/pets.ts` (PetController使用)
 
 **パラメータ**
+
 - `type`: `dog` または `cat`
 
 **クエリパラメータ**
+
 - `count`: 取得件数（デフォルト: 10、最大: 50）
 - `exclude`: 除外するID（カンマ区切り）
 - `prefecture`: 都道府県フィルタ
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -189,16 +207,19 @@
 ```
 
 ### GET `/api/pets/:type/:id`
+
 特定ペット詳細取得
 
 - **認証**: APIキー必須
 - **実装**: `/api/src/routes/pets.ts` (PetController使用)
 
 **パラメータ**
+
 - `type`: `dog` または `cat`
 - `id`: ペットID
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -234,6 +255,7 @@
 ## 3. 画像API
 
 ### GET `/api/images/:filename`
+
 画像取得（ファイル名のみ）
 
 - **認証**: APIキー必須
@@ -241,14 +263,17 @@
 - **キャッシュ**: Cloudflare Cacheで自動キャッシュ
 
 **パラメータ**
+
 - `filename`: 画像ファイル名（例: `dog-12345.jpg`）
 
 **レスポンス**
+
 - 画像バイナリデータ
 - Content-Type: `image/jpeg` または `image/webp`
 - キャッシュヘッダー付き
 
 ### GET `/api/images/:type/:filename`
+
 画像取得（タイプ指定）
 
 - **認証**: APIキー必須
@@ -256,6 +281,7 @@
 - **キャッシュ**: Cloudflare Cacheで自動キャッシュ
 
 **パラメータ**
+
 - `type`: `dogs` または `cats`
 - `filename`: 画像ファイル名
 
@@ -264,12 +290,14 @@
 ## 4. 統計API
 
 ### GET `/api/stats`
+
 統計情報取得
 
 - **認証**: APIキー必須
 - **実装**: `/api/src/routes/stats.ts` (HealthController使用)
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -307,12 +335,15 @@
 ## 5. 管理API（認証必須）
 
 ### POST `/api/admin/pets/update-flags`
+
 ペットフラグ一括更新
 
 **ヘッダー**
+
 - `Authorization`: Bearer token または API管理キー
 
 **リクエスト**
+
 ```json
 {
   "petIds": ["dog-12345", "cat-67890"],
@@ -325,6 +356,7 @@
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -334,12 +366,15 @@
 ```
 
 ### POST `/api/admin/update-images`
+
 画像処理結果の反映（レガシー、互換性のため残す）
 
 **ヘッダー**
+
 - `Authorization`: Bearer token または API管理キー
 
 **リクエスト**
+
 ```json
 {
   "results": [
@@ -354,6 +389,7 @@
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -364,12 +400,15 @@
 ```
 
 ### POST `/api/admin/upload-screenshot`
+
 画像のスクリーンショットアップロード（GitHub Actions用）
 
 **ヘッダー**
+
 - `Authorization`: Bearer token または API管理キー
 
 **リクエスト**
+
 ```json
 {
   "petId": "dog-12345",
@@ -381,6 +420,7 @@
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -393,12 +433,15 @@
 ```
 
 ### POST `/api/admin/convert-image`
+
 画像変換とアップロード（GitHub Actions用）
 
 **ヘッダー**
+
 - `Authorization`: Bearer token または API管理キー
 
 **リクエスト**
+
 ```json
 {
   "petId": "dog-12345",
@@ -411,6 +454,7 @@
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -424,12 +468,15 @@
 ```
 
 ### POST `/api/admin/batch-upload`
+
 複数画像の一括アップロード（GitHub Actions用）
 
 **ヘッダー**
+
 - `Authorization`: Bearer token または API管理キー
 
 **リクエスト**
+
 ```json
 {
   "results": [
@@ -453,6 +500,7 @@
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -474,9 +522,11 @@
 ## 6. APIキー管理
 
 ### POST `/api/keys/validate`
+
 APIキーの検証
 
 **リクエスト**
+
 ```json
 {
   "key": "your-api-key-here",
@@ -486,6 +536,7 @@ APIキーの検証
 ```
 
 **レスポンス（成功時）**
+
 ```json
 {
   "success": true,
@@ -502,6 +553,7 @@ APIキーの検証
 ```
 
 **レスポンス（失敗時）**
+
 ```json
 {
   "success": false,
@@ -512,12 +564,15 @@ APIキーの検証
 ```
 
 ### POST `/api/keys/admin/keys`
+
 APIキーの作成（マスターキー必須）
 
 **ヘッダー**
+
 - `X-Master-Secret`: マスターシークレット
 
 **リクエスト**
+
 ```json
 {
   "name": "新しいAPIキー",
@@ -532,6 +587,7 @@ APIキーの作成（マスターキー必須）
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -549,12 +605,15 @@ APIキーの作成（マスターキー必須）
 ```
 
 ### GET `/api/keys/admin/keys`
+
 APIキー一覧取得（マスターキー必須）
 
 **ヘッダー**
+
 - `X-Master-Secret`: マスターシークレット
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -576,15 +635,19 @@ APIキー一覧取得（マスターキー必須）
 ```
 
 ### DELETE `/api/keys/admin/keys/:id`
+
 APIキーの無効化（マスターキー必須）
 
 **ヘッダー**
+
 - `X-Master-Secret`: マスターシークレット
 
 **パラメータ**
+
 - `id`: APIキーID
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -594,15 +657,19 @@ APIキーの無効化（マスターキー必須）
 ```
 
 ### POST `/api/keys/admin/keys/:id/rotate`
+
 APIキーのローテーション（マスターキー必須）
 
 **ヘッダー**
+
 - `X-Master-Secret`: マスターシークレット
 
 **パラメータ**
+
 - `id`: APIキーID
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -613,12 +680,15 @@ APIキーのローテーション（マスターキー必須）
 ```
 
 ### GET `/api/keys/admin/rate-limits`
+
 レート制限状態確認（マスターキー必須）
 
 **ヘッダー**
+
 - `X-Master-Secret`: マスターシークレット
 
 **レスポンス**
+
 ```json
 {
   "success": true,
@@ -640,9 +710,11 @@ APIキーのローテーション（マスターキー必須）
 ## 7. 内部API（クローラー用）
 
 ### POST `/crawler/pets/bulk`
+
 ペットデータ一括登録
 
 **リクエスト**
+
 ```json
 {
   "pets": [
@@ -668,6 +740,7 @@ APIキーのローテーション（マスターキー必須）
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": 1,
@@ -677,9 +750,11 @@ APIキーのローテーション（マスターキー必須）
 ```
 
 ### POST `/crawler/state`
+
 クローラー状態の保存・更新
 
 **リクエスト**
+
 ```json
 {
   "source_id": "pet-home",
@@ -693,6 +768,7 @@ APIキーのローテーション（マスターキー必須）
 ```
 
 **レスポンス**
+
 ```json
 {
   "success": true
@@ -700,13 +776,16 @@ APIキーのローテーション（マスターキー必須）
 ```
 
 ### GET `/crawler/state/:source/:type?`
+
 クローラー状態の取得
 
 **パラメータ**
+
 - `source`: データソースID（例: `pet-home`）
 - `type`: ペットタイプ（オプション、`dog` または `cat`）
 
 **レスポンス**
+
 ```json
 {
   "source_id": "pet-home",
@@ -724,19 +803,19 @@ APIキーのローテーション（マスターキー必須）
 
 ## エラーコード一覧
 
-| コード | 説明 |
-|--------|------|
-| `ROUTE_NOT_FOUND` | エンドポイントが見つからない |
-| `INTERNAL_ERROR` | サーバー内部エラー |
-| `VALIDATION_ERROR` | リクエストパラメータが無効 |
-| `UNAUTHORIZED` | 認証エラー |
-| `FORBIDDEN` | 権限不足 |
-| `RATE_LIMIT_EXCEEDED` | レート制限超過 |
-| `INVALID_KEY` | APIキーが無効 |
-| `EXPIRED_KEY` | APIキーが期限切れ |
-| `INSUFFICIENT_PERMISSIONS` | 必要な権限がない |
-| `DATABASE_ERROR` | データベースエラー |
-| `STORAGE_ERROR` | ストレージエラー |
+| コード                     | 説明                         |
+| -------------------------- | ---------------------------- |
+| `ROUTE_NOT_FOUND`          | エンドポイントが見つからない |
+| `INTERNAL_ERROR`           | サーバー内部エラー           |
+| `VALIDATION_ERROR`         | リクエストパラメータが無効   |
+| `UNAUTHORIZED`             | 認証エラー                   |
+| `FORBIDDEN`                | 権限不足                     |
+| `RATE_LIMIT_EXCEEDED`      | レート制限超過               |
+| `INVALID_KEY`              | APIキーが無効                |
+| `EXPIRED_KEY`              | APIキーが期限切れ            |
+| `INSUFFICIENT_PERMISSIONS` | 必要な権限がない             |
+| `DATABASE_ERROR`           | データベースエラー           |
+| `STORAGE_ERROR`            | ストレージエラー             |
 
 ---
 
@@ -769,7 +848,7 @@ APIキーのローテーション（マスターキー必須）
 各APIキーには以下のレート制限が適用されます：
 
 - **Public キー**: 1000リクエスト/分
-- **Internal キー**: 5000リクエスト/分  
+- **Internal キー**: 5000リクエスト/分
 - **Admin キー**: 100リクエスト/分
 
 制限を超えた場合、`429 Too Many Requests`が返されます。

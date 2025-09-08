@@ -17,7 +17,7 @@ export const FETCH_CONFIG = {
   MAX_RETRIES: 3,
   /** リトライ間隔（ミリ秒） */
   RETRY_DELAY: 1000,
-} as const;
+} as const
 
 /**
  * バッチ処理設定
@@ -29,7 +29,7 @@ export const BATCH_CONFIG = {
   MAX_BATCH_SIZE: 100,
   /** 並列処理数 */
   CONCURRENT_REQUESTS: 5,
-} as const;
+} as const
 
 /**
  * HTTPリクエスト設定
@@ -39,10 +39,10 @@ export const HTTP_CONFIG = {
   USER_AGENT: 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)',
   /** デフォルトヘッダー */
   DEFAULT_HEADERS: {
-    'Accept': 'application/json',
+    Accept: 'application/json',
     'Accept-Language': 'ja,en;q=0.9',
   },
-} as const;
+} as const
 
 /**
  * データ検証設定
@@ -56,7 +56,7 @@ export const VALIDATION_CONFIG = {
   MAX_DESCRIPTION_LENGTH: 5000,
   /** 有効なペットタイプ */
   VALID_PET_TYPES: ['dog', 'cat'] as const,
-} as const;
+} as const
 
 /**
  * 画像処理設定
@@ -70,7 +70,7 @@ export const IMAGE_CONFIG = {
   JPEG_QUALITY: 85,
   /** 画像品質（WebP） */
   WEBP_QUALITY: 80,
-} as const;
+} as const
 
 /**
  * エラーメッセージ定数
@@ -81,4 +81,4 @@ export const ERROR_MESSAGES = {
   REQUEST_TIMEOUT: 'Request timed out',
   NETWORK_ERROR: 'Network error occurred',
   PARSE_ERROR: 'Failed to parse response',
-} as const;
+} as const

@@ -27,7 +27,6 @@
     "dev:dispatcher": "npm run -w @pawmatch/dispatcher dev",
     "dev:dog": "npm run -w @pawmatch/frontend dev:dog",
     "dev:cat": "npm run -w @pawmatch/frontend dev:cat",
-    
     "// Build": "ビルドコマンド",
     "build": "npm run -w @pawmatch/frontend build",
     "build:all": "npm run build --workspaces --if-present",
@@ -41,7 +40,6 @@
     "build:api:production": "NODE_ENV=production npm run -w @pawmatch/api build",
     "build:crawler:production": "NODE_ENV=production npm run -w @pawmatch/crawler build",
     "build:dispatcher:production": "NODE_ENV=production npm run -w @pawmatch/dispatcher build",
-    
     "// Type Check & Lint": "型チェックとLintコマンド",
     "type-check": "npm run type-check --workspaces --if-present",
     "type-check:app": "npm run -w @pawmatch/frontend type-check",
@@ -49,12 +47,10 @@
     "lint:app": "npm run -w @pawmatch/frontend lint",
     "lint:fix": "npm run -w @pawmatch/frontend lint:fix",
     "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
-    
     "// Test": "テストコマンド",
     "test": "npm run test --workspaces --if-present",
     "test:app": "npm run -w @pawmatch/frontend test",
     "test:crawler": "npm run -w @pawmatch/crawler test",
-    
     "// Deploy": "デプロイコマンド",
     "deploy:dog": "npm run -w @pawmatch/frontend deploy:dog",
     "deploy:cat": "npm run -w @pawmatch/frontend deploy:cat",
@@ -64,13 +60,11 @@
     "deploy:dispatcher": "npm run -w @pawmatch/dispatcher deploy",
     "deploy:workers": "concurrently --names 'API,CRAWLER,DISPATCH' --prefix-colors 'yellow,cyan,magenta' 'npm run deploy:api' 'npm run deploy:crawler' 'npm run deploy:dispatcher'",
     "deploy:all": "npm run deploy:workers && npm run deploy:apps",
-    
     "// Cloudflare Wrangler": "Wrangler関連コマンド",
     "tail": "npm run -w @pawmatch/api tail",
     "tail:api": "npm run -w @pawmatch/api tail",
     "tail:crawler": "npm run -w @pawmatch/crawler tail",
     "tail:dispatcher": "npm run -w @pawmatch/dispatcher tail",
-    
     "// Database": "データベース管理コマンド",
     "db:init": "npm run -w @pawmatch/api run wrangler d1 execute pawmatch-db --local --file=./database/migrations/0001_initial_schema.sql",
     "db:migrate": "npm run -w @pawmatch/api run wrangler d1 migrations apply pawmatch-db --local",
@@ -82,7 +76,6 @@
     "db:push": "npm run -w @pawmatch/api run drizzle-kit push",
     "db:studio": "npm run -w @pawmatch/api run drizzle-kit studio",
     "db:studio:prod": "npm run -w @pawmatch/api run drizzle-kit studio -- --config drizzle.config.prod.ts",
-    
     "// Crawler": "クローラー関連コマンド",
     "crawler:dogs": "npm run -w @pawmatch/crawler crawl:dogs",
     "crawler:cats": "npm run -w @pawmatch/crawler crawl:cats",
@@ -90,15 +83,15 @@
     "crawl:pethome:dogs": "npm run -w @pawmatch/crawler crawl:pethome:dogs",
     "crawl:pethome:cats": "npm run -w @pawmatch/crawler crawl:pethome:cats",
     "crawl:pethome:all": "npm run -w @pawmatch/crawler crawl:pethome:all",
-    
     "// Utility": "ユーティリティコマンド",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
     "clean:all": "rm -rf node_modules package-lock.json **/node_modules **/package-lock.json",
     "reinstall": "npm run clean:all && npm install",
-    "postinstall": "echo 'All dependencies installed successfully!'"
+    "postinstall": "echo 'All dependencies installed successfully!'",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240117.0",
+    "@cloudflare/workers-types": "^4.20250906.0",
     "@types/node": "^20.16.0",
     "concurrently": "^8.2.2",
     "prettier": "^3.6.2",
@@ -108,5 +101,10 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "packageManager": "npm@10.8.2"
+  "packageManager": "npm@10.8.2",
+  "lint-staged": {
+    "*.{js,ts,tsx,json,md}": [
+      "prettier --check"
+    ]
+  }
 }
