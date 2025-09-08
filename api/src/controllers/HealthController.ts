@@ -85,16 +85,42 @@ export class HealthController {
 
       // 画像がないペットを取得
       let missingImages: Array<{ id: string; name: string; type: string; sourceUrl: string }> = []
+      let debugInfo: any = {}
       try {
+        // デバッグ用：最初の5件のペットの画像キー状態を確認
+        const samplePets = await this.db
+          .prepare(`SELECT id, jpeg_image_key, webp_image_key FROM pets LIMIT 5`)
+          .all()
+
+        debugInfo.samplePets = samplePets.results
+
+        // 画像キーの状態を集計
+        const keyStats = await this.db
+          .prepare(
+            `
+            SELECT 
+              COUNT(*) as total,
+              COUNT(CASE WHEN jpeg_image_key IS NOT NULL AND jpeg_image_key != '' THEN 1 END) as with_jpeg,
+              COUNT(CASE WHEN webp_image_key IS NOT NULL AND webp_image_key != '' THEN 1 END) as with_webp,
+              COUNT(CASE WHEN (jpeg_image_key IS NULL OR jpeg_image_key = '') AND (webp_image_key IS NULL OR webp_image_key = '') THEN 1 END) as without_both
+            FROM pets
+          `
+          )
+          .all()
+
+        debugInfo.keyStats = keyStats.results?.[0]
+
         const petsWithoutImages = await this.db
           .prepare(
-            `SELECT id, name, type, source_url 
+            `SELECT id, name, type, source_url, jpeg_image_key, webp_image_key
              FROM pets 
              WHERE (jpeg_image_key IS NULL OR jpeg_image_key = '') 
-                OR (webp_image_key IS NULL OR webp_image_key = '')
+                AND (webp_image_key IS NULL OR webp_image_key = '')
              LIMIT 50`
           )
           .all()
+
+        debugInfo.queryResultCount = petsWithoutImages.results?.length || 0
 
         missingImages =
           petsWithoutImages.results?.map((pet) => ({
@@ -105,6 +131,7 @@ export class HealthController {
           })) || []
       } catch (dbError) {
         console.error('Error fetching missing images:', dbError)
+        debugInfo.error = String(dbError)
         // エラーが発生しても続行（missingImagesは空のまま）
       }
 
@@ -115,6 +142,7 @@ export class HealthController {
           byPrefecture: detailedStats.prefectureDistribution,
           recentPets: detailedStats.recentPets,
           missingImages,
+          debug: debugInfo, // デバッグ情報を追加
         })
       )
     } catch (error) {
