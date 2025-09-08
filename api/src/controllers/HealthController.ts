@@ -87,22 +87,22 @@ export class HealthController {
       let missingImages: Array<{ id: string; name: string; type: string; sourceUrl: string }> = []
       let debugInfo: any = {}
       try {
-        // デバッグ用：最初の5件のペットの画像キー状態を確認
+        // デバッグ用：最初の5件のペットの画像状態を確認
         const samplePets = await this.db
-          .prepare(`SELECT id, jpeg_image_key, webp_image_key FROM pets LIMIT 5`)
+          .prepare(`SELECT id, has_jpeg, has_webp, image_url FROM pets LIMIT 5`)
           .all()
 
         debugInfo.samplePets = samplePets.results
 
-        // 画像キーの状態を集計
+        // 画像の状態を集計
         const keyStats = await this.db
           .prepare(
             `
             SELECT 
               COUNT(*) as total,
-              COUNT(CASE WHEN jpeg_image_key IS NOT NULL AND jpeg_image_key != '' THEN 1 END) as with_jpeg,
-              COUNT(CASE WHEN webp_image_key IS NOT NULL AND webp_image_key != '' THEN 1 END) as with_webp,
-              COUNT(CASE WHEN (jpeg_image_key IS NULL OR jpeg_image_key = '') AND (webp_image_key IS NULL OR webp_image_key = '') THEN 1 END) as without_both
+              COUNT(CASE WHEN has_jpeg = 1 THEN 1 END) as with_jpeg,
+              COUNT(CASE WHEN has_webp = 1 THEN 1 END) as with_webp,
+              COUNT(CASE WHEN has_jpeg = 0 AND has_webp = 0 THEN 1 END) as without_both
             FROM pets
           `
           )
@@ -112,10 +112,9 @@ export class HealthController {
 
         const petsWithoutImages = await this.db
           .prepare(
-            `SELECT id, name, type, source_url, jpeg_image_key, webp_image_key
+            `SELECT id, name, type, source_url, has_jpeg, has_webp, image_url
              FROM pets 
-             WHERE (jpeg_image_key IS NULL OR jpeg_image_key = '') 
-                AND (webp_image_key IS NULL OR webp_image_key = '')
+             WHERE has_jpeg = 0 AND has_webp = 0
              LIMIT 50`
           )
           .all()
