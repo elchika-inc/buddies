@@ -131,6 +131,7 @@ export class HealthController {
       } catch (dbError) {
         console.error('Error fetching missing images:', dbError)
         debugInfo.error = String(dbError)
+        console.error('Debug - Database error details:', dbError)
         // エラーが発生しても続行（missingImagesは空のまま）
       }
 
