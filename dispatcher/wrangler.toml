@@ -59,7 +59,7 @@ name = "pawmatch-dispatcher"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
-database_id = "09bcc380-4c44-4e29-9a45-6ce6def62c7f"
+database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
 [[env.production.r2_buckets]]
