@@ -6,12 +6,10 @@
 node_modules/
 jspm_packages/
 
-# Package manager lock files (project uses Bun primarily)
-package-lock.json
+# Package manager lock files (project uses npm primarily)
+# package-lock.json is needed for GitHub Actions cache
 yarn.lock
 pnpm-lock.yaml
-# Exception: converter needs package-lock.json for GitHub Actions
-!converter/package-lock.json
 
 # Bun specific
 bun.lockb
