@@ -10,10 +10,12 @@ import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
  * @description APIのヘルス状態、準備状態、統計情報を提供するコントローラー
  */
 export class HealthController {
+  private db: D1Database
   private dataService: DataService
   private imageService: UnifiedImageService
 
   constructor(db: D1Database, r2: R2Bucket) {
+    this.db = db
     this.dataService = new DataService(db, r2)
     this.imageService = new UnifiedImageService(db, r2)
   }
@@ -82,23 +84,29 @@ export class HealthController {
       ])
 
       // 画像がないペットを取得
-      const petsWithoutImages = await this.db
-        .prepare(
-          `SELECT id, name, type, source_url 
-           FROM pets 
-           WHERE (jpeg_image_key IS NULL OR jpeg_image_key = '') 
-              OR (webp_image_key IS NULL OR webp_image_key = '')
-           LIMIT 50`
-        )
-        .all()
+      let missingImages = []
+      try {
+        const petsWithoutImages = await this.db
+          .prepare(
+            `SELECT id, name, type, source_url 
+             FROM pets 
+             WHERE (jpeg_image_key IS NULL OR jpeg_image_key = '') 
+                OR (webp_image_key IS NULL OR webp_image_key = '')
+             LIMIT 50`
+          )
+          .all()
 
-      const missingImages =
-        petsWithoutImages.results?.map((pet) => ({
-          id: pet.id,
-          name: pet.name,
-          type: pet.type,
-          sourceUrl: pet.source_url,
-        })) || []
+        missingImages =
+          petsWithoutImages.results?.map((pet) => ({
+            id: pet.id,
+            name: pet.name,
+            type: pet.type,
+            sourceUrl: pet.source_url,
+          })) || []
+      } catch (dbError) {
+        console.error('Error fetching missing images:', dbError)
+        // エラーが発生しても続行（missingImagesは空のまま）
+      }
 
       return c.json(
         successResponse({
