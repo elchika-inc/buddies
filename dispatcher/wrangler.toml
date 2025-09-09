@@ -29,18 +29,6 @@ dead_letter_queue = "pawmatch-dispatch-dlq"
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
-# D1データベース設定（APIと共有）
-[[d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
-migrations_dir = "../database/migrations"
-
-# R2バケット設定（オプション: R2から画像削除する場合）
-[[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "pawmatch-images"
-
 # Cron Trigger設定
 [triggers]
 crons = [
@@ -55,16 +43,42 @@ enabled = true
 [env.production]
 name = "pawmatch-dispatcher"
 
-# Production環境でもD1とR2バインディングを追加
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
-migrations_dir = "../database/migrations"
+# 環境変数（production環境でも必要）
+[env.production.vars]
+NODE_ENV = "production"
+GITHUB_OWNER = "elchika-inc"
+GITHUB_REPO = "pawmatch"
+WORKFLOW_FILE = "automated-screenshot-capture.yml"
+API_URL = "https://pawmatch-api.elchika.app"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-[[env.production.r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "pawmatch-images"
+# Production環境のQueue設定
+[[env.production.queues.producers]]
+binding = "PAWMATCH_DISPATCH_QUEUE"
+queue = "pawmatch-dispatch-queue"
+
+[[env.production.queues.consumers]]
+queue = "pawmatch-dispatch-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-dispatch-dlq"
+
+# Dead Letter Queue設定
+[[env.production.queues.producers]]
+binding = "PAWMATCH_DISPATCH_DLQ"
+queue = "pawmatch-dispatch-dlq"
+
+# Production環境でもD1とR2は使用しない（APIのみ使用）
+# [[env.production.d1_databases]]
+# binding = "DB"
+# database_name = "pawmatch-db"
+# database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+# migrations_dir = "../database/migrations"
+
+# [[env.production.r2_buckets]]
+# binding = "R2_BUCKET"
+# bucket_name = "pawmatch-images"
 
 # 開発環境設定
 [env.development]

@@ -2,7 +2,7 @@
  * Dispatcher モジュールの型定義
  */
 
-import type { Queue, R2Bucket, D1Database } from '@cloudflare/workers-types'
+import type { Queue } from '@cloudflare/workers-types'
 
 // 共通の型定義を再エクスポート
 export type { Pet, CrawlerState, CrawlerStateRecord } from '../../../shared/types'
@@ -10,7 +10,7 @@ export type { Pet, CrawlerState, CrawlerStateRecord } from '../../../shared/type
 export { isPet } from '../../../shared/types'
 
 export interface Env {
-  DB?: D1Database // D1データベースを追加
+  // D1とR2は使用しない（APIのみ使用）
   PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>
   PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>
   GITHUB_TOKEN: string
@@ -20,7 +20,6 @@ export interface Env {
   API_URL: string
   API_KEY?: string
   PUBLIC_API_KEY?: string // APIキーを追加
-  R2_BUCKET?: R2Bucket
   [key: string]: unknown
 }
 

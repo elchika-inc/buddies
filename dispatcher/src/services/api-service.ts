@@ -5,38 +5,22 @@
 import type { Env, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
 import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api'
-import { drizzle } from 'drizzle-orm/d1'
-import { eq, isNull, or } from 'drizzle-orm'
-import { pets as petsTable } from '../../../database/schema/schema'
 
 export class ApiService {
   private readonly apiUrl: string
   private readonly apiKey: string | undefined
-  private readonly db: ReturnType<typeof drizzle> | undefined
 
   constructor(env: Env) {
     this.apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app'
     this.apiKey = env.PUBLIC_API_KEY || env.API_KEY || undefined
-    this.db = env.DB ? drizzle(env.DB) : undefined
   }
 
   /**
-   * 画像がないペットを取得（D1データベースから直接取得）
+   * 画像がないペットを取得（API経由でのみ取得）
    */
   async fetchPetsWithoutImages(limit = 30): Promise<Result<Pet[]>> {
     try {
-      // D1データベースが使用可能な場合は直接クエリ
-      if (this.db) {
-        const petsWithoutImages = await this.db
-          .select()
-          .from(petsTable)
-          .where(or(isNull(petsTable.images), eq(petsTable.images, '[]')))
-          .limit(limit)
-
-        return Ok(petsWithoutImages.map(this.dbRecordToPet))
-      }
-
-      // D1が使用できない場合はAPIにフォールバック
+      // API経由でデータ取得（D1とR2は使用しない）
       const response = await this.makeApiRequest('/api/stats')
 
       if (!response.ok) {
@@ -161,22 +145,6 @@ export class ApiService {
       likes: 0,
       created_at: now,
       updated_at: now,
-    }
-  }
-
-  /**
-   * データベースレコードをPet型に変換
-   */
-  private dbRecordToPet(record: any): Pet {
-    return {
-      ...record,
-      images: record.images ? JSON.parse(record.images) : [],
-      tags: record.tags ? JSON.parse(record.tags) : [],
-      personality_traits: record.personality_traits ? JSON.parse(record.personality_traits) : null,
-      spayed_neutered: record.spayed_neutered === 1,
-      good_with_kids: record.good_with_kids === 1,
-      good_with_pets: record.good_with_pets === 1,
-      featured: record.featured === 1,
     }
   }
 

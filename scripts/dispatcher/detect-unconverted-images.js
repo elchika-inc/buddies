@@ -226,23 +226,21 @@ async function main() {
     // R2から未変換画像を検出
     const unconvertedImages = await detectUnconvertedImages(params)
 
-    // 結果がない場合はAPIからフォールバック
-    if (unconvertedImages.length === 0 && process.env.API_URL) {
-      console.log('\n⚠️ No unconverted images found in R2')
-      console.log('📡 Fetching from API as fallback...')
-
-      const apiPets = await fetchFromAPI(params.limit)
-      if (apiPets.length > 0) {
-        console.log(`  Found ${apiPets.length} pets without images in API`)
-        await fs.writeFile(params.output, JSON.stringify(apiPets, null, 2))
-      } else {
-        console.log('  No pets without images found in API either')
-        await fs.writeFile(params.output, JSON.stringify([], null, 2))
-      }
-    } else {
-      // 結果を保存
+    if (unconvertedImages.length > 0) {
+      // R2内に存在するスクリーンショットの変換リストを保存
       await fs.writeFile(params.output, JSON.stringify(unconvertedImages, null, 2))
       console.log(`\n✅ Results saved to: ${params.output}`)
+    } else {
+      // R2に未変換画像がない場合
+      console.log('\n⚠️ No unconverted images found in R2')
+      console.log('ℹ️  This is normal if all screenshots have been converted.')
+      console.log('ℹ️  To capture new screenshots, use the Screenshot Capture workflow instead.')
+
+      // 空の配列を出力（エラーではない）
+      await fs.writeFile(params.output, JSON.stringify([], null, 2))
+
+      // 注意: APIからのフォールバックは削除
+      // 理由: スクリーンショットが存在しないペットを変換しようとするとエラーになるため
     }
   } catch (error) {
     console.error('❌ Error:', error)
