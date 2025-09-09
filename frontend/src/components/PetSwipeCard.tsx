@@ -1,11 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { PetCard } from './PetCard'
 import { SwipeIndicator } from './SwipeIndicator'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import { SwipeDirection, useSwipeGesture } from '@/hooks/usePetSwipe'
 
 type PetSwipeCardProps = {
-  pet: Pet
+  pet: FrontendPet
   onSwipe: (direction: SwipeDirection) => void
   isTopCard?: boolean
   buttonSwipeDirection?: SwipeDirection | null

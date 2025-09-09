@@ -4,10 +4,11 @@
  */
 
 // 共通型をインポート
-import type { Pet, PetRecord, PetSearchFilters } from '../../../shared/types/index'
+import type { PetSearchFilters } from '../../../shared/types/index'
+import type { FrontendPet } from './pet'
 
 // 再エクスポート
-export type { Pet, PetRecord, PetSearchFilters }
+export type { FrontendPet, PetSearchFilters }
 
 /**
  * フロントエンド固有の型
@@ -19,8 +20,8 @@ export interface SwipeAction {
 }
 
 export interface SwipeHistory {
-  liked: Pet[]
-  passed: Pet[]
+  liked: FrontendPet[]
+  passed: FrontendPet[]
   lastSwipeAt?: string
 }
 
@@ -32,8 +33,8 @@ export interface UserPreferences {
 }
 
 export interface AppState {
-  currentPet: Pet | null
-  nextPet: Pet | null
+  currentPet: FrontendPet | null
+  nextPet: FrontendPet | null
   swipeHistory: SwipeHistory
   preferences: UserPreferences
   isLoading: boolean

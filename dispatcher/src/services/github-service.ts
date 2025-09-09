@@ -2,7 +2,7 @@
  * GitHub Actionsワークフローを制御するサービス
  */
 
-import type { Env, PetRecord } from '../types'
+import type { Env, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
 
 export class RateLimitError extends Error {
@@ -34,7 +34,7 @@ export class GitHubService {
   /**
    * GitHub Actionsワークフローをトリガー
    */
-  async triggerWorkflow(pets: PetRecord[], batchId: string): Promise<Result<void>> {
+  async triggerWorkflow(pets: Pet[], batchId: string): Promise<Result<void>> {
     try {
       const url = this.buildWorkflowUrl()
       const payload = this.buildWorkflowPayload(pets, batchId)
@@ -78,7 +78,7 @@ export class GitHubService {
   /**
    * ワークフローペイロードを構築
    */
-  private buildWorkflowPayload(pets: PetRecord[], batchId: string) {
+  private buildWorkflowPayload(pets: Pet[], batchId: string) {
     // PetRecordをJSONファイル形式に変換
     const petsData = pets.map((pet) => ({
       id: pet.id,

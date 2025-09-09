@@ -2,13 +2,13 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import { PetDetailModal } from './PetDetailModal'
 // import { Location } from './LocationModal'
 
 interface MatchHeaderProps {
-  likedPets: Pet[]
-  superLikedPets: Pet[]
+  likedPets: FrontendPet[]
+  superLikedPets: FrontendPet[]
   onRemoveLike: (petId: string) => void
   onRemoveSuperLike: (petId: string) => void
   onLocationClick: () => void
@@ -27,7 +27,7 @@ export function MatchHeader({
 }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'all' | 'like' | 'super_like'>('all')
-  const [selectedPet, setSelectedPet] = useState<Pet | null>(null)
+  const [selectedPet, setSelectedPet] = useState<FrontendPet | null>(null)
 
   const safeLikedPets = Array.isArray(likedPets) ? likedPets : []
   const safeSuperLikedPets = Array.isArray(superLikedPets) ? superLikedPets : []

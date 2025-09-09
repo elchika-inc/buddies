@@ -15,7 +15,7 @@ import { Result } from '../../shared/types/result'
 import { ApiService } from './services/api-service'
 import { QueueService } from './services/queue-service'
 import { QueueHandler } from './handlers/queue-handler'
-import type { Env, DispatchMessage, PetRecord } from './types'
+import type { Env, DispatchMessage, Pet } from './types'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -75,8 +75,8 @@ async function createAndSendBatch(
     // バッチIDを生成
     const batchId = QueueService.generateBatchId(prefix)
 
-    // PetRecordをPetDispatchDataに変換
-    const petDispatchData = pets.map(QueueService.convertPetRecordToDispatchData)
+    // PetをPetDispatchDataに変換
+    const petDispatchData = pets.map(QueueService.convertPetToDispatchData)
 
     // Queueにメッセージを送信
     const sendResult = await queueService.sendDispatchMessage(petDispatchData, batchId)
@@ -93,7 +93,7 @@ async function createAndSendBatch(
       batchId,
       count: pets.length,
       message: 'Batch queued for processing',
-      pets: pets.map((p: PetRecord) => ({ id: p.id, name: p.name })),
+      pets: pets.map((p: Pet) => ({ id: p.id, name: p.name })),
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

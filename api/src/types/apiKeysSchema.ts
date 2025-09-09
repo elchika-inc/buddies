@@ -24,7 +24,7 @@ export interface ApiKey {
   updatedAt: string
   lastUsedAt: string | null
   isActive: boolean
-  metadata?: Record<string, any> | null
+  metadata?: Record<string, unknown> | null
 }
 
 // Drizzleのレコードをアプリケーション型に変換

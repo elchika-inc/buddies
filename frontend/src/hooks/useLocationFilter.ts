@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import { filterPetsByLocation, getUniquePrefectures, getUniqueCities } from '@/utils/dataMigration'
 
 interface LocationFilter {
@@ -10,7 +10,7 @@ interface LocationFilter {
 /**
  * 地域フィルタリング用のカスタムフック
  */
-export function useLocationFilter(pets: Pet[], filter: LocationFilter) {
+export function useLocationFilter(pets: FrontendPet[], filter: LocationFilter) {
   const filteredPets = useMemo(() => {
     if (!filter.prefecture && !filter.city) {
       return pets
@@ -37,7 +37,7 @@ export function useLocationFilter(pets: Pet[], filter: LocationFilter) {
 /**
  * 地域統計情報用のカスタムフック
  */
-export function useLocationStats(pets: Pet[]) {
+export function useLocationStats(pets: FrontendPet[]) {
   const stats = useMemo(() => {
     const prefectureCount: Record<string, number> = {}
     const cityCount: Record<string, number> = {}

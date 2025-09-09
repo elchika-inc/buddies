@@ -1,11 +1,11 @@
 // 型ガード関数群
-import { Pet, Dog, Cat } from '@/types/pet'
+import { FrontendPet, Dog, Cat } from '@/types/pet'
 import { StatsData } from '@/types/api'
 
 /**
  * Dog型の型ガード
  */
-export function isDog(pet: Pet): pet is Dog {
+export function isDog(pet: FrontendPet): pet is Dog {
   return (
     'size' in pet &&
     'exerciseLevel' in pet &&
@@ -19,7 +19,7 @@ export function isDog(pet: Pet): pet is Dog {
 /**
  * Cat型の型ガード
  */
-export function isCat(pet: Pet): pet is Cat {
+export function isCat(pet: FrontendPet): pet is Cat {
   return (
     'coatLength' in pet &&
     'socialLevel' in pet &&
@@ -33,7 +33,7 @@ export function isCat(pet: Pet): pet is Cat {
 /**
  * ペットリストデータの型ガード
  */
-export function isPetListData(obj: Record<string, unknown>): obj is { pets: Pet[] } {
+export function isPetListData(obj: Record<string, unknown>): obj is { pets: FrontendPet[] } {
   return Array.isArray(obj['pets']) && (obj['pets'].length === 0 || isPet(obj['pets'][0]))
 }
 
@@ -42,14 +42,14 @@ export function isPetListData(obj: Record<string, unknown>): obj is { pets: Pet[
  */
 export function isSinglePetData(
   obj: Record<string, unknown>
-): obj is Record<string, unknown> & Pet {
+): obj is Record<string, unknown> & FrontendPet {
   return isPet(obj)
 }
 
 /**
  * Pet型の基本的な型ガード
  */
-export function isPet(obj: unknown): obj is Pet {
+export function isPet(obj: unknown): obj is FrontendPet {
   if (!obj || typeof obj !== 'object') {
     return false
   }

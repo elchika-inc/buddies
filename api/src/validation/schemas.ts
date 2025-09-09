@@ -95,10 +95,10 @@ export const ApiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
       .object({
         message: z.string(),
         code: z.string(),
-        details: z.any().optional(),
+        details: z.record(z.string(), z.unknown()).optional(),
       })
       .optional(),
-    meta: z.any().optional(),
+    meta: z.record(z.string(), z.unknown()).optional(),
     timestamp: z.string().datetime(),
   })
 
@@ -154,8 +154,8 @@ export class ValidationError extends Error {
 /**
  * 部分的なスキーマバリデーション
  */
-export function partialValidate<T extends Record<string, any>>(
-  schema: z.ZodObject<any>,
+export function partialValidate<T extends Record<string, unknown>>(
+  schema: z.ZodObject<z.ZodRawShape>,
   data: unknown
 ): Partial<T> | null {
   const partialSchema = schema.partial()

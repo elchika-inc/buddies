@@ -1,10 +1,10 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { PetCard } from '../PetCard'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 
 // モックペットデータ
-const mockPet: Pet = {
+const mockPet: FrontendPet = {
   id: 'test-pet-1',
   name: 'テスト太郎',
   breed: 'テスト犬',

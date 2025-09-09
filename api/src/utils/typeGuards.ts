@@ -85,7 +85,7 @@ export function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
       (typeof response['error'] === 'object' &&
         response['error'] !== null &&
         'message' in response['error'] &&
-        typeof (response['error'] as any)['message'] === 'string'))
+        typeof (response['error'] as Record<string, unknown>)['message'] === 'string'))
   )
 }
 

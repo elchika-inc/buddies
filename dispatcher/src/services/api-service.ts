@@ -2,11 +2,11 @@
  * API通信を管理するサービス
  */
 
-import type { Env, PetRecord } from '../types'
+import type { Env, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
 import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, isNull, and, or } from 'drizzle-orm'
+import { eq, isNull, or } from 'drizzle-orm'
 import { pets as petsTable } from '../../../database/schema/schema'
 
 export class ApiService {
@@ -23,22 +23,17 @@ export class ApiService {
   /**
    * 画像がないペットを取得（D1データベースから直接取得）
    */
-  async fetchPetsWithoutImages(limit = 30): Promise<Result<PetRecord[]>> {
+  async fetchPetsWithoutImages(limit = 30): Promise<Result<Pet[]>> {
     try {
       // D1データベースが使用可能な場合は直接クエリ
       if (this.db) {
         const petsWithoutImages = await this.db
           .select()
           .from(petsTable)
-          .where(
-            and(
-              or(isNull(petsTable.imageUrl), eq(petsTable.hasJpeg, 0), eq(petsTable.hasWebp, 0)),
-              isNull(petsTable.screenshotRequestedAt)
-            )
-          )
+          .where(or(isNull(petsTable.images), eq(petsTable.images, '[]')))
           .limit(limit)
 
-        return Ok(petsWithoutImages as PetRecord[])
+        return Ok(petsWithoutImages.map(this.dbRecordToPet))
       }
 
       // D1が使用できない場合はAPIにフォールバック
@@ -65,7 +60,7 @@ export class ApiService {
       }
 
       // ペットデータを変換
-      const pets = this.convertApiPetsToPetRecords(data.data.missingImages, limit)
+      const pets = this.convertApiPetsToPets(data.data.missingImages, limit)
       return Ok(pets)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown API error'
@@ -101,15 +96,15 @@ export class ApiService {
   }
 
   /**
-   * APIのペットデータをPetRecord型に変換
+   * APIのペットデータをPet型に変換
    */
-  private convertApiPetsToPetRecords(apiPets: ApiPetData[], limit: number): PetRecord[] {
-    const records: PetRecord[] = []
+  private convertApiPetsToPets(apiPets: ApiPetData[], limit: number): Pet[] {
+    const records: Pet[] = []
     const petsToProcess = apiPets.slice(0, limit)
 
     for (const apiPet of petsToProcess) {
       if (isApiPetData(apiPet)) {
-        records.push(this.convertApiPetToPetRecord(apiPet))
+        records.push(this.convertApiPetToPet(apiPet))
       } else {
         console.warn('Invalid pet data skipped:', apiPet)
       }
@@ -119,58 +114,69 @@ export class ApiService {
   }
 
   /**
-   * 単一のAPIペットデータをPetRecord型に変換
+   * 単一のAPIペットデータをPet型に変換
    * 注: 最小限のフィールドのみ設定（スクリーンショット処理に必要な情報）
    */
-  private convertApiPetToPetRecord(apiPet: ApiPetData): PetRecord {
-    // 必須フィールドと画像関連フィールドのみ設定
+  private convertApiPetToPet(apiPet: ApiPetData): Pet {
+    const now = new Date().toISOString()
+    // 統一されたPet型に合わせて設定
     return {
       id: apiPet.id,
-      type: apiPet.type,
+      type: apiPet.type as 'dog' | 'cat',
       name: apiPet.name,
       breed: null,
       age: null,
-      gender: null,
+      age_group: null,
+      gender: 'unknown' as const,
+      size: null,
+      weight: null,
+      color: null,
+      description: null,
+      location: null,
       prefecture: null,
       city: null,
-      location: null,
-      description: null,
-      personality: null,
+      status: 'available' as const,
       medical_info: null,
-      care_requirements: null,
-      good_with: null,
-      health_notes: null,
-      color: null,
-      weight: null,
-      size: null,
-      coat_length: null,
-      is_neutered: null,
-      is_vaccinated: null,
       vaccination_status: null,
-      is_fiv_felv_tested: null,
-      exercise_level: null,
-      training_level: null,
-      social_level: null,
-      indoor_outdoor: null,
-      grooming_requirements: null,
+      spayed_neutered: null,
+      special_needs: null,
+      personality_traits: null,
       good_with_kids: null,
-      good_with_dogs: null,
-      good_with_cats: null,
-      apartment_friendly: null,
-      needs_yard: null,
-      image_url: null,
-      has_jpeg: apiPet.hasJpeg ? 1 : 0,
-      has_webp: apiPet.hasWebp ? 1 : 0,
-      image_checked_at: null,
-      screenshot_requested_at: null,
-      screenshot_completed_at: null,
-      shelter_name: null,
-      shelter_contact: null,
-      source_url: apiPet.sourceUrl,
-      source_id: null,
+      good_with_pets: null,
       adoption_fee: null,
-      created_at: null,
-      updated_at: null,
+      organization_id: null,
+      organization_name: null,
+      contact_email: null,
+      contact_phone: null,
+      posted_date: null,
+      updated_date: null,
+      source_url: apiPet.sourceUrl,
+      external_id: null,
+      care_requirements: null,
+      images: [],
+      video_url: null,
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: now,
+      updated_at: now,
+    }
+  }
+
+  /**
+   * データベースレコードをPet型に変換
+   */
+  private dbRecordToPet(record: any): Pet {
+    return {
+      ...record,
+      images: record.images ? JSON.parse(record.images) : [],
+      tags: record.tags ? JSON.parse(record.tags) : [],
+      personality_traits: record.personality_traits ? JSON.parse(record.personality_traits) : null,
+      spayed_neutered: record.spayed_neutered === 1,
+      good_with_kids: record.good_with_kids === 1,
+      good_with_pets: record.good_with_pets === 1,
+      featured: record.featured === 1,
     }
   }
 

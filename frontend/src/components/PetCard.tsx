@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import { useState } from 'react'
 import { getPetType } from '@/config/petConfig'
 
@@ -8,7 +8,7 @@ import { getPetType } from '@/config/petConfig'
  */
 type PetCardProps = {
   /** 表示するペット情報 */
-  pet: Pet
+  pet: FrontendPet
   /** カードタップ時のコールバック関数 */
   onTap?: (() => void) | undefined
 }

@@ -5,36 +5,36 @@ import type { Env } from '../types'
 
 const pets = new Hono<{ Bindings: Env }>()
 
-// ペット一覧取得（タイプ指定なし）
+// 全ペット一覧取得（タイプ指定なし）
 pets.get(
-  '/',
+  '/all',
   withEnv(async (c) => {
     const petController = new PetController(c.env.DB)
-    return petController.getPets(c)
+    return petController.getAllPets(c)
   })
 )
 
-// ペット一覧取得（タイプ指定あり）
+// タイプ別ペット一覧取得
 pets.get(
-  '/:type',
+  '/type/:type',
   withEnv(async (c) => {
     const petController = new PetController(c.env.DB)
-    return petController.getPets(c)
+    return petController.getPetsByType(c)
   })
 )
 
 // ランダムペット取得
 pets.get(
-  '/:type/random',
+  '/type/:type/random',
   withEnv(async (c) => {
     const petController = new PetController(c.env.DB)
     return petController.getRandomPets(c)
   })
 )
 
-// 特定ペット取得
+// IDで特定ペット取得
 pets.get(
-  '/:type/:id',
+  '/type/:type/id/:id',
   withEnv(async (c) => {
     const petController = new PetController(c.env.DB)
     return petController.getPetById(c)

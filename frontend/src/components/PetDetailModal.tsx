@@ -1,9 +1,9 @@
 import Image from 'next/image'
-import { Pet, isDog, isCat } from '@/types/pet'
+import { FrontendPet, isDog, isCat } from '@/types/pet'
 // import { getPetType } from '@/config/petConfig'
 
 interface PetDetailModalProps {
-  pet: Pet
+  pet: FrontendPet
   isOpen: boolean
   onClose: () => void
 }

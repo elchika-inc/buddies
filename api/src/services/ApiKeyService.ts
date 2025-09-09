@@ -3,6 +3,7 @@ import { eq, and, sql } from 'drizzle-orm'
 import { apiKeys } from '../../../database/schema/schema'
 import {
   ApiKey,
+  ApiKeyInsert,
   convertDrizzleApiKey,
   toDrizzleApiKey,
   ApiKeyType,
@@ -183,7 +184,7 @@ export class ApiKeyService {
     permissions: Permission[]
     rateLimit: number
     expiresAt?: string | null
-    metadata?: Record<string, any> | null
+    metadata?: Record<string, unknown> | null
   }): Promise<void> {
     const insertData = toDrizzleApiKey({
       id: params.id,
@@ -197,7 +198,7 @@ export class ApiKeyService {
       metadata: params.metadata || null,
     })
 
-    await this.db.insert(apiKeys).values(insertData as any)
+    await this.db.insert(apiKeys).values(insertData as ApiKeyInsert)
   }
 
   /**

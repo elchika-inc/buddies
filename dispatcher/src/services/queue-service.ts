@@ -6,7 +6,7 @@
  * ペット画像処理のディスパッチ、リトライ、DLQ（Dead Letter Queue）処理を担当
  */
 
-import type { Env, DispatchMessage, DLQMessage, PetDispatchData, PetRecord } from '../types'
+import type { Env, DispatchMessage, DLQMessage, PetDispatchData, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
 
 export class QueueService {
@@ -120,7 +120,7 @@ export class QueueService {
    * @description データベースから取得したペットデータをキューメッセージ形式に変換
    * 必要最小限の情報のみを抜き出してメッセージサイズを最適化
    */
-  static convertPetRecordToDispatchData(pet: PetRecord): PetDispatchData {
+  static convertPetToDispatchData(pet: Pet): PetDispatchData {
     return {
       id: pet.id,
       name: pet.name,
@@ -137,55 +137,50 @@ export class QueueService {
    * @description キューメッセージからデータベースレコード形式に変換
    * 不足するフィールドはnullまたはデフォルト値で補完
    */
-  static convertDispatchDataToPetRecord(pet: PetDispatchData): PetRecord {
-    // PetRecordの全フィールドを設定（共通型定義に合わせる）
+  static convertDispatchDataToPet(pet: PetDispatchData): Pet {
+    const now = new Date().toISOString()
+    // 統一されたPet型の全フィールドを設定
     return {
       id: pet.id,
       type: pet.type,
       name: pet.name,
       breed: null,
       age: null,
-      gender: null,
+      age_group: null,
+      gender: 'unknown' as const,
+      size: null,
+      weight: null,
+      color: null,
+      description: null,
+      location: null,
       prefecture: null,
       city: null,
-      location: null,
-      description: null,
-      personality: null,
+      status: 'available' as const,
       medical_info: null,
-      care_requirements: null,
-      good_with: null,
-      health_notes: null,
-      color: null,
-      weight: null,
-      size: null,
-      coat_length: null,
-      is_neutered: null,
-      is_vaccinated: null,
       vaccination_status: null,
-      is_fiv_felv_tested: null,
-      exercise_level: null,
-      training_level: null,
-      social_level: null,
-      indoor_outdoor: null,
-      grooming_requirements: null,
+      spayed_neutered: null,
+      special_needs: null,
+      personality_traits: null,
       good_with_kids: null,
-      good_with_dogs: null,
-      good_with_cats: null,
-      apartment_friendly: null,
-      needs_yard: null,
-      image_url: null,
-      has_jpeg: 0,
-      has_webp: 0,
-      image_checked_at: null,
-      screenshot_requested_at: null,
-      screenshot_completed_at: null,
-      shelter_name: null,
-      shelter_contact: null,
-      source_url: pet.sourceUrl,
-      source_id: null,
+      good_with_pets: null,
       adoption_fee: null,
-      created_at: null,
-      updated_at: null,
+      organization_id: null,
+      organization_name: null,
+      contact_email: null,
+      contact_phone: null,
+      posted_date: null,
+      updated_date: null,
+      source_url: pet.sourceUrl,
+      external_id: null,
+      care_requirements: null,
+      images: [],
+      video_url: null,
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: now,
+      updated_at: now,
     }
   }
 

@@ -25,15 +25,26 @@ export class ImageStorageService {
    */
   async saveImage(
     key: string,
-    data: ArrayBuffer | ReadableStream<any>,
+    data: ArrayBuffer | ReadableStream<Uint8Array>,
     contentType: string
   ): Promise<void> {
     try {
-      await this.r2.put(key, data as any, {
-        httpMetadata: {
-          contentType,
-        },
-      })
+      // R2 APIの型と互換性を保つため、dataを適切にキャスト
+      // ArrayBufferの場合はそのまま、ReadableStreamの場合はanyにキャスト
+      if (data instanceof ArrayBuffer) {
+        await this.r2.put(key, data, {
+          httpMetadata: {
+            contentType,
+          },
+        })
+      } else {
+        // ReadableStreamの場合、互換性のためanyにキャスト
+        await this.r2.put(key, data as any, {
+          httpMetadata: {
+            contentType,
+          },
+        })
+      }
     } catch (error) {
       console.error(`[ImageStorageService] Failed to save image: ${key}`, error)
       throw error

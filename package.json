@@ -43,6 +43,8 @@
     "// Type Check & Lint": "型チェックとLintコマンド",
     "type-check": "npm run type-check --workspaces --if-present",
     "type-check:app": "npm run -w @pawmatch/frontend type-check",
+    "type-coverage": "type-coverage --at-least 95 --detail --strict --ignore-files 'node_modules/**' --ignore-files 'dist/**' --ignore-files '.next/**'",
+    "type-coverage:report": "type-coverage --detail --strict --ignore-files 'node_modules/**' --ignore-files 'dist/**' --ignore-files '.next/**' > type-coverage-report.txt",
     "lint": "npm run lint --workspaces --if-present",
     "lint:app": "npm run -w @pawmatch/frontend lint",
     "lint:fix": "npm run -w @pawmatch/frontend lint:fix",
@@ -95,6 +97,7 @@
     "@types/node": "^20.16.0",
     "concurrently": "^8.2.2",
     "prettier": "^3.6.2",
+    "type-coverage": "^2.29.7",
     "typescript": "^5.6.0"
   },
   "engines": {

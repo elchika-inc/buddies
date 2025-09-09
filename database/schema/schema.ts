@@ -10,7 +10,8 @@ export const pets = sqliteTable(
     type: text('type').notNull(), // 'dog' | 'cat'
     name: text('name').notNull(),
     breed: text('breed'),
-    age: text('age'),
+    age: real('age'),
+    age_group: text('age_group'),
     gender: text('gender'),
 
     // Location fields
@@ -20,13 +21,15 @@ export const pets = sqliteTable(
 
     // Description fields
     description: text('description'),
-    personality: text('personality'), // JSON array
-    medicalInfo: text('medical_info'),
-    careRequirements: text('care_requirements'), // JSON array
+    personality_traits: text('personality_traits'), // JSON array
+    medical_info: text('medical_info'),
+    care_requirements: text('care_requirements'), // JSON array
+    special_needs: text('special_needs'),
 
     // Extended pet information
-    goodWith: text('good_with'), // JSON array
-    healthNotes: text('health_notes'), // JSON array
+    status: text('status').notNull().default('available'), // 'available' | 'adopted' | 'pending' | 'unavailable'
+    vaccination_status: text('vaccination_status'),
+    spayed_neutered: integer('spayed_neutered'),
 
     // Physical characteristics
     color: text('color'),
@@ -34,52 +37,42 @@ export const pets = sqliteTable(
     size: text('size'),
     coatLength: text('coat_length'),
 
-    // Health status
-    isNeutered: integer('is_neutered').default(0),
-    isVaccinated: integer('is_vaccinated').default(0),
-    vaccinationStatus: text('vaccination_status'),
-    isFivFelvTested: integer('is_fiv_felv_tested').default(0),
-
-    // Behavior characteristics
-    exerciseLevel: text('exercise_level'),
-    trainingLevel: text('training_level'),
-    socialLevel: text('social_level'),
-    indoorOutdoor: text('indoor_outdoor'),
-    groomingRequirements: text('grooming_requirements'),
-
     // Compatibility flags
-    goodWithKids: integer('good_with_kids').default(0),
-    goodWithDogs: integer('good_with_dogs').default(0),
-    goodWithCats: integer('good_with_cats').default(0),
-    apartmentFriendly: integer('apartment_friendly').default(0),
-    needsYard: integer('needs_yard').default(0),
+    good_with_kids: integer('good_with_kids'),
+    good_with_pets: integer('good_with_pets'),
 
-    // Image management
-    imageUrl: text('image_url'),
-    hasJpeg: integer('has_jpeg').default(0),
-    hasWebp: integer('has_webp').default(0),
-    imageCheckedAt: text('image_checked_at'),
-    screenshotRequestedAt: text('screenshot_requested_at'),
-    screenshotCompletedAt: text('screenshot_completed_at'),
+    // Organization information
+    organization_id: text('organization_id'),
+    organization_name: text('organization_name'),
+    contact_email: text('contact_email'),
+    contact_phone: text('contact_phone'),
+    adoption_fee: real('adoption_fee'),
 
-    // Shelter information
-    shelterName: text('shelter_name'),
-    shelterContact: text('shelter_contact'),
-    sourceUrl: text('source_url'),
-    sourceId: text('source_id').default('pet-home'),
-    adoptionFee: integer('adoption_fee').default(0),
+    // Media
+    images: text('images'), // JSON array of image URLs
+    video_url: text('video_url'),
+
+    // Metadata
+    source_url: text('source_url'),
+    external_id: text('external_id'),
+    posted_date: text('posted_date'),
+    updated_date: text('updated_date'),
+    tags: text('tags'), // JSON array
+    featured: integer('featured').default(0),
+    views: integer('views').default(0),
+    likes: integer('likes').default(0),
 
     // Timestamps
-    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+    created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     typeIdx: index('idx_pets_type').on(table.type),
+    statusIdx: index('idx_pets_status').on(table.status),
     prefectureIdx: index('idx_pets_prefecture').on(table.prefecture),
-    createdAtIdx: index('idx_pets_created_at').on(table.createdAt),
-    hasJpegIdx: index('idx_pets_has_jpeg').on(table.hasJpeg),
-    hasWebpIdx: index('idx_pets_has_webp').on(table.hasWebp),
-    typeCreatedIdx: index('idx_pets_type_created').on(table.type, table.createdAt),
+    createdAtIdx: index('idx_pets_created_at').on(table.created_at),
+    typeCreatedIdx: index('idx_pets_type_created').on(table.type, table.created_at),
+    featuredIdx: index('idx_pets_featured').on(table.featured),
   })
 )
 
@@ -137,6 +130,32 @@ export const syncMetadata = sqliteTable(
   },
   (table) => ({
     keyIdx: index('idx_sync_metadata_key').on(table.key),
+  })
+)
+
+// 画像テーブル
+export const images = sqliteTable(
+  'images',
+  {
+    id: text('id').primaryKey(),
+    pet_id: text('pet_id').notNull(),
+    url: text('url').notNull(),
+    thumbnail_url: text('thumbnail_url'),
+    alt_text: text('alt_text'),
+    is_primary: integer('is_primary').default(0),
+    display_order: integer('display_order').default(0),
+    width: integer('width'),
+    height: integer('height'),
+    size: integer('size'),
+    mime_type: text('mime_type'),
+    status: text('status').default('pending'), // 'pending' | 'processed' | 'failed' | 'deleted'
+    created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    petIdIdx: index('idx_images_pet_id').on(table.pet_id),
+    statusIdx: index('idx_images_status').on(table.status),
+    isPrimaryIdx: index('idx_images_is_primary').on(table.is_primary),
   })
 )
 

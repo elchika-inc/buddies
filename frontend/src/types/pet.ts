@@ -7,7 +7,7 @@ export interface BasePet {
   id: string
   name: string
   breed?: string | null
-  age: string | null
+  age?: string | null
   gender?: 'male' | 'female' | 'unknown' | null
   color?: string | null
   weight?: number | null
@@ -19,7 +19,7 @@ export interface BasePet {
   medicalInfo?: string | null
   careRequirements: string[]
   imageUrl?: string | null
-  localImagePath?: string // ローカル開発用画像パス
+  localImagePath?: string | undefined // ローカル開発用画像パス
   shelterName?: string | null
   shelterContact?: string | null
   sourceUrl?: string | null
@@ -92,7 +92,7 @@ export const toFrontendPet = (pet: SharedPet): FrontendPet => {
     id: pet.id,
     name: pet.name,
     breed: pet.breed ?? null,
-    age: pet.age ?? null,
+    age: pet.age?.toString() ?? null,
     gender: pet.gender ?? null,
     color: pet.color ?? null,
     weight: pet.weight ?? null,
@@ -100,19 +100,19 @@ export const toFrontendPet = (pet: SharedPet): FrontendPet => {
     city: pet.city ?? null,
     location: pet.location ?? null,
     description: pet.description ?? null,
-    personality: parseJsonArray(pet.personality),
-    medicalInfo: pet.medicalInfo ?? null,
-    careRequirements: parseJsonArray(pet.careRequirements),
-    imageUrl: pet.imageUrl ?? null,
-    shelterName: pet.shelterName ?? null,
-    shelterContact: pet.shelterContact ?? null,
-    sourceUrl: pet.sourceUrl ?? null,
-    sourceId: pet.sourceId ?? null,
-    adoptionFee: pet.adoptionFee || 0,
-    isNeutered: Boolean(pet.isNeutered),
-    isVaccinated: Boolean(pet.isVaccinated),
-    createdAt: pet.createdAt ?? null,
-    updatedAt: pet.updatedAt ?? null,
+    personality: parseJsonArray(pet.personality_traits),
+    medicalInfo: pet.medical_info ?? null,
+    careRequirements: typeof pet.care_requirements === 'string' ? [pet.care_requirements] : [],
+    imageUrl: (pet.images && pet.images.length > 0 ? pet.images[0] : null) ?? null,
+    shelterName: pet.organization_name ?? null,
+    shelterContact: pet.contact_email ?? null,
+    sourceUrl: pet.source_url ?? null,
+    sourceId: pet.external_id ?? null,
+    adoptionFee: pet.adoption_fee || 0,
+    isNeutered: Boolean(pet.spayed_neutered),
+    isVaccinated: Boolean(pet.vaccination_status),
+    createdAt: pet.created_at ?? null,
+    updatedAt: pet.updated_at ?? null,
   }
 
   if (pet.type === 'dog') {
@@ -120,26 +120,26 @@ export const toFrontendPet = (pet: SharedPet): FrontendPet => {
       ...basePet,
       type: 'dog',
       size: pet.size || '',
-      goodWithKids: Boolean(pet.goodWithKids),
-      goodWithDogs: Boolean(pet.goodWithDogs),
-      exerciseLevel: pet.exerciseLevel || '',
-      trainingLevel: pet.trainingLevel || '',
+      goodWithKids: Boolean(pet.good_with_kids),
+      goodWithDogs: Boolean(pet.good_with_pets),
+      exerciseLevel: '',
+      trainingLevel: '',
       walkFrequency: '',
-      needsYard: Boolean(pet.needsYard),
-      apartmentFriendly: Boolean(pet.apartmentFriendly),
+      needsYard: false,
+      apartmentFriendly: true,
     } as Dog
   } else {
     return {
       ...basePet,
       type: 'cat',
-      coatLength: pet.coatLength || '',
-      isFivFelvTested: Boolean(pet.isFivFelvTested),
-      isFIVFeLVTested: Boolean(pet.isFivFelvTested), // 後方互換性
-      socialLevel: pet.socialLevel || '',
-      indoorOutdoor: pet.indoorOutdoor || '',
-      goodWithCats: Boolean(pet.goodWithCats),
-      goodWithMultipleCats: Boolean(pet.goodWithCats), // 後方互換性
-      groomingRequirements: pet.groomingRequirements || '',
+      coatLength: '',
+      isFivFelvTested: false,
+      isFIVFeLVTested: false,
+      socialLevel: '',
+      indoorOutdoor: '',
+      goodWithCats: Boolean(pet.good_with_pets),
+      goodWithMultipleCats: Boolean(pet.good_with_pets),
+      groomingRequirements: '',
       vocalizationLevel: '',
       activityTime: '',
       playfulness: '',

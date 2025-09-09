@@ -1,7 +1,7 @@
 /**
  * シンプルなAPIレスポンス変換（Result型を使用しない）
  */
-import { Pet, Dog, Cat } from '@/types/pet'
+import { FrontendPet, Dog, Cat } from '@/types/pet'
 import {
   UnifiedApiResponse,
   LegacyPetListResponse,
@@ -44,9 +44,9 @@ export function transformToLegacyFormat<T>(unifiedResponse: UnifiedApiResponse<T
   // データタイプに応じた変換
   switch (dataType) {
     case 'petList':
-      return transformPetListResponse(dataObj['pets'] as Pet[], meta)
+      return transformPetListResponse(dataObj['pets'] as FrontendPet[], meta)
     case 'singlePet':
-      return transformSinglePetResponse(dataObj as unknown as Pet)
+      return transformSinglePetResponse(dataObj as unknown as FrontendPet)
     case 'prefectures':
       return transformPrefecturesResponse(dataObj['prefectures'] as string[])
     case 'stats':
@@ -84,7 +84,7 @@ function identifyDataType(
 /**
  * ペットリストレスポンスの変換
  */
-export function transformPetListResponse(pets: Pet[], meta?: ApiMeta): LegacyPetListResponse {
+export function transformPetListResponse(pets: FrontendPet[], meta?: ApiMeta): LegacyPetListResponse {
   return {
     pets,
     pagination: meta
@@ -106,7 +106,7 @@ export function transformPetListResponse(pets: Pet[], meta?: ApiMeta): LegacyPet
 /**
  * 単一ペットレスポンスの変換
  */
-export function transformSinglePetResponse(pet: Pet): LegacySinglePetResponse {
+export function transformSinglePetResponse(pet: FrontendPet): LegacySinglePetResponse {
   // ペットの型に応じて適切なフォーマットで返す
   if ('type' in pet && pet.type === 'cat') {
     return { cat: pet as Cat }

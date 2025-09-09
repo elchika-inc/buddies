@@ -31,7 +31,7 @@ export interface ApiErrorDetail {
 
 // レガシー形式のレスポンス型
 export interface LegacyPetListResponse {
-  pets?: Pet[]
+  pets?: FrontendPet[]
   cats?: Cat[]
   dogs?: Dog[]
   pagination?: {
@@ -78,4 +78,4 @@ export type LegacyResponse =
   | LegacyStatsResponse
 
 // 必要な型のインポート
-import { Pet, Dog, Cat } from '@/types/pet'
+import { FrontendPet, Dog, Cat } from '@/types/pet'

@@ -7,14 +7,14 @@ import { LocationModal, Location } from './LocationModal'
 import { PetDetailModal } from './PetDetailModal'
 import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { useState, useEffect } from 'react'
-import { Pet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import { getPetType } from '@/config/petConfig'
 
 export function PetMatchApp() {
   const petType = getPetType()
 
   // ダミーのペットデータ（実際のアプリではAPIから取得）
-  const [pets] = useState<Pet[]>([])
+  const [pets] = useState<FrontendPet[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
@@ -25,7 +25,7 @@ export function PetMatchApp() {
   const [modals, setModals] = useState({
     location: false,
     detail: false,
-    selectedPet: null as Pet | null,
+    selectedPet: null as FrontendPet | null,
   })
 
   const { currentPet, hasMorePets, likes, superLikes, handleSwipe, reset } = usePetSwipe(
@@ -41,7 +41,7 @@ export function PetMatchApp() {
   // モーダル操作関数
   const openLocationModal = () => setModals((prev) => ({ ...prev, location: true }))
   const closeLocationModal = () => setModals((prev) => ({ ...prev, location: false }))
-  const openPetDetailModal = (pet: Pet) =>
+  const openPetDetailModal = (pet: FrontendPet) =>
     setModals({ location: false, detail: true, selectedPet: pet })
   const closePetDetailModal = () =>
     setModals((prev) => ({ ...prev, detail: false, selectedPet: null }))

@@ -29,14 +29,13 @@ export class PetController {
   constructor(private db: D1Database) {}
 
   /**
-   * ペット一覧を取得（簡素化版）
+   * 全ペット一覧を取得
    *
    * @param {Context} c - Honoコンテキスト
    * @returns {Promise<Response>} ペット一覧のレスポンス
    */
-  async getPets(c: Context) {
+  async getAllPets(c: Context) {
     try {
-      const petType = validatePetType(c.req.param('type'))
       const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
       const limit = Math.min(
         parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
@@ -45,13 +44,45 @@ export class PetController {
       const offset = (page - 1) * limit
       const prefecture = c.req.query('prefecture')
 
-      const result = await this.fetchPetsSimple(petType ?? null, limit, offset, prefecture)
+      const result = await this.fetchPetsSimple(null, limit, offset, prefecture)
 
       return c.json(successResponse(result.data, paginationMeta(page, limit, result.total)))
     } catch (error) {
-      throw error // エラーはグローバルミドルウェアで処理
+      console.error('全ペット取得エラー:', error)
+      throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
   }
+
+  /**
+   * タイプ別ペット一覧を取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ペット一覧のレスポンス
+   */
+  async getPetsByType(c: Context) {
+    try {
+      const petType = validatePetType(c.req.param('type'))
+      if (!petType) {
+        throw new NotFoundError('無効なペットタイプです')
+      }
+      
+      const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
+      const limit = Math.min(
+        parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
+        CONFIG.LIMITS.MAX_PETS_PER_REQUEST
+      )
+      const offset = (page - 1) * limit
+      const prefecture = c.req.query('prefecture')
+
+      const result = await this.fetchPetsSimple(petType, limit, offset, prefecture)
+
+      return c.json(successResponse(result.data, paginationMeta(page, limit, result.total)))
+    } catch (error) {
+      console.error('タイプ別ペット取得エラー:', error)
+      throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
+    }
+  }
+
 
   /**
    * IDでペットを取得

@@ -3,7 +3,7 @@
  */
 
 import type { MessageBatch, Message } from '@cloudflare/workers-types'
-import type { Env, DispatchMessage, PetRecord } from '../types'
+import type { Env, DispatchMessage, Pet } from '../types'
 import { isPetDispatchData } from '../types'
 import { Result, isErr, isOk } from '../types/result'
 import { GitHubService, RateLimitError } from '../services/github-service'
@@ -85,8 +85,8 @@ export class QueueHandler {
       }
     }
 
-    // PetDispatchDataをPetRecordに変換
-    const petRecords: PetRecord[] = dispatch.pets.map(QueueService.convertDispatchDataToPetRecord)
+    // PetDispatchDataをPetに変換
+    const petRecords: Pet[] = dispatch.pets.map(QueueService.convertDispatchDataToPet)
 
     // GitHub Actionsワークフローをトリガー
     return await this.githubService.triggerWorkflow(petRecords, dispatch.batchId)

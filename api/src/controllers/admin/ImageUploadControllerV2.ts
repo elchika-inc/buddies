@@ -270,7 +270,7 @@ export class ImageUploadControllerV2 {
           } else {
             const errors = results
               .filter((r) => !Result.isSuccess(r))
-              .map((r) => (r as any).error?.message)
+              .map((r) => (r as { error?: { message?: string } }).error?.message)
               .join(', ')
 
             processResults.push({

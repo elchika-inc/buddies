@@ -85,14 +85,14 @@ export class HealthController {
 
       // 画像がないペットを取得
       let missingImages: Array<{ id: string; name: string; type: string; sourceUrl: string }> = []
-      let debugInfo: any = {}
+      let debugInfo: Record<string, unknown> = {}
       try {
         // デバッグ用：最初の5件のペットの画像状態を確認
         const samplePets = await this.db
           .prepare(`SELECT id, has_jpeg, has_webp, image_url FROM pets LIMIT 5`)
           .all()
 
-        debugInfo.samplePets = samplePets.results
+        debugInfo['samplePets'] = samplePets.results
 
         // 画像の状態を集計
         const keyStats = await this.db
@@ -108,7 +108,7 @@ export class HealthController {
           )
           .all()
 
-        debugInfo.keyStats = keyStats.results?.[0]
+        debugInfo['keyStats'] = keyStats.results?.[0]
 
         const petsWithoutImages = await this.db
           .prepare(
@@ -119,7 +119,7 @@ export class HealthController {
           )
           .all()
 
-        debugInfo.queryResultCount = petsWithoutImages.results?.length || 0
+        debugInfo['queryResultCount'] = petsWithoutImages.results?.length || 0
 
         missingImages =
           petsWithoutImages.results?.map((pet) => ({
@@ -130,7 +130,7 @@ export class HealthController {
           })) || []
       } catch (dbError) {
         console.error('Error fetching missing images:', dbError)
-        debugInfo.error = String(dbError)
+        debugInfo['error'] = String(dbError)
         console.error('Debug - Database error details:', dbError)
         // エラーが発生しても続行（missingImagesは空のまま）
       }

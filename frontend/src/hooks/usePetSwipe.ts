@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Pet } from '../types/pet'
+import { FrontendPet } from '../types/pet'
 
 /** スワイプ方向の定義 */
 export type SwipeDirection = 'like' | 'pass' | 'superLike'
@@ -20,7 +20,7 @@ interface SwipeState {
  * 統合されたペットスワイプHook
  * シンプルな状態管理とスワイプロジックを提供
  */
-export function usePetSwipe(pets: Pet[], _petType: 'dog' | 'cat') {
+export function usePetSwipe(pets: FrontendPet[], _petType: 'dog' | 'cat') {
   const [state, setState] = useState<SwipeState>({
     currentIndex: 0,
     likes: [],

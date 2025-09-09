@@ -3,59 +3,101 @@
  * 複雑なペットオブジェクトの構築を段階的かつ読みやすく行う
  */
 
-import type { Pet, PetRecord } from '../../../shared/types/index'
+import type { Pet } from '../../../shared/types/index'
+
+// DB レコード型（snake_case）
+interface DBPetRecord {
+  id: string
+  type: 'dog' | 'cat'
+  name: string
+  breed?: string | null
+  age?: number | null
+  age_group?: string | null
+  gender?: string | null
+  size?: string | null
+  weight?: number | null
+  color?: string | null
+  description?: string | null
+  location?: string | null
+  prefecture?: string | null
+  city?: string | null
+  status?: string | null
+  medical_info?: string | null
+  vaccination_status?: string | null
+  spayed_neutered?: number | null
+  special_needs?: string | null
+  personality_traits?: string | null
+  good_with_kids?: number | null
+  good_with_pets?: number | null
+  adoption_fee?: number | null
+  organization_name?: string | null
+  contact_email?: string | null
+  contact_phone?: string | null
+  source_url?: string | null
+  external_id?: string | null
+  care_requirements?: string | null
+  has_jpeg?: number | null
+  has_webp?: number | null
+  created_at?: string | null
+  updated_at?: string | null
+}
 
 // TypeConvertersはローカルに実装
 const TypeConverters = {
-  recordToPet(record: PetRecord): Pet {
-    const pet = {
+  recordToPet(record: DBPetRecord): Pet {
+    const pet: Partial<Pet> = {
       id: record.id,
       type: record.type,
       name: record.name,
-      breed: record.breed,
-      age: record.age,
-      gender: record.gender,
-      location: record.location,
-      description: record.description,
-      imageUrl: record.image_url,
-      personality: this.parseJsonField(record.personality),
-      careRequirements: this.parseJsonField(record.care_requirements),
-      adoptionFee: record.adoption_fee,
-      isNeutered: record.is_neutered === 1,
-      isVaccinated: record.is_vaccinated === 1,
-      size: record.size,
-      weight: record.weight,
-      color: record.color,
-      hasJpeg: record.has_jpeg === 1,
-      hasWebp: record.has_webp === 1,
-      screenshotCompletedAt: record.screenshot_completed_at,
-      imageCheckedAt: record.image_checked_at,
-      sourceId: record.source_id,
-      sourceUrl: record.source_url,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at,
+      breed: record.breed ?? undefined,
+      age: record.age ?? undefined,
+      age_group: record.age_group as Pet['age_group'],
+      gender: (record.gender as Pet['gender']) ?? 'unknown',
+      size: record.size as Pet['size'],
+      weight: record.weight ?? undefined,
+      color: record.color ?? undefined,
+      description: record.description ?? undefined,
+      location: record.location ?? undefined,
+      prefecture: record.prefecture ?? undefined,
+      city: record.city ?? undefined,
+      status: (record.status as Pet['status']) ?? 'available',
+      medical_info: record.medical_info ?? undefined,
+      vaccination_status: record.vaccination_status ?? undefined,
+      spayed_neutered: record.spayed_neutered === 1 ? true : false,
+      special_needs: record.special_needs ?? undefined,
+      personality_traits: this.parseJsonArray(record.personality_traits),
+      good_with_kids: record.good_with_kids === 1 ? true : false,
+      good_with_pets: record.good_with_pets === 1 ? true : false,
+      adoption_fee: record.adoption_fee ?? undefined,
+      organization_name: record.organization_name ?? undefined,
+      contact_email: record.contact_email ?? undefined,
+      contact_phone: record.contact_phone ?? undefined,
+      source_url: record.source_url ?? undefined,
+      external_id: record.external_id ?? undefined,
+      care_requirements: record.care_requirements ?? undefined,
+      images: [],
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: record.created_at ?? new Date().toISOString(),
+      updated_at: record.updated_at ?? new Date().toISOString(),
     }
 
-    // null値を除去
-    const result: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(pet)) {
-      if (value != null) {
-        result[key] = value
-      }
-    }
-    return result as unknown as Pet
+    return pet as Pet
   },
 
-  parseJsonField(value: string | null | undefined): string[] | string | null {
-    if (!value) return null
+  parseJsonArray(value: string | null | undefined): string[] | undefined {
+    if (!value) return undefined
 
     try {
       if (value.startsWith('[')) {
-        return JSON.parse(value)
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed : undefined
       }
-      return value
+      return undefined
     } catch {
-      return value
+      return undefined
     }
   },
 }
@@ -67,23 +109,31 @@ type MutablePet = {
 
 /**
  * ペットビルダークラス
- * 流暢なインターフェースで段階的にペットデータを構築
+ *
+ * @class PetBuilder
+ * @description ビルダーパターンでペットオブジェクトを構築
  */
 export class PetBuilder {
-  // ビルダー用の可変ペットデータ
-  private pet: Partial<MutablePet> = {}
+  private pet: Partial<MutablePet>
 
-  /**
-   * 静的ファクトリメソッド
-   */
-  static create(id: string, type: 'dog' | 'cat', name: string): PetBuilder {
-    return new PetBuilder().setBasicInfo(id, type, name)
+  constructor() {
+    this.pet = {
+      gender: 'unknown',
+      status: 'available',
+      images: [],
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
   }
 
   /**
-   * データベースレコードからビルダーを作成
+   * DBレコードからビルダーを初期化
    */
-  static fromRecord(record: PetRecord): PetBuilder {
+  static fromRecord(record: DBPetRecord): PetBuilder {
     const builder = new PetBuilder()
     const pet = TypeConverters.recordToPet(record)
     builder.pet = { ...pet }
@@ -91,329 +141,175 @@ export class PetBuilder {
   }
 
   /**
-   * APIリクエストからビルダーを作成
+   * 既存のPetオブジェクトからビルダーを初期化
    */
-  static fromApiRequest(data: Record<string, unknown>): PetBuilder {
+  static fromPet(pet: Pet): PetBuilder {
     const builder = new PetBuilder()
-
-    // 基本情報
-    if (
-      typeof data['id'] === 'string' &&
-      (data['type'] === 'dog' || data['type'] === 'cat') &&
-      typeof data['name'] === 'string'
-    ) {
-      builder.setBasicInfo(data['id'], data['type'], data['name'])
-    }
-
-    // その他のフィールドを追加
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'type' && key !== 'name' && value != null) {
-        type PetKey = keyof typeof builder.pet
-        if (key in builder.pet) {
-          ;(builder.pet as Record<PetKey, unknown>)[key as PetKey] = value
-        }
-      }
-    })
-
+    builder.pet = { ...pet }
     return builder
   }
 
-  /**
-   * 基本情報設定
-   */
-  setBasicInfo(id: string, type: 'dog' | 'cat', name: string): this {
+  // 基本情報のセッター
+  setId(id: string): PetBuilder {
     this.pet.id = id
+    return this
+  }
+
+  setType(type: 'dog' | 'cat'): PetBuilder {
     this.pet.type = type
+    return this
+  }
+
+  setName(name: string): PetBuilder {
     this.pet.name = name
     return this
   }
 
-  /**
-   * プロフィール情報設定
-   */
-  setProfile(profile: {
-    breed?: string | null
-    age?: string | null
-    gender?: 'male' | 'female' | 'unknown' | null
-    size?: string | null
-    weight?: number | null
-    color?: string | null
-  }): this {
-    Object.assign(this.pet, profile)
+  setBreed(breed: string | null): PetBuilder {
+    this.pet.breed = breed ?? undefined
     return this
   }
 
-  /**
-   * 位置情報設定
-   */
-  setLocation(location: string | null): this {
-    this.pet.location = location
+  setAge(age: number | null): PetBuilder {
+    this.pet.age = age ?? undefined
     return this
   }
 
-  /**
-   * 説明文設定
-   */
-  setDescription(description: string | null): this {
-    this.pet.description = description
+  setGender(gender: Pet['gender']): PetBuilder {
+    this.pet.gender = gender
     return this
   }
 
-  /**
-   * 性格・ケア要件設定
-   */
-  setCharacteristics(characteristics: {
-    personality?: string[] | string | null
-    careRequirements?: string[] | string | null
-  }): this {
-    if (characteristics.personality) {
-      this.pet.personality = TypeConverters.parseJsonField(
-        typeof characteristics.personality === 'string'
-          ? characteristics.personality
-          : JSON.stringify(characteristics.personality)
-      )
+  setLocation(location: string | null): PetBuilder {
+    this.pet.location = location ?? undefined
+    return this
+  }
+
+  setDescription(description: string | null): PetBuilder {
+    this.pet.description = description ?? undefined
+    return this
+  }
+
+  // 画像関連のセッター
+  setImages(images: string[]): PetBuilder {
+    this.pet.images = images
+    return this
+  }
+
+  addImage(imageUrl: string): PetBuilder {
+    if (!this.pet.images) {
+      this.pet.images = []
     }
-    if (characteristics.careRequirements) {
-      this.pet.careRequirements = TypeConverters.parseJsonField(
-        typeof characteristics.careRequirements === 'string'
-          ? characteristics.careRequirements
-          : JSON.stringify(characteristics.careRequirements)
-      )
+    this.pet.images.push(imageUrl)
+    return this
+  }
+
+  // 健康情報のセッター
+  setVaccinationStatus(status: string | null): PetBuilder {
+    this.pet.vaccination_status = status ?? undefined
+    return this
+  }
+
+  setSpayedNeutered(isSpayedNeutered: boolean): PetBuilder {
+    this.pet.spayed_neutered = isSpayedNeutered
+    return this
+  }
+
+  // 料金のセッター
+  setAdoptionFee(fee: number | null): PetBuilder {
+    this.pet.adoption_fee = fee ?? undefined
+    return this
+  }
+
+  // 組織情報のセッター
+  setOrganizationName(name: string | null): PetBuilder {
+    this.pet.organization_name = name ?? undefined
+    return this
+  }
+
+  setContactEmail(email: string | null): PetBuilder {
+    this.pet.contact_email = email ?? undefined
+    return this
+  }
+
+  // タイムスタンプのセッター
+  setCreatedAt(date: string): PetBuilder {
+    this.pet.created_at = date
+    return this
+  }
+
+  setUpdatedAt(date: string): PetBuilder {
+    this.pet.updated_at = date
+    return this
+  }
+
+  /**
+   * ビルドメソッド - 完全なPetオブジェクトを生成
+   *
+   * @returns {Pet} 構築されたPetオブジェクト
+   * @throws {Error} 必須フィールドが不足している場合
+   */
+  build(): Pet {
+    // 必須フィールドの検証
+    if (!this.pet.id) {
+      throw new Error('Pet ID is required')
     }
-    return this
-  }
+    if (!this.pet.type) {
+      throw new Error('Pet type is required')
+    }
+    if (!this.pet.name) {
+      throw new Error('Pet name is required')
+    }
 
-  /**
-   * 健康情報設定
-   */
-  setHealthInfo(health: {
-    isNeutered?: boolean | null
-    isVaccinated?: boolean | null
-    healthStatus?: string | null
-  }): this {
-    Object.assign(this.pet, health)
-    return this
-  }
-
-  /**
-   * 費用情報設定
-   */
-  setAdoptionFee(fee: number | null): this {
-    this.pet.adoptionFee = fee
-    return this
-  }
-
-  /**
-   * 画像情報設定
-   */
-  setImageInfo(imageInfo: {
-    imageUrl?: string | null
-    hasJpeg?: boolean
-    hasWebp?: boolean
-    screenshotCompletedAt?: string | null
-    imageCheckedAt?: string | null
-  }): this {
-    Object.assign(this.pet, imageInfo)
-    return this
-  }
-
-  /**
-   * メタデータ設定
-   */
-  setMetadata(metadata: {
-    sourceId?: string | null
-    sourceUrl?: string | null
-    crawledAt?: string | null
-  }): this {
-    Object.assign(this.pet, metadata)
-    return this
-  }
-
-  /**
-   * タイムスタンプ設定
-   */
-  setTimestamps(timestamps?: { createdAt?: string | null; updatedAt?: string | null }): this {
-    const now = new Date().toISOString()
-    this.pet.createdAt = timestamps?.createdAt || now
-    this.pet.updatedAt = timestamps?.updatedAt || now
-    return this
-  }
-
-  /**
-   * デフォルト値設定
-   */
-  withDefaults(): this {
-    // 性別のデフォルト
+    // デフォルト値の設定
     if (!this.pet.gender) {
       this.pet.gender = 'unknown'
     }
+    if (!this.pet.status) {
+      this.pet.status = 'available'
+    }
+    if (!this.pet.images) {
+      this.pet.images = []
+    }
+    if (!this.pet.tags) {
+      this.pet.tags = []
+    }
+    if (this.pet.featured === undefined) {
+      this.pet.featured = false
+    }
+    if (this.pet.views === undefined) {
+      this.pet.views = 0
+    }
+    if (this.pet.likes === undefined) {
+      this.pet.likes = 0
+    }
+    if (!this.pet.created_at) {
+      this.pet.created_at = new Date().toISOString()
+    }
+    if (!this.pet.updated_at) {
+      this.pet.updated_at = new Date().toISOString()
+    }
 
-    // 画像フラグのデフォルト
-    if (this.pet.hasJpeg === undefined) {
-      this.pet.hasJpeg = false
-    }
-    if (this.pet.hasWebp === undefined) {
-      this.pet.hasWebp = false
-    }
+    return this.pet as Pet
+  }
 
-    // 健康情報のデフォルト
-    if (this.pet.isNeutered === undefined) {
-      this.pet.isNeutered = false
+  /**
+   * リセットメソッド - ビルダーを初期状態に戻す
+   */
+  reset(): PetBuilder {
+    this.pet = {
+      gender: 'unknown',
+      status: 'available',
+      images: [],
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     }
-    if (this.pet.isVaccinated === undefined) {
-      this.pet.isVaccinated = false
-    }
-
-    // タイムスタンプのデフォルト
-    const now = new Date().toISOString()
-    if (!this.pet.createdAt) {
-      this.pet.createdAt = now
-    }
-    if (!this.pet.updatedAt) {
-      this.pet.updatedAt = now
-    }
-
     return this
   }
-
-  /**
-   * 検証
-   */
-  validate(): { isValid: boolean; errors: string[] } {
-    const errors: string[] = []
-
-    // 必須フィールドチェック
-    if (!this.pet.id) errors.push('ID is required')
-    if (!this.pet.type) errors.push('Type is required')
-    if (!this.pet.name) errors.push('Name is required')
-
-    // 型チェック
-    if (this.pet.type && this.pet.type !== 'dog' && this.pet.type !== 'cat') {
-      errors.push('Type must be "dog" or "cat"')
-    }
-
-    if (
-      this.pet.gender &&
-      this.pet.gender !== 'male' &&
-      this.pet.gender !== 'female' &&
-      this.pet.gender !== 'unknown'
-    ) {
-      errors.push('Gender must be "male", "female", or "unknown"')
-    }
-
-    // 数値範囲チェック
-    if (this.pet.weight !== null && this.pet.weight !== undefined) {
-      if (this.pet.weight < 0 || this.pet.weight > 200) {
-        errors.push('Weight must be between 0 and 200')
-      }
-    }
-
-    if (this.pet.adoptionFee !== null && this.pet.adoptionFee !== undefined) {
-      if (this.pet.adoptionFee < 0) {
-        errors.push('Adoption fee cannot be negative')
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    }
-  }
-
-  /**
-   * ビルド（最終的なPetオブジェクトを生成）
-   */
-  build(): Pet {
-    const validation = this.validate()
-    if (!validation.isValid) {
-      throw new Error(`Pet validation failed: ${validation.errors.join(', ')}`)
-    }
-
-    // 必須フィールドの確認
-    if (!this.pet.id || !this.pet.type || !this.pet.name) {
-      throw new Error('Required fields are missing')
-    }
-
-    // null値を除去してPetオブジェクトを構築
-    const result: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(this.pet)) {
-      if (value != null) {
-        result[key] = value
-      }
-    }
-
-    return result as unknown as Pet
-  }
-
-  /**
-   * 安全なビルド（検証エラーがあってもデフォルト値で補完）
-   */
-  buildSafe(): Pet {
-    this.withDefaults()
-
-    // 必須フィールドのみ確認
-    if (!this.pet.id || !this.pet.type || !this.pet.name) {
-      throw new Error('ID, type, and name are required')
-    }
-
-    // null値を除去してPetオブジェクトを構築
-    const result: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(this.pet)) {
-      if (value != null) {
-        result[key] = value
-      }
-    }
-
-    return result as unknown as Pet
-  }
-
-  /**
-   * データベースレコードに変換
-   */
-  toRecord(): PetRecord {
-    const pet = this.buildSafe()
-
-    return {
-      id: pet.id,
-      type: pet.type,
-      name: pet.name,
-      breed: pet.breed || null,
-      age: pet.age || null,
-      gender: pet.gender || null,
-      location: pet.location || null,
-      description: pet.description || null,
-      image_url: pet.imageUrl || null,
-      personality:
-        typeof pet.personality === 'string'
-          ? pet.personality
-          : JSON.stringify(pet.personality) || null,
-      care_requirements:
-        typeof pet.careRequirements === 'string'
-          ? pet.careRequirements
-          : JSON.stringify(pet.careRequirements) || null,
-      adoption_fee: pet.adoptionFee || null,
-      is_neutered: pet.isNeutered ? 1 : 0,
-      is_vaccinated: pet.isVaccinated ? 1 : 0,
-      size: pet.size || null,
-      weight: pet.weight || null,
-      color: pet.color || null,
-      has_jpeg: pet.hasJpeg ? 1 : 0,
-      has_webp: pet.hasWebp ? 1 : 0,
-      screenshot_completed_at: pet.screenshotCompletedAt || null,
-      image_checked_at: pet.imageCheckedAt || null,
-      source_id: pet.sourceId || null,
-      source_url: pet.sourceUrl || null,
-      created_at: pet.createdAt || null,
-      updated_at: pet.updatedAt || null,
-    }
-  }
-
-  /**
-   * クローン作成
-   */
-  clone(): PetBuilder {
-    const newBuilder = new PetBuilder()
-    newBuilder.pet = { ...this.pet }
-    return newBuilder
-  }
 }
+
+export default PetBuilder

@@ -80,7 +80,7 @@ export class SyncService {
               await this.syncPet(pet)
               job.progress++
             } catch (error) {
-              job.errors.push(`Failed to sync ${(pet as any)['id']}: ${error}`)
+              job.errors.push(`Failed to sync ${(pet as { id?: string })['id'] || 'unknown'}: ${error}`)
             }
           })
         )

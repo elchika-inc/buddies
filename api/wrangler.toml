@@ -1,3 +1,6 @@
+# API Service Configuration
+# Inherits from: ../wrangler.base.toml
+
 name = "pawmatch-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"

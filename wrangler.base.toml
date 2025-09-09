@@ -1,0 +1,23 @@
+# 共通Wrangler設定
+# 各サービスのwrangler.tomlでこのファイルを継承して使用
+
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 共通環境変数（開発環境）
+[vars]
+NODE_ENV = "development"
+LOG_LEVEL = "debug"
+
+# 共通環境変数（本番環境）
+[env.production.vars]
+NODE_ENV = "production"
+LOG_LEVEL = "info"
+
+# 共通の観測性設定
+[observability]
+enabled = true
+
+# 共通の制限設定
+[limits]
+cpu_ms = 50

@@ -218,16 +218,19 @@ export class PetHomeCrawler {
     // 品種
     const breedLink =
       petType === 'dog' ? $('a[href*="/dogs/cg_"]').first() : $('a[href*="/cats/cg_"]').first()
-    const breed = breedLink.text().trim() || '不明'
+    const breed = breedLink.text().trim() || null
 
-    // 年齢
-    let age = '不明'
+    // 年齢（数値として処理）
+    let age: number | null = null
     $('dt:contains("年齢")')
       .next('dd')
       .each((_, el) => {
         const text = $(el).text().trim()
         if (text) {
-          age = text.replace(/[（）]/g, (match) => (match === '（' ? '(' : ')'))
+          const ageMatch = text.match(/(\d+)/)
+          if (ageMatch && ageMatch[1]) {
+            age = parseInt(ageMatch[1])
+          }
         }
       })
 
@@ -245,32 +248,59 @@ export class PetHomeCrawler {
     const [prefecture, city] = this.parseLocation(locationText)
 
     // 説明
-    const description = $('.list_title:contains("性格・特徴")').next('p.info').text().trim() || ''
+    const description = $('.list_title:contains("性格・特徴")').next('p.info').text().trim() || null
 
     // 画像
-    const imageUrl =
-      $('.main_photo img, .photo_main img').attr('src') ||
-      'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400'
+    const imageUrl = $('.main_photo img, .photo_main img').attr('src')
+    const images: string[] = []
+    if (imageUrl) {
+      const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${PetHomeCrawler.BASE_URL}${imageUrl}`
+      images.push(fullImageUrl)
+    }
 
+    const now = new Date().toISOString()
+    
     return {
       id: petInfo.id,
       type: petType,
       name,
       breed,
       age,
+      age_group: null,
       gender,
+      size: null,
+      weight: null,
+      color: null,
+      description,
+      location: city ? `${prefecture} ${city}` : prefecture,
       prefecture,
       city,
-      location: city ? `${prefecture} ${city}` : prefecture,
-      description,
-      personality: [],
-      medicalInfo: '',
-      careRequirements: [],
-      imageUrl: imageUrl.startsWith('http') ? imageUrl : `${PetHomeCrawler.BASE_URL}${imageUrl}`,
-      shelterName: '',
-      shelterContact: '',
-      sourceUrl: petInfo.detailUrl,
-      createdAt: new Date().toISOString(),
+      status: 'available' as const,
+      medical_info: null,
+      vaccination_status: null,
+      spayed_neutered: null,
+      special_needs: null,
+      personality_traits: null,
+      good_with_kids: null,
+      good_with_pets: null,
+      adoption_fee: null,
+      organization_id: null,
+      organization_name: null,
+      contact_email: null,
+      contact_phone: null,
+      posted_date: null,
+      updated_date: null,
+      source_url: petInfo.detailUrl,
+      external_id: null,
+      care_requirements: null,
+      images,
+      video_url: null,
+      tags: [],
+      featured: false,
+      views: 0,
+      likes: 0,
+      created_at: now,
+      updated_at: now,
     }
   }
 
@@ -325,34 +355,50 @@ export class PetHomeCrawler {
    *
    * @param pet - 作成するペット情報
    * @description 新しいペット情報をデータベースに挿入。
-   * Pet型からデータベースレコード型に変換して保存
+   * Pet型をデータベーススキーマに直接マッピング
    */
   private async createPet(pet: Pet): Promise<void> {
-    const { petToRecord } = await import('./types')
-    const record = petToRecord(pet)
-
     await this.db.insert(pets).values({
-      id: record.id,
-      type: record.type,
-      name: record.name,
-      breed: record.breed,
-      age: record.age,
-      gender: record.gender,
-      prefecture: record.prefecture,
-      city: record.city,
-      location: record.location,
-      description: record.description,
-      personality: record.personality,
-      medicalInfo: record.medical_info,
-      careRequirements: record.care_requirements,
-      imageUrl: record.image_url,
-      shelterName: record.shelter_name,
-      shelterContact: record.shelter_contact,
-      sourceUrl: record.source_url,
-      sourceId: record.source_id || 'pet-home',
-      adoptionFee: record.adoption_fee || 0,
-      createdAt: record.created_at || new Date().toISOString(),
-      updatedAt: record.updated_at || new Date().toISOString(),
+      id: pet.id,
+      type: pet.type,
+      name: pet.name,
+      breed: pet.breed,
+      age: pet.age,
+      age_group: pet.age_group,
+      gender: pet.gender,
+      size: pet.size,
+      weight: pet.weight,
+      color: pet.color,
+      prefecture: pet.prefecture,
+      city: pet.city,
+      location: pet.location,
+      description: pet.description,
+      personality_traits: pet.personality_traits ? JSON.stringify(pet.personality_traits) : null,
+      medical_info: pet.medical_info,
+      care_requirements: pet.care_requirements,
+      special_needs: pet.special_needs,
+      status: pet.status,
+      vaccination_status: pet.vaccination_status,
+      spayed_neutered: pet.spayed_neutered ? 1 : 0,
+      good_with_kids: pet.good_with_kids ? 1 : 0,
+      good_with_pets: pet.good_with_pets ? 1 : 0,
+      organization_id: pet.organization_id,
+      organization_name: pet.organization_name,
+      contact_email: pet.contact_email,
+      contact_phone: pet.contact_phone,
+      adoption_fee: pet.adoption_fee,
+      images: pet.images ? JSON.stringify(pet.images) : null,
+      video_url: pet.video_url,
+      source_url: pet.source_url,
+      external_id: pet.external_id,
+      posted_date: pet.posted_date,
+      updated_date: pet.updated_date,
+      tags: pet.tags ? JSON.stringify(pet.tags) : null,
+      featured: pet.featured ? 1 : 0,
+      views: pet.views,
+      likes: pet.likes,
+      created_at: pet.created_at,
+      updated_at: pet.updated_at,
     })
   }
 
@@ -364,31 +410,48 @@ export class PetHomeCrawler {
    * ID以外の全フィールドとupdated_atを更新
    */
   private async updatePet(pet: Pet): Promise<void> {
-    const { petToRecord } = await import('./types')
-    const record = petToRecord(pet)
-
     await this.db
       .update(pets)
       .set({
-        name: record.name,
-        breed: record.breed,
-        age: record.age,
-        gender: record.gender,
-        prefecture: record.prefecture,
-        city: record.city,
-        location: record.location,
-        description: record.description,
-        personality: record.personality,
-        medicalInfo: record.medical_info,
-        careRequirements: record.care_requirements,
-        imageUrl: record.image_url,
-        shelterName: record.shelter_name,
-        shelterContact: record.shelter_contact,
-        sourceUrl: record.source_url,
-        sourceId: record.source_id || 'pet-home',
-        updatedAt: new Date().toISOString(),
+        name: pet.name,
+        breed: pet.breed,
+        age: pet.age,
+        age_group: pet.age_group,
+        gender: pet.gender,
+        size: pet.size,
+        weight: pet.weight,
+        color: pet.color,
+        prefecture: pet.prefecture,
+        city: pet.city,
+        location: pet.location,
+        description: pet.description,
+        personality_traits: pet.personality_traits ? JSON.stringify(pet.personality_traits) : null,
+        medical_info: pet.medical_info,
+        care_requirements: pet.care_requirements,
+        special_needs: pet.special_needs,
+        status: pet.status,
+        vaccination_status: pet.vaccination_status,
+        spayed_neutered: pet.spayed_neutered ? 1 : 0,
+        good_with_kids: pet.good_with_kids ? 1 : 0,
+        good_with_pets: pet.good_with_pets ? 1 : 0,
+        organization_id: pet.organization_id,
+        organization_name: pet.organization_name,
+        contact_email: pet.contact_email,
+        contact_phone: pet.contact_phone,
+        adoption_fee: pet.adoption_fee,
+        images: pet.images ? JSON.stringify(pet.images) : null,
+        video_url: pet.video_url,
+        source_url: pet.source_url,
+        external_id: pet.external_id,
+        posted_date: pet.posted_date,
+        updated_date: pet.updated_date,
+        tags: pet.tags ? JSON.stringify(pet.tags) : null,
+        featured: pet.featured ? 1 : 0,
+        views: pet.views,
+        likes: pet.likes,
+        updated_at: new Date().toISOString(),
       })
-      .where(eq(pets.id, record.id))
+      .where(eq(pets.id, pet.id))
   }
 
   /**
@@ -399,33 +462,41 @@ export class PetHomeCrawler {
    * Cloudflare R2ストレージに保存。エラーが発生しても処理を継続
    */
   private async saveImageToR2(pet: Pet): Promise<void> {
-    if (!pet.imageUrl || !pet.imageUrl.startsWith('http')) {
+    if (!pet.images || pet.images.length === 0) {
       return
     }
 
-    try {
-      const response = await fetch(pet.imageUrl, {
-        headers: { 'User-Agent': PetHomeCrawler.USER_AGENT },
-        signal: AbortSignal.timeout(10000),
-      })
+    for (let i = 0; i < pet.images.length; i++) {
+      const imageUrl = pet.images[i]
+      if (!imageUrl || !imageUrl.startsWith('http')) {
+        continue
+      }
 
-      if (!response.ok) return
+      try {
+        const response = await fetch(imageUrl, {
+          headers: { 'User-Agent': PetHomeCrawler.USER_AGENT },
+          signal: AbortSignal.timeout(10000),
+        })
 
-      const imageBuffer = await response.arrayBuffer()
-      const key = `pets/${pet.type}s/${pet.id}/original.jpg`
+        if (!response.ok) continue
 
-      await this.env.R2_BUCKET.put(key, imageBuffer, {
-        httpMetadata: {
-          contentType: 'image/jpeg',
-        },
-        customMetadata: {
-          petId: pet.id,
-          petType: pet.type,
-          uploadedAt: new Date().toISOString(),
-        },
-      })
-    } catch (error) {
-      console.error(`Failed to save image for pet ${pet.id}:`, error)
+        const imageBuffer = await response.arrayBuffer()
+        const key = `pets/${pet.type}s/${pet.id}/${i === 0 ? 'original' : `image-${i}`}.jpg`
+
+        await this.env.R2_BUCKET.put(key, imageBuffer, {
+          httpMetadata: {
+            contentType: 'image/jpeg',
+          },
+          customMetadata: {
+            petId: pet.id,
+            petType: pet.type,
+            imageIndex: i.toString(),
+            uploadedAt: new Date().toISOString(),
+          },
+        })
+      } catch (error) {
+        console.error(`Failed to save image ${i} for pet ${pet.id}:`, error)
+      }
     }
   }
 }

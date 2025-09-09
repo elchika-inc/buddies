@@ -5,14 +5,9 @@
 import type { Queue, R2Bucket, D1Database } from '@cloudflare/workers-types'
 
 // 共通の型定義を再エクスポート
-export type { Pet, PetRecord, CrawlerState, CrawlerStateRecord } from '../../../shared/types'
+export type { Pet, CrawlerState, CrawlerStateRecord } from '../../../shared/types'
 
-export {
-  petToRecord,
-  recordToPet,
-  isPet,
-  isPetRecord as isPetRecordType,
-} from '../../../shared/types'
+export { isPet } from '../../../shared/types'
 
 export interface Env {
   DB?: D1Database // D1データベースを追加

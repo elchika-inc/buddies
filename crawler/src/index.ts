@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { MessageBatch, ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
-import type { CrawlResult, CrawlerStateRecord, PetRecord } from '../../shared/types/index'
+import type { CrawlResult, CrawlerStateRecord, Pet } from '../../shared/types/index'
 import { PetHomeCrawler } from './crawler'
 import { Result } from '../../shared/types/result'
 
@@ -269,7 +269,7 @@ async function getPets(
   petType?: string,
   limit: number = 20,
   offset: number = 0
-): Promise<Result<PetRecord[], Error>> {
+): Promise<Result<Pet[], Error>> {
   try {
     let query = 'SELECT * FROM pets'
     const params: (string | number)[] = []
@@ -285,7 +285,7 @@ async function getPets(
     const result = await env['DB']
       .prepare(query)
       .bind(...params)
-      .all<PetRecord>()
+      .all<Pet>()
     return Result.ok(result.results || [])
   } catch (error) {
     return Result.err(error instanceof Error ? error : new Error(String(error)))
