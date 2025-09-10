@@ -17,13 +17,21 @@ export interface Env {
   /** D1データベースインスタンス */
   DB: D1Database
   /** R2ストレージバケット */
-  R2_BUCKET: R2Bucket
-  /** APIディスパッチャーキュー */
-  API_DISPATCHER_QUEUE: Queue
+  IMAGES_BUCKET: R2Bucket // wrangler.tomlに合わせて修正
+  /** ペットホーム猫用キュー */
+  PAWMATCH_CAT_PETHOME_QUEUE: Queue
+  /** ペットホーム犬用キュー */
+  PAWMATCH_DOG_PETHOME_QUEUE: Queue
   /** CORS許可オリジン */
   ALLOWED_ORIGIN?: string
   /** ローカル画像使用フラグ */
   USE_LOCAL_IMAGES?: string
+  /** API URL */
+  API_URL?: string
+  /** Crawler API キー */
+  CRAWLER_API_KEY?: string
+  /** ペットホームベースURL */
+  PET_HOME_BASE_URL?: string
 }
 import * as cheerio from 'cheerio'
 import { drizzle } from 'drizzle-orm/d1'
@@ -254,12 +262,14 @@ export class PetHomeCrawler {
     const imageUrl = $('.main_photo img, .photo_main img').attr('src')
     const images: string[] = []
     if (imageUrl) {
-      const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${PetHomeCrawler.BASE_URL}${imageUrl}`
+      const fullImageUrl = imageUrl.startsWith('http')
+        ? imageUrl
+        : `${PetHomeCrawler.BASE_URL}${imageUrl}`
       images.push(fullImageUrl)
     }
 
     const now = new Date().toISOString()
-    
+
     return {
       id: petInfo.id,
       type: petType,
@@ -483,7 +493,7 @@ export class PetHomeCrawler {
         const imageBuffer = await response.arrayBuffer()
         const key = `pets/${pet.type}s/${pet.id}/${i === 0 ? 'original' : `image-${i}`}.jpg`
 
-        await this.env.R2_BUCKET.put(key, imageBuffer, {
+        await this.env.IMAGES_BUCKET.put(key, imageBuffer, {
           httpMetadata: {
             contentType: 'image/jpeg',
           },

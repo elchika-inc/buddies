@@ -8,10 +8,16 @@ import { Result } from '../../shared/types/result'
 // Env型定義
 export interface Env {
   DB: D1Database
-  R2_BUCKET: R2Bucket
-  API_DISPATCHER_QUEUE: Queue
+  IMAGES_BUCKET: R2Bucket // wrangler.tomlに合わせて修正
+  PAWMATCH_CAT_PETHOME_QUEUE: Queue // wrangler.tomlに合わせて修正
+  PAWMATCH_DOG_PETHOME_QUEUE: Queue // wrangler.tomlに合わせて修正
+  PAWMATCH_CAT_PETHOME_DLQ: Queue // DLQ用
+  PAWMATCH_DOG_PETHOME_DLQ: Queue // DLQ用
   ALLOWED_ORIGIN?: string
   USE_LOCAL_IMAGES?: string
+  API_URL?: string
+  CRAWLER_API_KEY?: string
+  PET_HOME_BASE_URL?: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -124,6 +130,32 @@ app.get('/crawl/status/:source?/:type?', async (c) => {
     },
     500
   )
+})
+
+// Scheduled イベントのテスト用エンドポイント（開発環境専用）
+app.post('/test-scheduled', async (c) => {
+  try {
+    // scheduled 関数を手動で呼び出し
+    const dogResult = await crawlPets(c.env, 'dog', 5)
+    const catResult = await crawlPets(c.env, 'cat', 5)
+
+    return c.json({
+      message: 'Scheduled event triggered manually',
+      results: {
+        dog: Result.isOk(dogResult) ? dogResult.data : { error: dogResult.error.message },
+        cat: Result.isOk(catResult) ? catResult.data : { error: catResult.error.message },
+      },
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    return c.json(
+      {
+        error: 'Failed to trigger scheduled event',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      500
+    )
+  }
 })
 
 // ペット一覧取得（API用）
