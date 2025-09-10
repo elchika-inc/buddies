@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev --local",
     "build": "wrangler build",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --env production",
     "tail": "wrangler tail",
     "test": "../../scripts/crawler/dev/test-crawlers.sh",
     "db:init": "node ../../scripts/crawler/dev/init-db.js",
