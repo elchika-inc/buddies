@@ -62,7 +62,11 @@ export function handleError(
 }
 
 // 成功レスポンスヘルパー（error-handler-standardからの移行）
-export function successResponse<T>(c: { json: (object: unknown, status?: number) => unknown }, data: T, meta?: Record<string, unknown>) {
+export function successResponse<T>(
+  c: { json: (object: unknown, status?: number) => unknown },
+  data: T,
+  meta?: Record<string, unknown>
+) {
   return c.json({
     success: true,
     data,

@@ -84,7 +84,10 @@ function identifyDataType(
 /**
  * ペットリストレスポンスの変換
  */
-export function transformPetListResponse(pets: FrontendPet[], meta?: ApiMeta): LegacyPetListResponse {
+export function transformPetListResponse(
+  pets: FrontendPet[],
+  meta?: ApiMeta
+): LegacyPetListResponse {
   return {
     pets,
     pagination: meta

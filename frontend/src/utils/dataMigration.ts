@@ -55,7 +55,7 @@ export function migrateAllCatData(cats: Cat[]): Cat[] {
  * 地域フィルター機能
  */
 export function filterPetsByLocation<
-  T extends { prefecture?: string | null; city?: string | null },
+  T extends { prefecture?: string | null | undefined; city?: string | null | undefined },
 >(
   pets: T[],
   filters: {
@@ -111,7 +111,7 @@ export function groupPetsByCity<T extends { city?: string | null }>(
 /**
  * 都道府県一覧を取得（データから抽出）
  */
-export function getUniquePrefectures<T extends { prefecture?: string | null }>(
+export function getUniquePrefectures<T extends { prefecture?: string | null | undefined }>(
   pets: T[]
 ): string[] {
   const prefectures = pets
@@ -125,10 +125,9 @@ export function getUniquePrefectures<T extends { prefecture?: string | null }>(
 /**
  * 市町村一覧を取得（指定した都道府県内で）
  */
-export function getUniqueCities<T extends { prefecture?: string | null; city?: string | null }>(
-  pets: T[],
-  targetPrefecture?: string
-): string[] {
+export function getUniqueCities<
+  T extends { prefecture?: string | null | undefined; city?: string | null | undefined },
+>(pets: T[], targetPrefecture?: string): string[] {
   const filteredPets = targetPrefecture
     ? pets.filter((pet) => pet.prefecture === targetPrefecture)
     : pets

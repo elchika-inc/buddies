@@ -101,8 +101,8 @@ export class CleanupService {
         .prepare(
           `
         UPDATE pets 
-        SET expires_at = datetime(created_at, '+${days} days')
-        WHERE expires_at IS NULL
+        SET expiresAt = datetime(createdAt, '+${days} days')
+        WHERE expiresAt IS NULL
       `
         )
         .run()

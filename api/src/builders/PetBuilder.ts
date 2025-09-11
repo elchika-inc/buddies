@@ -5,14 +5,13 @@
 
 import type { Pet } from '../../../shared/types/index'
 
-// DB レコード型（snake_case）
+// DB レコード型（統一型定義に準拠）
 interface DBPetRecord {
   id: string
   type: 'dog' | 'cat'
   name: string
   breed?: string | null
-  age?: number | null
-  age_group?: string | null
+  age?: string | null
   gender?: string | null
   size?: string | null
   weight?: number | null
@@ -21,25 +20,38 @@ interface DBPetRecord {
   location?: string | null
   prefecture?: string | null
   city?: string | null
-  status?: string | null
-  medical_info?: string | null
-  vaccination_status?: string | null
-  spayed_neutered?: number | null
-  special_needs?: string | null
-  personality_traits?: string | null
-  good_with_kids?: number | null
-  good_with_pets?: number | null
-  adoption_fee?: number | null
-  organization_name?: string | null
-  contact_email?: string | null
-  contact_phone?: string | null
-  source_url?: string | null
-  external_id?: string | null
-  care_requirements?: string | null
-  has_jpeg?: number | null
-  has_webp?: number | null
-  created_at?: string | null
-  updated_at?: string | null
+  medicalInfo?: string | null
+  vaccinationStatus?: string | null
+  isNeutered?: number | null
+  personality?: string | null
+  goodWithKids?: number | null
+  goodWithDogs?: number | null
+  goodWithCats?: number | null
+  shelterName?: string | null
+  shelterContact?: string | null
+  sourceUrl?: string | null
+  sourceId?: string | null
+  careRequirements?: string | null
+  hasJpeg?: number | null
+  hasWebp?: number | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  imageUrl?: string | null
+  isVaccinated?: number | null
+  isFivFelvTested?: number | null
+  exerciseLevel?: string | null
+  trainingLevel?: string | null
+  socialLevel?: string | null
+  indoorOutdoor?: string | null
+  groomingRequirements?: string | null
+  apartmentFriendly?: number | null
+  needsYard?: number | null
+  goodWith?: string | null
+  healthNotes?: string | null
+  coatLength?: string | null
+  imageCheckedAt?: string | null
+  screenshotRequestedAt?: string | null
+  screenshotCompletedAt?: string | null
 }
 
 // TypeConvertersはローカルに実装
@@ -51,54 +63,49 @@ const TypeConverters = {
       name: record.name,
       breed: record.breed ?? undefined,
       age: record.age ?? undefined,
-      age_group: record.age_group as Pet['age_group'],
-      gender: (record.gender as Pet['gender']) ?? 'unknown',
-      size: record.size as Pet['size'],
+      gender: (record.gender as Pet['gender']) ?? undefined,
+      size: (record.size as Pet['size']) ?? undefined,
       weight: record.weight ?? undefined,
       color: record.color ?? undefined,
       description: record.description ?? undefined,
       location: record.location ?? undefined,
       prefecture: record.prefecture ?? undefined,
       city: record.city ?? undefined,
-      status: (record.status as Pet['status']) ?? 'available',
-      medical_info: record.medical_info ?? undefined,
-      vaccination_status: record.vaccination_status ?? undefined,
-      spayed_neutered: record.spayed_neutered === 1 ? true : false,
-      special_needs: record.special_needs ?? undefined,
-      personality_traits: this.parseJsonArray(record.personality_traits),
-      good_with_kids: record.good_with_kids === 1 ? true : false,
-      good_with_pets: record.good_with_pets === 1 ? true : false,
-      adoption_fee: record.adoption_fee ?? undefined,
-      organization_name: record.organization_name ?? undefined,
-      contact_email: record.contact_email ?? undefined,
-      contact_phone: record.contact_phone ?? undefined,
-      source_url: record.source_url ?? undefined,
-      external_id: record.external_id ?? undefined,
-      care_requirements: record.care_requirements ?? undefined,
-      images: [],
-      tags: [],
-      featured: false,
-      views: 0,
-      likes: 0,
-      created_at: record.created_at ?? new Date().toISOString(),
-      updated_at: record.updated_at ?? new Date().toISOString(),
+      medicalInfo: record.medicalInfo ?? undefined,
+      vaccinationStatus: record.vaccinationStatus ?? undefined,
+      isNeutered: record.isNeutered ?? 0,
+      isVaccinated: record.isVaccinated ?? 0,
+      isFivFelvTested: record.isFivFelvTested ?? 0,
+      personality: record.personality ?? undefined,
+      goodWithKids: record.goodWithKids ?? 0,
+      goodWithDogs: record.goodWithDogs ?? 0,
+      goodWithCats: record.goodWithCats ?? 0,
+      apartmentFriendly: record.apartmentFriendly ?? 0,
+      needsYard: record.needsYard ?? 0,
+      shelterName: record.shelterName ?? undefined,
+      shelterContact: record.shelterContact ?? undefined,
+      sourceUrl: record.sourceUrl ?? undefined,
+      sourceId: record.sourceId ?? 'pet-home',
+      careRequirements: record.careRequirements ?? undefined,
+      imageUrl: record.imageUrl ?? undefined,
+      hasJpeg: record.hasJpeg ?? 0,
+      hasWebp: record.hasWebp ?? 0,
+      exerciseLevel: record.exerciseLevel ?? undefined,
+      trainingLevel: record.trainingLevel ?? undefined,
+      socialLevel: record.socialLevel ?? undefined,
+      indoorOutdoor: record.indoorOutdoor ?? undefined,
+      groomingRequirements: record.groomingRequirements ?? undefined,
+      goodWith: record.goodWith ?? undefined,
+      healthNotes: record.healthNotes ?? undefined,
+      coatLength: record.coatLength ?? undefined,
+      imageCheckedAt: record.imageCheckedAt ?? undefined,
+      screenshotRequestedAt: record.screenshotRequestedAt ?? undefined,
+      screenshotCompletedAt: record.screenshotCompletedAt ?? undefined,
+      createdAt: record.createdAt ?? new Date().toISOString(),
+      updatedAt: record.updatedAt ?? new Date().toISOString(),
     }
 
     return pet as Pet
-  },
-
-  parseJsonArray(value: string | null | undefined): string[] | undefined {
-    if (!value) return undefined
-
-    try {
-      if (value.startsWith('[')) {
-        const parsed = JSON.parse(value)
-        return Array.isArray(parsed) ? parsed : undefined
-      }
-      return undefined
-    } catch {
-      return undefined
-    }
   },
 }
 
@@ -118,15 +125,19 @@ export class PetBuilder {
 
   constructor() {
     this.pet = {
-      gender: 'unknown',
-      status: 'available',
-      images: [],
-      tags: [],
-      featured: false,
-      views: 0,
-      likes: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      isNeutered: 0,
+      isVaccinated: 0,
+      isFivFelvTested: 0,
+      goodWithKids: 0,
+      goodWithDogs: 0,
+      goodWithCats: 0,
+      apartmentFriendly: 0,
+      needsYard: 0,
+      hasJpeg: 0,
+      hasWebp: 0,
+      sourceId: 'pet-home',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
   }
 
@@ -170,7 +181,7 @@ export class PetBuilder {
     return this
   }
 
-  setAge(age: number | null): PetBuilder {
+  setAge(age: string | null): PetBuilder {
     this.pet.age = age ?? undefined
     return this
   }
@@ -191,55 +202,72 @@ export class PetBuilder {
   }
 
   // 画像関連のセッター
-  setImages(images: string[]): PetBuilder {
-    this.pet.images = images
+  setImageUrl(imageUrl: string | null): PetBuilder {
+    this.pet.imageUrl = imageUrl ?? undefined
     return this
   }
 
-  addImage(imageUrl: string): PetBuilder {
-    if (!this.pet.images) {
-      this.pet.images = []
-    }
-    this.pet.images.push(imageUrl)
+  setHasJpeg(hasJpeg: boolean): PetBuilder {
+    this.pet.hasJpeg = hasJpeg ? 1 : 0
+    return this
+  }
+
+  setHasWebp(hasWebp: boolean): PetBuilder {
+    this.pet.hasWebp = hasWebp ? 1 : 0
     return this
   }
 
   // 健康情報のセッター
   setVaccinationStatus(status: string | null): PetBuilder {
-    this.pet.vaccination_status = status ?? undefined
+    this.pet.vaccinationStatus = status ?? undefined
     return this
   }
 
-  setSpayedNeutered(isSpayedNeutered: boolean): PetBuilder {
-    this.pet.spayed_neutered = isSpayedNeutered
+  setIsNeutered(isNeutered: boolean): PetBuilder {
+    this.pet.isNeutered = isNeutered ? 1 : 0
     return this
   }
 
-  // 料金のセッター
-  setAdoptionFee(fee: number | null): PetBuilder {
-    this.pet.adoption_fee = fee ?? undefined
+  setIsVaccinated(isVaccinated: boolean): PetBuilder {
+    this.pet.isVaccinated = isVaccinated ? 1 : 0
     return this
   }
 
-  // 組織情報のセッター
-  setOrganizationName(name: string | null): PetBuilder {
-    this.pet.organization_name = name ?? undefined
+  // 互換性フラグのセッター
+  setGoodWithKids(goodWithKids: boolean): PetBuilder {
+    this.pet.goodWithKids = goodWithKids ? 1 : 0
     return this
   }
 
-  setContactEmail(email: string | null): PetBuilder {
-    this.pet.contact_email = email ?? undefined
+  setGoodWithDogs(goodWithDogs: boolean): PetBuilder {
+    this.pet.goodWithDogs = goodWithDogs ? 1 : 0
+    return this
+  }
+
+  setGoodWithCats(goodWithCats: boolean): PetBuilder {
+    this.pet.goodWithCats = goodWithCats ? 1 : 0
+    return this
+  }
+
+  // シェルター情報のセッター
+  setShelterName(name: string | null): PetBuilder {
+    this.pet.shelterName = name ?? undefined
+    return this
+  }
+
+  setShelterContact(contact: string | null): PetBuilder {
+    this.pet.shelterContact = contact ?? undefined
     return this
   }
 
   // タイムスタンプのセッター
   setCreatedAt(date: string): PetBuilder {
-    this.pet.created_at = date
+    this.pet.createdAt = date
     return this
   }
 
   setUpdatedAt(date: string): PetBuilder {
-    this.pet.updated_at = date
+    this.pet.updatedAt = date
     return this
   }
 
@@ -262,32 +290,44 @@ export class PetBuilder {
     }
 
     // デフォルト値の設定
-    if (!this.pet.gender) {
-      this.pet.gender = 'unknown'
+    if (this.pet.isNeutered === undefined) {
+      this.pet.isNeutered = 0
     }
-    if (!this.pet.status) {
-      this.pet.status = 'available'
+    if (this.pet.isVaccinated === undefined) {
+      this.pet.isVaccinated = 0
     }
-    if (!this.pet.images) {
-      this.pet.images = []
+    if (this.pet.isFivFelvTested === undefined) {
+      this.pet.isFivFelvTested = 0
     }
-    if (!this.pet.tags) {
-      this.pet.tags = []
+    if (this.pet.goodWithKids === undefined) {
+      this.pet.goodWithKids = 0
     }
-    if (this.pet.featured === undefined) {
-      this.pet.featured = false
+    if (this.pet.goodWithDogs === undefined) {
+      this.pet.goodWithDogs = 0
     }
-    if (this.pet.views === undefined) {
-      this.pet.views = 0
+    if (this.pet.goodWithCats === undefined) {
+      this.pet.goodWithCats = 0
     }
-    if (this.pet.likes === undefined) {
-      this.pet.likes = 0
+    if (this.pet.apartmentFriendly === undefined) {
+      this.pet.apartmentFriendly = 0
     }
-    if (!this.pet.created_at) {
-      this.pet.created_at = new Date().toISOString()
+    if (this.pet.needsYard === undefined) {
+      this.pet.needsYard = 0
     }
-    if (!this.pet.updated_at) {
-      this.pet.updated_at = new Date().toISOString()
+    if (this.pet.hasJpeg === undefined) {
+      this.pet.hasJpeg = 0
+    }
+    if (this.pet.hasWebp === undefined) {
+      this.pet.hasWebp = 0
+    }
+    if (!this.pet.sourceId) {
+      this.pet.sourceId = 'pet-home'
+    }
+    if (!this.pet.createdAt) {
+      this.pet.createdAt = new Date().toISOString()
+    }
+    if (!this.pet.updatedAt) {
+      this.pet.updatedAt = new Date().toISOString()
     }
 
     return this.pet as Pet
@@ -298,15 +338,19 @@ export class PetBuilder {
    */
   reset(): PetBuilder {
     this.pet = {
-      gender: 'unknown',
-      status: 'available',
-      images: [],
-      tags: [],
-      featured: false,
-      views: 0,
-      likes: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      isNeutered: 0,
+      isVaccinated: 0,
+      isFivFelvTested: 0,
+      goodWithKids: 0,
+      goodWithDogs: 0,
+      goodWithCats: 0,
+      apartmentFriendly: 0,
+      needsYard: 0,
+      hasJpeg: 0,
+      hasWebp: 0,
+      sourceId: 'pet-home',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
     return this
   }

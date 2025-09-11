@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, index, real } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
-// ペットテーブル
+// ペットテーブル（camelCase版）
 export const pets = sqliteTable(
   'pets',
   {
@@ -10,8 +10,7 @@ export const pets = sqliteTable(
     type: text('type').notNull(), // 'dog' | 'cat'
     name: text('name').notNull(),
     breed: text('breed'),
-    age: real('age'),
-    age_group: text('age_group'),
+    age: text('age'), // DBはtext型
     gender: text('gender'),
 
     // Location fields
@@ -21,58 +20,66 @@ export const pets = sqliteTable(
 
     // Description fields
     description: text('description'),
-    personality_traits: text('personality_traits'), // JSON array
-    medical_info: text('medical_info'),
-    care_requirements: text('care_requirements'), // JSON array
-    special_needs: text('special_needs'),
-
-    // Extended pet information
-    status: text('status').notNull().default('available'), // 'available' | 'adopted' | 'pending' | 'unavailable'
-    vaccination_status: text('vaccination_status'),
-    spayed_neutered: integer('spayed_neutered'),
+    personality: text('personality'),
+    medicalInfo: text('medicalInfo'),
+    careRequirements: text('careRequirements'),
+    goodWith: text('goodWith'),
+    healthNotes: text('healthNotes'),
 
     // Physical characteristics
     color: text('color'),
     weight: real('weight'),
     size: text('size'),
-    coatLength: text('coat_length'),
+    coatLength: text('coatLength'),
+
+    // Medical status
+    isNeutered: integer('isNeutered').default(0),
+    isVaccinated: integer('isVaccinated').default(0),
+    vaccinationStatus: text('vaccinationStatus'),
+    isFivFelvTested: integer('isFivFelvTested').default(0),
+
+    // Behavior and requirements
+    exerciseLevel: text('exerciseLevel'),
+    trainingLevel: text('trainingLevel'),
+    socialLevel: text('socialLevel'),
+    indoorOutdoor: text('indoorOutdoor'),
+    groomingRequirements: text('groomingRequirements'),
 
     // Compatibility flags
-    good_with_kids: integer('good_with_kids'),
-    good_with_pets: integer('good_with_pets'),
+    goodWithKids: integer('goodWithKids').default(0),
+    goodWithDogs: integer('goodWithDogs').default(0),
+    goodWithCats: integer('goodWithCats').default(0),
+    apartmentFriendly: integer('apartmentFriendly').default(0),
+    needsYard: integer('needsYard').default(0),
 
-    // Organization information
-    organization_id: text('organization_id'),
-    organization_name: text('organization_name'),
-    contact_email: text('contact_email'),
-    contact_phone: text('contact_phone'),
-    adoption_fee: real('adoption_fee'),
+    // Image status
+    imageUrl: text('imageUrl'),
+    hasJpeg: integer('hasJpeg').default(0),
+    hasWebp: integer('hasWebp').default(0),
+    imageCheckedAt: text('imageCheckedAt'),
+    screenshotRequestedAt: text('screenshotRequestedAt'),
+    screenshotCompletedAt: text('screenshotCompletedAt'),
 
-    // Media
-    images: text('images'), // JSON array of image URLs
-    video_url: text('video_url'),
+    // Shelter information
+    shelterName: text('shelterName'),
+    shelterContact: text('shelterContact'),
 
-    // Metadata
-    source_url: text('source_url'),
-    external_id: text('external_id'),
-    posted_date: text('posted_date'),
-    updated_date: text('updated_date'),
-    tags: text('tags'), // JSON array
-    featured: integer('featured').default(0),
-    views: integer('views').default(0),
-    likes: integer('likes').default(0),
+    // Source information
+    sourceUrl: text('sourceUrl'),
+    sourceId: text('sourceId').default('pet-home'),
+    adoptionFee: integer('adoptionFee').default(0),
 
     // Timestamps
-    created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-    updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     typeIdx: index('idx_pets_type').on(table.type),
-    statusIdx: index('idx_pets_status').on(table.status),
     prefectureIdx: index('idx_pets_prefecture').on(table.prefecture),
-    createdAtIdx: index('idx_pets_created_at').on(table.created_at),
-    typeCreatedIdx: index('idx_pets_type_created').on(table.type, table.created_at),
-    featuredIdx: index('idx_pets_featured').on(table.featured),
+    createdAtIdx: index('idx_pets_createdAt').on(table.createdAt),
+    hasJpegIdx: index('idx_pets_hasJpeg').on(table.hasJpeg),
+    hasWebpIdx: index('idx_pets_hasWebp').on(table.hasWebp),
+    typeCreatedIdx: index('idx_pets_type_created').on(table.type, table.createdAt),
   })
 )
 
@@ -81,13 +88,13 @@ export const crawlerStates = sqliteTable(
   'crawler_states',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    sourceId: text('source_id').notNull(),
-    petType: text('pet_type').notNull(),
-    checkpoint: text('checkpoint'), // JSON
-    totalProcessed: integer('total_processed').default(0),
-    lastCrawlAt: text('last_crawl_at'),
-    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+    sourceId: text('sourceId').notNull(),
+    petType: text('petType').notNull(),
+    checkpoint: text('checkpoint'),
+    totalProcessed: integer('totalProcessed').default(0),
+    lastCrawlAt: text('lastCrawlAt'),
+    createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     sourceTypeIdx: index('idx_crawler_states_source_type').on(table.sourceId, table.petType),
@@ -99,15 +106,15 @@ export const syncStatus = sqliteTable(
   'sync_status',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    syncType: text('sync_type').notNull(),
+    syncType: text('syncType').notNull(),
     status: text('status').notNull(), // 'pending' | 'running' | 'completed' | 'failed'
-    totalRecords: integer('total_records').default(0),
-    processedRecords: integer('processed_records').default(0),
-    failedRecords: integer('failed_records').default(0),
+    totalRecords: integer('totalRecords').default(0),
+    processedRecords: integer('processedRecords').default(0),
+    failedRecords: integer('failedRecords').default(0),
     metadata: text('metadata'), // JSON
-    startedAt: text('started_at'),
-    completedAt: text('completed_at'),
-    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    startedAt: text('startedAt'),
+    completedAt: text('completedAt'),
+    createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     syncTypeIdx: index('idx_sync_status_type').on(table.syncType),
@@ -123,39 +130,13 @@ export const syncMetadata = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     key: text('key').notNull().unique(),
     value: text('value'),
-    valueType: text('value_type').default('string'),
+    valueType: text('valueType').default('string'),
     description: text('description'),
-    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     keyIdx: index('idx_sync_metadata_key').on(table.key),
-  })
-)
-
-// 画像テーブル
-export const images = sqliteTable(
-  'images',
-  {
-    id: text('id').primaryKey(),
-    pet_id: text('pet_id').notNull(),
-    url: text('url').notNull(),
-    thumbnail_url: text('thumbnail_url'),
-    alt_text: text('alt_text'),
-    is_primary: integer('is_primary').default(0),
-    display_order: integer('display_order').default(0),
-    width: integer('width'),
-    height: integer('height'),
-    size: integer('size'),
-    mime_type: text('mime_type'),
-    status: text('status').default('pending'), // 'pending' | 'processed' | 'failed' | 'deleted'
-    created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-    updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
-  },
-  (table) => ({
-    petIdIdx: index('idx_images_pet_id').on(table.pet_id),
-    statusIdx: index('idx_images_status').on(table.status),
-    isPrimaryIdx: index('idx_images_is_primary').on(table.is_primary),
   })
 )
 
@@ -168,22 +149,22 @@ export const apiKeys = sqliteTable(
     name: text('name').notNull(),
     type: text('type').notNull(), // 'public' | 'internal' | 'admin'
     permissions: text('permissions').notNull(), // JSON配列形式
-    rateLimit: integer('rate_limit').notNull().default(100),
-    expiresAt: text('expires_at'),
-    createdAt: text('created_at')
+    rateLimit: integer('rateLimit').notNull().default(100),
+    expiresAt: text('expiresAt'),
+    createdAt: text('createdAt')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: text('updated_at')
+    updatedAt: text('updatedAt')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    lastUsedAt: text('last_used_at'),
-    isActive: integer('is_active').notNull().default(1),
+    lastUsedAt: text('lastUsedAt'),
+    isActive: integer('isActive').notNull().default(1),
     metadata: text('metadata'), // JSON形式の追加メタデータ
   },
   (table) => ({
     keyIdx: index('idx_api_keys_key').on(table.key),
     typeIdx: index('idx_api_keys_type').on(table.type),
-    isActiveIdx: index('idx_api_keys_is_active').on(table.isActive),
-    expiresAtIdx: index('idx_api_keys_expires_at').on(table.expiresAt),
+    isActiveIdx: index('idx_api_keys_isActive').on(table.isActive),
+    expiresAtIdx: index('idx_api_keys_expiresAt').on(table.expiresAt),
   })
 )

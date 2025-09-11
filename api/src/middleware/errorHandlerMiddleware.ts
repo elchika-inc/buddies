@@ -128,7 +128,10 @@ export async function errorHandlerMiddleware(c: Context, next: Next): Promise<Re
     c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
     // エラーレスポンスを返す
-    return c.json(response, details.status as 200 | 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503)
+    return c.json(
+      response,
+      details.status as 200 | 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503
+    )
   }
 }
 

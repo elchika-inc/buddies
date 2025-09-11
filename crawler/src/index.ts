@@ -204,24 +204,24 @@ async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
         location TEXT,
         description TEXT,
         personality TEXT,
-        medical_info TEXT,
-        care_requirements TEXT,
-        image_url TEXT,
-        shelter_name TEXT,
-        shelter_contact TEXT,
-        source_url TEXT,
-        adoption_fee INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        medicalInfo TEXT,
+        careRequirements TEXT,
+        imageUrl TEXT,
+        shelterName TEXT,
+        shelterContact TEXT,
+        sourceUrl TEXT,
+        adoptionFee INTEGER DEFAULT 0,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       );
       
       CREATE TABLE IF NOT EXISTS crawler_states (
-        source_id TEXT NOT NULL,
+        sourceId TEXT NOT NULL,
         pet_type TEXT NOT NULL,
         checkpoint TEXT,
         total_processed INTEGER DEFAULT 0,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (source_id, pet_type)
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (sourceId, pet_type)
       );
     `
 
@@ -259,12 +259,12 @@ async function getCrawlStatus(
 ): Promise<Result<CrawlerStateRecord[], Error>> {
   try {
     let query =
-      'SELECT source_id, pet_type, checkpoint, total_processed, updated_at FROM crawler_states'
+      'SELECT sourceId, pet_type, checkpoint, total_processed, updatedAt FROM crawler_states'
     const params: (string | number)[] = []
     const conditions: string[] = []
 
     if (sourceId === 'pet-home') {
-      conditions.push('source_id = ?')
+      conditions.push('sourceId = ?')
       params.push(sourceId)
     }
 
@@ -311,7 +311,7 @@ async function getPets(
       params.push(petType)
     }
 
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    query += ' ORDER BY createdAt DESC LIMIT ? OFFSET ?'
     params.push(limit, offset)
 
     const result = await env['DB']

@@ -275,42 +275,48 @@ export class PetHomeCrawler {
       type: petType,
       name,
       breed,
-      age,
-      age_group: null,
+      age: age ? String(age) : null,
       gender,
       size: null,
       weight: null,
       color: null,
       description,
+      personality: null,
       location: city ? `${prefecture} ${city}` : prefecture,
       prefecture,
       city,
-      status: 'available' as const,
-      medical_info: null,
-      vaccination_status: null,
-      spayed_neutered: null,
-      special_needs: null,
-      personality_traits: null,
-      good_with_kids: null,
-      good_with_pets: null,
-      adoption_fee: null,
-      organization_id: null,
-      organization_name: null,
-      contact_email: null,
-      contact_phone: null,
-      posted_date: null,
-      updated_date: null,
-      source_url: petInfo.detailUrl,
-      external_id: null,
-      care_requirements: null,
-      images,
-      video_url: null,
-      tags: [],
-      featured: false,
-      views: 0,
-      likes: 0,
-      created_at: now,
-      updated_at: now,
+      medicalInfo: null,
+      careRequirements: null,
+      goodWith: null,
+      healthNotes: null,
+      coatLength: null,
+      isNeutered: 0,
+      isVaccinated: 0,
+      vaccinationStatus: null,
+      isFivFelvTested: 0,
+      exerciseLevel: null,
+      trainingLevel: null,
+      socialLevel: null,
+      indoorOutdoor: null,
+      groomingRequirements: null,
+      goodWithKids: 0,
+      goodWithDogs: 0,
+      goodWithCats: 0,
+      apartmentFriendly: 0,
+      needsYard: 0,
+      imageUrl: images && images.length > 0 ? images[0] : null,
+      hasJpeg: images && images.length > 0 ? 1 : 0,
+      hasWebp: 0,
+      imageCheckedAt: null,
+      screenshotRequestedAt: null,
+      screenshotCompletedAt: null,
+      shelterName: null,
+      shelterContact: null,
+      sourceUrl: petInfo.detailUrl,
+      sourceId: 'pet-home',
+      adoptionFee: 0,
+      createdAt: now,
+      updatedAt: now,
     }
   }
 
@@ -374,7 +380,6 @@ export class PetHomeCrawler {
       name: pet.name,
       breed: pet.breed,
       age: pet.age,
-      age_group: pet.age_group,
       gender: pet.gender,
       size: pet.size,
       weight: pet.weight,
@@ -383,32 +388,23 @@ export class PetHomeCrawler {
       city: pet.city,
       location: pet.location,
       description: pet.description,
-      personality_traits: pet.personality_traits ? JSON.stringify(pet.personality_traits) : null,
-      medical_info: pet.medical_info,
-      care_requirements: pet.care_requirements,
-      special_needs: pet.special_needs,
-      status: pet.status,
-      vaccination_status: pet.vaccination_status,
-      spayed_neutered: pet.spayed_neutered ? 1 : 0,
-      good_with_kids: pet.good_with_kids ? 1 : 0,
-      good_with_pets: pet.good_with_pets ? 1 : 0,
-      organization_id: pet.organization_id,
-      organization_name: pet.organization_name,
-      contact_email: pet.contact_email,
-      contact_phone: pet.contact_phone,
-      adoption_fee: pet.adoption_fee,
-      images: pet.images ? JSON.stringify(pet.images) : null,
-      video_url: pet.video_url,
-      source_url: pet.source_url,
-      external_id: pet.external_id,
-      posted_date: pet.posted_date,
-      updated_date: pet.updated_date,
-      tags: pet.tags ? JSON.stringify(pet.tags) : null,
-      featured: pet.featured ? 1 : 0,
-      views: pet.views,
-      likes: pet.likes,
-      created_at: pet.created_at,
-      updated_at: pet.updated_at,
+      personality: pet.personality,
+      medicalInfo: pet.medicalInfo,
+      careRequirements: pet.careRequirements,
+      vaccinationStatus: pet.vaccinationStatus,
+      isNeutered: pet.isNeutered,
+      isVaccinated: pet.isVaccinated,
+      goodWithKids: pet.goodWithKids,
+      goodWithDogs: pet.goodWithDogs,
+      goodWithCats: pet.goodWithCats,
+      shelterName: pet.shelterName,
+      shelterContact: pet.shelterContact,
+      adoptionFee: pet.adoptionFee,
+      imageUrl: pet.imageUrl,
+      sourceUrl: pet.sourceUrl,
+      sourceId: 'pet-home',
+      createdAt: pet.createdAt,
+      updatedAt: pet.updatedAt,
     })
   }
 
@@ -417,7 +413,7 @@ export class PetHomeCrawler {
    *
    * @param pet - 更新するペット情報
    * @description 既存のペット情報を最新のデータで更新。
-   * ID以外の全フィールドとupdated_atを更新
+   * ID以外の全フィールドとupdatedAtを更新
    */
   private async updatePet(pet: Pet): Promise<void> {
     await this.db
@@ -426,7 +422,6 @@ export class PetHomeCrawler {
         name: pet.name,
         breed: pet.breed,
         age: pet.age,
-        age_group: pet.age_group,
         gender: pet.gender,
         size: pet.size,
         weight: pet.weight,
@@ -435,31 +430,38 @@ export class PetHomeCrawler {
         city: pet.city,
         location: pet.location,
         description: pet.description,
-        personality_traits: pet.personality_traits ? JSON.stringify(pet.personality_traits) : null,
-        medical_info: pet.medical_info,
-        care_requirements: pet.care_requirements,
-        special_needs: pet.special_needs,
-        status: pet.status,
-        vaccination_status: pet.vaccination_status,
-        spayed_neutered: pet.spayed_neutered ? 1 : 0,
-        good_with_kids: pet.good_with_kids ? 1 : 0,
-        good_with_pets: pet.good_with_pets ? 1 : 0,
-        organization_id: pet.organization_id,
-        organization_name: pet.organization_name,
-        contact_email: pet.contact_email,
-        contact_phone: pet.contact_phone,
-        adoption_fee: pet.adoption_fee,
-        images: pet.images ? JSON.stringify(pet.images) : null,
-        video_url: pet.video_url,
-        source_url: pet.source_url,
-        external_id: pet.external_id,
-        posted_date: pet.posted_date,
-        updated_date: pet.updated_date,
-        tags: pet.tags ? JSON.stringify(pet.tags) : null,
-        featured: pet.featured ? 1 : 0,
-        views: pet.views,
-        likes: pet.likes,
-        updated_at: new Date().toISOString(),
+        personality: pet.personality,
+        medicalInfo: pet.medicalInfo,
+        careRequirements: pet.careRequirements,
+        goodWith: pet.goodWith,
+        healthNotes: pet.healthNotes,
+        coatLength: pet.coatLength,
+        isNeutered: pet.isNeutered,
+        isVaccinated: pet.isVaccinated,
+        vaccinationStatus: pet.vaccinationStatus,
+        isFivFelvTested: pet.isFivFelvTested,
+        exerciseLevel: pet.exerciseLevel,
+        trainingLevel: pet.trainingLevel,
+        socialLevel: pet.socialLevel,
+        indoorOutdoor: pet.indoorOutdoor,
+        groomingRequirements: pet.groomingRequirements,
+        goodWithKids: pet.goodWithKids,
+        goodWithDogs: pet.goodWithDogs,
+        goodWithCats: pet.goodWithCats,
+        apartmentFriendly: pet.apartmentFriendly,
+        needsYard: pet.needsYard,
+        imageUrl: pet.imageUrl,
+        hasJpeg: pet.hasJpeg,
+        hasWebp: pet.hasWebp,
+        imageCheckedAt: pet.imageCheckedAt,
+        screenshotRequestedAt: pet.screenshotRequestedAt,
+        screenshotCompletedAt: pet.screenshotCompletedAt,
+        shelterName: pet.shelterName,
+        shelterContact: pet.shelterContact,
+        sourceUrl: pet.sourceUrl,
+        sourceId: pet.sourceId,
+        adoptionFee: pet.adoptionFee,
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(pets.id, pet.id))
   }
@@ -472,41 +474,39 @@ export class PetHomeCrawler {
    * Cloudflare R2ストレージに保存。エラーが発生しても処理を継続
    */
   private async saveImageToR2(pet: Pet): Promise<void> {
-    if (!pet.images || pet.images.length === 0) {
+    if (!pet.imageUrl) {
       return
     }
 
-    for (let i = 0; i < pet.images.length; i++) {
-      const imageUrl = pet.images[i]
-      if (!imageUrl || !imageUrl.startsWith('http')) {
-        continue
-      }
+    const imageUrl = pet.imageUrl
+    if (!imageUrl || !imageUrl.startsWith('http')) {
+      return
+    }
 
-      try {
-        const response = await fetch(imageUrl, {
-          headers: { 'User-Agent': PetHomeCrawler.USER_AGENT },
-          signal: AbortSignal.timeout(10000),
-        })
+    try {
+      const response = await fetch(imageUrl, {
+        headers: { 'User-Agent': PetHomeCrawler.USER_AGENT },
+        signal: AbortSignal.timeout(10000),
+      })
 
-        if (!response.ok) continue
+      if (!response.ok) return
 
-        const imageBuffer = await response.arrayBuffer()
-        const key = `pets/${pet.type}s/${pet.id}/${i === 0 ? 'original' : `image-${i}`}.jpg`
+      const imageBuffer = await response.arrayBuffer()
+      const key = `pets/${pet.type}s/${pet.id}/original.jpg`
 
-        await this.env.IMAGES_BUCKET.put(key, imageBuffer, {
-          httpMetadata: {
-            contentType: 'image/jpeg',
-          },
-          customMetadata: {
-            petId: pet.id,
-            petType: pet.type,
-            imageIndex: i.toString(),
-            uploadedAt: new Date().toISOString(),
-          },
-        })
-      } catch (error) {
-        console.error(`Failed to save image ${i} for pet ${pet.id}:`, error)
-      }
+      await this.env.IMAGES_BUCKET.put(key, imageBuffer, {
+        httpMetadata: {
+          contentType: 'image/jpeg',
+        },
+        customMetadata: {
+          petId: pet.id,
+          petType: pet.type,
+          imageIndex: '0',
+          uploadedAt: new Date().toISOString(),
+        },
+      })
+    } catch (error) {
+      console.error(`Failed to save image for pet ${pet.id}:`, error)
     }
   }
 }

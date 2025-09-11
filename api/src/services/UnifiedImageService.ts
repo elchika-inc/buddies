@@ -68,9 +68,9 @@ export class UnifiedImageService {
     await this.r2.put(key, data)
 
     // DBを更新
-    const column = format === 'jpeg' ? 'has_jpeg' : 'has_webp'
+    const column = format === 'jpeg' ? 'hasJpeg' : 'hasWebp'
     await this.db
-      .prepare(`UPDATE pets SET ${column} = 1, image_checked_at = ? WHERE id = ?`)
+      .prepare(`UPDATE pets SET ${column} = 1, imageCheckedAt = ? WHERE id = ?`)
       .bind(new Date().toISOString(), petId)
       .run()
   }
@@ -99,11 +99,11 @@ export class UnifiedImageService {
 
     // DBを更新
     if (format) {
-      const column = format === 'jpeg' ? 'has_jpeg' : 'has_webp'
+      const column = format === 'jpeg' ? 'hasJpeg' : 'hasWebp'
       await this.db.prepare(`UPDATE pets SET ${column} = 0 WHERE id = ?`).bind(petId).run()
     } else {
       await this.db
-        .prepare('UPDATE pets SET has_jpeg = 0, has_webp = 0 WHERE id = ?')
+        .prepare('UPDATE pets SET hasJpeg = 0, hasWebp = 0 WHERE id = ?')
         .bind(petId)
         .run()
     }
@@ -118,17 +118,17 @@ export class UnifiedImageService {
         `
         SELECT 
           COUNT(*) as total_pets,
-          SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as pets_with_jpeg,
-          SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as pets_with_webp,
-          SUM(CASE WHEN has_jpeg = 1 AND has_webp = 1 THEN 1 ELSE 0 END) as pets_with_both
+          SUM(CASE WHEN hasJpeg = 1 THEN 1 ELSE 0 END) as petsWithJpeg,
+          SUM(CASE WHEN hasWebp = 1 THEN 1 ELSE 0 END) as petsWithWebp,
+          SUM(CASE WHEN hasJpeg = 1 AND hasWebp = 1 THEN 1 ELSE 0 END) as petsWithBoth
         FROM pets
       `
       )
       .first<{
-        total_pets: number
-        pets_with_jpeg: number
-        pets_with_webp: number
-        pets_with_both: number
+        totalPets: number
+        petsWithJpeg: number
+        petsWithWebp: number
+        petsWithBoth: number
       }>()
 
     if (!stats) {
@@ -141,16 +141,16 @@ export class UnifiedImageService {
       }
     }
 
-    const total = stats.total_pets || 0
+    const total = stats.totalPets || 0
     return {
       totalPets: total,
-      petsWithJpeg: stats.pets_with_jpeg || 0,
-      petsWithWebp: stats.pets_with_webp || 0,
-      petsWithBoth: stats.pets_with_both || 0,
+      petsWithJpeg: stats.petsWithJpeg || 0,
+      petsWithWebp: stats.petsWithWebp || 0,
+      petsWithBoth: stats.petsWithBoth || 0,
       coverage: {
-        jpeg: total > 0 ? (stats.pets_with_jpeg / total) * 100 : 0,
-        webp: total > 0 ? (stats.pets_with_webp / total) * 100 : 0,
-        both: total > 0 ? (stats.pets_with_both / total) * 100 : 0,
+        jpeg: total > 0 ? (stats.petsWithJpeg / total) * 100 : 0,
+        webp: total > 0 ? (stats.petsWithWebp / total) * 100 : 0,
+        both: total > 0 ? (stats.petsWithBoth / total) * 100 : 0,
       },
     }
   }
@@ -164,7 +164,7 @@ export class UnifiedImageService {
         `
         SELECT id, name 
         FROM pets 
-        WHERE has_jpeg = 0 OR has_webp = 0
+        WHERE hasJpeg = 0 OR hasWebp = 0
         LIMIT ?
       `
       )
@@ -185,7 +185,7 @@ export class UnifiedImageService {
           .prepare(
             `
             UPDATE pets 
-            SET has_jpeg = ?, has_webp = ?, image_checked_at = ?
+            SET hasJpeg = ?, hasWebp = ?, imageCheckedAt = ?
             WHERE id = ?
           `
           )

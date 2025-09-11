@@ -80,7 +80,9 @@ export class SyncService {
               await this.syncPet(pet)
               job.progress++
             } catch (error) {
-              job.errors.push(`Failed to sync ${(pet as { id?: string })['id'] || 'unknown'}: ${error}`)
+              job.errors.push(
+                `Failed to sync ${(pet as { id?: string })['id'] || 'unknown'}: ${error}`
+              )
             }
           })
         )
@@ -107,7 +109,7 @@ export class SyncService {
     // ここで実際の同期処理を実装
     // 例: 画像チェック、データ検証など
     await this.db
-      .prepare('UPDATE pets SET last_synced_at = ? WHERE id = ?')
+      .prepare('UPDATE pets SET lastSyncedAt = ? WHERE id = ?')
       .bind(new Date().toISOString(), petData.id)
       .run()
   }
@@ -120,7 +122,7 @@ export class SyncService {
     await this.db
       .prepare(
         `
-        INSERT OR REPLACE INTO sync_jobs (id, progress, total, updated_at)
+        INSERT OR REPLACE INTO sync_jobs (id, progress, total, updatedAt)
         VALUES (?, ?, ?, ?)
       `
       )
@@ -156,7 +158,7 @@ export class SyncService {
 
     // 画像なしペットをチェック
     const noImageResult = await this.db
-      .prepare('SELECT COUNT(*) as count FROM pets WHERE has_jpeg = 0 AND has_webp = 0')
+      .prepare('SELECT COUNT(*) as count FROM pets WHERE hasJpeg = 0 AND hasWebp = 0')
       .first<{ count: number }>()
 
     if (noImageResult && noImageResult.count > 0) {
@@ -190,21 +192,21 @@ export class SyncService {
       .prepare(
         `
         SELECT 
-          COUNT(CASE WHEN last_synced_at IS NOT NULL THEN 1 END) as synced,
-          MAX(last_synced_at) as last_sync,
-          COUNT(CASE WHEN last_synced_at IS NULL THEN 1 END) as pending
+          COUNT(CASE WHEN lastSyncedAt IS NOT NULL THEN 1 END) as synced,
+          MAX(lastSyncedAt) as lastSync,
+          COUNT(CASE WHEN lastSyncedAt IS NULL THEN 1 END) as pending
         FROM pets
       `
       )
       .first<{
         synced: number
-        last_sync: string
+        lastSync: string
         pending: number
       }>()
 
     return {
       totalSynced: stats?.synced || 0,
-      lastSyncTime: stats?.last_sync,
+      lastSyncTime: stats?.lastSync,
       pendingSync: stats?.pending || 0,
     }
   }

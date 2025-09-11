@@ -6,15 +6,15 @@ interface UpdateFlagsRequest {
   petType: string
   petIds: string[]
   flags: {
-    has_webp?: boolean
-    has_jpeg?: boolean
+    hasWebp?: boolean
+    hasJpeg?: boolean
   }
 }
 
 interface UpdateImagesRequest {
   results: Array<{
     success: boolean
-    pet_id?: string
+    petId?: string
     jpegUrl?: string
     webpUrl?: string
   }>
@@ -183,11 +183,11 @@ export class AdminController {
   private buildUpdateFields(flags: UpdateFlagsRequest['flags']): string[] {
     const updateFields: string[] = []
 
-    if (flags.has_webp !== undefined) {
-      updateFields.push(`has_webp = ${flags.has_webp ? 1 : 0}`)
+    if (flags.hasWebp !== undefined) {
+      updateFields.push(`hasWebp = ${flags.hasWebp ? 1 : 0}`)
     }
-    if (flags.has_jpeg !== undefined) {
-      updateFields.push(`has_jpeg = ${flags.has_jpeg ? 1 : 0}`)
+    if (flags.hasJpeg !== undefined) {
+      updateFields.push(`hasJpeg = ${flags.hasJpeg ? 1 : 0}`)
     }
 
     return updateFields
@@ -211,7 +211,7 @@ export class AdminController {
       const sql = `
         UPDATE pets 
         SET ${updateFields.join(', ')}, 
-            updated_at = datetime('now')
+            updatedAt = datetime('now')
         WHERE id IN (${placeholders}) 
           AND type = ?
       `
@@ -240,51 +240,51 @@ export class AdminController {
     const errors: Array<{ petId: string; error: string }> = []
 
     for (const result of results) {
-      if (result.success && result.pet_id) {
+      if (result.success && result.petId) {
         try {
           const hasJpeg = result.jpegUrl ? 1 : 0
           const hasWebp = result.webpUrl ? 1 : 0
 
           console.log(
-            `[update-images] Updating pet ${result.pet_id}: has_jpeg=${hasJpeg}, has_webp=${hasWebp}`
+            `[update-images] Updating pet ${result.petId}: hasJpeg=${hasJpeg}, hasWebp=${hasWebp}`
           )
 
           const updateResult = await this.db
             .prepare(
               `
             UPDATE pets 
-            SET has_jpeg = ?, 
-                has_webp = ?,
-                screenshot_completed_at = CURRENT_TIMESTAMP,
-                image_checked_at = CURRENT_TIMESTAMP
+            SET hasJpeg = ?, 
+                hasWebp = ?,
+                screenshotCompletedAt = CURRENT_TIMESTAMP,
+                imageCheckedAt = CURRENT_TIMESTAMP
             WHERE id = ?
           `
             )
-            .bind(hasJpeg, hasWebp, result.pet_id)
+            .bind(hasJpeg, hasWebp, result.petId)
             .run()
 
           if (updateResult.meta.changes > 0) {
             updatedCount++
-            console.log(`[update-images] Successfully updated pet ${result.pet_id}`)
+            console.log(`[update-images] Successfully updated pet ${result.petId}`)
           } else {
             console.log(
-              `[update-images] No rows updated for pet ${result.pet_id} - pet may not exist`
+              `[update-images] No rows updated for pet ${result.petId} - pet may not exist`
             )
             errors.push({
-              petId: result.pet_id,
+              petId: result.petId,
               error: 'Pet not found in database',
             })
           }
         } catch (error) {
-          console.error(`[update-images] Error updating pet ${result.pet_id}:`, error)
+          console.error(`[update-images] Error updating pet ${result.petId}:`, error)
           errors.push({
-            petId: result.pet_id,
+            petId: result.petId,
             error: error instanceof Error ? error.message : 'Unknown error',
           })
         }
       } else {
         console.log(
-          `[update-images] Skipping result - success: ${result.success}, pet_id: ${result.pet_id}`
+          `[update-images] Skipping result - success: ${result.success}, petId: ${result.petId}`
         )
       }
     }

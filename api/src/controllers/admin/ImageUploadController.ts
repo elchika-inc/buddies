@@ -358,8 +358,8 @@ export class ImageUploadController {
       .prepare(
         `
       UPDATE pets 
-      SET screenshot_completed_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
+      SET screenshotCompletedAt = CURRENT_TIMESTAMP,
+          updatedAt = CURRENT_TIMESTAMP
       WHERE id = ? AND type = ?
     `
       )
@@ -382,10 +382,10 @@ export class ImageUploadController {
       .prepare(
         `
       UPDATE pets 
-      SET has_jpeg = CASE WHEN ? = 1 THEN 1 ELSE has_jpeg END,
-          has_webp = CASE WHEN ? = 1 THEN 1 ELSE has_webp END,
-          image_checked_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
+      SET hasJpeg = CASE WHEN ? = 1 THEN 1 ELSE hasJpeg END,
+          hasWebp = CASE WHEN ? = 1 THEN 1 ELSE hasWebp END,
+          imageCheckedAt = CURRENT_TIMESTAMP,
+          updatedAt = CURRENT_TIMESTAMP
       WHERE id = ? AND type = ?
     `
       )

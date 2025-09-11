@@ -40,13 +40,13 @@ export interface CrawlerState {
 
 export interface CrawlerStateRecord {
   id?: number
-  source_id: string
-  pet_type: string
+  sourceId: string
+  petType: string
   checkpoint?: string | null
-  total_processed?: number | null
-  last_crawl_at?: string | null
-  created_at?: string | null
-  updated_at?: string | null
+  totalProcessed?: number | null
+  lastCrawlAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
 }
 
 // ============== 同期関連型定義 ==============
@@ -72,15 +72,15 @@ export interface SyncStatus {
 
 export interface SyncStatusRecord {
   id?: number
-  sync_type: string
+  syncType: string
   status: 'pending' | 'running' | 'completed' | 'failed'
-  total_records?: number | null
-  processed_records?: number | null
-  failed_records?: number | null
+  totalRecords?: number | null
+  processedRecords?: number | null
+  failedRecords?: number | null
   metadata?: string | null
-  started_at?: string | null
-  completed_at?: string | null
-  created_at?: string | null
+  startedAt?: string | null
+  completedAt?: string | null
+  createdAt?: string | null
 }
 
 export interface SyncMetadata {
@@ -97,10 +97,10 @@ export interface SyncMetadataRecord {
   id?: number
   key: string
   value?: string | null
-  value_type?: string | null
+  valueType?: string | null
   description?: string | null
-  created_at?: string | null
-  updated_at?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
 }
 
 // ============== 検索・フィルター型定義 ==============

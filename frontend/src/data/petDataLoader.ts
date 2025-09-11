@@ -1,175 +1,220 @@
+import type { FrontendPet, Dog, Cat, Pet } from '@/types/pet'
+
 /**
- * シンプルなペットデータローダー
- * 戦略パターンを削除し、直接的なAPI呼び出しに簡素化
+ * ローカルのペットデータローダー
+ * JSONファイルからペットデータを読み込み、適切な型に変換する
  */
 
-import { getPetType } from '@/config/petConfig'
-import { FrontendPet } from '@/types/pet'
-import petApi from '@/services/api'
+interface RawPetData {
+  id: string
+  type: 'dog' | 'cat'
+  name: string
+  breed?: string | null
+  age?: string | number | null
+  gender?: 'male' | 'female' | 'unknown' | null
+  prefecture?: string | null
+  city?: string | null
+  location?: string | null
+  description?: string | null
+  imageUrl?: string | null
+  localImagePath?: string
+  medicalInfo?: string | null
+  careRequirements?: string | string[] | null
+  shelterName?: string | null
+  shelterContact?: string | null
+  sourceUrl?: string | null
+  sourceId?: string | null
+  adoptionFee?: number | null
+  isNeutered?: boolean | number | null
+  isVaccinated?: boolean | number | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  personality?: string | string[] | null
+  size?: string | null
+  goodWithKids?: boolean | number | null
+  goodWithDogs?: boolean | number | null
+  goodWithCats?: boolean | number | null
+  exerciseLevel?: string | null
+  trainingLevel?: string | null
+  walkFrequency?: string | null
+  needsYard?: boolean | number | null
+  apartmentFriendly?: boolean | number | null
+  coatLength?: string | null
+  isFivFelvTested?: boolean | number | null
+  isFIVFeLVTested?: boolean | number | null
+  socialLevel?: string | null
+  indoorOutdoor?: string | null
+  goodWithMultipleCats?: boolean | number | null
+  groomingRequirements?: string | null
+  vocalizationLevel?: string | null
+  activityTime?: string | null
+  playfulness?: string | null
+}
 
-// APIレスポンスをFrontendPet型に変換（snake_case と camelCase の両方に対応）
-function transformApiPet(apiPet: unknown): FrontendPet {
-  const pet = apiPet as Record<string, unknown>
-
-  // 必須フィールドを確認
-  if (!pet['id'] || !pet['type'] || !pet['name']) {
-    throw new Error('Invalid pet data: missing required fields')
-  }
-
-  // 基本的なFrontendPetオブジェクトを構築
-  const baseResult = {
-    id: pet['id'] as string,
-    type: pet['type'] as 'dog' | 'cat',
-    name: pet['name'] as string,
-    breed: (pet['breed'] || null) as string | null,
-    age: (pet['age']?.toString() || null) as string | null,
-    gender: (pet['gender'] || null) as 'male' | 'female' | 'unknown' | null,
-    color: (pet['color'] || null) as string | null,
-    weight: (pet['weight'] || null) as number | null,
-    prefecture: (pet['prefecture'] || null) as string | null,
-    city: (pet['city'] || null) as string | null,
-    location: (pet['location'] || null) as string | null,
-    description: (pet['description'] || null) as string | null,
-    imageUrl: (pet['image_url'] || pet['imageUrl'] || null) as string | null,
-    localImagePath: (pet['local_image_path'] || pet['localImagePath'] || undefined) as string | undefined,
-    medicalInfo: (pet['medical_info'] || pet['medicalInfo'] || null) as string | null,
-    careRequirements: (pet['care_requirements'] || pet['careRequirements'] || []) as string[],
-    shelterName: (pet['shelter_name'] || pet['shelterName'] || null) as string | null,
-    shelterContact: (pet['shelter_contact'] || pet['shelterContact'] || null) as string | null,
-    sourceUrl: (pet['source_url'] || pet['sourceUrl'] || null) as string | null,
-    sourceId: (pet['source_id'] || pet['sourceId'] || null) as string | null,
-    adoptionFee: (pet['adoption_fee'] || pet['adoptionFee'] || 0) as number,
-    isNeutered: (pet['is_neutered'] ?? pet['isNeutered'] ?? false) as boolean,
-    isVaccinated: (pet['is_vaccinated'] ?? pet['isVaccinated'] ?? false) as boolean,
-    createdAt: (pet['created_at'] || pet['createdAt'] || null) as string | null,
-    updatedAt: (pet['updated_at'] || pet['updatedAt'] || null) as string | null,
-    personality: [] as string[],
+/**
+ * APIレスポンスやJSONデータをFrontendPet型に変換
+ * キャメルケース対応
+ */
+export function convertToFrontendPet(pet: RawPetData): FrontendPet {
+  // 共通フィールドの変換 (DB型と同じ形式に)
+  const baseResult: Partial<Pet> = {
+    id: pet.id,
+    type: pet.type,
+    name: pet.name,
+    breed: pet.breed ?? undefined,
+    age: typeof pet.age === 'string' ? pet.age : (pet.age?.toString() ?? undefined),
+    gender: pet.gender ?? undefined,
+    prefecture: pet.prefecture ?? undefined,
+    city: pet.city ?? undefined,
+    location: pet.location ?? undefined,
+    description: pet.description ?? undefined,
+    imageUrl: pet.imageUrl ?? undefined,
+    medicalInfo: pet.medicalInfo ?? undefined,
+    careRequirements:
+      typeof pet.careRequirements === 'string'
+        ? pet.careRequirements
+        : Array.isArray(pet.careRequirements)
+          ? pet.careRequirements.join(', ')
+          : undefined,
+    shelterName: pet.shelterName ?? undefined,
+    shelterContact: pet.shelterContact ?? undefined,
+    sourceUrl: pet.sourceUrl ?? undefined,
+    sourceId: pet.sourceId ?? 'pet-home',
+    isNeutered:
+      typeof pet.isNeutered === 'boolean' ? (pet.isNeutered ? 1 : 0) : (pet.isNeutered ?? 0),
+    isVaccinated:
+      typeof pet.isVaccinated === 'boolean' ? (pet.isVaccinated ? 1 : 0) : (pet.isVaccinated ?? 0),
+    goodWithKids:
+      typeof pet.goodWithKids === 'boolean' ? (pet.goodWithKids ? 1 : 0) : (pet.goodWithKids ?? 0),
+    goodWithDogs:
+      typeof pet.goodWithDogs === 'boolean' ? (pet.goodWithDogs ? 1 : 0) : (pet.goodWithDogs ?? 0),
+    goodWithCats:
+      typeof pet.goodWithCats === 'boolean' ? (pet.goodWithCats ? 1 : 0) : (pet.goodWithCats ?? 0),
+    apartmentFriendly:
+      typeof pet.apartmentFriendly === 'boolean'
+        ? pet.apartmentFriendly
+          ? 1
+          : 0
+        : (pet.apartmentFriendly ?? 0),
+    needsYard: typeof pet.needsYard === 'boolean' ? (pet.needsYard ? 1 : 0) : (pet.needsYard ?? 0),
+    createdAt: pet.createdAt ?? new Date().toISOString(),
+    updatedAt: pet.updatedAt ?? new Date().toISOString(),
   }
 
   // 型に応じて適切なオブジェクトを作成
   let result: FrontendPet
-  if (baseResult.type === 'dog') {
-    result = {
+  if (pet.type === 'dog') {
+    const dogResult: Dog = {
       ...baseResult,
       type: 'dog',
-      size: (pet['size'] || 'medium') as string,
-      goodWithKids: (pet['good_with_kids'] ?? pet['goodWithKids'] ?? true) as boolean,
-      goodWithDogs: (pet['good_with_dogs'] ?? pet['goodWithDogs'] ?? true) as boolean,
-      exerciseLevel: (pet['exercise_level'] || pet['exerciseLevel'] || 'medium') as string,
-      trainingLevel: (pet['training_level'] || pet['trainingLevel'] || 'basic') as string,
-      walkFrequency: (pet['walk_frequency'] || pet['walkFrequency'] || 'daily') as string,
-      needsYard: (pet['needs_yard'] ?? pet['needsYard'] ?? false) as boolean,
-      apartmentFriendly: (pet['apartment_friendly'] ?? pet['apartmentFriendly'] ?? true) as boolean,
-    }
+      size: (pet.size as Dog['size']) ?? 'medium',
+      exerciseLevel: pet.exerciseLevel ?? 'medium',
+      trainingLevel: pet.trainingLevel ?? 'basic',
+      walkFrequency: pet.walkFrequency ?? undefined,
+    } as Dog
+    result = dogResult
   } else {
-    result = {
+    const catResult: Cat = {
       ...baseResult,
       type: 'cat',
-      coatLength: (pet['coat_length'] || pet['coatLength'] || 'short') as string,
-      isFivFelvTested: (pet['is_fiv_felv_tested'] ?? pet['isFivFelvTested'] ?? false) as boolean,
-      isFIVFeLVTested: (pet['is_fiv_felv_tested'] ?? pet['isFIVFeLVTested'] ?? false) as boolean,
-      socialLevel: (pet['social_level'] || pet['socialLevel'] || 'friendly') as string,
-      indoorOutdoor: (pet['indoor_outdoor'] || pet['indoorOutdoor'] || 'indoor') as string,
-      goodWithCats: (pet['good_with_cats'] ?? pet['goodWithCats'] ?? true) as boolean,
-      goodWithMultipleCats: (pet['good_with_multiple_cats'] ?? pet['goodWithMultipleCats'] ?? true) as boolean,
-      groomingRequirements: (pet['grooming_requirements'] || pet['groomingRequirements'] || 'low') as string,
-      vocalizationLevel: (pet['vocalization_level'] || pet['vocalizationLevel'] || 'quiet') as string,
-      activityTime: (pet['activity_time'] || pet['activityTime'] || 'mixed') as string,
-      playfulness: (pet['playfulness'] || 'medium') as string,
+      coatLength: pet.coatLength ?? 'short',
+      isFivFelvTested:
+        typeof pet.isFivFelvTested === 'boolean'
+          ? pet.isFivFelvTested
+            ? 1
+            : 0
+          : (pet.isFivFelvTested ?? 0),
+      socialLevel: pet.socialLevel ?? 'medium',
+      indoorOutdoor: pet.indoorOutdoor ?? 'indoor',
+      groomingRequirements: pet.groomingRequirements ?? 'low',
+      vocalizationLevel: pet.vocalizationLevel ?? undefined,
+      activityTime: pet.activityTime ?? undefined,
+      playfulness: pet.playfulness ?? undefined,
+    } as Cat
+    result = catResult
+  }
+
+  // personalityフィールドの処理
+  if (pet.personality) {
+    if (typeof pet.personality === 'string') {
+      try {
+        const parsed = JSON.parse(pet.personality)
+        result.personality = Array.isArray(parsed) ? parsed.join(', ') : pet.personality
+      } catch {
+        result.personality = pet.personality
+      }
+    } else if (Array.isArray(pet.personality)) {
+      result.personality = pet.personality.join(', ')
     }
   }
 
-  // その他のフィールドをコピー
-  const additionalFields = [
-    'breed',
-    'age',
-    'gender',
-    'location',
-    'description',
-    'personality',
-    'healthStatus',
-    'size',
-    'weight',
-    'color',
-    'hasJpeg',
-    'hasWebp',
-    'screenshotCompletedAt',
-    'imageCheckedAt',
-    'sourceId',
-    'updatedAt',
-    'crawledAt',
-  ]
-
-  for (const field of additionalFields) {
-    if (pet[field] !== undefined) {
-      ;(result as unknown as Record<string, unknown>)[field] = pet[field]
+  // careRequirementsフィールドの処理
+  if (pet.careRequirements) {
+    if (typeof pet.careRequirements === 'string') {
+      result.careRequirements = pet.careRequirements
+    } else if (Array.isArray(pet.careRequirements)) {
+      result.careRequirements = pet.careRequirements.join(', ')
     }
   }
 
   return result
 }
 
-// ペットデータをインクリメンタルに読み込む（ページネーション対応）
-export const loadPetDataIncremental = async (
-  offset: number = 0,
-  limit: number = 10
-): Promise<{
-  pets: FrontendPet[]
-  hasMore: boolean
-  total: number
-}> => {
-  // const petType = getPetType()
-
+/**
+ * JSONファイルから全ペットデータを読み込む
+ */
+export async function loadAllPetsFromJson(): Promise<FrontendPet[]> {
   try {
-    // API経由でデータを取得
-    const response = await petApi.fetchPets(offset, limit)
+    const [dogsModule, catsModule] = await Promise.all([
+      import('@/data/json/dogs.json'),
+      import('@/data/json/cats.json'),
+    ])
 
-    // レスポンスデータの変換
-    const pets = (response.pets || []).map(transformApiPet)
+    const dogs = (dogsModule.default as RawPetData[]).map(convertToFrontendPet)
+    const cats = (catsModule.default as RawPetData[]).map(convertToFrontendPet)
 
-    return {
-      pets,
-      hasMore: pets.length === limit,
-      total: response.total || pets.length,
-    }
+    return [...dogs, ...cats]
   } catch (error) {
     console.error('Failed to load pet data:', error)
-    return {
-      pets: [],
-      hasMore: false,
-      total: 0,
-    }
+    return []
   }
 }
 
-// 既存のloadPetData関数（互換性のために残す）
-export const loadPetData = async (): Promise<FrontendPet[]> => {
-  const result = await loadPetDataIncremental(0, 100)
-  return result.pets
-}
-
-// 地域データの読み込み
-export const loadLocations = async () => {
-  const petType = getPetType()
-
-  if (petType === 'dog') {
-    const { locations } = await import('./dog/locations')
-    return locations
-  } else {
-    const { locations } = await import('./cat/locations')
-    return locations
+/**
+ * 特定タイプのペットデータを読み込む
+ */
+export async function loadPetsByType(type: 'dog' | 'cat'): Promise<FrontendPet[]> {
+  try {
+    const petData = await import(`@/data/json/${type}s.json`)
+    return (petData.default as RawPetData[]).map(convertToFrontendPet)
+  } catch (error) {
+    console.error(`Failed to load ${type} data:`, error)
+    return []
   }
 }
 
-// 地域データの読み込み
-export const loadRegions = async () => {
-  const petType = getPetType()
+/**
+ * ランダムなペットデータを取得
+ */
+export async function getRandomPets(count: number = 20): Promise<FrontendPet[]> {
+  const allPets = await loadAllPetsFromJson()
 
-  if (petType === 'dog') {
-    const { regions } = await import('./dog/regions')
-    return regions
-  } else {
-    const { regions } = await import('./cat/regions')
-    return regions
+  // Fisher-Yates シャッフル
+  const shuffled = [...allPets]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = shuffled[i]
+    shuffled[i] = shuffled[j]!
+    shuffled[j] = temp!
   }
+
+  return shuffled.slice(0, count)
+}
+
+/**
+ * 特定IDのペットデータを取得
+ */
+export async function getPetById(id: string): Promise<FrontendPet | null> {
+  const allPets = await loadAllPetsFromJson()
+  return allPets.find((pet) => pet.id === id) || null
 }

@@ -18,8 +18,8 @@ export class ImageDatabaseService {
         .prepare(
           `
         UPDATE pets 
-        SET screenshot_completed_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
+        SET screenshotCompletedAt = CURRENT_TIMESTAMP,
+            updatedAt = CURRENT_TIMESTAMP
         WHERE id = ? AND type = ?
       `
         )
@@ -50,10 +50,10 @@ export class ImageDatabaseService {
         .prepare(
           `
         UPDATE pets 
-        SET has_jpeg = CASE WHEN ? = 1 THEN 1 ELSE has_jpeg END,
-            has_webp = CASE WHEN ? = 1 THEN 1 ELSE has_webp END,
-            image_checked_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
+        SET hasJpeg = CASE WHEN ? = 1 THEN 1 ELSE hasJpeg END,
+            hasWebp = CASE WHEN ? = 1 THEN 1 ELSE hasWebp END,
+            imageCheckedAt = CURRENT_TIMESTAMP,
+            updatedAt = CURRENT_TIMESTAMP
         WHERE id = ? AND type = ?
       `
         )
@@ -103,8 +103,8 @@ export class ImageDatabaseService {
         .prepare(
           `
         SELECT 
-          has_jpeg,
-          has_webp,
+          hasJpeg,
+          hasWebp,
           screenshot_completed_at,
           image_checked_at
         FROM pets 
@@ -113,8 +113,8 @@ export class ImageDatabaseService {
         )
         .bind(petId, petType)
         .first<{
-          has_jpeg: number
-          has_webp: number
+          hasJpeg: number
+          hasWebp: number
           screenshot_completed_at: string | null
           image_checked_at: string | null
         }>()
@@ -124,8 +124,8 @@ export class ImageDatabaseService {
       }
 
       return Result.ok({
-        hasJpeg: result.has_jpeg === 1,
-        hasWebp: result.has_webp === 1,
+        hasJpeg: result.hasJpeg === 1,
+        hasWebp: result.hasWebp === 1,
         screenshotCompleted: result.screenshot_completed_at !== null,
         imageCheckedAt: result.image_checked_at,
       })

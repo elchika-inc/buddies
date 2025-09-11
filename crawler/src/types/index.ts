@@ -1,12 +1,7 @@
 import type { R2Bucket, D1Database, Queue } from '@cloudflare/workers-types'
 
 // Re-export shared types from shared/types
-export type {
-  Pet,
-  CrawlResult,
-  CrawlerState,
-  CrawlerStateRecord,
-} from '../../../shared/types'
+export type { Pet, CrawlResult, CrawlerState, CrawlerStateRecord } from '../../../shared/types'
 
 export { isPet } from '../../../shared/types'
 

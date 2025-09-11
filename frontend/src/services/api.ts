@@ -3,7 +3,7 @@
  * ペット情報の取得を担当するサービス層
  */
 
-import { FrontendPet, toFrontendPet } from '@/types/pet'
+import { FrontendPet } from '@/types/pet'
 import type { Pet as SharedPet } from '../../../shared/types'
 import { getPetType } from '@/config/petConfig'
 
@@ -88,8 +88,8 @@ class PetApi {
         throw new Error(data.error || 'Failed to fetch pets')
       }
 
-      // SharedPet型からFrontendPet型に変換
-      const frontendPets = data.data.pets.map(toFrontendPet)
+      // SharedPet型は既にFrontendPet型と互換性があるため、変換不要
+      const frontendPets = data.data.pets as FrontendPet[]
 
       return {
         ...data.data,

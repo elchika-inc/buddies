@@ -30,10 +30,10 @@ export const PetSchema = z.object({
   description: z.string().optional(),
   url: z.string().url().optional(),
   organization: z.string().optional(),
-  has_jpeg: z.boolean(),
-  has_webp: z.boolean(),
-  created_at: z.string().datetime().optional(),
-  updated_at: z.string().datetime().optional(),
+  hasJpeg: z.boolean(),
+  hasWebp: z.boolean(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 })
 
 export type Pet = z.infer<typeof PetSchema>

@@ -177,24 +177,23 @@ export class PetHomeCrawler {
 
       // 画像処理
       if (options.downloadImages && detailInfo.imageUrl) {
-        const imageResult = await this.processImage(normalized, detailInfo.imageUrl)
+        const imageResult = await this.processImage(normalized as Pet, detailInfo.imageUrl)
         if (imageResult.url) {
           normalized.imageUrl = imageResult.url
         }
       }
 
       // データベース保存
-      const record = this.transformer.transformToPetRecord(normalized)
-      const exists = await this.repository.checkExisting(record.id)
+      const exists = await this.repository.checkExisting(normalized.id)
 
       if (exists) {
-        const updateResult = await this.repository.update(record)
+        const updateResult = await this.repository.update(normalized)
         if (!updateResult.success) {
           return { error: updateResult.error }
         }
         return { updated: true }
       } else {
-        const createResult = await this.repository.create(record)
+        const createResult = await this.repository.create(normalized)
         if (!createResult.success) {
           return { error: createResult.error }
         }

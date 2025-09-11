@@ -65,7 +65,7 @@ export class PetController {
       if (!petType) {
         throw new NotFoundError('無効なペットタイプです')
       }
-      
+
       const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
       const limit = Math.min(
         parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
@@ -82,7 +82,6 @@ export class PetController {
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
   }
-
 
   /**
    * IDでペットを取得
@@ -103,7 +102,7 @@ export class PetController {
 
       // データベースから取得を試みる（画像があるペットのみ）
       const pet = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND has_jpeg = 1')
+        .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND hasJpeg = 1')
         .bind(petType, petId)
         .first()
 
@@ -143,7 +142,7 @@ export class PetController {
 
       // データベースから取得を試みる（画像があるペットのみ）
       const dbPets = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? AND has_jpeg = 1 ORDER BY RANDOM() LIMIT ?')
+        .prepare('SELECT * FROM pets WHERE type = ? AND hasJpeg = 1 ORDER BY RANDOM() LIMIT ?')
         .bind(petType, count)
         .all()
 
@@ -182,7 +181,7 @@ export class PetController {
     prefecture?: string
   ): Promise<{ data: PetsResponseData; total: number }> {
     // WHERE条件を動的に構築（画像があるものを必須条件として追加）
-    const conditions: string[] = ['has_jpeg = 1']
+    const conditions: string[] = ['hasJpeg = 1']
     const params: (string | number)[] = []
 
     if (type) {
@@ -200,7 +199,7 @@ export class PetController {
     // ペットデータとカウントを同時取得
     const [petsResult, countResult] = await Promise.all([
       this.db
-        .prepare(`SELECT * FROM pets ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+        .prepare(`SELECT * FROM pets ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`)
         .bind(...params, limit, offset)
         .all(),
 

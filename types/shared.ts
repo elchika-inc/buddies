@@ -60,7 +60,7 @@ export interface PetMetadata {
 export interface Pet extends PetDetails, PetImageInfo, PetMetadata {}
 
 /**
- * データベース用のペットレコード（スネークケース）
+ * データベース用のペットレコード（キャメルケース）
  */
 export interface PetRecord {
   id: string
@@ -71,25 +71,25 @@ export interface PetRecord {
   gender: 'male' | 'female' | 'unknown' | null
   location: string | null
   description: string | null
-  image_url: string | null
+  imageUrl: string | null
   personality: string | null
-  care_requirements: string | null
-  adoption_fee: number | null
-  is_neutered: number | null // 0 or 1
-  is_vaccinated: number | null // 0 or 1
-  health_status: string | null
+  careRequirements: string | null
+  adoptionFee: number | null
+  isNeutered: number | null // 0 or 1
+  isVaccinated: number | null // 0 or 1
+  healthStatus: string | null
   size: string | null
   weight: number | null
   color: string | null
-  has_jpeg: number | null // 0 or 1
-  has_webp: number | null // 0 or 1
-  screenshot_completed_at: string | null
-  image_checked_at: string | null
-  source_id: string | null
-  source_url: string | null
-  created_at: string | null
-  updated_at: string | null
-  crawled_at: string | null
+  hasJpeg: number | null // 0 or 1
+  hasWebp: number | null // 0 or 1
+  screenshotCompletedAt: string | null
+  imageCheckedAt: string | null
+  sourceId: string | null
+  sourceUrl: string | null
+  createdAt: string | null
+  updatedAt: string | null
+  crawledAt: string | null
 }
 
 /**
@@ -201,25 +201,25 @@ export const TypeConverters = {
       gender: record.gender,
       location: record.location,
       description: record.description,
-      imageUrl: record.image_url,
+      imageUrl: record.imageUrl,
       personality: this.parseJsonField(record.personality),
-      careRequirements: this.parseJsonField(record.care_requirements),
-      adoptionFee: record.adoption_fee,
-      isNeutered: record.is_neutered === 1,
-      isVaccinated: record.is_vaccinated === 1,
-      healthStatus: record.health_status,
+      careRequirements: this.parseJsonField(record.careRequirements),
+      adoptionFee: record.adoptionFee,
+      isNeutered: record.isNeutered === 1,
+      isVaccinated: record.isVaccinated === 1,
+      healthStatus: record.healthStatus,
       size: record.size,
       weight: record.weight,
       color: record.color,
-      hasJpeg: record.has_jpeg === 1,
-      hasWebp: record.has_webp === 1,
-      screenshotCompletedAt: record.screenshot_completed_at,
-      imageCheckedAt: record.image_checked_at,
-      sourceId: record.source_id,
-      sourceUrl: record.source_url,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at,
-      crawledAt: record.crawled_at,
+      hasJpeg: record.hasJpeg === 1,
+      hasWebp: record.hasWebp === 1,
+      screenshotCompletedAt: record.screenshotCompletedAt,
+      imageCheckedAt: record.imageCheckedAt,
+      sourceId: record.sourceId,
+      sourceUrl: record.sourceUrl,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      crawledAt: record.crawledAt,
     }
 
     // null値を除去

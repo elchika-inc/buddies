@@ -2,7 +2,7 @@
  * ペットデータ変換専門クラス
  */
 
-import { Pet, PetRecord, toPetRecord } from '../../../shared/types/pet'
+import { Pet, createDefaultPet } from '../../../shared/types/unified'
 import { PetDetailInfo } from './PetHomeParser'
 
 export interface ValidationResult {
@@ -15,47 +15,32 @@ export class PetDataTransformer {
    * PetDetailInfoからPetへの変換
    */
   transformToPet(petDetail: PetDetailInfo): Pet {
-    const pet: Pet = {
+    // デフォルト値でペットオブジェクトを作成
+    const pet = createDefaultPet(petDetail.type, {
       id: petDetail.id,
-      type: petDetail.type,
       name: petDetail.name,
-      breed: petDetail.breed,
-      age: petDetail.age,
-      gender: petDetail.gender,
-      location: petDetail.location,
-      prefecture: petDetail.prefecture,
-      city: petDetail.city,
-      description: petDetail.description,
-      personality: petDetail.personality,
-      imageUrl: petDetail.imageUrl,
-      images: petDetail.images,
+      breed: petDetail.breed || undefined,
+      age: petDetail.age || undefined,
+      gender: petDetail.gender || undefined,
+      location: petDetail.location || undefined,
+      prefecture: petDetail.prefecture || undefined,
+      city: petDetail.city || undefined,
+      description: petDetail.description || undefined,
+      personality: petDetail.personality ? petDetail.personality.join(', ') : undefined,
+      imageUrl: petDetail.imageUrl || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }
-
-    // 空の配列や未定義の値をクリーンアップ
-    Object.keys(pet).forEach((key) => {
-      const value = pet[key as keyof Pet]
-      if (value === undefined || (Array.isArray(value) && value.length === 0)) {
-        delete pet[key as keyof Pet]
-      }
     })
 
     return pet
   }
 
   /**
-   * PetからPetRecordへの変換
+   * PetからPetへの変換（統一型定義使用により変換不要）
    */
-  transformToPetRecord(pet: Pet): PetRecord {
-    const record = toPetRecord(pet)
-
-    // 追加のフラグ設定
-    record.is_available = 1
-    record.has_jpeg = pet.imageUrl ? 1 : 0
-    record.has_webp = 0 // 初期値
-
-    return record
+  transformToPetRecord(pet: Pet): Pet {
+    // 統一型定義では変換不要
+    return pet
   }
 
   /**
@@ -84,14 +69,7 @@ export class PetDataTransformer {
       errors.push('画像URLの形式が不正です')
     }
 
-    // 配列フィールドの型チェック
-    if (pet.personality && !Array.isArray(pet.personality)) {
-      errors.push('性格は配列である必要があります')
-    }
-
-    if (pet.images && !Array.isArray(pet.images)) {
-      errors.push('画像リストは配列である必要があります')
-    }
+    // 統一型定義では配列フィールドは文字列として保存
 
     return {
       isValid: errors.length === 0,
@@ -104,6 +82,11 @@ export class PetDataTransformer {
    */
   normalizePetData(pet: Pet): Pet {
     const normalized = { ...pet }
+
+    // nullをundefinedに変換（統一型定義に準拠）
+    if (normalized.breed === null) {
+      normalized.breed = undefined
+    }
 
     // 名前の正規化（前後の空白削除）
     if (normalized.name) {

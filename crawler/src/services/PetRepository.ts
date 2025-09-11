@@ -3,7 +3,7 @@
  */
 
 import type { D1Database } from '@cloudflare/workers-types'
-import { PetRecord } from '../../../shared/types/pet'
+import { Pet } from '../../../shared/types/unified'
 
 export interface QueryResult<T> {
   success: boolean
@@ -38,10 +38,10 @@ export class PetRepository {
   /**
    * ペットの作成
    */
-  async create(pet: PetRecord): Promise<QueryResult<void>> {
+  async create(pet: Pet): Promise<QueryResult<void>> {
     try {
-      const fields = Object.keys(pet).filter((key) => pet[key as keyof PetRecord] !== undefined)
-      const values = fields.map((key) => pet[key as keyof PetRecord])
+      const fields = Object.keys(pet).filter((key) => pet[key as keyof Pet] !== undefined)
+      const values = fields.map((key) => pet[key as keyof Pet])
       const placeholders = fields.map(() => '?').join(', ')
 
       const query = `
@@ -67,18 +67,18 @@ export class PetRepository {
   /**
    * ペットの更新
    */
-  async update(pet: PetRecord): Promise<QueryResult<void>> {
+  async update(pet: Pet): Promise<QueryResult<void>> {
     try {
       const fields = Object.keys(pet).filter(
-        (key) => key !== 'id' && pet[key as keyof PetRecord] !== undefined
+        (key) => key !== 'id' && pet[key as keyof Pet] !== undefined
       )
       const setClause = fields.map((field) => `${field} = ?`).join(', ')
-      const values = fields.map((key) => pet[key as keyof PetRecord])
+      const values = fields.map((key) => pet[key as keyof Pet])
       values.push(pet.id) // WHERE句用
 
       const query = `
         UPDATE pets
-        SET ${setClause}, updated_at = datetime('now')
+        SET ${setClause}, updatedAt = datetime('now')
         WHERE id = ?
       `
 
@@ -117,12 +117,9 @@ export class PetRepository {
   /**
    * ペットの取得（ID指定）
    */
-  async findById(id: string): Promise<QueryResult<PetRecord>> {
+  async findById(id: string): Promise<QueryResult<Pet>> {
     try {
-      const result = await this.db
-        .prepare('SELECT * FROM pets WHERE id = ?')
-        .bind(id)
-        .first<PetRecord>()
+      const result = await this.db.prepare('SELECT * FROM pets WHERE id = ?').bind(id).first<Pet>()
 
       if (!result) {
         return {
@@ -147,11 +144,11 @@ export class PetRepository {
   /**
    * ペット一覧の取得
    */
-  async findAll(options?: PaginationOptions): Promise<QueryResult<PetRecord[]>> {
+  async findAll(options?: PaginationOptions): Promise<QueryResult<Pet[]>> {
     try {
       const limit = options?.limit || 100
       const offset = options?.offset || 0
-      const orderBy = options?.orderBy || 'created_at'
+      const orderBy = options?.orderBy || 'createdAt'
       const orderDirection = options?.orderDirection || 'DESC'
 
       const query = `
@@ -160,7 +157,7 @@ export class PetRepository {
         LIMIT ? OFFSET ?
       `
 
-      const result = await this.db.prepare(query).bind(limit, offset).all<PetRecord>()
+      const result = await this.db.prepare(query).bind(limit, offset).all<Pet>()
 
       return {
         success: true,
@@ -179,9 +176,9 @@ export class PetRepository {
    * 条件検索
    */
   async findByCondition(
-    condition: Partial<PetRecord>,
+    condition: Partial<Pet>,
     options?: PaginationOptions
-  ): Promise<QueryResult<PetRecord[]>> {
+  ): Promise<QueryResult<Pet[]>> {
     try {
       const whereConditions: string[] = []
       const values: unknown[] = []
@@ -197,7 +194,7 @@ export class PetRepository {
 
       const limit = options?.limit || 100
       const offset = options?.offset || 0
-      const orderBy = options?.orderBy || 'created_at'
+      const orderBy = options?.orderBy || 'createdAt'
       const orderDirection = options?.orderDirection || 'DESC'
 
       values.push(limit, offset)
@@ -212,7 +209,7 @@ export class PetRepository {
       const result = await this.db
         .prepare(query)
         .bind(...values)
-        .all<PetRecord>()
+        .all<Pet>()
 
       return {
         success: true,
@@ -230,7 +227,7 @@ export class PetRepository {
   /**
    * バッチ作成
    */
-  async createBatch(pets: PetRecord[]): Promise<QueryResult<number>> {
+  async createBatch(pets: Pet[]): Promise<QueryResult<number>> {
     try {
       let successCount = 0
 

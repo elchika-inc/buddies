@@ -28,11 +28,11 @@ export class MetadataService {
     await this.db
       .prepare(
         `
-      INSERT INTO sync_metadata (key, value, updated_at) 
+      INSERT INTO sync_metadata (key, value, updatedAt) 
       VALUES (?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(key) DO UPDATE SET 
         value = excluded.value,
-        updated_at = CURRENT_TIMESTAMP
+        updatedAt = CURRENT_TIMESTAMP
     `
       )
       .bind(key, value.toString())

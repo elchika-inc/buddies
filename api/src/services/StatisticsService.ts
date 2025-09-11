@@ -52,12 +52,12 @@ export class StatisticsService {
         COUNT(*) as total_pets,
         SUM(CASE WHEN type = 'dog' THEN 1 ELSE 0 END) as total_dogs,
         SUM(CASE WHEN type = 'cat' THEN 1 ELSE 0 END) as total_cats,
-        SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as pets_with_jpeg,
-        SUM(CASE WHEN has_webp = 1 THEN 1 ELSE 0 END) as pets_with_webp,
-        SUM(CASE WHEN type = 'dog' AND has_jpeg = 1 THEN 1 ELSE 0 END) as dogs_with_jpeg,
-        SUM(CASE WHEN type = 'dog' AND has_webp = 1 THEN 1 ELSE 0 END) as dogs_with_webp,
-        SUM(CASE WHEN type = 'cat' AND has_jpeg = 1 THEN 1 ELSE 0 END) as cats_with_jpeg,
-        SUM(CASE WHEN type = 'cat' AND has_webp = 1 THEN 1 ELSE 0 END) as cats_with_webp
+        SUM(CASE WHEN hasJpeg = 1 THEN 1 ELSE 0 END) as petsWithJpeg,
+        SUM(CASE WHEN hasWebp = 1 THEN 1 ELSE 0 END) as petsWithWebp,
+        SUM(CASE WHEN type = 'dog' AND hasJpeg = 1 THEN 1 ELSE 0 END) as dogsWithJpeg,
+        SUM(CASE WHEN type = 'dog' AND hasWebp = 1 THEN 1 ELSE 0 END) as dogsWithWebp,
+        SUM(CASE WHEN type = 'cat' AND hasJpeg = 1 THEN 1 ELSE 0 END) as catsWithJpeg,
+        SUM(CASE WHEN type = 'cat' AND hasWebp = 1 THEN 1 ELSE 0 END) as catsWithWebp
       FROM pets
     `
       )
@@ -77,7 +77,7 @@ export class StatisticsService {
 
     // 統計をキャッシュ
     await this.metadataService.setMetadata('pet_statistics', JSON.stringify(result))
-    await this.metadataService.setMetadata('pet_statistics_updated_at', new Date().toISOString())
+    await this.metadataService.setMetadata('petStatisticsUpdatedAt', new Date().toISOString())
 
     return result
   }
@@ -129,9 +129,9 @@ export class StatisticsService {
         id,
         type,
         name,
-        created_at
+        createdAt
       FROM pets
-      ORDER BY created_at DESC
+      ORDER BY createdAt DESC
       LIMIT ${CONFIG.STATISTICS.RECENT_PETS_LIMIT}
     `
       )
@@ -142,11 +142,11 @@ export class StatisticsService {
       .prepare(
         `
       SELECT 
-        DATE(image_checked_at) as date,
+        DATE(imageCheckedAt) as date,
         COUNT(*) as checked,
-        SUM(CASE WHEN has_jpeg = 1 THEN 1 ELSE 0 END) as with_images
+        SUM(CASE WHEN hasJpeg = 1 THEN 1 ELSE 0 END) as withImages
       FROM pets
-      WHERE image_checked_at IS NOT NULL
+      WHERE imageCheckedAt IS NOT NULL
       GROUP BY DATE(image_checked_at)
       ORDER BY date DESC
       LIMIT ${CONFIG.STATISTICS.COVERAGE_TREND_DAYS}
@@ -194,7 +194,7 @@ export class StatisticsService {
       id: safeGet(pet, 'id', isString, ''),
       type: (safeGet(pet, 'type', isString, 'dog') === 'cat' ? 'cat' : 'dog') as 'dog' | 'cat',
       name: safeGet(pet, 'name', isString, 'Unknown'),
-      created_at: safeGet(pet, 'created_at', isString, new Date().toISOString()),
+      createdAt: safeGet(pet, 'createdAt', isString, new Date().toISOString()),
     }))
 
     const validCoverageTrend = ensureArray(

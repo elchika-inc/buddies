@@ -4,15 +4,14 @@
 
 export interface PetWithTimestamp {
   createdAt?: string | number | Date
-  created_at?: string | number | Date
 }
 
 /**
  * ペットデータからタイムスタンプを安全に抽出
  */
 export function extractTimestamp(pet: PetWithTimestamp): number {
-  // createdAtまたはcreated_atを取得
-  const timestamp = pet.createdAt ?? pet.created_at
+  // createdAtを取得
+  const timestamp = pet.createdAt
 
   if (timestamp instanceof Date) {
     return timestamp.getTime()

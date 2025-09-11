@@ -41,7 +41,7 @@ export class ImageManagementService {
     try {
       // データベースからペット情報を取得
       const pets = await this.db
-        .prepare('SELECT id, name, has_jpeg, has_webp FROM pets WHERE type = ?')
+        .prepare('SELECT id, name, hasJpeg, hasWebp FROM pets WHERE type = ?')
         .bind(petType)
         .all()
 
@@ -113,7 +113,7 @@ export class ImageManagementService {
     try {
       // データベースからペット一覧を取得
       const pets = await this.db
-        .prepare('SELECT id, has_jpeg, has_webp FROM pets WHERE type = ?')
+        .prepare('SELECT id, hasJpeg, hasWebp FROM pets WHERE type = ?')
         .bind(petType)
         .all()
 
@@ -133,8 +133,8 @@ export class ImageManagementService {
             this.storageService.exists(webpPath),
           ])
 
-          const currentHasJpeg = pet['has_jpeg'] === 1
-          const currentHasWebp = pet['has_webp'] === 1
+          const currentHasJpeg = pet['hasJpeg'] === 1
+          const currentHasWebp = pet['hasWebp'] === 1
 
           // フラグが異なる場合は更新
           if (jpegExists !== currentHasJpeg || webpExists !== currentHasWebp) {
@@ -142,7 +142,7 @@ export class ImageManagementService {
               .prepare(
                 `
               UPDATE pets 
-              SET has_jpeg = ?, has_webp = ?, image_checked_at = CURRENT_TIMESTAMP
+              SET hasJpeg = ?, hasWebp = ?, imageCheckedAt = CURRENT_TIMESTAMP
               WHERE id = ?
             `
               )

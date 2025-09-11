@@ -27,7 +27,7 @@ export interface RecentPet {
   id: string
   type: 'dog' | 'cat'
   name: string
-  created_at: string
+  createdAt: string
 }
 
 /**

@@ -36,13 +36,6 @@ export interface Pet {
   // 互換性
   goodWith?: string[]
   healthNotes?: string[]
-  // DB用のsnake_case互換プロパティ
-  has_jpeg?: number
-  has_webp?: number
-  source_url?: string
-  image_checked_at?: string | null
-  screenshot_requested_at?: string | null
-  screenshot_completed_at?: string | null
 }
 
 /**
@@ -52,9 +45,9 @@ export interface PetForImage {
   id: string
   type: string
   name: string
-  has_jpeg: number
-  has_webp: number
-  source_url: string
+  hasJpeg: number
+  hasWebp: number
+  sourceUrl: string
 }
 
 /**

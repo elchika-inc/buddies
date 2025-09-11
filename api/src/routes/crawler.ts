@@ -25,8 +25,8 @@ crawler.post('/pets/bulk', async (c) => {
           `
           INSERT OR REPLACE INTO pets (
             id, type, name, breed, age, gender, prefecture, city,
-            description, personality, care_requirements, good_with,
-            health_notes, source_url, images, created_at, updated_at
+            description, personality, careRequirements, goodWith,
+            healthNotes, sourceUrl, images, createdAt, updatedAt
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         )
@@ -41,13 +41,13 @@ crawler.post('/pets/bulk', async (c) => {
             pet.city || null,
             pet.description || null,
             JSON.stringify(pet.personality || []),
-            JSON.stringify(pet.care_requirements || []),
-            pet.good_with || null,
-            pet.health_notes || null,
-            pet.source_url,
+            JSON.stringify(pet.careRequirements || []),
+            pet.goodWith || null,
+            pet.healthNotes || null,
+            pet.sourceUrl,
             JSON.stringify(pet.images || []),
-            pet.created_at || new Date().toISOString(),
-            pet.updated_at || new Date().toISOString()
+            pet.createdAt || new Date().toISOString(),
+            pet.updatedAt || new Date().toISOString()
           )
           .run()
 
@@ -85,15 +85,15 @@ crawler.post('/state', async (c) => {
     await c.env.DB.prepare(
       `
       INSERT OR REPLACE INTO crawler_states (
-        source_id, pet_type, checkpoint, total_processed, updated_at
+        sourceId, petType, checkpoint, totalProcessed, updatedAt
       ) VALUES (?, ?, ?, ?, ?)
     `
     )
       .bind(
-        state.source_id,
-        state.pet_type,
+        state.sourceId,
+        state.petType,
         JSON.stringify(state.checkpoint),
-        state.total_processed,
+        state.totalProcessed,
         new Date().toISOString()
       )
       .run()

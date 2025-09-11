@@ -26,7 +26,7 @@ export class ImageController {
       }
 
       const pet = await this.db
-        .prepare('SELECT id, type, has_jpeg, has_webp FROM pets WHERE id = ?')
+        .prepare('SELECT id, type, hasJpeg, hasWebp FROM pets WHERE id = ?')
         .bind(petId)
         .first()
 

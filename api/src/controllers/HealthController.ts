@@ -89,7 +89,7 @@ export class HealthController {
       try {
         // デバッグ用：最初の5件のペットの画像状態を確認
         const samplePets = await this.db
-          .prepare(`SELECT id, has_jpeg, has_webp, image_url FROM pets LIMIT 5`)
+          .prepare(`SELECT id, hasJpeg, hasWebp, imageUrl FROM pets LIMIT 5`)
           .all()
 
         debugInfo['samplePets'] = samplePets.results
@@ -100,9 +100,9 @@ export class HealthController {
             `
             SELECT 
               COUNT(*) as total,
-              COUNT(CASE WHEN has_jpeg = 1 THEN 1 END) as with_jpeg,
-              COUNT(CASE WHEN has_webp = 1 THEN 1 END) as with_webp,
-              COUNT(CASE WHEN has_jpeg = 0 AND has_webp = 0 THEN 1 END) as without_both
+              COUNT(CASE WHEN hasJpeg = 1 THEN 1 END) as withJpeg,
+              COUNT(CASE WHEN hasWebp = 1 THEN 1 END) as withWebp,
+              COUNT(CASE WHEN hasJpeg = 0 AND hasWebp = 0 THEN 1 END) as withoutBoth
             FROM pets
           `
           )
@@ -112,9 +112,9 @@ export class HealthController {
 
         const petsWithoutImages = await this.db
           .prepare(
-            `SELECT id, name, type, source_url, has_jpeg, has_webp, image_url
+            `SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
              FROM pets 
-             WHERE has_jpeg = 0 AND has_webp = 0
+             WHERE hasJpeg = 0 AND hasWebp = 0
              LIMIT 50`
           )
           .all()
@@ -126,7 +126,7 @@ export class HealthController {
             id: pet['id'] as string,
             name: pet['name'] as string,
             type: pet['type'] as string,
-            sourceUrl: pet['source_url'] as string,
+            sourceUrl: pet['sourceUrl'] as string,
           })) || []
       } catch (dbError) {
         console.error('Error fetching missing images:', dbError)
