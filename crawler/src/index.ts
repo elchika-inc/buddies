@@ -217,11 +217,11 @@ async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
       
       CREATE TABLE IF NOT EXISTS crawler_states (
         sourceId TEXT NOT NULL,
-        pet_type TEXT NOT NULL,
+        petType TEXT NOT NULL,
         checkpoint TEXT,
-        total_processed INTEGER DEFAULT 0,
+        totalProcessed INTEGER DEFAULT 0,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (sourceId, pet_type)
+        PRIMARY KEY (sourceId, petType)
       );
     `
 
@@ -259,7 +259,7 @@ async function getCrawlStatus(
 ): Promise<Result<CrawlerStateRecord[], Error>> {
   try {
     let query =
-      'SELECT sourceId, pet_type, checkpoint, total_processed, updatedAt FROM crawler_states'
+      'SELECT sourceId, petType, checkpoint, totalProcessed, updatedAt FROM crawler_states'
     const params: (string | number)[] = []
     const conditions: string[] = []
 
@@ -269,7 +269,7 @@ async function getCrawlStatus(
     }
 
     if (petType === 'dog' || petType === 'cat') {
-      conditions.push('pet_type = ?')
+      conditions.push('petType = ?')
       params.push(petType)
     }
 

@@ -116,11 +116,11 @@ crawler.get('/state/:source/:type?', async (c) => {
     const sourceId = c.req.param('source')
     const petType = c.req.param('type')
 
-    let query = 'SELECT * FROM crawler_states WHERE source_id = ?'
+    let query = 'SELECT * FROM crawler_states WHERE sourceId = ?'
     const params: Array<string> = [sourceId]
 
     if (petType) {
-      query += ' AND pet_type = ?'
+      query += ' AND petType = ?'
       params.push(petType)
     }
 
