@@ -1,0 +1,96 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+**/dist/
+**/build/
+**/.next/
+*.tsbuildinfo
+
+# Frontend build artifacts
+frontend/public/fallback-*.js
+frontend/public/sw.js
+frontend/public/sw.js.map
+frontend/public/workbox-*.js
+frontend/public/workbox-*.js.map
+frontend/public/worker-*.js
+
+# Cloudflare Workers
+.wrangler/
+**/.wrangler/
+
+# Cache and temp files
+.cache/
+.temp/
+.tmp/
+tmp/
+temp/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+*.min.js
+*.min.css
+*.map
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Images and media
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.webp
+*.mp4
+*.mp3
+*.wav
+*.pdf
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
