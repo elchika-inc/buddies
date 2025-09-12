@@ -362,8 +362,23 @@ export class PetHomeCrawler {
    * @description 指定されたIDのペットがデータベースに存在するか確認
    */
   private async checkExistingPet(id: string): Promise<boolean> {
-    const result = await this.db.select({ id: pets.id }).from(pets).where(eq(pets.id, id)).limit(1)
-    return result.length > 0
+    try {
+      const result = await this.db
+        .select({ id: pets.id })
+        .from(pets)
+        .where(eq(pets.id, id))
+        .limit(1)
+      return result.length > 0
+    } catch (error) {
+      console.error(`Failed to check existing pet ${id}:`, error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+      throw new Error(
+        `Failed query: select "id" from "pets" where "pets"."id" = ? limit ?\nparams: ${id},1`
+      )
+    }
   }
 
   /**

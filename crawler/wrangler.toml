@@ -22,6 +22,7 @@ bucket_name = "pawmatch-images"
 binding = "DB"
 database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+migrations_dir = "../database/migrations"
 
 # Queue設定 - PetHome猫用
 [[queues.producers]]
