@@ -1,9 +1,18 @@
+# =============================================================================
+# PawMatch Dispatcher Service Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Base Configuration
+# -----------------------------------------------------------------------------
 name = "pawmatch-dispatcher"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 環境変数
+# -----------------------------------------------------------------------------
+# Default Environment Variables
+# -----------------------------------------------------------------------------
 [vars]
 NODE_ENV = "production"
 GITHUB_OWNER = "elchika-inc"
@@ -12,7 +21,11 @@ WORKFLOW_FILE = "automated-screenshot-capture.yml"
 API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-# Queue設定
+# -----------------------------------------------------------------------------
+# Queue Configuration
+# -----------------------------------------------------------------------------
+
+# Main Dispatch Queue
 [[queues.producers]]
 binding = "PAWMATCH_DISPATCH_QUEUE"
 queue = "pawmatch-dispatch-queue"
@@ -24,26 +37,35 @@ max_batch_timeout = 30
 max_retries = 3
 dead_letter_queue = "pawmatch-dispatch-dlq"
 
-# Dead Letter Queue設定
+# Dead Letter Queue
 [[queues.producers]]
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
-# Cron Trigger設定
+# -----------------------------------------------------------------------------
+# Triggers
+# -----------------------------------------------------------------------------
 [triggers]
 crons = [
-  "15 */4 * * *"  # Crawlerの15分後、4時間ごと（スクリーンショット処理）
+  "15 */4 * * *"  # 15 minutes after crawler, every 4 hours (screenshot processing)
 ]
 
-# Observability設定
+# -----------------------------------------------------------------------------
+# Observability
+# -----------------------------------------------------------------------------
 [observability.logs]
 enabled = true
 
-# 本番環境設定
+# =============================================================================
+# Environment-specific Configurations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Production Environment
+# -----------------------------------------------------------------------------
 [env.production]
 name = "pawmatch-dispatcher"
 
-# 環境変数（production環境でも必要）
 [env.production.vars]
 NODE_ENV = "production"
 GITHUB_OWNER = "elchika-inc"
@@ -52,7 +74,7 @@ WORKFLOW_FILE = "automated-screenshot-capture.yml"
 API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-# Production環境のQueue設定
+# Production Queue Configuration
 [[env.production.queues.producers]]
 binding = "PAWMATCH_DISPATCH_QUEUE"
 queue = "pawmatch-dispatch-queue"
@@ -64,27 +86,29 @@ max_batch_timeout = 30
 max_retries = 3
 dead_letter_queue = "pawmatch-dispatch-dlq"
 
-# Dead Letter Queue設定
 [[env.production.queues.producers]]
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
-# Production環境でもD1とR2は使用しない（APIのみ使用）
-# [[env.production.d1_databases]]
-# binding = "DB"
-# database_name = "pawmatch-db"
-# database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
-# migrations_dir = "../database/migrations"
+# NOTE: Dispatcher does not use D1 or R2 directly (uses API instead)
 
-# [[env.production.r2_buckets]]
-# binding = "R2_BUCKET"
-# bucket_name = "pawmatch-images"
-
-# 開発環境設定
+# -----------------------------------------------------------------------------
+# Development Environment
+# -----------------------------------------------------------------------------
 [env.development]
-vars = { NODE_ENV = "development", API_URL = "http://localhost:8787" }
+name = "pawmatch-dispatcher-dev"
 
-# 開発サーバーポート設定
+[env.development.vars]
+NODE_ENV = "development"
+GITHUB_OWNER = "elchika-inc"
+GITHUB_REPO = "pawmatch"
+WORKFLOW_FILE = "automated-screenshot-capture.yml"
+API_URL = "http://localhost:9789"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
+# -----------------------------------------------------------------------------
+# Local Development Server
+# -----------------------------------------------------------------------------
 [dev]
 port = 9788
 inspector_port = 10788

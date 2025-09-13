@@ -1,12 +1,18 @@
-# API Service Configuration
-# Inherits from: ../wrangler.base.toml
+# =============================================================================
+# PawMatch API Service Configuration
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# Base Configuration
+# -----------------------------------------------------------------------------
 name = "pawmatch-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 環境変数
+# -----------------------------------------------------------------------------
+# Default Environment Variables
+# -----------------------------------------------------------------------------
 [vars]
 NODE_ENV = "production"
 ALLOWED_ORIGIN = "*"
@@ -14,35 +20,52 @@ ALLOWED_ORIGINS = "https://pawmatch-api.elchika.app,http://localhost:8787"
 API_BASE_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-# KVネームスペース（APIキー高速キャッシュ用）
+# -----------------------------------------------------------------------------
+# Resource Bindings
+# -----------------------------------------------------------------------------
+
+# KV Namespace (API Key Cache)
 [[kv_namespaces]]
 binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
 preview_id = "ec30a1e116fb42c081ad0b7f07d413da"
 
-# R2バケット設定（画像配信用）
+# R2 Bucket (Image Storage)
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"
 
-# D1データベース設定
+# D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
-# Observability設定
+# -----------------------------------------------------------------------------
+# Observability
+# -----------------------------------------------------------------------------
 [observability.logs]
 enabled = true
 
-# カスタムドメイン設定
+# =============================================================================
+# Environment-specific Configurations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Production Environment
+# -----------------------------------------------------------------------------
 [env.production]
 name = "pawmatch-api"
-vars = { ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app" }
 route = { pattern = "pawmatch-api.elchika.app/*", zone_name = "elchika.app" }
 
-# Production環境でもKV、R2とD1バインディングを追加
+[env.production.vars]
+NODE_ENV = "production"
+ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app"
+ALLOWED_ORIGINS = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app"
+API_BASE_URL = "https://pawmatch-api.elchika.app"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
 [[env.production.kv_namespaces]]
 binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
@@ -57,11 +80,22 @@ database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
-# 開発環境設定
+# -----------------------------------------------------------------------------
+# Development Environment
+# -----------------------------------------------------------------------------
 [env.development]
-vars = { NODE_ENV = "development", ALLOWED_ORIGIN = "http://localhost:3004" }
+name = "pawmatch-api-dev"
 
-# 開発サーバーポート設定
+[env.development.vars]
+NODE_ENV = "development"
+ALLOWED_ORIGIN = "http://localhost:3004"
+ALLOWED_ORIGINS = "http://localhost:3004,http://localhost:3000"
+API_BASE_URL = "http://localhost:9789"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
+# -----------------------------------------------------------------------------
+# Local Development Server
+# -----------------------------------------------------------------------------
 [dev]
 port = 9789
 inspector_port = 10789

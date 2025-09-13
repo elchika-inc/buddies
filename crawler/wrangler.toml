@@ -1,9 +1,18 @@
+# =============================================================================
+# PawMatch Crawler Service Configuration
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Base Configuration
+# -----------------------------------------------------------------------------
 name = "pawmatch-crawler"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# 環境変数
+# -----------------------------------------------------------------------------
+# Default Environment Variables
+# -----------------------------------------------------------------------------
 [vars]
 NODE_ENV = "production"
 ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
@@ -11,68 +20,83 @@ PET_HOME_BASE_URL = "https://www.pet-home.jp"
 API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-# R2バケット設定
+# -----------------------------------------------------------------------------
+# Resource Bindings
+# -----------------------------------------------------------------------------
+
+# R2 Bucket (Image Storage)
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"
 
-
-# D1データベース設定（APIと共有）
+# D1 Database (Shared with API)
 [[d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
-# Queue設定 - PetHome猫用
+# -----------------------------------------------------------------------------
+# Queue Configuration
+# -----------------------------------------------------------------------------
+
+# Cat Queue (PetHome)
 [[queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_QUEUE"
 queue = "pawmatch-cat-pethome-queue"
 
 [[queues.consumers]]
 queue = "pawmatch-cat-pethome-queue"
-max_batch_size = 1  # 1メッセージずつ順次処理
+max_batch_size = 1
 max_batch_timeout = 30
 max_retries = 3
 dead_letter_queue = "pawmatch-cat-pethome-dlq"
-max_concurrency = 1  # 順次実行を保証
+max_concurrency = 1
 
-# Queue設定 - PetHome犬用
+# Dog Queue (PetHome)
 [[queues.producers]]
 binding = "PAWMATCH_DOG_PETHOME_QUEUE"
 queue = "pawmatch-dog-pethome-queue"
 
 [[queues.consumers]]
 queue = "pawmatch-dog-pethome-queue"
-max_batch_size = 1  # 1メッセージずつ順次処理
+max_batch_size = 1
 max_batch_timeout = 30
 max_retries = 3
 dead_letter_queue = "pawmatch-dog-pethome-dlq"
-max_concurrency = 1  # 順次実行を保証
+max_concurrency = 1
 
-# Dead Letter Queue設定 - PetHome猫用
+# Dead Letter Queues
 [[queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_DLQ"
 queue = "pawmatch-cat-pethome-dlq"
 
-# Dead Letter Queue設定 - PetHome犬用
 [[queues.producers]]
 binding = "PAWMATCH_DOG_PETHOME_DLQ"
 queue = "pawmatch-dog-pethome-dlq"
 
-# Cron Trigger設定（4時間ごとに実行）
+# -----------------------------------------------------------------------------
+# Triggers
+# -----------------------------------------------------------------------------
 [triggers]
-crons = ["0 */4 * * *"]
+crons = ["0 */4 * * *"]  # Run every 4 hours
 
-# Observability設定
+# -----------------------------------------------------------------------------
+# Observability
+# -----------------------------------------------------------------------------
 [observability.logs]
 enabled = true
 
-# 本番環境でのGitHub Actions設定
+# =============================================================================
+# Environment-specific Configurations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Production Environment
+# -----------------------------------------------------------------------------
 [env.production]
 name = "pawmatch-crawler"
 
-# 環境変数（本番環境）
 [env.production.vars]
 GITHUB_ACTIONS = "true"
 NODE_ENV = "production"
@@ -81,19 +105,18 @@ PET_HOME_BASE_URL = "https://www.pet-home.jp"
 API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
-# R2バケット設定（本番環境）
+# Production Resource Bindings
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"
 
-# D1データベース設定（本番環境）
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
-# Queue設定 - PetHome猫用（本番環境）
+# Production Queue Configuration
 [[env.production.queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_QUEUE"
 queue = "pawmatch-cat-pethome-queue"
@@ -106,7 +129,6 @@ max_retries = 3
 dead_letter_queue = "pawmatch-cat-pethome-dlq"
 max_concurrency = 1
 
-# Queue設定 - PetHome犬用（本番環境）
 [[env.production.queues.producers]]
 binding = "PAWMATCH_DOG_PETHOME_QUEUE"
 queue = "pawmatch-dog-pethome-queue"
@@ -119,21 +141,30 @@ max_retries = 3
 dead_letter_queue = "pawmatch-dog-pethome-dlq"
 max_concurrency = 1
 
-# Dead Letter Queue設定 - PetHome猫用（本番環境）
 [[env.production.queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_DLQ"
 queue = "pawmatch-cat-pethome-dlq"
 
-# Dead Letter Queue設定 - PetHome犬用（本番環境）
 [[env.production.queues.producers]]
 binding = "PAWMATCH_DOG_PETHOME_DLQ"
 queue = "pawmatch-dog-pethome-dlq"
 
-# 開発環境設定
-[env.development]  
-vars = { NODE_ENV = "development", ALLOWED_ORIGIN = "http://localhost:3004" }
+# -----------------------------------------------------------------------------
+# Development Environment
+# -----------------------------------------------------------------------------
+[env.development]
+name = "pawmatch-crawler-dev"
 
-# 開発サーバーポート設定
+[env.development.vars]
+NODE_ENV = "development"
+ALLOWED_ORIGIN = "http://localhost:3004"
+PET_HOME_BASE_URL = "https://www.pet-home.jp"
+API_URL = "http://localhost:9789"
+PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
+# -----------------------------------------------------------------------------
+# Local Development Server
+# -----------------------------------------------------------------------------
 [dev]
 port = 9787
 inspector_port = 10787
