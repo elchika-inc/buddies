@@ -46,7 +46,7 @@ jobs:
           node-version: '20'
       
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             node_modules
@@ -89,7 +89,7 @@ jobs:
       
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sync-report-${{ github.run_number }}
           path: |
