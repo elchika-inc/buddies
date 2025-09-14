@@ -1,52 +1,15 @@
 # =============================================================================
-# PawMatch Frontend Configuration (Cloudflare Pages)
+# PawMatch Frontend - Cloudflare Pages Configuration
+# =============================================================================
+# This file provides minimal configuration for Cloudflare Pages deployment.
+# Dog/Cat applications are deployed as separate projects using --project-name flag:
+#   - npm run deploy:dog → deploys to pawmatch-dogs project
+#   - npm run deploy:cat → deploys to pawmatch-cats project
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# Base Configuration
-# -----------------------------------------------------------------------------
 name = "pawmatch"
 compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
+pages_build_output_dir = "dist"
 
-# -----------------------------------------------------------------------------
-# NOTE: Frontend uses Cloudflare Pages
-# - No main entry point needed (static site)
-# - Environment variables are set in Cloudflare Dashboard
-# - Deployment is handled by Cloudflare Pages integration
-# -----------------------------------------------------------------------------
-
-# =============================================================================
-# Environment-specific Configurations
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# Production - Dog Application
-# -----------------------------------------------------------------------------
-[env.dog-production]
-name = "pawmatch-dogs"
-# Environment variables set in Cloudflare Dashboard:
-# - NEXT_PUBLIC_PET_TYPE = "dog"
-# - NEXT_PUBLIC_ANIMALS_API = "https://pawmatch-api.elchika.app"
-# - NEXT_PUBLIC_ENVIRONMENT = "production"
-
-# -----------------------------------------------------------------------------
-# Production - Cat Application
-# -----------------------------------------------------------------------------
-[env.cat-production]
-name = "pawmatch-cats"
-# Environment variables set in Cloudflare Dashboard:
-# - NEXT_PUBLIC_PET_TYPE = "cat"
-# - NEXT_PUBLIC_ANIMALS_API = "https://pawmatch-api.elchika.app"
-# - NEXT_PUBLIC_ENVIRONMENT = "production"
-
-# -----------------------------------------------------------------------------
-# Development Environment
-# -----------------------------------------------------------------------------
-[env.development]
-name = "pawmatch-dev"
-# Local development uses .env.local file for configuration:
-# - NEXT_PUBLIC_PET_TYPE = "dog" or "cat"
-# - NEXT_PUBLIC_ANIMALS_API = "http://localhost:9789"
-# - NEXT_PUBLIC_ENVIRONMENT = "development"
+# Note: Environment variables (NEXT_PUBLIC_PET_TYPE, etc.) are set during build time
+# via the build:dog:ci and build:cat:ci scripts in package.json
