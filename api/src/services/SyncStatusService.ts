@@ -53,29 +53,29 @@ interface PetWithMissingImage {
   id: string
   type: string
   name: string
-  source_url: string
-  screenshot_requested: number
+  sourceUrl: string
+  screenshotRequested: number
 }
 
 interface SyncJob {
   id: number
-  job_type: string
+  jobType: string
   source: string
   status: string
-  pet_type: string | null
-  started_at: string
-  completed_at: string | null
-  total_records: number
-  processed_records: number
-  new_records: number
-  updated_records: number
-  failed_records: number
-  images_total: number
-  images_with_jpeg: number
-  images_with_webp: number
-  images_missing: number
-  duration_ms: number
-  error_message: string | null
+  petType: string | null
+  startedAt: string
+  completedAt: string | null
+  totalRecords: number
+  processedRecords: number
+  newRecords: number
+  updatedRecords: number
+  failedRecords: number
+  imagesTotal: number
+  imagesWithJpeg: number
+  imagesWithWebp: number
+  imagesMissing: number
+  durationMs: number
+  errorMessage: string | null
   metadata: string
   created_at: string
 }
@@ -373,11 +373,11 @@ export class SyncStatusService {
     const pets = await this.db
       .prepare(
         `
-      SELECT p.id, p.type, p.name, p.source_url, ps.screenshot_requested
+      SELECT p.id, p.type, p.name, p.sourceUrl,
+             CASE WHEN p.screenshotRequestedAt IS NOT NULL THEN 1 ELSE 0 END as screenshotRequested
       FROM pets p
-      LEFT JOIN pet_sync_status ps ON p.id = ps.pet_id
-      WHERE ps.has_jpeg = 0 OR ps.has_jpeg IS NULL
-      ORDER BY p.created_at DESC
+      WHERE p.hasJpeg = 0 OR p.hasJpeg IS NULL
+      ORDER BY p.createdAt DESC
       LIMIT ?
     `
       )
@@ -395,10 +395,9 @@ export class SyncStatusService {
     await this.db
       .prepare(
         `
-      UPDATE pet_sync_status
-      SET screenshot_requested = 1,
-          screenshot_request_at = CURRENT_TIMESTAMP
-      WHERE pet_id IN (${placeholders})
+      UPDATE pets
+      SET screenshotRequestedAt = CURRENT_TIMESTAMP
+      WHERE id IN (${placeholders})
     `
       )
       .bind(...petIds)
@@ -412,8 +411,8 @@ export class SyncStatusService {
     const jobs = await this.db
       .prepare(
         `
-      SELECT * FROM sync_jobs
-      ORDER BY created_at DESC
+      SELECT * FROM sync_status
+      ORDER BY createdAt DESC
       LIMIT ?
     `
       )

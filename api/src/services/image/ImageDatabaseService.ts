@@ -105,8 +105,8 @@ export class ImageDatabaseService {
         SELECT 
           hasJpeg,
           hasWebp,
-          screenshot_completed_at,
-          image_checked_at
+          screenshotCompletedAt,
+          imageCheckedAt
         FROM pets 
         WHERE id = ? AND type = ?
       `
@@ -115,8 +115,8 @@ export class ImageDatabaseService {
         .first<{
           hasJpeg: number
           hasWebp: number
-          screenshot_completed_at: string | null
-          image_checked_at: string | null
+          screenshotCompletedAt: string | null
+          imageCheckedAt: string | null
         }>()
 
       if (!result) {
@@ -126,8 +126,8 @@ export class ImageDatabaseService {
       return Result.ok({
         hasJpeg: result.hasJpeg === 1,
         hasWebp: result.hasWebp === 1,
-        screenshotCompleted: result.screenshot_completed_at !== null,
-        imageCheckedAt: result.image_checked_at,
+        screenshotCompleted: result.screenshotCompletedAt !== null,
+        imageCheckedAt: result.imageCheckedAt,
       })
     } catch (error) {
       return Result.err(error instanceof Error ? error : new Error('Failed to get image status'))

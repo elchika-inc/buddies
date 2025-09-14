@@ -16,12 +16,12 @@ interface StatsQueryResult {
   total_pets?: number
   total_dogs?: number
   total_cats?: number
-  pets_with_jpeg?: number
-  pets_with_webp?: number
-  dogs_with_jpeg?: number
-  dogs_with_webp?: number
-  cats_with_jpeg?: number
-  cats_with_webp?: number
+  petsWithJpeg?: number
+  petsWithWebp?: number
+  dogsWithJpeg?: number
+  dogsWithWebp?: number
+  catsWithJpeg?: number
+  catsWithWebp?: number
 }
 
 /**
@@ -67,12 +67,12 @@ export class StatisticsService {
       totalPets: stats?.total_pets || 0,
       totalDogs: stats?.total_dogs || 0,
       totalCats: stats?.total_cats || 0,
-      petsWithJpeg: stats?.pets_with_jpeg || 0,
-      petsWithWebp: stats?.pets_with_webp || 0,
-      dogsWithJpeg: stats?.dogs_with_jpeg || 0,
-      dogsWithWebp: stats?.dogs_with_webp || 0,
-      catsWithJpeg: stats?.cats_with_jpeg || 0,
-      catsWithWebp: stats?.cats_with_webp || 0,
+      petsWithJpeg: stats?.petsWithJpeg || 0,
+      petsWithWebp: stats?.petsWithWebp || 0,
+      dogsWithJpeg: stats?.dogsWithJpeg || 0,
+      dogsWithWebp: stats?.dogsWithWebp || 0,
+      catsWithJpeg: stats?.catsWithJpeg || 0,
+      catsWithWebp: stats?.catsWithWebp || 0,
     }
 
     // 統計をキャッシュ
@@ -147,7 +147,7 @@ export class StatisticsService {
         SUM(CASE WHEN hasJpeg = 1 THEN 1 ELSE 0 END) as withImages
       FROM pets
       WHERE imageCheckedAt IS NOT NULL
-      GROUP BY DATE(image_checked_at)
+      GROUP BY DATE(imageCheckedAt)
       ORDER BY date DESC
       LIMIT ${CONFIG.STATISTICS.COVERAGE_TREND_DAYS}
     `
