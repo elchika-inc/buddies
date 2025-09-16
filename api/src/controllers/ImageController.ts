@@ -135,7 +135,7 @@ export class ImageController {
       })
 
       // リクエストボディの解析を試行 - 詳細なエラーハンドリング付き
-      let rawBody: string
+      let rawBody = ''
       let parsedBody: any
 
       try {
@@ -153,8 +153,8 @@ export class ImageController {
       } catch (parseError) {
         console.error(`[${requestId}] JSON parsing failed:`, {
           error: parseError instanceof Error ? parseError.message : 'Unknown parsing error',
-          bodyLength: rawBody?.length || 0,
-          bodyPreview: rawBody?.substring(0, 200) || 'No body',
+          bodyLength: rawBody.length,
+          bodyPreview: rawBody.substring(0, 200) || 'No body',
           contentType,
         })
 
@@ -166,7 +166,7 @@ export class ImageController {
               parseError:
                 parseError instanceof Error ? parseError.message : 'Unknown parsing error',
               contentType,
-              bodyLength: rawBody?.length || 0,
+              bodyLength: rawBody.length,
             },
           },
           400
@@ -238,6 +238,22 @@ export class ImageController {
       // 各uploadアイテムの検証
       for (let i = 0; i < body.uploads.length; i++) {
         const upload = body.uploads[i]
+
+        // uploadが存在するかチェック
+        if (!upload) {
+          console.error(`[${requestId}] Upload item ${i} is undefined`)
+          return c.json(
+            {
+              success: false,
+              error: `Upload item ${i} is undefined`,
+              details: {
+                uploadIndex: i,
+              },
+            },
+            400
+          )
+        }
+
         console.log(`[${requestId}] Validating upload ${i}:`, {
           hasPetId: !!upload.petId,
           hasImageData: !!upload.imageData,
@@ -337,6 +353,13 @@ export class ImageController {
 
       for (let i = 0; i < body.uploads.length; i++) {
         const upload = body.uploads[i]
+
+        // uploadが正しく検証されていることを確認（上記のバリデーションで検証済み）
+        if (!upload || !upload.petId || !upload.imageData || !upload.mimeType) {
+          // これは起こり得ないが、TypeScriptのためにチェック
+          continue
+        }
+
         const uploadStart = Date.now()
 
         try {
@@ -363,7 +386,7 @@ export class ImageController {
           console.log(`[${requestId}] Pet found: ${upload.petId} (${petType})`)
 
           // Base64データをデコード
-          const imageBuffer = Uint8Array.from(atob(upload.imageData), (c) => c.charCodeAt(0))
+          const imageBuffer = Uint8Array.from(atob(upload.imageData!), (c) => c.charCodeAt(0))
           const isWebp = upload.mimeType === 'image/webp'
           const isPng = upload.mimeType === 'image/png'
 
@@ -375,10 +398,10 @@ export class ImageController {
           // R2にアップロード
           await this.bucket.put(key, imageBuffer, {
             httpMetadata: {
-              contentType: upload.mimeType,
+              contentType: upload.mimeType!,
             },
             customMetadata: {
-              petId: upload.petId,
+              petId: upload.petId!,
               petType,
               uploadedAt: new Date().toISOString(),
               requestId,
