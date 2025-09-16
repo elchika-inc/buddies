@@ -67,14 +67,24 @@ export class QueueHandler {
       return validationResult
     }
 
-    // screenshotタイプのみ処理
-    if (dispatch.type !== 'screenshot') {
-      console.log(`Skipping non-screenshot message type: ${dispatch.type}`)
-      return { success: true, data: undefined }
+    // メッセージタイプに応じて処理を分岐
+    switch (dispatch.type) {
+      case 'screenshot':
+        return await this.processScreenshotMessage(dispatch)
+      case 'conversion':
+        return await this.processConversionMessage(dispatch)
+      default:
+        console.log(`Skipping unsupported message type: ${dispatch.type}`)
+        return { success: true, data: undefined }
     }
+  }
 
+  /**
+   * スクリーンショットメッセージを処理
+   */
+  private async processScreenshotMessage(dispatch: DispatchMessage): Promise<Result<void>> {
     if (!dispatch.pets || dispatch.pets.length === 0) {
-      console.log('No pets to process in message')
+      console.log('No pets to process in screenshot message')
       return { success: true, data: undefined }
     }
 
@@ -90,6 +100,25 @@ export class QueueHandler {
 
     // GitHub Actionsワークフローをトリガー
     return await this.githubService.triggerWorkflow(petRecords, dispatch.batchId)
+  }
+
+  /**
+   * 画像変換メッセージを処理
+   */
+  private async processConversionMessage(dispatch: DispatchMessage): Promise<Result<void>> {
+    if (!dispatch.conversionData || dispatch.conversionData.length === 0) {
+      console.log('No conversion data to process')
+      return { success: true, data: undefined }
+    }
+
+    const workflowFile = dispatch.workflowFile || 'image-conversion.yml'
+
+    // GitHub Actionsワークフローをトリガー
+    return await this.githubService.triggerConversionWorkflow(
+      dispatch.conversionData,
+      dispatch.batchId,
+      workflowFile
+    )
   }
 
   /**

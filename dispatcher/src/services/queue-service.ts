@@ -50,8 +50,6 @@ export class QueueService {
       }
 
       await this.queue.send(message)
-
-      console.log(`Message sent to queue: ${batchId}, pets: ${pets.length}`)
       return Ok(undefined)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -76,8 +74,6 @@ export class QueueService {
       }
 
       await this.queue.send(retryMessage, { delaySeconds })
-
-      console.log(`Retry message sent to queue: ${message.batchId}, delay: ${delaySeconds}s`)
       return Ok(undefined)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -186,10 +182,13 @@ export class QueueService {
    * @description バッチ処理用の一意識別子を生成
    * cronの場合は日付を含む形式、dispatchの場合はタイムスタンプのみ
    */
-  static generateBatchId(prefix: 'dispatch' | 'cron'): string {
+  static generateBatchId(prefix: 'dispatch' | 'cron' | 'conversion'): string {
     if (prefix === 'cron') {
       const dateStr = new Date().toISOString().split('T')[0]
       return `cron-${dateStr}-${Date.now()}`
+    }
+    if (prefix === 'conversion') {
+      return `conversion-${Date.now()}`
     }
     return `dispatch-${Date.now()}`
   }

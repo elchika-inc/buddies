@@ -150,7 +150,7 @@ export class ErrorHandler {
   /**
    * Resultエラーを処理してレスポンスを返す
    */
-  static handleResult<T>(c: Context, result: Result<T>, successStatus: number = 200): Response {
+  static handleResult<T>(c: Context, result: Result<T>, successStatus = 200): Response {
     if (Result.isSuccess(result)) {
       return c.json(
         {
@@ -194,6 +194,9 @@ export async function errorMiddleware(c: Context, next: () => Promise<void>): Pr
     c.header('Content-Type', 'application/json')
     c.header('X-Error-Code', appError.code)
 
-    return c.json(appError.toResponse(), appError.statusCode as any)
+    return c.json(
+      appError.toResponse(),
+      appError.statusCode as 400 | 401 | 403 | 404 | 409 | 500 | 503
+    )
   }
 }

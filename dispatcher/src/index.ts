@@ -137,16 +137,75 @@ app.post('/dispatch', async (c: Context<{ Bindings: Env }>) => {
  * 定期実行エンドポイント（Cron用）
  */
 app.post('/scheduled', async (c: Context<{ Bindings: Env }>) => {
-  console.log('Scheduled dispatch triggered')
-
   const result = await createAndSendBatch(c.env, 30, 'cron')
 
   if (result.success) {
-    console.log(`Scheduled dispatch completed: ${result.count} pets`)
     return c.json(result)
   } else {
     console.error('Scheduled dispatch error:', result.error)
     return c.json(result, 500)
+  }
+})
+
+/**
+ * 画像変換ディスパッチエンドポイント
+ */
+app.post('/dispatch-conversion', async (c: Context<{ Bindings: Env }>) => {
+  try {
+    const requestData = (await c.req.json()) as {
+      pets?: Array<{ id: string; type: 'dog' | 'cat'; screenshotKey?: string }>
+      limit?: number
+    }
+
+    const { pets = [], limit = 50 } = requestData
+
+    if (pets.length === 0) {
+      return c.json(
+        {
+          success: false,
+          message: 'No pets provided for conversion',
+        },
+        400
+      )
+    }
+
+    // バッチIDを生成
+    const batchId = QueueService.generateBatchId('conversion')
+
+    // ConversionDataを作成
+    const conversionData = pets.slice(0, limit).map((pet) => ({
+      id: pet.id,
+      type: pet.type,
+      screenshotKey: pet.screenshotKey,
+    }))
+
+    // Queueにメッセージを送信
+    const message: DispatchMessage = {
+      type: 'conversion',
+      batchId,
+      timestamp: new Date().toISOString(),
+      conversionData,
+      workflowFile: 'image-conversion.yml',
+    }
+
+    await c.env.PAWMATCH_DISPATCH_QUEUE.send(message)
+
+    return c.json({
+      success: true,
+      batchId,
+      count: conversionData.length,
+      message: 'Image conversion batch queued for processing',
+    })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Conversion dispatch error:', errorMessage)
+    return c.json(
+      {
+        success: false,
+        error: errorMessage,
+      },
+      500
+    )
   }
 })
 
@@ -181,9 +240,9 @@ export default {
   /**
    * Cronジョブハンドラー
    */
-  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     try {
-      console.log(`Scheduled execution triggered: ${event.cron}`)
+      // Scheduled execution triggered
 
       // /scheduledエンドポイントを呼び出し
       const response = await app.fetch(
@@ -193,8 +252,7 @@ export default {
         env
       )
 
-      const result = await response.json()
-      console.log('Scheduled execution result:', result)
+      await response.json()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       console.error('Scheduled execution error:', errorMessage)

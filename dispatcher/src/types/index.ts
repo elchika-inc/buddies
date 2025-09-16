@@ -24,12 +24,21 @@ export interface Env {
 }
 
 export interface DispatchMessage {
-  type: 'screenshot' | 'crawl' | 'convert' | 'cleanup'
+  type: 'screenshot' | 'crawl' | 'conversion' | 'cleanup'
   pets?: PetDispatchData[]
   batchId: string
   retryCount?: number
   timestamp: string
   cleanupType?: 'expired' | 'all'
+  workflowFile?: string // 画像変換用のワークフローファイル指定
+  conversionData?: ConversionData[] // 画像変換用のデータ
+}
+
+export interface ConversionData {
+  id: string
+  type: 'dog' | 'cat'
+  screenshotKey?: string
+  sourceUrl?: string
 }
 
 export interface PetDispatchData {

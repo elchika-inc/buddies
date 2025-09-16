@@ -1,5 +1,4 @@
 import { chromium } from 'playwright'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -7,15 +6,9 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// R2クライアントの設定
-const r2Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-  },
-})
+// API設定
+const API_URL = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+const API_KEY = process.env.API_KEY || process.env.PUBLIC_API_KEY
 
 // コマンドライン引数を解析
 function parseArgs() {
@@ -97,32 +90,47 @@ async function captureScreenshot(page, pet) {
       })
     }
 
-    // R2にPNGとして保存
-    const screenshotKey = `pets/${pet.type}s/${pet.id}/screenshot.png`
+    // API経由でアップロード（base64エンコードして送信）
+    const base64Image = screenshotBuffer.toString('base64')
 
-    await r2Client.send(
-      new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: screenshotKey,
-        Body: screenshotBuffer,
-        ContentType: 'image/png',
-        Metadata: {
-          'pet-id': pet.id,
-          'pet-type': pet.type,
-          'capture-method': captureMethod,
-          'captured-at': new Date().toISOString(),
-          'source-url': pet.sourceUrl,
-        },
-      })
-    )
+    const uploadResponse = await fetch(`${API_URL}/api/images/upload/batch`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uploads: [
+          {
+            petId: pet.id,
+            imageData: base64Image,
+            mimeType: 'image/png',
+          },
+        ],
+      }),
+    })
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text()
+      throw new Error(`API upload failed: ${uploadResponse.status} - ${errorText}`)
+    }
+
+    const uploadResult = await uploadResponse.json()
+    const uploadedPet = uploadResult.data?.results?.[0]
+
+    if (!uploadedPet?.success) {
+      throw new Error(uploadedPet?.error || 'Upload failed')
+    }
 
     console.log(
-      `  ☁️ Uploaded PNG screenshot to R2 (${(screenshotBuffer.length / 1024).toFixed(1)}KB)`
+      `  ☁️ Uploaded PNG screenshot via API (${(screenshotBuffer.length / 1024).toFixed(1)}KB)`
     )
+
+    const screenshotKey = uploadedPet.key || `pets/${pet.type}s/${pet.id}/screenshot.png`
 
     results.success = true
     results.screenshotKey = screenshotKey
-    results.screenshotUrl = `https://${process.env.R2_BUCKET_NAME}.r2.dev/${screenshotKey}`
+    results.screenshotUrl = `${API_URL}/api/images/${pet.type}/${pet.id}.png`
     results.screenshotSize = screenshotBuffer.length
     results.captureMethod = captureMethod
     results.imageInfo = imageInfo

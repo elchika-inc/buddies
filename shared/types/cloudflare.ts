@@ -62,9 +62,13 @@ export interface CloudflareEnv {
 
   // Crawler specific
   API_URL?: string
+  CRAWLER_API_KEY?: string
 
   // Dispatcher specific
   CRAWLER_TRIGGER_URL?: string
+
+  // Service Bindings
+  DISPATCHER?: Fetcher
 }
 
 /**

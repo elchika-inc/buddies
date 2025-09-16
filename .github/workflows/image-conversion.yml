@@ -1,4 +1,4 @@
-name: Automated Image Conversion
+name: Image Conversion
 
 on:
   # 手動実行可能

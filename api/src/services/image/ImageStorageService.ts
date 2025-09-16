@@ -38,7 +38,7 @@ export class ImageStorageService {
           },
         })
       } else {
-        // ReadableStreamの場合、互換性のためanyにキャスト
+        // ReadableStreamの場合（型アサーションを使用）
         await this.r2.put(key, data as any, {
           httpMetadata: {
             contentType,

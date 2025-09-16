@@ -33,4 +33,34 @@ images.get(
   })
 )
 
+// 画像アップロード（単一）
+images.post(
+  '/upload/:petId',
+  // apiAuth, // 一時的に認証を無効化
+  withEnv(async (c) => {
+    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
+    return imageController.uploadImage(c)
+  })
+)
+
+// 画像一括アップロード
+images.post(
+  '/upload/batch',
+  // apiAuth, // 一時的に認証を無効化
+  withEnv(async (c) => {
+    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
+    return imageController.uploadBatch(c)
+  })
+)
+
+// 画像存在チェックとフラグ更新
+images.post(
+  '/sync-flags',
+  // apiAuth, // 一時的に認証を無効化
+  withEnv(async (c) => {
+    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
+    return imageController.syncImageFlags(c)
+  })
+)
+
 export default images

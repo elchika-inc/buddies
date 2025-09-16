@@ -9,6 +9,245 @@ export class ImageController {
     private bucket?: R2Bucket,
     private db?: D1Database
   ) {}
+
+  async uploadImage(c: Context<{ Bindings: Env }>) {
+    try {
+      const petId = c.req.param('petId')
+      const formData = await c.req.formData()
+      const file = formData.get('image') as File
+      const imageType = (formData.get('type') as string) || 'screenshot'
+
+      if (!file) {
+        return c.json({ success: false, error: 'No image provided' }, 400)
+      }
+
+      if (!this.bucket || !this.db) {
+        throw new ServiceUnavailableError('Storage or database not available')
+      }
+
+      // ペット情報を取得
+      const pet = await this.db
+        .prepare('SELECT id, type FROM pets WHERE id = ?')
+        .bind(petId)
+        .first()
+
+      if (!pet) {
+        throw new NotFoundError('Pet not found')
+      }
+
+      const petType = pet['type'] as string
+      const arrayBuffer = await file.arrayBuffer()
+      const isPng = file.type === 'image/png' || file.name.endsWith('.png')
+      const isWebp = file.type === 'image/webp' || file.name.endsWith('.webp')
+
+      // R2にアップロード
+      const extension = isWebp ? 'webp' : isPng ? 'png' : 'jpg'
+      const filename =
+        imageType === 'screenshot' ? 'screenshot.png' : isWebp ? 'optimized.webp' : 'original.jpg'
+      const key = `pets/${petType}s/${petId}/${filename}`
+
+      await this.bucket.put(key, arrayBuffer, {
+        httpMetadata: {
+          contentType: file.type || 'image/jpeg',
+        },
+        customMetadata: {
+          petId,
+          petType,
+          uploadedAt: new Date().toISOString(),
+        },
+      })
+
+      // データベースのフラグを更新
+      const updateQuery = isWebp
+        ? 'UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+        : 'UPDATE pets SET hasJpeg = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+
+      if (isWebp) {
+        await this.db.prepare(updateQuery).bind(petId).run()
+      } else {
+        const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${petId}.${extension}`
+        await this.db.prepare(updateQuery).bind(imageUrl, petId).run()
+      }
+
+      return c.json({
+        success: true,
+        data: {
+          petId,
+          key,
+          type: file.type,
+          size: arrayBuffer.byteLength,
+        },
+      })
+    } catch (error) {
+      return handleError(c, error)
+    }
+  }
+
+  async uploadBatch(c: Context<{ Bindings: Env }>) {
+    try {
+      const body = (await c.req.json()) as {
+        uploads: Array<{
+          petId: string
+          imageData: string // base64
+          mimeType: string
+        }>
+      }
+
+      if (!this.bucket || !this.db) {
+        throw new ServiceUnavailableError('Storage or database not available')
+      }
+
+      const results = []
+
+      for (const upload of body.uploads) {
+        try {
+          // ペット情報を取得
+          const pet = await this.db
+            .prepare('SELECT id, type FROM pets WHERE id = ?')
+            .bind(upload.petId)
+            .first()
+
+          if (!pet) {
+            results.push({ petId: upload.petId, success: false, error: 'Pet not found' })
+            continue
+          }
+
+          const petType = pet['type'] as string
+          const imageBuffer = Uint8Array.from(atob(upload.imageData), (c) => c.charCodeAt(0))
+          const isWebp = upload.mimeType === 'image/webp'
+          const isPng = upload.mimeType === 'image/png'
+
+          const filename = isPng ? 'screenshot.png' : isWebp ? 'optimized.webp' : 'original.jpg'
+          const key = `pets/${petType}s/${upload.petId}/${filename}`
+
+          // R2にアップロード
+          await this.bucket.put(key, imageBuffer, {
+            httpMetadata: {
+              contentType: upload.mimeType,
+            },
+            customMetadata: {
+              petId: upload.petId,
+              petType,
+              uploadedAt: new Date().toISOString(),
+            },
+          })
+
+          // データベースのフラグを更新
+          if (isWebp) {
+            await this.db
+              .prepare('UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?')
+              .bind(upload.petId)
+              .run()
+          } else {
+            const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
+            await this.db
+              .prepare(
+                'UPDATE pets SET hasJpeg = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+              )
+              .bind(imageUrl, upload.petId)
+              .run()
+          }
+
+          results.push({ petId: upload.petId, success: true, key })
+        } catch (error) {
+          results.push({
+            petId: upload.petId,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+        }
+      }
+
+      return c.json({
+        success: true,
+        data: {
+          total: body.uploads.length,
+          successful: results.filter((r) => r.success).length,
+          failed: results.filter((r) => !r.success).length,
+          results,
+        },
+      })
+    } catch (error) {
+      return handleError(c, error)
+    }
+  }
+
+  async syncImageFlags(c: Context<{ Bindings: Env }>) {
+    try {
+      if (!this.bucket || !this.db) {
+        throw new ServiceUnavailableError('Storage or database not available')
+      }
+
+      // 全ペットを取得
+      const pets = await this.db.prepare('SELECT id, type FROM pets').all()
+
+      let updatedCount = 0
+      const errors = []
+
+      for (const pet of pets.results || []) {
+        try {
+          const petId = pet['id'] as string
+          const petType = pet['type'] as string
+
+          // R2で画像の存在をチェック
+          const jpegKey = `pets/${petType}s/${petId}/original.jpg`
+          const pngKey = `pets/${petType}s/${petId}/screenshot.png`
+          const webpKey = `pets/${petType}s/${petId}/optimized.webp`
+
+          const [jpegExists, pngExists, webpExists] = await Promise.all([
+            this.bucket
+              .head(jpegKey)
+              .then(() => true)
+              .catch(() => false),
+            this.bucket
+              .head(pngKey)
+              .then(() => true)
+              .catch(() => false),
+            this.bucket
+              .head(webpKey)
+              .then(() => true)
+              .catch(() => false),
+          ])
+
+          const hasJpeg = jpegExists || pngExists
+          const hasWebp = webpExists
+
+          // データベースを更新
+          if (hasJpeg || hasWebp) {
+            const imageUrl = hasJpeg
+              ? `https://pawmatch-api.elchika.app/api/images/${petType}/${petId}.${jpegExists ? 'jpg' : 'png'}`
+              : null
+
+            await this.db
+              .prepare(
+                'UPDATE pets SET hasJpeg = ?, hasWebp = ?, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+              )
+              .bind(hasJpeg ? 1 : 0, hasWebp ? 1 : 0, imageUrl, petId)
+              .run()
+
+            updatedCount++
+          }
+        } catch (error) {
+          errors.push({
+            petId: pet['id'],
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+        }
+      }
+
+      return c.json({
+        success: true,
+        data: {
+          totalPets: pets.results?.length || 0,
+          updatedPets: updatedCount,
+          errors: errors.length,
+          errorDetails: errors,
+        },
+      })
+    } catch (error) {
+      return handleError(c, error)
+    }
+  }
   async getImage(c: Context<{ Bindings: Env }>) {
     try {
       const filename = c.req.param('filename')

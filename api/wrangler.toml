@@ -19,10 +19,16 @@ ALLOWED_ORIGIN = "*"
 ALLOWED_ORIGINS = "https://pawmatch-api.elchika.app,http://localhost:8787"
 API_BASE_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+CRAWLER_API_KEY = "crawler-secret-key-2024"
 
 # -----------------------------------------------------------------------------
 # Resource Bindings
 # -----------------------------------------------------------------------------
+
+# Service Bindings
+[[services]]
+binding = "DISPATCHER"
+service = "pawmatch-dispatcher"
 
 # KV Namespace (API Key Cache)
 [[kv_namespaces]]
@@ -65,6 +71,10 @@ ALLOWED_ORIGIN = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchik
 ALLOWED_ORIGINS = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchika.app"
 API_BASE_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+
+[[env.production.services]]
+binding = "DISPATCHER"
+service = "pawmatch-dispatcher"
 
 [[env.production.kv_namespaces]]
 binding = "API_KEYS_CACHE"

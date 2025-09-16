@@ -342,13 +342,10 @@ export default {
     _ctx: ExecutionContext
   ): Promise<void> {
     // シンプルなスケジュールクロール
-    const dogResult = await crawlPets(env, 'dog', 5)
-    const catResult = await crawlPets(env, 'cat', 5)
+    await crawlPets(env, 'dog', 5)
+    await crawlPets(env, 'cat', 5)
 
-    console.log('Scheduled crawl completed:', {
-      dog: Result.isOk(dogResult) ? dogResult.data : dogResult.error.message,
-      cat: Result.isOk(catResult) ? catResult.data : catResult.error.message,
-    })
+    // Scheduled crawl completed
   },
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -366,7 +363,6 @@ export default {
       const result = await handleQueueMessage(env, petType)
 
       if (Result.isOk(result)) {
-        console.log(`Queue processing completed for ${petType}:`, result.data)
         message.ack()
       } else {
         console.error(`Queue processing failed for ${petType}:`, result.error)

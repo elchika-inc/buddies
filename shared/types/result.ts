@@ -119,3 +119,7 @@ export function isErr<T, E>(result: Result<T, E>): result is { success: false; e
 export function isOk<T, E>(result: Result<T, E>): result is { success: true; data: T } {
   return result.success
 }
+
+// Ok と Err のエイリアスをエクスポート
+export const Ok = Result.ok
+export const Err = Result.err

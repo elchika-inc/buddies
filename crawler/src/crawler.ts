@@ -6,6 +6,8 @@
  * @site https://www.pet-home.jp
  */
 import type { Pet, CrawlResult } from '../../shared/types/index'
+import { ApiServiceClient } from '../../shared/services/api-client'
+import { Result } from '../../shared/types/result'
 
 /**
  * Cloudflare Workers環境変数の型定義
@@ -22,6 +24,8 @@ export interface Env {
   PAWMATCH_CAT_PETHOME_QUEUE: Queue
   /** ペットホーム犬用キュー */
   PAWMATCH_DOG_PETHOME_QUEUE: Queue
+  /** APIサービスBinding */
+  API_SERVICE?: Fetcher
   /** CORS許可オリジン */
   ALLOWED_ORIGIN?: string
   /** ローカル画像使用フラグ */
@@ -73,7 +77,7 @@ export class PetHomeCrawler {
    * @param petType - クロール対象のペットタイプ（'dog' | 'cat'）
    * @param limit - 取得するペットの上限数（デフォルト: 10）
    * @returns クロール結果
-   * @description 指定されたタイプのペット情報を取得し、データベースに保存
+   * @description 指定されたタイプのペット情報を取得し、API経由でデータベースに保存
    * 新規作成、更新、エラーの統計情報も返す
    */
   async crawl(petType: 'dog' | 'cat', limit: number = 10): Promise<CrawlResult> {
@@ -89,29 +93,99 @@ export class PetHomeCrawler {
       const pets = await this.fetchPets(petType, limit)
       result.totalPets = pets.length
 
-      for (const pet of pets) {
-        try {
-          const existingPet = await this.checkExistingPet(pet.id)
+      // Service Bindingが利用可能な場合はAPI経由で送信
+      if (this.env.API_SERVICE) {
+        const apiResult = await this.submitToAPI(pets, petType)
+        result.newPets = apiResult.newPets
+        result.updatedPets = apiResult.updatedPets
+        result.success = apiResult.success
+        result.errors = apiResult.errors
+      } else {
+        // 従来のローカルDB保存処理
+        for (const pet of pets) {
+          try {
+            const existingPet = await this.checkExistingPet(pet.id)
 
-          if (existingPet) {
-            await this.updatePet(pet)
-            result.updatedPets++
-          } else {
-            await this.createPet(pet)
-            result.newPets++
+            if (existingPet) {
+              await this.updatePet(pet)
+              result.updatedPets++
+            } else {
+              await this.createPet(pet)
+              result.newPets++
+            }
+
+            await this.saveImageToR2(pet)
+          } catch (error) {
+            result.errors.push(`Failed to process pet ${pet.id}: ${error}`)
           }
-
-          await this.saveImageToR2(pet)
-        } catch (error) {
-          result.errors.push(`Failed to process pet ${pet.id}: ${error}`)
         }
+
+        result.success = result.errors.length === 0
       }
 
-      result.success = result.errors.length === 0
       return result
     } catch (error) {
       result.errors.push(`Crawling failed: ${error}`)
       return result
+    }
+  }
+
+  /**
+   * APIにペット情報を送信
+   *
+   * @param pets - 送信するペット情報の配列
+   * @param petType - ペットタイプ
+   * @returns クロール結果
+   * @description Service Binding経由でAPIにペット情報を送信し、
+   * データベースへの保存とDispatcherを通じたスクリーンショット処理をトリガー
+   */
+  private async submitToAPI(
+    pets: Pet[],
+    petType: 'dog' | 'cat'
+  ): Promise<{
+    success: boolean
+    newPets: number
+    updatedPets: number
+    errors: string[]
+  }> {
+    const apiClient = new ApiServiceClient(this.env.API_SERVICE)
+
+    if (!apiClient.isAvailable()) {
+      return {
+        success: false,
+        newPets: 0,
+        updatedPets: 0,
+        errors: ['API Service not configured'],
+      }
+    }
+
+    const result = await apiClient.submitCrawlerData(
+      {
+        source: 'pet-home',
+        petType,
+        pets,
+        crawlStats: {
+          totalProcessed: pets.length,
+          successCount: pets.length,
+        },
+      },
+      this.env.CRAWLER_API_KEY || ''
+    )
+
+    if (Result.isOk(result)) {
+      return {
+        success: result.data.success,
+        newPets: result.data.newPets,
+        updatedPets: result.data.updatedPets,
+        errors: [],
+      }
+    } else {
+      return {
+        success: false,
+        newPets: 0,
+        updatedPets: 0,
+        errors: [result.error.message],
+      }
     }
   }
 

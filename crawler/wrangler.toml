@@ -19,10 +19,16 @@ ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
 PET_HOME_BASE_URL = "https://www.pet-home.jp"
 API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+CRAWLER_API_KEY = "crawler-secret-key-2024"
 
 # -----------------------------------------------------------------------------
 # Resource Bindings
 # -----------------------------------------------------------------------------
+
+# Service Bindings for internal communication
+[[services]]
+binding = "API_SERVICE"
+service = "pawmatch-api"
 
 # R2 Bucket (Image Storage)
 [[r2_buckets]]
@@ -106,6 +112,10 @@ API_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 
 # Production Resource Bindings
+[[env.production.services]]
+binding = "API_SERVICE"
+service = "pawmatch-api"
+
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "pawmatch-images"

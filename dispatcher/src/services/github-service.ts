@@ -2,7 +2,7 @@
  * GitHub Actionsワークフローを制御するサービス
  */
 
-import type { Env, Pet } from '../types'
+import type { Env, Pet, ConversionData } from '../types'
 import { Result, Ok, Err } from '../types/result'
 
 export class RateLimitError extends Error {
@@ -141,6 +141,45 @@ export class GitHubService {
 
     // デフォルトは60秒
     return 60
+  }
+
+  /**
+   * 画像変換ワークフローをトリガー
+   */
+  async triggerConversionWorkflow(
+    conversionData: ConversionData[],
+    batchId: string,
+    workflowFile: string
+  ): Promise<Result<void>> {
+    try {
+      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${workflowFile}/dispatches`
+
+      const payload = {
+        ref: 'main',
+        inputs: {
+          pets_data: JSON.stringify(conversionData),
+          batch_id: batchId,
+          source: 'dispatcher-queue',
+          limit: String(conversionData.length),
+        },
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.buildHeaders(),
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        return this.handleErrorResponse(response)
+      }
+
+      console.log(`Image conversion workflow triggered successfully for batch: ${batchId}`)
+      return Ok(undefined)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`Image conversion workflow trigger failed: ${errorMessage}`))
+    }
   }
 
   /**
