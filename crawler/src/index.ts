@@ -141,52 +141,6 @@ app.get('/saved-pets/:type?', async (c) => {
 })
 
 /**
- * データベース初期化
- */
-async function initializeDatabase(env: Env): Promise<Result<void, Error>> {
-  try {
-    const sql = `
-      CREATE TABLE IF NOT EXISTS pets (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL CHECK (type IN ('dog', 'cat')),
-        name TEXT NOT NULL,
-        breed TEXT,
-        age TEXT,
-        gender TEXT,
-        prefecture TEXT NOT NULL,
-        city TEXT,
-        location TEXT,
-        description TEXT,
-        personality TEXT,
-        medicalInfo TEXT,
-        careRequirements TEXT,
-        imageUrl TEXT,
-        shelterName TEXT,
-        shelterContact TEXT,
-        sourceUrl TEXT,
-        adoptionFee INTEGER DEFAULT 0,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE TABLE IF NOT EXISTS crawler_states (
-        sourceId TEXT NOT NULL,
-        petType TEXT NOT NULL,
-        checkpoint TEXT,
-        totalProcessed INTEGER DEFAULT 0,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (sourceId, petType)
-      );
-    `
-
-    await env['DB'].exec(sql)
-    return Result.ok(undefined as void)
-  } catch (error) {
-    return Result.err(error instanceof Error ? error : new Error(String(error)))
-  }
-}
-
-/**
  * ペットクロール処理
  */
 async function crawlPets(

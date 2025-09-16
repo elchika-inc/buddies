@@ -24,39 +24,67 @@ const conversionRequestSchema = z.object({
 const app = new Hono<{ Bindings: Env }>()
 
 /**
- * 手動で画像変換処理を開始
- * POST /api/conversion/manual-start
+ * 画像変換処理を開始（手動またはスクリーンショット後）
+ * POST /api/conversion/screenshot
  */
-app.post('/manual-start', async (c: Context<{ Bindings: Env }>) => {
+app.post('/screenshot', async (c: Context<{ Bindings: Env }>) => {
   try {
-    // リクエストデータの検証
     const body = await c.req.json()
-    const validationResult = conversionRequestSchema.safeParse(body)
 
-    if (!validationResult.success) {
+    // スクリーンショット結果またはペット情報のどちらかを受け入れる
+    let pets: Array<{ id: string; type: 'dog' | 'cat'; screenshotKey?: string }>
+
+    if ('screenshotResults' in body) {
+      // スクリーンショット完了後の自動変換
+      const results = body.screenshotResults as Array<{
+        pet_id: string
+        pet_type: 'dog' | 'cat'
+        success: boolean
+        screenshotKey?: string
+      }>
+
+      // 成功したスクリーンショットのみを抽出
+      pets = results
+        .filter((r) => r.success && r.screenshotKey)
+        .map((r) => ({
+          id: r.pet_id,
+          type: r.pet_type,
+          screenshotKey: r.screenshotKey,
+        }))
+    } else if ('pets' in body) {
+      // 手動実行
+      const validationResult = conversionRequestSchema.safeParse(body)
+
+      if (!validationResult.success) {
+        return c.json(
+          {
+            success: false,
+            error: 'Invalid request data',
+            details: validationResult.error.flatten(),
+          },
+          400
+        )
+      }
+
+      pets = validationResult.data.pets.slice(0, validationResult.data.limit)
+    } else {
       return c.json(
         {
           success: false,
-          error: 'Invalid request data',
-          details: validationResult.error.flatten(),
+          error: 'Invalid request: must provide either screenshotResults or pets',
         },
         400
       )
     }
-
-    const { pets, limit } = validationResult.data
 
     if (pets.length === 0) {
-      return c.json(
-        {
-          success: false,
-          error: 'No pets provided for conversion',
-        },
-        400
-      )
+      return c.json({
+        success: true,
+        message: 'No pets to convert',
+      })
     }
 
-    // Service Binding経由でDispatcherを呼び出し
+    // Dispatcher経由で変換をトリガー
     const dispatcherClient = new DispatcherServiceClient(c.env.DISPATCHER)
 
     if (!dispatcherClient.isAvailable()) {
@@ -70,8 +98,7 @@ app.post('/manual-start', async (c: Context<{ Bindings: Env }>) => {
     }
 
     const result = await dispatcherClient.dispatchConversion({
-      pets: pets.slice(0, limit),
-      limit,
+      pets,
     })
 
     if (Result.isErr(result)) {
@@ -93,84 +120,6 @@ app.post('/manual-start', async (c: Context<{ Bindings: Env }>) => {
     })
   } catch (error) {
     console.error('Conversion trigger error:', error)
-    return c.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      500
-    )
-  }
-})
-
-/**
- * スクリーンショット撮影完了後に画像変換を開始
- * POST /api/conversion/after-screenshot
- */
-app.post('/after-screenshot', async (c: Context<{ Bindings: Env }>) => {
-  try {
-    const body = (await c.req.json()) as {
-      screenshotResults: Array<{
-        pet_id: string
-        pet_type: 'dog' | 'cat'
-        success: boolean
-        screenshotKey?: string
-      }>
-    }
-
-    // 成功したスクリーンショットのみを抽出
-    const successfulPets = body.screenshotResults
-      .filter((r) => r.success && r.screenshotKey)
-      .map((r) => ({
-        id: r.pet_id,
-        type: r.pet_type,
-        screenshotKey: r.screenshotKey,
-      }))
-
-    if (successfulPets.length === 0) {
-      return c.json({
-        success: true,
-        message: 'No successful screenshots to convert',
-      })
-    }
-
-    // Dispatcher経由で変換をトリガー
-    const dispatcherClient = new DispatcherServiceClient(c.env.DISPATCHER)
-
-    if (!dispatcherClient.isAvailable()) {
-      return c.json(
-        {
-          success: false,
-          error: 'Dispatcher service not configured',
-        },
-        500
-      )
-    }
-
-    const result = await dispatcherClient.dispatchConversion({
-      pets: successfulPets,
-    })
-
-    if (Result.isErr(result)) {
-      return c.json(
-        {
-          success: false,
-          error: 'Failed to trigger auto-conversion',
-          details: result.error.message,
-        },
-        500
-      )
-    }
-
-    return c.json({
-      success: result.data.success,
-      batchId: result.data.batchId,
-      count: result.data.count,
-      message: result.data.message || 'Auto-conversion triggered successfully',
-    })
-  } catch (error) {
-    console.error('Auto-conversion trigger error:', error)
     return c.json(
       {
         success: false,

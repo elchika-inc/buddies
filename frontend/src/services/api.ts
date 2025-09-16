@@ -65,7 +65,7 @@ class PetApi {
   async fetchPets(offset: number = 0, limit: number = 10): Promise<FrontendPetsResponse> {
     // ペットタイプ（犬/猫）を取得
     const petType = getPetType()
-    const url = `${this.baseUrl}/api/pets/${petType}?offset=${offset}&limit=${limit}`
+    const url = `${this.baseUrl}/api/pets/type/${petType}?offset=${offset}&limit=${limit}`
 
     try {
       // APIリクエスト（APIキー認証付き）
@@ -126,5 +126,5 @@ class PetApi {
 }
 
 /** PetApiクラスのシングルトンインスタンス */
-const petApi = new PetApi()
+export const petApi = new PetApi()
 export default petApi

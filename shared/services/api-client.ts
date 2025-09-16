@@ -79,28 +79,21 @@ export class ApiServiceClient extends ServiceClient {
   }
 
   /**
-   * 画像変換をトリガー
+   * 画像変換をトリガー（手動またはスクリーンショット後）
    */
   async triggerImageConversion(
-    data: ConversionTriggerData
+    data:
+      | ConversionTriggerData
+      | {
+          screenshotResults: Array<{
+            pet_id: string
+            pet_type: 'dog' | 'cat'
+            success: boolean
+            screenshotKey?: string
+          }>
+        }
   ): Promise<Result<ConversionTriggerResult, Error>> {
-    return this.post<ConversionTriggerResult>('/conversion/manual-start', data)
-  }
-
-  /**
-   * 自動変換をトリガー（スクリーンショット完了後）
-   */
-  async triggerAutoConversion(
-    screenshotResults: Array<{
-      pet_id: string
-      pet_type: 'dog' | 'cat'
-      success: boolean
-      screenshotKey?: string
-    }>
-  ): Promise<Result<ConversionTriggerResult, Error>> {
-    return this.post<ConversionTriggerResult>('/conversion/after-screenshot', {
-      screenshotResults,
-    })
+    return this.post<ConversionTriggerResult>('/conversion/screenshot', data)
   }
 
   /**

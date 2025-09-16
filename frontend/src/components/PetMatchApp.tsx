@@ -9,12 +9,13 @@ import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { useState, useEffect } from 'react'
 import { FrontendPet } from '@/types/pet'
 import { getPetType } from '@/config/petConfig'
+import { petApi } from '@/services/api'
 
 export function PetMatchApp() {
   const petType = getPetType()
 
-  // ダミーのペットデータ（実際のアプリではAPIから取得）
-  const [pets] = useState<FrontendPet[]>([])
+  // APIから取得するペットデータ
+  const [pets, setPets] = useState<FrontendPet[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
@@ -53,10 +54,21 @@ export function PetMatchApp() {
     handleSwipe(direction)
   }
 
-  // ペットデータの初期化（実際のアプリではAPIから取得）
+  // ペットデータをAPIから取得
   useEffect(() => {
-    // TODO: 実際のAPIから取得する処理に置き換え
-    setIsLoading(false)
+    const fetchPets = async () => {
+      try {
+        setIsLoading(true)
+        const response = await petApi.fetchPets(0, 20)
+        setPets(response.pets)
+      } catch (error) {
+        console.error('ペットデータの取得に失敗しました:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPets()
   }, [])
 
   // ローディング表示

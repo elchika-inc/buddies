@@ -2,7 +2,6 @@ import { Hono } from 'hono'
 import { setupMiddleware } from './middleware/setup'
 import { withEnv } from './middleware/envMiddleware'
 import { HealthController } from './controllers'
-import healthRoutes from './routes/health'
 import petRoutes from './routes/pets'
 import imageRoutes from './routes/images'
 import adminRoutes from './routes/admin'
@@ -29,9 +28,6 @@ app.get(
     return healthController.getHealthStatus(c)
   })
 )
-
-// ヘルスチェックルート
-app.route('/health', healthRoutes)
 
 // APIルート
 app.route('/api/stats', statsRoutes)
