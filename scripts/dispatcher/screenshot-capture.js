@@ -91,7 +91,7 @@ async function captureScreenshot(page, pet) {
     }
 
     // API経由でアップロード（base64エンコードして送信）
-    const base64Image = `data:image/png;base64,${screenshotBuffer.toString('base64')}`
+    const base64String = screenshotBuffer.toString('base64')
 
     const uploadResponse = await fetch(`${API_URL}/api/images/upload/batch`, {
       method: 'POST',
@@ -103,7 +103,7 @@ async function captureScreenshot(page, pet) {
         uploads: [
           {
             petId: pet.id,
-            imageData: base64Image.replace(/^data:image\/\w+;base64,/, ''), // データ部分のみ送信
+            imageData: base64String, // base64文字列をそのまま送信
             mimeType: 'image/png',
           },
         ],

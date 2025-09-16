@@ -121,6 +121,22 @@ export class ImageController {
         }>
       }
 
+      // デバッグログ：受信したボディの構造を確認
+      console.log('Received body structure:', {
+        hasBody: !!body,
+        hasUploads: !!body?.uploads,
+        uploadsLength: body?.uploads?.length,
+        firstUpload: body?.uploads?.[0]
+          ? {
+              hasPetId: !!body.uploads[0].petId,
+              hasImageData: !!body.uploads[0].imageData,
+              hasMimeType: !!body.uploads[0].mimeType,
+              imageDataLength: body.uploads[0].imageData?.length,
+              keys: Object.keys(body.uploads[0]),
+            }
+          : null,
+      })
+
       // デバッグ: リクエストボディを確認
       if (!body || !body.uploads || body.uploads.length === 0) {
         throw new BadRequestError('No uploads provided')
@@ -129,6 +145,11 @@ export class ImageController {
       // 各uploadの検証
       for (const upload of body.uploads) {
         if (!upload.imageData) {
+          console.error('Missing imageData for upload:', {
+            petId: upload.petId,
+            keys: Object.keys(upload),
+            upload: JSON.stringify(upload).substring(0, 200),
+          })
           throw new BadRequestError(`No image provided for petId: ${upload.petId}`)
         }
       }
