@@ -104,7 +104,7 @@ async function captureScreenshot(page, pet) {
     const execAsync = promisify(exec)
 
     try {
-      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png`
+      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png --remote`
       console.log(`  📤 Uploading to R2: ${screenshotKey}`)
 
       const { stdout, stderr } = await execAsync(uploadCommand)
