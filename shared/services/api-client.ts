@@ -84,7 +84,7 @@ export class ApiServiceClient extends ServiceClient {
   async triggerImageConversion(
     data: ConversionTriggerData
   ): Promise<Result<ConversionTriggerResult, Error>> {
-    return this.post<ConversionTriggerResult>('/conversion/trigger', data)
+    return this.post<ConversionTriggerResult>('/conversion/manual-start', data)
   }
 
   /**
@@ -98,7 +98,7 @@ export class ApiServiceClient extends ServiceClient {
       screenshotKey?: string
     }>
   ): Promise<Result<ConversionTriggerResult, Error>> {
-    return this.post<ConversionTriggerResult>('/conversion/auto-trigger', {
+    return this.post<ConversionTriggerResult>('/conversion/after-screenshot', {
       screenshotResults,
     })
   }

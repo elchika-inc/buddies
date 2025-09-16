@@ -43,30 +43,8 @@ app.get('/', (c) => {
   })
 })
 
-// データベース初期化エンドポイント（開発環境専用）
-app.post('/dev/init-db', async (c) => {
-  const result = await initializeDatabase(c.env)
-
-  if (Result.isOk(result)) {
-    return c.json({
-      success: true,
-      message: 'Database initialized successfully',
-      timestamp: new Date().toISOString(),
-    })
-  }
-
-  return c.json(
-    {
-      success: false,
-      error: result.error.message,
-      timestamp: new Date().toISOString(),
-    },
-    500
-  )
-})
-
-// 手動クロール実行エンドポイント
-app.post('/crawl/:source/:type?', async (c) => {
+// ペット情報を外部サイトから取得
+app.post('/fetch-pet-data/:source/:type?', async (c) => {
   const sourceId = c.req.param('source') || 'pet-home'
   const petType = (c.req.param('type') as 'dog' | 'cat') || 'cat'
   const limit = parseInt(c.req.query('limit') || '10')
@@ -110,8 +88,8 @@ app.post('/crawl/:source/:type?', async (c) => {
   )
 })
 
-// クロール状態取得エンドポイント
-app.get('/crawl/status/:source?/:type?', async (c) => {
+// データ取得の進行状況を確認
+app.get('/fetch-status/:source?/:type?', async (c) => {
   const sourceId = c.req.param('source')
   const petType = c.req.param('type')
 
@@ -134,34 +112,8 @@ app.get('/crawl/status/:source?/:type?', async (c) => {
   )
 })
 
-// Scheduled イベントのテスト用エンドポイント（開発環境専用）
-app.post('/test-scheduled', async (c) => {
-  try {
-    // scheduled 関数を手動で呼び出し
-    const dogResult = await crawlPets(c.env, 'dog', 5)
-    const catResult = await crawlPets(c.env, 'cat', 5)
-
-    return c.json({
-      message: 'Scheduled event triggered manually',
-      results: {
-        dog: Result.isOk(dogResult) ? dogResult.data : { error: dogResult.error.message },
-        cat: Result.isOk(catResult) ? catResult.data : { error: catResult.error.message },
-      },
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    return c.json(
-      {
-        error: 'Failed to trigger scheduled event',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      500
-    )
-  }
-})
-
-// ペット一覧取得（API用）
-app.get('/pets/:type?', async (c) => {
+// 保存済みペット情報一覧を取得
+app.get('/saved-pets/:type?', async (c) => {
   const petType = c.req.param('type')
   const limit = parseInt(c.req.query('limit') || '20')
   const offset = parseInt(c.req.query('offset') || '0')

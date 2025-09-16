@@ -24,10 +24,10 @@ const conversionRequestSchema = z.object({
 const app = new Hono<{ Bindings: Env }>()
 
 /**
- * 画像変換をトリガー
- * POST /api/conversion/trigger
+ * 手動で画像変換処理を開始
+ * POST /api/conversion/manual-start
  */
-app.post('/trigger', async (c: Context<{ Bindings: Env }>) => {
+app.post('/manual-start', async (c: Context<{ Bindings: Env }>) => {
   try {
     // リクエストデータの検証
     const body = await c.req.json()
@@ -105,10 +105,10 @@ app.post('/trigger', async (c: Context<{ Bindings: Env }>) => {
 })
 
 /**
- * スクリーンショット完了後の自動変換トリガー
- * POST /api/conversion/auto-trigger
+ * スクリーンショット撮影完了後に画像変換を開始
+ * POST /api/conversion/after-screenshot
  */
-app.post('/auto-trigger', async (c: Context<{ Bindings: Env }>) => {
+app.post('/after-screenshot', async (c: Context<{ Bindings: Env }>) => {
   try {
     const body = (await c.req.json()) as {
       screenshotResults: Array<{
