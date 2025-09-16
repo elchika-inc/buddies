@@ -11,6 +11,7 @@ export interface Env {
   ALLOWED_ORIGIN: string
   PET_HOME_BASE_URL: string
   GITHUB_ACTIONS?: string
+  CRAWLER_API_KEY?: string
   PAWMATCH_CAT_PETHOME_QUEUE?: Queue
   PAWMATCH_DOG_PETHOME_QUEUE?: Queue
   PAWMATCH_CAT_PETHOME_DLQ?: Queue
