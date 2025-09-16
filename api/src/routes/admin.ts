@@ -3,6 +3,7 @@ import { withEnv } from '../middleware/EnvMiddleware'
 import { adminAuth } from '../middleware/AdminAuth'
 import { AdminController } from '../controllers/admin/AdminController'
 import { ImageUploadController } from '../controllers/admin/ImageUploadController'
+import { CrawlerController } from '../controllers/admin/CrawlerController'
 import type { Env } from '../types'
 
 const admin = new Hono<{ Bindings: Env }>()
@@ -63,6 +64,25 @@ admin.post(
       c.env.R2_BUCKET || c.env.IMAGES_BUCKET
     )
     return uploadController.batchUpload(c)
+  })
+)
+
+// Crawler制御エンドポイント
+admin.post(
+  '/trigger-crawler',
+  adminAuth,
+  withEnv(async (c) => {
+    const crawlerController = new CrawlerController(c.env)
+    return crawlerController.triggerCrawl(c)
+  })
+)
+
+admin.get(
+  '/crawler-status',
+  adminAuth,
+  withEnv(async (c) => {
+    const crawlerController = new CrawlerController(c.env)
+    return crawlerController.getCrawlerStatus(c)
   })
 )
 

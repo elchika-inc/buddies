@@ -94,6 +94,7 @@ export class GitHubService {
         batch_data: JSON.stringify(petsData),
         batch_id: batchId,
         limit: String(pets.length),
+        trigger_conversion: 'true', // 自動的にImage Conversionをトリガー
       },
     }
   }

@@ -101,7 +101,7 @@ jobs:
           retention-days: 7
       
       - name: Trigger conversion workflow
-        if: steps.prepare-pets.outputs.pet_count > 0 && github.event.inputs.trigger_conversion == 'true'
+        if: steps.prepare-pets.outputs.pet_count > 0 && (github.event.inputs.trigger_conversion == 'true' || github.event.inputs.trigger_conversion == true)
         uses: actions/github-script@v7
         with:
           script: |
@@ -136,6 +136,6 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         run: |
           echo "✅ Screenshot capture completed for ${{ steps.prepare-pets.outputs.pet_count }} pets"
-          if [ "${{ github.event.inputs.trigger_conversion }}" == "true" ]; then
+          if [ "${{ github.event.inputs.trigger_conversion }}" == "true" ] || [ "${{ github.event.inputs.trigger_conversion }}" == true ]; then
             echo "🔄 Image conversion workflow has been triggered"
           fi
