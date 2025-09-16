@@ -121,7 +121,7 @@ jobs:
               await github.rest.actions.createWorkflowDispatch({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                workflow_id: 'automated-image-conversion.yml',
+                workflow_id: 'image-conversion.yml',
                 ref: 'main',
                 inputs: {
                   pets_data: JSON.stringify(successfulPets),
