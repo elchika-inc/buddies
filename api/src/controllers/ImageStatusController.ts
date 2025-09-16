@@ -39,10 +39,10 @@ export class ImageStatusController {
       const parsed = updateStatusSchema.safeParse(body)
       if (!parsed.success) {
         console.error(`[${requestId}] Validation failed`, {
-          errors: parsed.error.errors,
+          errors: parsed.error.issues,
           body: body,
         })
-        throw new ValidationError('Invalid request body', parsed.error.errors)
+        throw new ValidationError('Invalid request body')
       }
 
       const { petId, petType, screenshotKey, hasScreenshot } = parsed.data
