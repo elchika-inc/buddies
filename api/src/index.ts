@@ -7,7 +7,7 @@ import imageRoutes from './routes/images'
 import adminRoutes from './routes/admin'
 import statsRoutes from './routes/stats'
 import crawlerRoutes from './routes/crawler'
-import apiKeysRoutes from './routes/ApiKeys'
+import apiKeysRoutes from './routes/apiKeys'
 import conversionRoutes from './routes/conversion'
 import type { Env } from './types'
 
