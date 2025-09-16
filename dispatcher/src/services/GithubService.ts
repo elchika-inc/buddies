@@ -46,7 +46,7 @@ export class GitHubService {
       })
 
       if (!response.ok) {
-        return this.handleErrorResponse(response)
+        return await this.handleErrorResponse(response)
       }
 
       console.log(`GitHub workflow triggered successfully for batch: ${batchId}`)
@@ -70,8 +70,9 @@ export class GitHubService {
   private buildHeaders(): Record<string, string> {
     return {
       Accept: 'application/vnd.github.v3+json',
-      Authorization: `token ${this.githubToken}`,
+      Authorization: `Bearer ${this.githubToken}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'pawmatch-dispatcher/1.0.0',
     }
   }
 
@@ -100,7 +101,21 @@ export class GitHubService {
   /**
    * エラーレスポンスを処理
    */
-  private handleErrorResponse(response: Response): Result<void> {
+  private async handleErrorResponse(response: Response): Promise<Result<void>> {
+    // エラーレスポンスのボディを取得してログに出力
+    let errorBody = ''
+    try {
+      errorBody = await response.text()
+      console.error('GitHub API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
+        headers: Object.fromEntries(response.headers.entries()),
+      })
+    } catch (e) {
+      console.error('Failed to read error response body')
+    }
+
     // Rate Limitエラーの場合
     if (response.status === 429) {
       const retryAfter = this.extractRetryAfter(response)
@@ -109,21 +124,23 @@ export class GitHubService {
 
     // 認証エラー
     if (response.status === 401) {
-      return Err(new Error('GitHub authentication failed. Please check your token.'))
+      return Err(new Error(`GitHub authentication failed. ${errorBody}`))
     }
 
     // 権限エラー
     if (response.status === 403) {
-      return Err(new Error('GitHub permission denied. Please check your repository permissions.'))
+      return Err(new Error(`GitHub permission denied. ${errorBody}`))
     }
 
     // Not Found
     if (response.status === 404) {
-      return Err(new Error('GitHub workflow not found. Please check your workflow file path.'))
+      return Err(new Error(`GitHub workflow not found. ${errorBody}`))
     }
 
     // その他のエラー
-    return Err(new Error(`GitHub API error: ${response.status} ${response.statusText}`))
+    return Err(
+      new Error(`GitHub API error: ${response.status} ${response.statusText}. ${errorBody}`)
+    )
   }
 
   /**
@@ -171,7 +188,7 @@ export class GitHubService {
       })
 
       if (!response.ok) {
-        return this.handleErrorResponse(response)
+        return await this.handleErrorResponse(response)
       }
 
       console.log(`Image conversion workflow triggered successfully for batch: ${batchId}`)
@@ -193,7 +210,8 @@ export class GitHubService {
         method: 'GET',
         headers: {
           Accept: 'application/vnd.github.v3+json',
-          Authorization: `token ${this.githubToken}`,
+          Authorization: `Bearer ${this.githubToken}`,
+          'User-Agent': 'pawmatch-dispatcher/1.0.0',
         },
       })
 
