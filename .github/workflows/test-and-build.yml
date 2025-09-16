@@ -91,7 +91,7 @@ jobs:
         run: npm ci
         
       - name: Build ${{ matrix.workspace }}
-        run: npm run -w @pawmatch/${{ matrix.workspace }} build
+        run: npm run build -w @pawmatch/${{ matrix.workspace }}
         continue-on-error: ${{ matrix.workspace != 'frontend' }}  # frontendのみ必須
         
   all-checks-passed:
