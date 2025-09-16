@@ -121,6 +121,18 @@ export class ImageController {
         }>
       }
 
+      // デバッグ: リクエストボディを確認
+      if (!body || !body.uploads || body.uploads.length === 0) {
+        throw new BadRequestError('No uploads provided')
+      }
+
+      // 各uploadの検証
+      for (const upload of body.uploads) {
+        if (!upload.imageData) {
+          throw new BadRequestError(`No image provided for petId: ${upload.petId}`)
+        }
+      }
+
       if (!this.bucket || !this.db) {
         throw new ServiceUnavailableError('Storage or database not available')
       }
