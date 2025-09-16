@@ -8,9 +8,9 @@
 import type { Pet, CrawlResult } from '../../../shared/types'
 import { Result } from '../../../shared/types/result'
 import { ApiServiceClient } from '../../../shared/services/api-client'
-import { HtmlParser } from './html-parser'
-import { HttpFetcher } from './http-fetcher'
-import { DataPersistence } from './data-persistence'
+import { HtmlParser } from './HtmlParser'
+import { HttpFetcher } from './HttpFetcher'
+import { DataPersistence } from './DataPersistence'
 import type { Env } from '../types'
 
 /**
@@ -124,7 +124,7 @@ export class PetHomeCrawler {
       const pageResult = await fetchPage(url)
 
       if (Result.isErr(pageResult)) {
-        errors.push(`Failed to fetch page ${page}: ${pageResult.error.message}`)
+        errors.push(`Failed to fetch page ${page}: ${(pageResult.error as Error).message}`)
         continue
       }
 
@@ -138,7 +138,9 @@ export class PetHomeCrawler {
         const detailResult = await fetchPage(petInfo.detailUrl)
 
         if (Result.isErr(detailResult)) {
-          errors.push(`Failed to fetch detail for ${petInfo.id}: ${detailResult.error.message}`)
+          errors.push(
+            `Failed to fetch detail for ${petInfo.id}: ${(detailResult.error as Error).message}`
+          )
           continue
         }
 
@@ -187,7 +189,7 @@ export class PetHomeCrawler {
     const saveResult = await this.dataPersistence.savePets(pets)
 
     if (Result.isErr(saveResult)) {
-      return Result.err(saveResult.error)
+      return Result.err(saveResult.error as Error)
     }
 
     // 画像を保存（オプション）
