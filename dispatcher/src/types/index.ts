@@ -24,7 +24,7 @@ export interface Env {
 }
 
 export interface DispatchMessage {
-  type: 'screenshot' | 'crawl' | 'conversion' | 'cleanup'
+  type: 'screenshot' | 'crawl' | 'conversion' | 'cleanup' | 'crawler'
   pets?: PetDispatchData[]
   batchId: string
   retryCount?: number
@@ -32,6 +32,12 @@ export interface DispatchMessage {
   cleanupType?: 'expired' | 'all'
   workflowFile?: string // 画像変換用のワークフローファイル指定
   conversionData?: ConversionData[] // 画像変換用のデータ
+  crawlerData?: CrawlerData // Crawler起動用のデータ
+}
+
+export interface CrawlerData {
+  petType: 'dog' | 'cat'
+  limit: number
 }
 
 export interface ConversionData {

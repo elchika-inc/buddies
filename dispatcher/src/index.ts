@@ -16,6 +16,14 @@ import { ApiService } from './services/ApiService'
 import { QueueService } from './services/QueueService'
 import { QueueHandler } from './handlers/QueueHandler'
 import type { Env, DispatchMessage, Pet } from './types'
+import type {
+  ErrorResponse,
+  HealthCheckResponse,
+  DispatchResponse,
+  CrawlerTriggerResponse,
+  ConversionDispatchResponse,
+  HistoryResponse,
+} from './types/responses'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -26,11 +34,13 @@ app.use('*', cors())
  * ヘルスチェックエンドポイント
  */
 app.get('/', (c) => {
-  return c.json({
+  const response: HealthCheckResponse = {
     service: 'PawMatch Dispatcher',
     status: 'healthy',
     timestamp: new Date().toISOString(),
-  })
+    success: true,
+  }
+  return c.json(response)
 })
 
 /**
@@ -40,14 +50,7 @@ async function createAndSendBatch(
   env: Env,
   limit: number,
   prefix: 'dispatch' | 'cron'
-): Promise<{
-  success: boolean
-  batchId?: string
-  count?: number
-  message?: string
-  error?: string
-  pets?: Array<{ id: string; name: string }>
-}> {
+): Promise<DispatchResponse | ErrorResponse> {
   try {
     const apiService = new ApiService(env)
     const queueService = new QueueService(env)
@@ -56,20 +59,23 @@ async function createAndSendBatch(
     const result = await apiService.fetchPetsWithoutImages(limit)
 
     if (Result.isErr(result)) {
-      return {
+      const errorResponse: ErrorResponse = {
         success: false,
         error: result.error.message,
       }
+      return errorResponse
     }
 
     const pets = Result.isOk(result) ? result.data : []
 
     if (pets.length === 0) {
-      return {
+      const response: DispatchResponse = {
         success: true,
         message: 'No pets without images found',
         count: 0,
+        batchId: '',
       }
+      return response
     }
 
     // バッチIDを生成
@@ -82,33 +88,40 @@ async function createAndSendBatch(
     const sendResult = await queueService.sendDispatchMessage(petDispatchData, batchId)
 
     if (Result.isErr(sendResult)) {
-      return {
+      const errorResponse: ErrorResponse = {
         success: false,
         error: sendResult.error.message,
       }
+      return errorResponse
     }
 
-    return {
+    const response: DispatchResponse = {
       success: true,
       batchId,
       count: pets.length,
       message: 'Batch queued for processing',
       pets: pets.map((p: Pet) => ({ id: p.id, name: p.name })),
     }
+    return response
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return {
+    const errorResponse: ErrorResponse = {
       success: false,
       error: errorMessage,
     }
+    return errorResponse
   }
 }
 
 /**
  * 手動ディスパッチエンドポイント
  */
+interface DispatchRequest {
+  limit?: number
+}
+
 app.post('/dispatch', async (c: Context<{ Bindings: Env }>) => {
-  let requestData: { limit?: number } = {}
+  let requestData: DispatchRequest = {}
 
   try {
     const rawData = await c.req.json()
@@ -147,26 +160,92 @@ app.post('/scheduled', async (c: Context<{ Bindings: Env }>) => {
   }
 })
 
+interface CrawlerTriggerRequest {
+  type?: 'dog' | 'cat' | 'both'
+  limit?: number
+}
+
+/**
+ * Crawler起動エンドポイント（API経由で呼ばれる）
+ */
+app.post('/trigger-crawler', async (c: Context<{ Bindings: Env }>) => {
+  try {
+    const requestData = (await c.req.json()) as CrawlerTriggerRequest
+
+    const { type = 'both', limit = 10 } = requestData
+
+    // Queueにクロール要求を送信
+    const messages: DispatchMessage[] = []
+
+    if (type === 'dog' || type === 'both') {
+      messages.push({
+        type: 'crawler',
+        batchId: QueueService.generateBatchId('crawler'),
+        timestamp: new Date().toISOString(),
+        crawlerData: {
+          petType: 'dog',
+          limit,
+        },
+      })
+    }
+
+    if (type === 'cat' || type === 'both') {
+      messages.push({
+        type: 'crawler',
+        batchId: QueueService.generateBatchId('crawler'),
+        timestamp: new Date().toISOString(),
+        crawlerData: {
+          petType: 'cat',
+          limit,
+        },
+      })
+    }
+
+    // メッセージをQueueに送信
+    for (const message of messages) {
+      await c.env.PAWMATCH_DISPATCH_QUEUE.send(message)
+    }
+
+    const response: CrawlerTriggerResponse = {
+      success: true,
+      message: `Crawler triggered for ${type}`,
+      batches: messages.map((m) => ({
+        batchId: m.batchId,
+        petType: m.crawlerData?.petType ?? 'unknown',
+      })),
+    }
+    return c.json(response)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Crawler trigger error:', errorMessage)
+    const errorResponse: ErrorResponse = {
+      success: false,
+      error: errorMessage,
+    }
+    return c.json(errorResponse, 500)
+  }
+})
+
+interface ConversionDispatchRequest {
+  pets?: Array<{ id: string; type: 'dog' | 'cat'; screenshotKey?: string }>
+  limit?: number
+}
+
 /**
  * 画像変換ディスパッチエンドポイント
  */
 app.post('/dispatch-conversion', async (c: Context<{ Bindings: Env }>) => {
   try {
-    const requestData = (await c.req.json()) as {
-      pets?: Array<{ id: string; type: 'dog' | 'cat'; screenshotKey?: string }>
-      limit?: number
-    }
+    const requestData = (await c.req.json()) as ConversionDispatchRequest
 
     const { pets = [], limit = 50 } = requestData
 
     if (pets.length === 0) {
-      return c.json(
-        {
-          success: false,
-          message: 'No pets provided for conversion',
-        },
-        400
-      )
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: 'No pets provided for conversion',
+      }
+      return c.json(errorResponse, 400)
     }
 
     // バッチIDを生成
@@ -190,22 +269,21 @@ app.post('/dispatch-conversion', async (c: Context<{ Bindings: Env }>) => {
 
     await c.env.PAWMATCH_DISPATCH_QUEUE.send(message)
 
-    return c.json({
+    const response: ConversionDispatchResponse = {
       success: true,
       batchId,
       count: conversionData.length,
       message: 'Image conversion batch queued for processing',
-    })
+    }
+    return c.json(response)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Conversion dispatch error:', errorMessage)
-    return c.json(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      500
-    )
+    const errorResponse: ErrorResponse = {
+      success: false,
+      error: errorMessage,
+    }
+    return c.json(errorResponse, 500)
   }
 })
 
@@ -213,11 +291,12 @@ app.post('/dispatch-conversion', async (c: Context<{ Bindings: Env }>) => {
  * ディスパッチ履歴エンドポイント（将来の実装用）
  */
 app.get('/history', async (c: Context<{ Bindings: Env }>) => {
-  return c.json({
+  const response: HistoryResponse = {
     success: true,
     message: 'History endpoint not yet implemented',
     history: [],
-  })
+  }
+  return c.json(response)
 })
 
 /**

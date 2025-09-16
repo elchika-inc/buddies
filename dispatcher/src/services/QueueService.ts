@@ -177,18 +177,21 @@ export class QueueService {
   /**
    * バッチIDを生成
    *
-   * @param prefix - IDの接頭辞（'dispatch' | 'cron'）
+   * @param prefix - IDの接頭辞（'dispatch' | 'cron' | 'conversion' | 'crawler'）
    * @returns 一意なバッチID
    * @description バッチ処理用の一意識別子を生成
    * cronの場合は日付を含む形式、dispatchの場合はタイムスタンプのみ
    */
-  static generateBatchId(prefix: 'dispatch' | 'cron' | 'conversion'): string {
+  static generateBatchId(prefix: 'dispatch' | 'cron' | 'conversion' | 'crawler'): string {
     if (prefix === 'cron') {
       const dateStr = new Date().toISOString().split('T')[0]
       return `cron-${dateStr}-${Date.now()}`
     }
     if (prefix === 'conversion') {
       return `conversion-${Date.now()}`
+    }
+    if (prefix === 'crawler') {
+      return `crawler-${Date.now()}`
     }
     return `dispatch-${Date.now()}`
   }

@@ -5,6 +5,7 @@
 import type { Env, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
 import { ApiPetData, isApiStatsResponse, isApiPetData } from '../types/api'
+import { ExternalServiceError, ErrorHandler } from '../../../shared/types/errors'
 
 export class ApiService {
   private readonly apiUrl: string
@@ -24,7 +25,12 @@ export class ApiService {
       const response = await this.makeApiRequest('/api/stats')
 
       if (!response.ok) {
-        return Err(new Error(`API request failed with status: ${response.status}`))
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
       }
 
       // レスポンスをJSONとしてパース
@@ -32,11 +38,21 @@ export class ApiService {
 
       // 型検証
       if (!isApiStatsResponse(data)) {
-        return Err(new Error('Invalid API response structure'))
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response structure',
+          data
+        )
+        return Err(error)
       }
 
       if (!data.success) {
-        return Err(new Error(data.error || 'API request was not successful'))
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          data.error || 'API request was not successful',
+          data
+        )
+        return Err(error)
       }
 
       if (!data.data?.missingImages) {
@@ -47,8 +63,9 @@ export class ApiService {
       const pets = this.convertApiPetsToPets(data.data.missingImages, limit)
       return Ok(pets)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown API error'
-      return Err(new Error(`Failed to fetch pets: ${errorMessage}`))
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch pets')
+      ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
+      return Err(wrappedError)
     }
   }
 
@@ -58,10 +75,15 @@ export class ApiService {
   private async makeApiRequest(endpoint: string): Promise<Response> {
     const url = `${this.apiUrl}${endpoint}`
 
-    return await fetch(url, {
-      method: 'GET',
-      headers: this.buildApiHeaders(),
-    })
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.buildApiHeaders(),
+      })
+      return response
+    } catch (error) {
+      throw new ExternalServiceError('PawMatch API', `Failed to connect to API at ${url}`, error)
+    }
   }
 
   /**

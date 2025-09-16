@@ -1,17 +1,18 @@
 /**
  * Queueメッセージの処理を管理するハンドラー
+ * KISS原則に基づき簡素化されたバージョン
  */
 
 import type { MessageBatch, Message } from '@cloudflare/workers-types'
-import type { Env, DispatchMessage, Pet } from '../types'
-import { isPetDispatchData } from '../types'
-import { Result, isErr, isOk } from '../types/result'
+import type { Env, DispatchMessage } from '../types'
 import { GitHubService, RateLimitError } from '../services/GithubService'
 import { QueueService } from '../services/QueueService'
+import { ErrorHandler, AppError } from '../../../shared/types/errors'
 
 export class QueueHandler {
   private readonly githubService: GitHubService
   private readonly queueService: QueueService
+  private readonly maxRetries = 3
 
   constructor(env: Env) {
     this.githubService = new GitHubService(env)
@@ -22,144 +23,143 @@ export class QueueHandler {
    * バッチのメッセージを処理
    */
   async handleBatch(batch: MessageBatch<DispatchMessage>): Promise<void> {
-    const tasks = batch.messages.map((message) => this.processMessage(message))
-    const results = await Promise.allSettled(tasks)
-
-    // エラーをログ出力
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        console.error(`Message ${index} processing failed:`, result.reason)
+    // シンプルな逐次処理で十分（並列処理の複雑さを回避）
+    for (const message of batch.messages) {
+      try {
+        await this.processMessage(message)
+        message.ack()
+      } catch (error) {
+        await this.handleError(message, error)
       }
-    })
+    }
   }
 
   /**
    * 個別のメッセージを処理
    */
   private async processMessage(message: Message<DispatchMessage>): Promise<void> {
-    const { batchId, retryCount = 0 } = message.body
+    const { type, batchId } = message.body
+    console.log(`Processing ${type} message: ${batchId}`)
 
-    console.log(`Processing message: ${batchId}, type: ${message.body.type}, retry: ${retryCount}`)
-
-    try {
-      const result = await this.processDispatchMessage(message.body)
-
-      if (isErr(result)) {
-        await this.handleProcessingError(message, result.error)
-        return
-      }
-
-      console.log(`Message processed successfully: ${batchId}`)
-      message.ack()
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Unknown error occurred')
-      await this.handleProcessingError(message, err)
-    }
-  }
-
-  /**
-   * ディスパッチメッセージを処理
-   */
-  private async processDispatchMessage(dispatch: DispatchMessage): Promise<Result<void>> {
-    // メッセージの妥当性を検証
-    const validationResult = QueueService.validateDispatchMessage(dispatch)
-    if (isErr(validationResult)) {
-      return validationResult
-    }
-
-    // メッセージタイプに応じて処理を分岐
-    switch (dispatch.type) {
+    switch (type) {
       case 'screenshot':
-        return await this.processScreenshotMessage(dispatch)
+        await this.processScreenshot(message.body)
+        break
+
       case 'conversion':
-        return await this.processConversionMessage(dispatch)
+        await this.processConversion(message.body)
+        break
+
+      case 'crawler':
+        // Crawler機能は現在未実装のため、メッセージを確認のみ
+        console.log(`Crawler message received: ${batchId}`)
+        break
+
       default:
-        console.log(`Skipping unsupported message type: ${dispatch.type}`)
-        return { success: true, data: undefined }
+        console.warn(`Unknown message type: ${type}`)
     }
   }
 
   /**
-   * スクリーンショットメッセージを処理
+   * スクリーンショット処理
    */
-  private async processScreenshotMessage(dispatch: DispatchMessage): Promise<Result<void>> {
-    if (!dispatch.pets || dispatch.pets.length === 0) {
-      console.log('No pets to process in screenshot message')
-      return { success: true, data: undefined }
+  private async processScreenshot(message: DispatchMessage): Promise<void> {
+    const { pets, batchId } = message
+
+    if (!pets?.length) {
+      console.log('No pets to process')
+      return
     }
 
-    // すべてのペットデータの妥当性を確認
-    for (const pet of dispatch.pets) {
-      if (!isPetDispatchData(pet)) {
-        return { success: false, error: new Error('Invalid pet data in message') }
-      }
+    // PetDispatchDataをPetに変換してGitHub Actionsを起動
+    const petRecords = pets.map(QueueService.convertDispatchDataToPet)
+    const result = await this.githubService.triggerWorkflow(petRecords, batchId)
+
+    if (!result.success) {
+      throw result.error
     }
-
-    // PetDispatchDataをPetに変換
-    const petRecords: Pet[] = dispatch.pets.map(QueueService.convertDispatchDataToPet)
-
-    // GitHub Actionsワークフローをトリガー
-    return await this.githubService.triggerWorkflow(petRecords, dispatch.batchId)
   }
 
   /**
-   * 画像変換メッセージを処理
+   * 画像変換処理
    */
-  private async processConversionMessage(dispatch: DispatchMessage): Promise<Result<void>> {
-    if (!dispatch.conversionData || dispatch.conversionData.length === 0) {
+  private async processConversion(message: DispatchMessage): Promise<void> {
+    const { conversionData, batchId, workflowFile = 'image-conversion.yml' } = message
+
+    if (!conversionData?.length) {
       console.log('No conversion data to process')
-      return { success: true, data: undefined }
+      return
     }
 
-    const workflowFile = dispatch.workflowFile || 'image-conversion.yml'
-
-    // GitHub Actionsワークフローをトリガー
-    return await this.githubService.triggerConversionWorkflow(
-      dispatch.conversionData,
-      dispatch.batchId,
+    const result = await this.githubService.triggerConversionWorkflow(
+      conversionData,
+      batchId,
       workflowFile
     )
+
+    if (!result.success) {
+      throw result.error
+    }
   }
 
   /**
-   * エラー処理
+   * エラーハンドリング（簡素化版）
    */
-  private async handleProcessingError(
-    message: Message<DispatchMessage>,
-    error: Error
-  ): Promise<void> {
+  private async handleError(message: Message<DispatchMessage>, error: unknown): Promise<void> {
+    const appError = ErrorHandler.wrap(error)
     const retryCount = message.body.retryCount || 0
-    const maxRetries = 3
+    const { batchId } = message.body
 
-    console.error(`Error processing message ${message.body.batchId}:`, error.message)
+    ErrorHandler.log(appError, { batchId, retryCount })
 
-    // Rate Limitエラーの場合、指定された時間後にリトライ
-    if (error instanceof RateLimitError && retryCount < maxRetries) {
-      const retryResult = await this.queueService.sendRetryMessage(message.body, error.retryAfter)
-
-      if (isOk(retryResult)) {
-        message.ack() // 現在のメッセージは処理済みとする
-        console.log(`Message scheduled for retry after ${error.retryAfter}s`)
-      } else {
-        console.error('Failed to schedule retry:', retryResult.error.message)
-        message.retry() // デフォルトのリトライ機構を使用
-      }
+    // Rate Limit エラーの特別処理
+    if (error instanceof RateLimitError && retryCount < this.maxRetries) {
+      await this.scheduleRetry(message, error.retryAfter)
       return
     }
 
-    // 最大リトライ回数に達した場合はDLQに送信
-    if (retryCount >= maxRetries) {
-      const dlqResult = await this.queueService.sendToDLQ(message.body, error)
-
-      if (isErr(dlqResult)) {
-        console.error('Failed to send message to DLQ:', dlqResult.error.message)
-      }
-
-      message.ack() // DLQ送信の成否に関わらず、メッセージは処理済みとする
+    // 最大リトライ回数チェック
+    if (retryCount >= this.maxRetries) {
+      await this.sendToDLQ(message, appError)
       return
     }
 
-    // その他の場合は通常のリトライ
+    // デフォルトリトライ
     message.retry()
+  }
+
+  /**
+   * リトライスケジューリング
+   */
+  private async scheduleRetry(
+    message: Message<DispatchMessage>,
+    delaySeconds: number
+  ): Promise<void> {
+    const retryMessage = {
+      ...message.body,
+      retryCount: (message.body.retryCount || 0) + 1,
+    }
+
+    const result = await this.queueService.sendRetryMessage(retryMessage, delaySeconds)
+
+    if (result.success) {
+      message.ack()
+      console.log(`Retry scheduled after ${delaySeconds}s`)
+    } else {
+      message.retry()
+    }
+  }
+
+  /**
+   * DLQ送信
+   */
+  private async sendToDLQ(message: Message<DispatchMessage>, error: AppError): Promise<void> {
+    const result = await this.queueService.sendToDLQ(message.body, error)
+
+    if (!result.success) {
+      console.error('DLQ send failed:', result.error.message)
+    }
+
+    message.ack() // DLQ送信の成否に関わらず処理済みとする
   }
 }
