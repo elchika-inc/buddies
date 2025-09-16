@@ -1,6 +1,11 @@
 import { Context } from 'hono'
 import { extractPetIdFromFilename } from '../utils/validation'
-import { handleError, ServiceUnavailableError, NotFoundError } from '../utils/ErrorHandler'
+import {
+  handleError,
+  ServiceUnavailableError,
+  NotFoundError,
+  ValidationError,
+} from '../utils/ErrorHandler'
 import type { Env } from '../types/env'
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 
@@ -139,7 +144,7 @@ export class ImageController {
 
       // デバッグ: リクエストボディを確認
       if (!body || !body.uploads || body.uploads.length === 0) {
-        throw new BadRequestError('No uploads provided')
+        throw new ValidationError('No uploads provided')
       }
 
       // 各uploadの検証
@@ -150,7 +155,7 @@ export class ImageController {
             keys: Object.keys(upload),
             upload: JSON.stringify(upload).substring(0, 200),
           })
-          throw new BadRequestError(`No image provided for petId: ${upload.petId}`)
+          throw new ValidationError(`No image provided for petId: ${upload.petId}`)
         }
       }
 
