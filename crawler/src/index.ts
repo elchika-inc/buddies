@@ -18,6 +18,8 @@ export interface Env {
   API_URL?: string
   CRAWLER_API_KEY?: string
   PET_HOME_BASE_URL?: string
+  // Service Bindings
+  API_SERVICE?: Fetcher
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -341,11 +343,39 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    // シンプルなスケジュールクロール
-    await crawlPets(env, 'dog', 5)
-    await crawlPets(env, 'cat', 5)
+    console.log('Scheduled crawl started at', new Date().toISOString())
 
-    // Scheduled crawl completed
+    // PetHomeCrawlerを使用して新しいService Bindingsアーキテクチャで実行
+    const crawler = new PetHomeCrawler(env)
+
+    try {
+      // 犬の情報をクロール
+      const dogResult = await crawler.crawl('dog', 10)
+      console.log('Dog crawl result:', {
+        success: dogResult.success,
+        totalPets: dogResult.totalPets,
+        newPets: dogResult.newPets,
+        updatedPets: dogResult.updatedPets,
+        errors: dogResult.errors.length,
+      })
+
+      // 猫の情報をクロール
+      const catResult = await crawler.crawl('cat', 10)
+      console.log('Cat crawl result:', {
+        success: catResult.success,
+        totalPets: catResult.totalPets,
+        newPets: catResult.newPets,
+        updatedPets: catResult.updatedPets,
+        errors: catResult.errors.length,
+      })
+    } catch (error) {
+      console.error(
+        'Scheduled crawl failed:',
+        error instanceof Error ? error.message : String(error)
+      )
+    }
+
+    console.log('Scheduled crawl completed at', new Date().toISOString())
   },
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
