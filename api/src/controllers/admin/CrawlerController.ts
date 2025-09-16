@@ -42,7 +42,7 @@ export class CrawlerController {
             success: false,
             error: `Crawler trigger failed: ${errorText}`,
           },
-          crawlerResponse.status
+          crawlerResponse.status as 400 | 401 | 403 | 404 | 500 | 502 | 503
         )
       }
 
@@ -93,7 +93,7 @@ export class CrawlerController {
             success: false,
             error: `Failed to get crawler status: ${errorText}`,
           },
-          statusResponse.status
+          statusResponse.status as 400 | 401 | 403 | 404 | 500 | 502 | 503
         )
       }
 

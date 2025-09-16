@@ -69,6 +69,7 @@ export interface CloudflareEnv {
 
   // Service Bindings
   DISPATCHER?: Fetcher
+  CRAWLER_SERVICE?: Fetcher
 }
 
 /**
