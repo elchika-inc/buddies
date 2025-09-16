@@ -110,7 +110,8 @@ export class GitHubService {
         status: response.status,
         statusText: response.statusText,
         body: errorBody,
-        headers: Object.fromEntries(response.headers.entries()),
+        rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
+        rateLimitReset: response.headers.get('x-ratelimit-reset'),
       })
     } catch (e) {
       console.error('Failed to read error response body')
