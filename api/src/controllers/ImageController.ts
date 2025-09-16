@@ -117,56 +117,231 @@ export class ImageController {
   }
 
   async uploadBatch(c: Context<{ Bindings: Env }>) {
+    // リクエスト開始時刻を記録
+    const requestStart = Date.now()
+
     try {
-      const body = (await c.req.json()) as {
-        uploads: Array<{
-          petId: string
-          imageData: string // base64
-          mimeType: string
+      // リクエストのメタ情報を取得して詳細ログ出力
+      const contentType = c.req.header('content-type') || ''
+      const userAgent = c.req.header('user-agent') || ''
+      const requestId = crypto.randomUUID().substring(0, 8)
+
+      console.log(`[${requestId}] uploadBatch started`, {
+        method: c.req.method,
+        contentType,
+        userAgent,
+        url: c.req.url,
+        timestamp: new Date().toISOString(),
+      })
+
+      // リクエストボディの解析を試行 - 詳細なエラーハンドリング付き
+      let rawBody: string
+      let parsedBody: any
+
+      try {
+        // まず生のテキストとして読み取り
+        rawBody = await c.req.text()
+        console.log(`[${requestId}] Raw request body size: ${rawBody.length} bytes`)
+
+        if (!rawBody || rawBody.length === 0) {
+          throw new ValidationError('Empty request body')
+        }
+
+        // JSONとして解析を試行
+        parsedBody = JSON.parse(rawBody)
+        console.log(`[${requestId}] JSON parsing successful`)
+      } catch (parseError) {
+        console.error(`[${requestId}] JSON parsing failed:`, {
+          error: parseError instanceof Error ? parseError.message : 'Unknown parsing error',
+          bodyLength: rawBody?.length || 0,
+          bodyPreview: rawBody?.substring(0, 200) || 'No body',
+          contentType,
+        })
+
+        return c.json(
+          {
+            success: false,
+            error: 'Invalid JSON in request body',
+            details: {
+              parseError:
+                parseError instanceof Error ? parseError.message : 'Unknown parsing error',
+              contentType,
+              bodyLength: rawBody?.length || 0,
+            },
+          },
+          400
+        )
+      }
+
+      // uploadsBatchの構造を検証
+      const body = parsedBody as {
+        uploads?: Array<{
+          petId?: string
+          imageData?: string
+          mimeType?: string
         }>
       }
 
-      // デバッグログ：受信したボディの構造を確認
-      console.log('Received body structure:', {
-        hasBody: !!body,
-        hasUploads: !!body?.uploads,
-        uploadsLength: body?.uploads?.length,
-        firstUpload: body?.uploads?.[0]
-          ? {
-              hasPetId: !!body.uploads[0].petId,
-              hasImageData: !!body.uploads[0].imageData,
-              hasMimeType: !!body.uploads[0].mimeType,
-              imageDataLength: body.uploads[0].imageData?.length,
-              keys: Object.keys(body.uploads[0]),
-            }
-          : null,
+      console.log(`[${requestId}] Request body structure:`, {
+        hasUploads: !!body.uploads,
+        uploadsType: typeof body.uploads,
+        uploadsLength: Array.isArray(body.uploads) ? body.uploads.length : 'not array',
+        bodyKeys: Object.keys(body),
+        firstUploadKeys: body.uploads?.[0] ? Object.keys(body.uploads[0]) : 'no uploads',
       })
 
-      // デバッグ: リクエストボディを確認
-      if (!body || !body.uploads || body.uploads.length === 0) {
-        throw new ValidationError('No uploads provided')
+      // バリデーション: uploadsが存在し、配列であることを確認
+      if (!body.uploads) {
+        console.error(`[${requestId}] Missing uploads field`)
+        return c.json(
+          {
+            success: false,
+            error: 'Missing uploads field in request body',
+            details: {
+              receivedKeys: Object.keys(body),
+              expectedField: 'uploads',
+            },
+          },
+          400
+        )
       }
 
-      // 各uploadの検証
-      for (const upload of body.uploads) {
+      if (!Array.isArray(body.uploads)) {
+        console.error(`[${requestId}] uploads field is not an array:`, typeof body.uploads)
+        return c.json(
+          {
+            success: false,
+            error: 'uploads field must be an array',
+            details: {
+              receivedType: typeof body.uploads,
+              expectedType: 'array',
+            },
+          },
+          400
+        )
+      }
+
+      if (body.uploads.length === 0) {
+        console.error(`[${requestId}] Empty uploads array`)
+        return c.json(
+          {
+            success: false,
+            error: 'Empty uploads array',
+            details: {
+              uploadsLength: 0,
+            },
+          },
+          400
+        )
+      }
+
+      // 各uploadアイテムの検証
+      for (let i = 0; i < body.uploads.length; i++) {
+        const upload = body.uploads[i]
+        console.log(`[${requestId}] Validating upload ${i}:`, {
+          hasPetId: !!upload.petId,
+          hasImageData: !!upload.imageData,
+          hasMimeType: !!upload.mimeType,
+          petId: upload.petId,
+          mimeType: upload.mimeType,
+          imageDataLength: upload.imageData?.length || 0,
+          keys: Object.keys(upload),
+        })
+
+        if (!upload.petId) {
+          console.error(`[${requestId}] Missing petId in upload ${i}`)
+          return c.json(
+            {
+              success: false,
+              error: `Missing petId in upload ${i}`,
+              details: {
+                uploadIndex: i,
+                uploadKeys: Object.keys(upload),
+              },
+            },
+            400
+          )
+        }
+
         if (!upload.imageData) {
-          console.error('Missing imageData for upload:', {
-            petId: upload.petId,
-            keys: Object.keys(upload),
-            upload: JSON.stringify(upload).substring(0, 200),
-          })
-          throw new ValidationError(`No image provided for petId: ${upload.petId}`)
+          console.error(`[${requestId}] Missing imageData in upload ${i}`)
+          return c.json(
+            {
+              success: false,
+              error: `Missing imageData in upload ${i}`,
+              details: {
+                uploadIndex: i,
+                petId: upload.petId,
+                uploadKeys: Object.keys(upload),
+              },
+            },
+            400
+          )
+        }
+
+        if (!upload.mimeType) {
+          console.error(`[${requestId}] Missing mimeType in upload ${i}`)
+          return c.json(
+            {
+              success: false,
+              error: `Missing mimeType in upload ${i}`,
+              details: {
+                uploadIndex: i,
+                petId: upload.petId,
+                uploadKeys: Object.keys(upload),
+              },
+            },
+            400
+          )
+        }
+
+        // base64データの有効性を確認
+        try {
+          const decoded = atob(upload.imageData)
+          if (decoded.length === 0) {
+            throw new Error('Decoded data is empty')
+          }
+          console.log(
+            `[${requestId}] Upload ${i} base64 data valid, decoded size: ${decoded.length}`
+          )
+        } catch (decodeError) {
+          console.error(`[${requestId}] Invalid base64 data in upload ${i}:`, decodeError)
+          return c.json(
+            {
+              success: false,
+              error: `Invalid base64 imageData in upload ${i}`,
+              details: {
+                uploadIndex: i,
+                petId: upload.petId,
+                decodeError:
+                  decodeError instanceof Error ? decodeError.message : 'Unknown decode error',
+              },
+            },
+            400
+          )
         }
       }
 
+      // サービス依存性の確認
       if (!this.bucket || !this.db) {
+        console.error(`[${requestId}] Missing services:`, {
+          hasBucket: !!this.bucket,
+          hasDb: !!this.db,
+        })
         throw new ServiceUnavailableError('Storage or database not available')
       }
 
+      // アップロード処理の実行
+      console.log(`[${requestId}] Starting upload process for ${body.uploads.length} items`)
       const results = []
 
-      for (const upload of body.uploads) {
+      for (let i = 0; i < body.uploads.length; i++) {
+        const upload = body.uploads[i]
+        const uploadStart = Date.now()
+
         try {
+          console.log(`[${requestId}] Processing upload ${i} for pet ${upload.petId}`)
+
           // ペット情報を取得
           const pet = await this.db
             .prepare('SELECT id, type FROM pets WHERE id = ?')
@@ -174,17 +349,28 @@ export class ImageController {
             .first()
 
           if (!pet) {
-            results.push({ petId: upload.petId, success: false, error: 'Pet not found' })
+            console.warn(`[${requestId}] Pet not found: ${upload.petId}`)
+            results.push({
+              petId: upload.petId,
+              success: false,
+              error: 'Pet not found',
+              uploadIndex: i,
+            })
             continue
           }
 
           const petType = pet['type'] as string
+          console.log(`[${requestId}] Pet found: ${upload.petId} (${petType})`)
+
+          // Base64データをデコード
           const imageBuffer = Uint8Array.from(atob(upload.imageData), (c) => c.charCodeAt(0))
           const isWebp = upload.mimeType === 'image/webp'
           const isPng = upload.mimeType === 'image/png'
 
           const filename = isPng ? 'screenshot.png' : isWebp ? 'optimized.webp' : 'original.jpg'
           const key = `pets/${petType}s/${upload.petId}/${filename}`
+
+          console.log(`[${requestId}] Uploading to R2: ${key} (${imageBuffer.length} bytes)`)
 
           // R2にアップロード
           await this.bucket.put(key, imageBuffer, {
@@ -195,8 +381,12 @@ export class ImageController {
               petId: upload.petId,
               petType,
               uploadedAt: new Date().toISOString(),
+              requestId,
+              uploadIndex: i.toString(),
             },
           })
+
+          console.log(`[${requestId}] R2 upload successful: ${key}`)
 
           // データベースのフラグを更新
           if (isWebp) {
@@ -204,6 +394,7 @@ export class ImageController {
               .prepare('UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?')
               .bind(upload.petId)
               .run()
+            console.log(`[${requestId}] Updated hasWebp flag for ${upload.petId}`)
           } else {
             const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
             await this.db
@@ -212,28 +403,67 @@ export class ImageController {
               )
               .bind(imageUrl, upload.petId)
               .run()
+            console.log(`[${requestId}] Updated hasJpeg flag and imageUrl for ${upload.petId}`)
           }
 
-          results.push({ petId: upload.petId, success: true, key })
+          const uploadDuration = Date.now() - uploadStart
+          console.log(`[${requestId}] Upload ${i} completed in ${uploadDuration}ms`)
+
+          results.push({
+            petId: upload.petId,
+            success: true,
+            key,
+            uploadIndex: i,
+            duration: uploadDuration,
+            size: imageBuffer.length,
+          })
         } catch (error) {
+          const uploadDuration = Date.now() - uploadStart
+          console.error(`[${requestId}] Upload ${i} failed:`, {
+            petId: upload.petId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            duration: uploadDuration,
+          })
+
           results.push({
             petId: upload.petId,
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error',
+            uploadIndex: i,
+            duration: uploadDuration,
           })
         }
       }
 
+      const totalDuration = Date.now() - requestStart
+      const successful = results.filter((r) => r.success).length
+      const failed = results.filter((r) => !r.success).length
+
+      console.log(`[${requestId}] uploadBatch completed:`, {
+        total: body.uploads.length,
+        successful,
+        failed,
+        duration: totalDuration,
+      })
+
       return c.json({
         success: true,
         data: {
+          requestId,
           total: body.uploads.length,
-          successful: results.filter((r) => r.success).length,
-          failed: results.filter((r) => !r.success).length,
+          successful,
+          failed,
           results,
+          duration: totalDuration,
         },
       })
     } catch (error) {
+      const totalDuration = Date.now() - requestStart
+      console.error(`uploadBatch error:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration: totalDuration,
+      })
+
       return handleError(c, error)
     }
   }
