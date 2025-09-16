@@ -82,8 +82,8 @@ jobs:
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.API_KEY || secrets.PUBLIC_API_KEY }}
-          PUBLIC_API_KEY: ${{ secrets.PUBLIC_API_KEY }}
+          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          PUBLIC_API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
         run: |
           # スクリーンショット取得を実行
           node scripts/dispatcher/screenshot-capture.js \
