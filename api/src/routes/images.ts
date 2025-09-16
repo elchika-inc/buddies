@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cache } from 'hono/cache'
-import { withEnv } from '../middleware/envMiddleware'
+import { withEnv } from '../middleware/EnvMiddleware'
 import { ImageController } from '../controllers'
 import { CONFIG } from '../utils'
 import type { Env } from '../types'

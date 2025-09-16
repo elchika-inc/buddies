@@ -9,7 +9,7 @@ import { MetadataService } from './MetadataService'
 import type { PetStatistics } from '../types/services'
 import type { DetailedStatistics } from '../types/statistics'
 import { CONFIG } from '../utils/constants'
-import { ensureArray, safeGet, isNumber, isString, isRecord } from '../utils/typeGuards'
+import { ensureArray, safeGet, isNumber, isString, isRecord } from '../utils/TypeGuards'
 
 // データベースクエリ結果の型定義
 interface StatsQueryResult {

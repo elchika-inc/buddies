@@ -6,8 +6,8 @@ import type { MessageBatch, Message } from '@cloudflare/workers-types'
 import type { Env, DispatchMessage, Pet } from '../types'
 import { isPetDispatchData } from '../types'
 import { Result, isErr, isOk } from '../types/result'
-import { GitHubService, RateLimitError } from '../services/github-service'
-import { QueueService } from '../services/queue-service'
+import { GitHubService, RateLimitError } from '../services/GithubService'
+import { QueueService } from '../services/QueueService'
 
 export class QueueHandler {
   private readonly githubService: GitHubService

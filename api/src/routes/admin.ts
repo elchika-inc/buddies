@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
-import { withEnv } from '../middleware/envMiddleware'
-import { adminAuth } from '../middleware/adminAuth'
+import { withEnv } from '../middleware/EnvMiddleware'
+import { adminAuth } from '../middleware/AdminAuth'
 import { AdminController } from '../controllers/admin/AdminController'
 import { ImageUploadController } from '../controllers/admin/ImageUploadController'
 import type { Env } from '../types'

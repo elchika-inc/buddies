@@ -6,10 +6,10 @@ import {
   CreateKeyResponse,
   ErrorResponse,
   SuccessResponse,
-} from '../types/apiKeys'
+} from '../types/ApiKeys'
 import { ApiKeyService } from '../services/ApiKeyService'
 import { RateLimitService } from '../services/RateLimitService'
-import { API_CONFIG, generateApiKey, calculateExpiryDate } from '../config/apiKeys'
+import { API_CONFIG, generateApiKey, calculateExpiryDate } from '../config/ApiKeys'
 import type { Env } from '../types/env'
 
 const app = new Hono<{ Bindings: Env }>()

@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { Env } from '../../types'
 import { setupCors } from './cors'
-import { errorHandlerMiddleware } from '../errorHandlerMiddleware'
+import { errorHandlerMiddleware } from '../ErrorHandlerMiddleware'
 
 /**
  * アプリケーションのミドルウェア設定を一元管理

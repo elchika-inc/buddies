@@ -6,8 +6,8 @@
 
 import { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { PawMatchError } from '../utils/errorHandler'
-import { errorResponse } from '../utils/responseFormatter'
+import { PawMatchError } from '../utils/ErrorHandler'
+import { errorResponse } from '../utils/ResponseFormatter'
 import type { JsonValue } from '../types/common'
 
 /**

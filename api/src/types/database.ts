@@ -55,4 +55,4 @@ export interface CountResult {
 
 // 型ガード関数は utils/typeGuards.ts に移動
 // 互換性のため再エクスポート
-export { isRawPetRecord, isCountResult } from '../utils/typeGuards'
+export { isRawPetRecord, isCountResult } from '../utils/TypeGuards'

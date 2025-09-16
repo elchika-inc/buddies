@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { MessageBatch, ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
 import type { CrawlResult, CrawlerStateRecord, Pet } from '../../shared/types/index'
-import { PetHomeCrawler } from './crawler'
+import { PetHomeCrawler } from './Crawler'
 import { Result } from '../../shared/types/result'
 
 // Env型定義

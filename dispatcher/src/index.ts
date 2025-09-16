@@ -12,9 +12,9 @@ import type { MessageBatch, ScheduledEvent } from '@cloudflare/workers-types'
 import { Result } from '../../shared/types/result'
 
 // types/indexから型定義をインポート（ローカル定義を削除）
-import { ApiService } from './services/api-service'
-import { QueueService } from './services/queue-service'
-import { QueueHandler } from './handlers/queue-handler'
+import { ApiService } from './services/ApiService'
+import { QueueService } from './services/QueueService'
+import { QueueHandler } from './handlers/QueueHandler'
 import type { Env, DispatchMessage, Pet } from './types'
 
 const app = new Hono<{ Bindings: Env }>()

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { withEnv } from '../middleware/envMiddleware'
+import { withEnv } from '../middleware/EnvMiddleware'
 import { PetController } from '../controllers'
 import type { Env } from '../types'
 

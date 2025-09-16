@@ -18,5 +18,5 @@ export * from './common'
 export * from './env'
 
 // APIキー関連の型
-export * from './apiKeys'
-export * from './apiKeysSchema'
+export * from './ApiKeys'
+export * from './ApiKeysSchema'

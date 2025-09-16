@@ -1,5 +1,5 @@
-import { RateLimitResult, parseRateLimitCount } from '../types/apiKeys'
-import { API_CONFIG, getRateLimitWindow } from '../config/apiKeys'
+import { RateLimitResult, parseRateLimitCount } from '../types/ApiKeys'
+import { API_CONFIG, getRateLimitWindow } from '../config/ApiKeys'
 
 export class RateLimitService {
   constructor(private cache: KVNamespace) {}

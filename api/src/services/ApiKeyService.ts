@@ -8,8 +8,8 @@ import {
   toDrizzleApiKey,
   ApiKeyType,
   Permission,
-} from '../types/apiKeysSchema'
-import { API_CONFIG, isExpired } from '../config/apiKeys'
+} from '../types/ApiKeysSchema'
+import { API_CONFIG, isExpired } from '../config/ApiKeys'
 
 /**
  * APIキー管理サービス
