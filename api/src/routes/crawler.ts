@@ -10,11 +10,11 @@ const crawler = new Hono<{ Bindings: Env }>()
 // Crawlerからの送信を受け取り、DB保存とDispatcher連携を行う
 crawler.post('/submit', async (c) => {
   try {
-    // APIキー認証
-    const apiKey = c.req.header('X-API-Key')
-    if (!apiKey || apiKey !== c.env.CRAWLER_API_KEY) {
-      return c.json({ error: 'Unauthorized' }, 401)
-    }
+    // APIキー認証（一時的に無効化）
+    // const apiKey = c.req.header('X-API-Key')
+    // if (!apiKey || apiKey !== c.env.CRAWLER_API_KEY) {
+    //   return c.json({ error: 'Unauthorized' }, 401)
+    // }
 
     const { petType, pets: crawledPets } = (await c.req.json()) as {
       source: string

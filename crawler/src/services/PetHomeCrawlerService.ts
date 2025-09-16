@@ -37,7 +37,10 @@ export class PetHomeCrawler {
   private readonly dataPersistence: DataPersistence
   private readonly config: Required<CrawlConfig>
 
-  constructor(env: Env, config: CrawlConfig = {}) {
+  constructor(
+    private readonly env: Env,
+    config: CrawlConfig = {}
+  ) {
     this.apiClient = new ApiServiceClient(env.API_SERVICE)
     this.dataPersistence = new DataPersistence(env)
 
@@ -164,7 +167,7 @@ export class PetHomeCrawler {
     pets: Pet[],
     petType: 'dog' | 'cat'
   ): Promise<Result<CrawlerSubmitResult, Error>> {
-    const apiKey = (this.apiClient as any).env?.CRAWLER_API_KEY || ''
+    const apiKey = this.env.CRAWLER_API_KEY || ''
 
     return this.apiClient.submitCrawlerData(
       {

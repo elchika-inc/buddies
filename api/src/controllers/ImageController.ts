@@ -13,7 +13,35 @@ export class ImageController {
   async uploadImage(c: Context<{ Bindings: Env }>) {
     try {
       const petId = c.req.param('petId')
-      const formData = await c.req.formData()
+
+      // Content-Typeのチェックとフォールバック処理
+      const contentType = c.req.header('content-type') || ''
+      let formData: FormData
+
+      // multipart/form-dataまたはapplication/x-www-form-urlencodedの場合のみFormDataを使用
+      if (
+        contentType.includes('multipart/form-data') ||
+        contentType.includes('application/x-www-form-urlencoded')
+      ) {
+        formData = await c.req.formData()
+      } else {
+        // その他の場合はJSONとして処理
+        const body = (await c.req.json()) as any
+        formData = new FormData()
+
+        if (body.image) {
+          // base64データの場合
+          const imageData = body.image.replace(/^data:image\/\w+;base64,/, '')
+          const buffer = Uint8Array.from(atob(imageData), (c) => c.charCodeAt(0))
+          const blob = new Blob([buffer], { type: body.mimeType || 'image/png' })
+          formData.append('image', blob, body.filename || 'screenshot.png')
+        }
+
+        if (body.type) {
+          formData.append('type', body.type)
+        }
+      }
+
       const file = formData.get('image') as File
       const imageType = (formData.get('type') as string) || 'screenshot'
 
