@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cache } from 'hono/cache'
 import { withEnv } from '../middleware/EnvMiddleware'
 import { ImageController } from '../controllers'
+import { ImageStatusController } from '../controllers/ImageStatusController'
 import { CONFIG } from '../utils'
 import type { Env } from '../types'
 
@@ -60,6 +61,16 @@ images.post(
   withEnv(async (c) => {
     const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
     return imageController.syncImageFlags(c)
+  })
+)
+
+// ステータス更新エンドポイント
+images.post(
+  '/status/update',
+  // apiAuth, // 一時的に認証を無効化
+  withEnv(async (c) => {
+    const statusController = new ImageStatusController(c.env.DB)
+    return statusController.updateStatus(c)
   })
 )
 

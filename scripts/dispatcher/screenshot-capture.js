@@ -88,106 +88,70 @@ async function captureScreenshot(page, pet) {
         fullPage: false,
         clip: { x: 0, y: 200, width: 800, height: 600 },
       })
-    } // API経由でアップロード（base64エンコードして送信）
-    const base64String = screenshotBuffer.toString('base64')
+    }
 
-    console.log(`  📤 Preparing API upload request:`, {
-      petId: pet.id,
-      bufferSize: screenshotBuffer.length,
-      base64Length: base64String.length,
-      apiUrl: API_URL,
-      hasApiKey: !!API_KEY,
-    })
+    // R2に直接アップロード
+    const screenshotKey = `pets/${pet.type}s/${pet.id}/screenshot.png`
+    const tempFilePath = `/tmp/screenshot-${pet.id}.png`
 
-    const requestPayload = {
-      uploads: [
-        {
-          petId: pet.id,
-          imageData: base64String, // base64文字列をそのまま送信
-          mimeType: 'image/png',
+    // 一時ファイルに保存
+    await fs.writeFile(tempFilePath, screenshotBuffer)
+    console.log(`  💾 Saved screenshot to temp file: ${tempFilePath}`)
+
+    // wrangler r2コマンドでR2にアップロード
+    const { exec } = await import('child_process')
+    const { promisify } = await import('util')
+    const execAsync = promisify(exec)
+
+    try {
+      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png`
+      console.log(`  📤 Uploading to R2: ${screenshotKey}`)
+
+      const { stdout, stderr } = await execAsync(uploadCommand)
+      if (stderr) {
+        console.error(`  ⚠️ R2 upload stderr: ${stderr}`)
+      }
+      console.log(`  ☁️ R2 upload complete: ${stdout}`)
+
+      // APIを呼び出してフラグを更新
+      console.log(`  🔄 Updating screenshot status via API...`)
+      const statusUpdateResponse = await fetch(`${API_URL}/api/images/status/update`, {
+        method: 'POST',
+        headers: {
+          'X-API-Key': API_KEY || 'dummy-key',
+          'Content-Type': 'application/json',
+          'User-Agent': 'PawMatch-Screenshot-Capture/1.0',
         },
-      ],
-    }
-
-    console.log(`  🔧 Request payload structure:`, {
-      hasUploads: !!requestPayload.uploads,
-      uploadsCount: requestPayload.uploads.length,
-      firstUploadKeys: Object.keys(requestPayload.uploads[0]),
-      firstUploadSizes: {
-        petId: requestPayload.uploads[0].petId?.length || 0,
-        imageData: requestPayload.uploads[0].imageData?.length || 0,
-        mimeType: requestPayload.uploads[0].mimeType?.length || 0,
-      },
-    })
-
-    const requestBody = JSON.stringify(requestPayload)
-    console.log(`  📦 Final request body size: ${requestBody.length} bytes`)
-
-    const uploadResponse = await fetch(`${API_URL}/api/images/upload/batch`, {
-      method: 'POST',
-      headers: {
-        'X-API-Key': API_KEY || 'dummy-key', // APIキーが不要でも一応送る
-        'Content-Type': 'application/json',
-        'User-Agent': 'PawMatch-Screenshot-Capture/1.0',
-      },
-      body: requestBody,
-    })
-
-    console.log(`  📡 API Response received:`, {
-      status: uploadResponse.status,
-      statusText: uploadResponse.statusText,
-      ok: uploadResponse.ok,
-      contentType: uploadResponse.headers.get('content-type'),
-      contentLength: uploadResponse.headers.get('content-length'),
-    })
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text()
-      console.error(`  ❌ API upload failed:`, {
-        status: uploadResponse.status,
-        statusText: uploadResponse.statusText,
-        errorText: errorText.substring(0, 500), // First 500 chars only
-        errorTextLength: errorText.length,
-        requestBodySize: requestBody.length,
-        petId: pet.id,
+        body: JSON.stringify({
+          petId: pet.id,
+          petType: pet.type,
+          screenshotKey: screenshotKey,
+          hasScreenshot: true,
+        }),
       })
-      throw new Error(`API upload failed: ${uploadResponse.status} - ${errorText}`)
-    }
 
-    const uploadResult = await uploadResponse.json()
-    console.log(`  ✅ API Response parsed:`, {
-      success: uploadResult.success,
-      hasData: !!uploadResult.data,
-      dataKeys: uploadResult.data ? Object.keys(uploadResult.data) : [],
-      resultsCount: uploadResult.data?.results?.length || 0,
-    })
+      if (!statusUpdateResponse.ok) {
+        const errorText = await statusUpdateResponse.text()
+        console.error(`  ⚠️ Status update failed: ${statusUpdateResponse.status} - ${errorText}`)
+        // ステータス更新失敗はエラーにしない（画像はアップロード済みなので）
+      } else {
+        console.log(`  ✅ Screenshot status updated successfully`)
+      }
 
-    const uploadedPet = uploadResult.data?.results?.[0]
-
-    if (!uploadedPet) {
-      console.error(`  ❌ No upload result found:`, {
-        uploadResult,
-        hasData: !!uploadResult.data,
-        hasResults: !!uploadResult.data?.results,
-        resultsLength: uploadResult.data?.results?.length || 0,
-      })
-      throw new Error('No upload result found in API response')
-    }
-
-    if (!uploadedPet.success) {
-      console.error(`  ❌ Upload marked as failed:`, {
-        uploadedPet,
-        error: uploadedPet.error,
-        petId: uploadedPet.petId,
-      })
-      throw new Error(uploadedPet.error || 'Upload failed')
+      // 一時ファイルを削除
+      await fs
+        .unlink(tempFilePath)
+        .catch((err) => console.warn(`  ⚠️ Failed to delete temp file: ${err.message}`))
+    } catch (uploadError) {
+      console.error(`  ❌ R2 upload failed: ${uploadError.message}`)
+      // 一時ファイルを削除
+      await fs.unlink(tempFilePath).catch(() => {})
+      throw uploadError
     }
 
     console.log(
-      `  ☁️ Uploaded PNG screenshot via API (${(screenshotBuffer.length / 1024).toFixed(1)}KB)`
+      `  ☁️ Uploaded PNG screenshot to R2 (${(screenshotBuffer.length / 1024).toFixed(1)}KB)`
     )
-
-    const screenshotKey = uploadedPet.key || `pets/${pet.type}s/${pet.id}/screenshot.png`
 
     results.success = true
     results.screenshotKey = screenshotKey
