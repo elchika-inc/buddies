@@ -117,7 +117,8 @@ jobs:
           SUCCESSFUL_PETS=$(echo "$RESULTS" | jq '[.results[] | select(.success) | {
             id: .pet_id,
             type: .pet_type,
-            screenshotKey: .screenshotKey
+            screenshotKey: .screenshotKey,
+            hasJpeg: 1
           }]')
 
           PET_COUNT=$(echo "$SUCCESSFUL_PETS" | jq 'length')
