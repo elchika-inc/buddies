@@ -91,7 +91,9 @@ async function captureScreenshot(page, pet) {
     }
 
     // R2に直接アップロード
-    const screenshotKey = `pets/${pet.type}s/${pet.id}/screenshot.png`
+    // pet.typeが単数形（dog/cat）の場合は複数形に変換
+    const petTypeFolder = pet.type.endsWith('s') ? pet.type : `${pet.type}s`
+    const screenshotKey = `pets/${petTypeFolder}/${pet.id}/screenshot.png`
     const tempFilePath = `/tmp/screenshot-${pet.id}.png`
 
     // 一時ファイルに保存
