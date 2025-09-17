@@ -85,6 +85,7 @@ jobs:
           API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
           PUBLIC_API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           # スクリーンショット取得を実行
           node scripts/dispatcher/screenshot-capture.js \
