@@ -108,7 +108,7 @@ jobs:
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
           API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
-          DISPATCHER_URL: ${{ secrets.DISPATCHER_URL || 'https://pawmatch-dispatcher.elchika-inc.workers.dev' }}
+          DISPATCHER_URL: ${{ secrets.DISPATCHER_URL || 'https://pawmatch-dispatcher.naoto24kawa.workers.dev' }}
         run: |
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
@@ -127,7 +127,7 @@ jobs:
             echo "📤 Sending conversion request to Dispatcher for $PET_COUNT pets"
 
             # Dispatcher Workerのconversion endpointに送信
-            DISPATCHER_URL="${DISPATCHER_URL:-https://pawmatch-dispatcher.elchika-inc.workers.dev}"
+            DISPATCHER_URL="${DISPATCHER_URL:-https://pawmatch-dispatcher.naoto24kawa.workers.dev}"
             RESPONSE=$(curl -s -X POST "${DISPATCHER_URL}/dispatch-conversion" \
               -H "Content-Type: application/json" \
               -H "X-API-Key: ${API_KEY}" \
