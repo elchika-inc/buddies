@@ -15,6 +15,10 @@ export class QueueService {
   private readonly queue: Env['PAWMATCH_DISPATCH_QUEUE']
   /** 失敗メッセージ用DLQインスタンス */
   private readonly dlq: Env['PAWMATCH_DISPATCH_DLQ']
+  /** Conversionキューインスタンス */
+  private readonly conversionQueue: Env['PAWMATCH_CONVERSION_QUEUE']
+  // /** Conversion DLQインスタンス (将来使用予定) */
+  // private readonly _conversionDlq: Env['PAWMATCH_CONVERSION_DLQ']
 
   /**
    * コンストラクタ
@@ -24,6 +28,8 @@ export class QueueService {
   constructor(env: Env) {
     this.queue = env.PAWMATCH_DISPATCH_QUEUE
     this.dlq = env.PAWMATCH_DISPATCH_DLQ
+    this.conversionQueue = env.PAWMATCH_CONVERSION_QUEUE
+    // this._conversionDlq = env.PAWMATCH_CONVERSION_DLQ
   }
 
   /**
@@ -79,6 +85,23 @@ export class QueueService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       return Err(new Error(`Failed to send retry message: ${errorMessage}`))
+    }
+  }
+
+  /**
+   * Conversionメッセージをキューに送信
+   *
+   * @param message - Conversion処理用メッセージ
+   * @returns 送信結果
+   * @description 画像変換処理メッセージをConversion Queueに送信
+   */
+  async sendConversionMessage(message: DispatchMessage): Promise<Result<void>> {
+    try {
+      await this.conversionQueue.send(message)
+      return Ok(undefined)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`Failed to send message to conversion queue: ${errorMessage}`))
     }
   }
 

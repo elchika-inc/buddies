@@ -111,8 +111,15 @@ export class ConversionService {
       // ペットデータをキュー用形式に変換
       const petDispatchData = targetPets.map(QueueService.convertPetToDispatchData)
 
-      // キューにメッセージを送信
-      const sendResult = await this.queueService.sendDispatchMessage(petDispatchData, batchId)
+      // Conversion Queueにメッセージを送信
+      const message = {
+        type: 'conversion' as const,
+        pets: petDispatchData,
+        batchId,
+        retryCount: 0,
+        timestamp: new Date().toISOString(),
+      }
+      const sendResult = await this.queueService.sendConversionMessage(message)
 
       if (Result.isErr(sendResult)) {
         console.error('Failed to send conversion message to queue:', sendResult.error)

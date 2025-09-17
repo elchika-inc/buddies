@@ -13,6 +13,8 @@ export interface Env {
   // D1とR2は使用しない（APIのみ使用）
   PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>
   PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>
+  PAWMATCH_CONVERSION_QUEUE: Queue<DispatchMessage>
+  PAWMATCH_CONVERSION_DLQ: Queue<DispatchMessage>
 
   // 統一プレフィックス付き環境変数
   PAWMATCH_GITHUB_TOKEN?: string
