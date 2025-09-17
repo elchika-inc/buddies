@@ -106,8 +106,8 @@ async function captureScreenshot(page, pet) {
     const execAsync = promisify(exec)
 
     try {
-      // wrangler@latestを使用して最新バージョンで実行
-      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler@latest r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png`
+      // wrangler@latestを使用して最新バージョンで実行（--remoteフラグを追加）
+      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler@latest r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png --remote`
       console.log(`  📤 Uploading to R2: ${screenshotKey}`)
 
       const { stdout, stderr } = await execAsync(uploadCommand, {
