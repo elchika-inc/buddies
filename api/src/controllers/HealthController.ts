@@ -85,7 +85,7 @@ export class HealthController {
 
       // 画像がないペットを取得
       let missingImages: Array<{ id: string; name: string; type: string; sourceUrl: string }> = []
-      let debugInfo: Record<string, unknown> = {}
+      const debugInfo: Record<string, unknown> = {}
       try {
         // デバッグ用：最初の5件のペットの画像状態を確認
         const samplePets = await this.db

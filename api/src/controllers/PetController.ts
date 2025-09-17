@@ -92,33 +92,29 @@ export class PetController {
    * @throws {404} ペットが見つからない場合
    */
   async getPetById(c: Context) {
-    try {
-      const petType = validatePetType(c.req.param('type'))
-      const petId = c.req.param('id')
+    const petType = validatePetType(c.req.param('type'))
+    const petId = c.req.param('id')
 
-      if (!petType) {
-        throw new NotFoundError('Pet type is required')
-      }
-
-      // データベースから取得を試みる（画像があるペットのみ）
-      const pet = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND hasJpeg = 1')
-        .bind(petType, petId)
-        .first()
-
-      if (!pet) {
-        throw new NotFoundError(`Pet not found: ${petId}`)
-      }
-
-      // 型ガードでデータの正当性を確認
-      if (!isRawPetRecord(pet)) {
-        throw new ServiceUnavailableError('Invalid pet data format')
-      }
-
-      return c.json(successResponse(transformPetRecord(pet)))
-    } catch (error) {
-      throw error // エラーはグローバルミドルウェアで処理
+    if (!petType) {
+      throw new NotFoundError('Pet type is required')
     }
+
+    // データベースから取得を試みる（画像があるペットのみ）
+    const pet = await this.db
+      .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND hasJpeg = 1')
+      .bind(petType, petId)
+      .first()
+
+    if (!pet) {
+      throw new NotFoundError(`Pet not found: ${petId}`)
+    }
+
+    // 型ガードでデータの正当性を確認
+    if (!isRawPetRecord(pet)) {
+      throw new ServiceUnavailableError('Invalid pet data format')
+    }
+
+    return c.json(successResponse(transformPetRecord(pet)))
   }
 
   /**
@@ -129,44 +125,40 @@ export class PetController {
    * @description スワイプ機能用にランダムなペットを返す
    */
   async getRandomPets(c: Context) {
-    try {
-      const petType = validatePetType(c.req.param('type'))
-      const count = Math.min(
-        parseInt(c.req.query('count') || String(CONFIG.LIMITS.DEFAULT_RANDOM_PETS)),
-        CONFIG.LIMITS.MAX_RANDOM_PETS
-      )
+    const petType = validatePetType(c.req.param('type'))
+    const count = Math.min(
+      parseInt(c.req.query('count') || String(CONFIG.LIMITS.DEFAULT_RANDOM_PETS)),
+      CONFIG.LIMITS.MAX_RANDOM_PETS
+    )
 
-      if (!petType) {
-        throw new NotFoundError('Pet type is required')
-      }
-
-      // データベースから取得を試みる（画像があるペットのみ）
-      const dbPets = await this.db
-        .prepare('SELECT * FROM pets WHERE type = ? AND hasJpeg = 1 ORDER BY RANDOM() LIMIT ?')
-        .bind(petType, count)
-        .all()
-
-      if (!dbPets.results || dbPets.results.length === 0) {
-        throw new ServiceUnavailableError('No pets available')
-      }
-
-      // 型ガードで有効なペットデータのみフィルタリング
-      const validPets = ensureArray(dbPets.results, isRawPetRecord)
-
-      if (validPets.length === 0) {
-        throw new ServiceUnavailableError('Invalid pet data format')
-      }
-
-      return c.json(
-        successResponse({
-          pets: validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet)),
-          type: petType,
-          count: validPets.length,
-        })
-      )
-    } catch (error) {
-      throw error // エラーはグローバルミドルウェアで処理
+    if (!petType) {
+      throw new NotFoundError('Pet type is required')
     }
+
+    // データベースから取得を試みる（画像があるペットのみ）
+    const dbPets = await this.db
+      .prepare('SELECT * FROM pets WHERE type = ? AND hasJpeg = 1 ORDER BY RANDOM() LIMIT ?')
+      .bind(petType, count)
+      .all()
+
+    if (!dbPets.results || dbPets.results.length === 0) {
+      throw new ServiceUnavailableError('No pets available')
+    }
+
+    // 型ガードで有効なペットデータのみフィルタリング
+    const validPets = ensureArray(dbPets.results, isRawPetRecord)
+
+    if (validPets.length === 0) {
+      throw new ServiceUnavailableError('Invalid pet data format')
+    }
+
+    return c.json(
+      successResponse({
+        pets: validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet)),
+        type: petType,
+        count: validPets.length,
+      })
+    )
   }
 
   /**

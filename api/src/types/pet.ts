@@ -8,9 +8,7 @@ import type { Pet, PetSearchFilters, SortOptions } from '../../../types/shared'
 /**
  * API固有のペット型（必要に応じて拡張）
  */
-export interface ApiPet extends Pet {
-  // API固有のフィールドがあれば追加
-}
+export type ApiPet = Pet
 
 /**
  * APIリクエスト型
@@ -37,9 +35,7 @@ export interface CreatePetRequest {
   sourceUrl?: string
 }
 
-export interface UpdatePetRequest extends Partial<CreatePetRequest> {
-  // 更新時は全フィールドがオプショナル
-}
+export type UpdatePetRequest = Partial<CreatePetRequest>
 
 /**
  * API用検索パラメータ

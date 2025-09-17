@@ -79,7 +79,7 @@ crawler.post('/submit', async (c) => {
         if (!dispatcherResponse.ok) {
           console.error('Failed to trigger screenshot workflow:', await dispatcherResponse.text())
         }
-      } catch (error) {
+      } catch (_error) {
         // Screenshot workflow trigger failed silently
       }
     }

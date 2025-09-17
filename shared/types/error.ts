@@ -157,12 +157,12 @@ export class ErrorHandler {
           success: true,
           data: result.data,
         },
-        successStatus as any
+        successStatus as 200 | 201 | 202 | 204
       )
     }
 
     const appError = this.toAppError(result.error)
-    return c.json(appError.toResponse(), appError.statusCode as any)
+    return c.json(appError.toResponse(), appError.statusCode as 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503)
   }
 
   /**

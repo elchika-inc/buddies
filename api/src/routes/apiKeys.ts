@@ -229,7 +229,7 @@ app.get('/admin/keys', requireMasterKey, async (c) => {
     const keys = await apiKeyService.listAll()
 
     // キー文字列を除外してレスポンス
-    const sanitizedKeys = keys.map(({ key, ...rest }) => rest)
+    const sanitizedKeys = keys.map(({ key: _key, ...rest }) => rest)
 
     const response = createSuccessResponse({
       keys: sanitizedKeys,

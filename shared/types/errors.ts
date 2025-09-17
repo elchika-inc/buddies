@@ -67,7 +67,7 @@ export class AppError extends Error {
 
     // スタックトレースを維持（Node.js環境のみ）
     // Cloudflare Workers環境では captureStackTrace は存在しない
-    const errorWithStackTrace = Error as any
+    const errorWithStackTrace = Error as unknown as { captureStackTrace?: (thisArg: object, constructorOpt?: typeof AppError) => void }
     if (typeof errorWithStackTrace.captureStackTrace === 'function') {
       errorWithStackTrace.captureStackTrace(this, AppError)
     }
@@ -252,10 +252,10 @@ export class ErrorHandler {
 
 // エラーバウンダリデコレータ（TypeScript用）
 export function catchError(defaultMessage?: string) {
-  return function (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: unknown, _propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       try {
         return await originalMethod.apply(this, args)
       } catch (error) {

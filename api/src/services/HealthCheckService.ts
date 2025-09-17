@@ -76,7 +76,7 @@ export class HealthCheckService {
             responseTime: Date.now() - r2Start,
           },
         })
-      } catch (error) {
+      } catch (_error) {
         // R2のHEADが404でも正常とみなす
         health.push({
           service: 'R2 Storage',
