@@ -86,7 +86,10 @@ name = "pawmatch-dispatcher"
 
 [env.production.vars]
 PAWMATCH_NODE_ENV = "production"
-# Other variables inherit from default [vars] section
+PAWMATCH_GITHUB_OWNER = "elchika-inc"
+PAWMATCH_GITHUB_REPO = "pawmatch"
+PAWMATCH_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
+PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
 
 # Production Queue Configuration
 [[env.production.queues.producers]]

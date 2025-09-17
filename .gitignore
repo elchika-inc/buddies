@@ -45,6 +45,9 @@ next-env.d.ts
 # Cloudflare
 .wrangler/
 .mf/
+# 自動生成されたREADME
+dist/README.md
+*/dist/README.md
 
 # Database
 *.db
@@ -64,10 +67,17 @@ logs/
 ehthumbs.db
 Thumbs.db
 
-# Backup files
+# Backup and temporary files
 *.bak
 *.backup
+*.old
+*.orig
 *.tmp
+*~
+*.swp
+*.swo
+.*.swp
+.*.swo
 
 # Test artifacts
 test-results/

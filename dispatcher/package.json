@@ -6,7 +6,7 @@
   "description": "Task dispatcher service for PawMatch",
   "scripts": {
     "dev": "wrangler dev --local",
-    "build": "wrangler build",
+    "build": "wrangler build --env production",
     "deploy": "wrangler deploy --env production",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:dev": "wrangler deploy --env development",

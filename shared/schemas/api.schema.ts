@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import { PetSchema, PetTypeSchema } from './pet.schema'
+import { PetSchema, PetTypeSchema } from '../types/unified'
 
 /**
  * Crawlerデータ送信スキーマ

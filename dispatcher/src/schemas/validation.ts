@@ -88,7 +88,16 @@ export type ValidatedDispatchMessage = z.infer<typeof DispatchMessageSchema>
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
   error: z.string().optional(),
-  data: z.any().optional(),
+  data: z
+    .union([
+      z.record(z.string(), z.unknown()),
+      z.array(z.unknown()),
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.null(),
+    ])
+    .optional(),
   message: z.string().optional(),
 })
 

@@ -29,23 +29,13 @@ export class ImageStorageService {
     contentType: string
   ): Promise<void> {
     try {
-      // R2 APIの型と互換性を保つため、dataを適切にキャスト
-      // ArrayBufferの場合はそのまま、ReadableStreamの場合はanyにキャスト
-      if (data instanceof ArrayBuffer) {
-        await this.r2.put(key, data, {
-          httpMetadata: {
-            contentType,
-          },
-        })
-      } else {
-        // ReadableStreamの場合
-        // R2 APIとの型の不整合を回避するため、asを使用
-        await this.r2.put(key, data as unknown as Parameters<typeof this.r2.put>[1], {
-          httpMetadata: {
-            contentType,
-          },
-        })
-      }
+      // TypeScript の型定義とCloudflare R2 APIの実装の差異を吸収
+      // @ts-expect-error - R2 API は実際にReadableStream<Uint8Array>を受け入れるが、型定義が不完全
+      await this.r2.put(key, data, {
+        httpMetadata: {
+          contentType,
+        },
+      })
     } catch (error) {
       console.error(`[ImageStorageService] Failed to save image: ${key}`, error)
       throw error
