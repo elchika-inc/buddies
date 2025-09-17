@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Run linters for all workspaces
-        run: npm run lint:all
+        run: npm run lint
 
   type-check:
     name: Type Check
@@ -45,7 +45,7 @@ jobs:
         run: npm ci
 
       - name: Run type check for all workspaces
-        run: npm run type-check:all
+        run: npm run type-check
 
   test:
     name: Test
@@ -65,7 +65,7 @@ jobs:
         run: npm ci
 
       - name: Run tests for all workspaces
-        run: npm run test:all
+        run: npm run test
         continue-on-error: true # テストがまだ実装されていない場合のため
 
   build:
@@ -92,13 +92,7 @@ jobs:
 
       - name: Build ${{ matrix.workspace }}
         run: |
-          if [[ "${{ matrix.workspace }}" == "frontend" ]]; then
-            npm run build:app
-          elif [[ "${{ matrix.workspace }}" == "dispatcher" ]]; then
-            npm run build:dispatcher
-          else
-            npm run build -w @pawmatch/${{ matrix.workspace }}
-          fi
+          npm run build -w @pawmatch/${{ matrix.workspace }}
         continue-on-error: ${{ matrix.workspace != 'frontend' }} # frontendのみ必須
 
   all-checks-passed:
