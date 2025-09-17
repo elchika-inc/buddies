@@ -43,6 +43,8 @@
     "// Type Check & Lint": "型チェックとLintコマンド",
     "type-check": "npm run type-check --workspaces --if-present",
     "type-check:app": "npm run -w @pawmatch/frontend type-check",
+    "type-check:api": "npm run -w @pawmatch/api type-check",
+    "type-check:crawler": "npm run -w @pawmatch/crawler type-check",
     "type-check:dispatcher": "npm run -w @pawmatch/dispatcher type-check",
     "type-coverage": "type-coverage --at-least 95 --detail --strict --ignore-files 'node_modules/**' --ignore-files 'dist/**' --ignore-files '.next/**'",
     "type-coverage:report": "type-coverage --detail --strict --ignore-files 'node_modules/**' --ignore-files 'dist/**' --ignore-files '.next/**' > type-coverage-report.txt",
