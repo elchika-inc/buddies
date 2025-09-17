@@ -25,9 +25,14 @@ export interface CloudflareEnv {
 
   // Queues
   IMAGE_PROCESSING_QUEUE?: Queue
+  CRAWLER_QUEUE?: Queue
+  PAWMATCH_DISPATCH_QUEUE?: Queue
 
-  // Image Worker
+  // Service Bindings
   IMAGE_WORKER?: {
+    fetch: (request: Request) => Promise<Response>
+  }
+  API_SERVICE?: {
     fetch: (request: Request) => Promise<Response>
   }
 

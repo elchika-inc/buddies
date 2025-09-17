@@ -46,6 +46,20 @@ migrations_dir = "../database/migrations"
 # Queue Configuration
 # -----------------------------------------------------------------------------
 
+# Main Crawler Queue (APIから起動)
+[[queues.consumers]]
+queue = "pawmatch-crawler-queue"
+max_batch_size = 5
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-crawler-dlq"
+max_concurrency = 2
+
+# Dead Letter Queue for Crawler
+[[queues.producers]]
+binding = "PAWMATCH_CRAWLER_DLQ"
+queue = "pawmatch-crawler-dlq"
+
 # Cat Queue (PetHome)
 [[queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_QUEUE"

@@ -13,13 +13,22 @@ export interface Env {
   // D1とR2は使用しない（APIのみ使用）
   PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>
   PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>
-  GITHUB_TOKEN: string
-  GITHUB_OWNER: string
-  GITHUB_REPO: string
-  WORKFLOW_FILE: string
-  API_URL: string
+
+  // 統一プレフィックス付き環境変数
+  PAWMATCH_GITHUB_TOKEN?: string
+  PAWMATCH_GITHUB_OWNER: string
+  PAWMATCH_GITHUB_REPO: string
+  PAWMATCH_GITHUB_WORKFLOW_FILE: string
+  PAWMATCH_API_URL: string
+  PAWMATCH_API_KEY?: string
+  PAWMATCH_NODE_ENV?: string
+
+  // 後方互換性のため旧名も保持（段階的削除予定）
+  GITHUB_TOKEN?: string
+  API_URL?: string
   API_KEY?: string
-  PUBLIC_API_KEY?: string // APIキーを追加
+  PUBLIC_API_KEY?: string
+
   [key: string]: unknown
 }
 

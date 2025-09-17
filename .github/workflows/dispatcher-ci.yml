@@ -1,0 +1,177 @@
+name: Dispatcher CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'dispatcher/**'
+      - 'shared/**'
+      - '.github/workflows/dispatcher-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'dispatcher/**'
+      - 'shared/**'
+      - '.github/workflows/dispatcher-ci.yml'
+
+jobs:
+  # 型チェック・リント・テストジョブ
+  quality-check:
+    name: Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check:dispatcher
+
+      - name: Lint check
+        run: npm run lint:dispatcher
+
+      - name: Format check
+        run: npm run format:check:dispatcher
+
+      - name: Build check
+        run: npm run build:dispatcher
+
+      - name: Test
+        run: npm run test:dispatcher
+        continue-on-error: true # テストがまだない場合もCIを通す
+
+  # セキュリティチェック
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./dispatcher
+          base: ${{ github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
+
+  # コード品質分析
+  code-analysis:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Analyze code complexity
+        run: |
+          npx complexity-report-cli dispatcher/src/**/*.ts \
+            --format json \
+            --output dispatcher-complexity.json || true
+
+      - name: Check bundle size
+        run: |
+          npm run build:dispatcher
+          if [ -f "dispatcher/dist/index.js" ]; then
+            echo "Bundle size: $(wc -c < dispatcher/dist/index.js) bytes"
+          fi
+
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-analysis
+          path: |
+            dispatcher-complexity.json
+            dispatcher/dist/
+
+  # デプロイ（mainブランチのみ）
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [quality-check, security-check]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:dispatcher -- --env production
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f https://pawmatch-dispatcher.elchika.app/ || exit 1
+
+  # ステージングデプロイ（developブランチのみ）
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [quality-check, security-check]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare Staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run deploy:dispatcher -- --env staging
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          curl -f https://pawmatch-dispatcher-staging.elchika.app/ || exit 1

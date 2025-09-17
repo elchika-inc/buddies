@@ -8,6 +8,7 @@
 
 import type { Env, DispatchMessage, DLQMessage, PetDispatchData, Pet } from '../types'
 import { Result, Ok, Err } from '../types/result'
+import { getLogger } from '../utils/logger'
 
 export class QueueService {
   /** メインキューインスタンス */
@@ -100,7 +101,13 @@ export class QueueService {
 
       await this.dlq.send(dlqMessage)
 
-      console.error(`Message sent to DLQ: ${message.batchId}, error: ${error.message}`)
+      // DLQメッセージは重要なのでwarnレベルで記録
+      const logger = getLogger()
+      logger.warn('Message sent to DLQ', {
+        batchId: message.batchId,
+        error: error.message,
+        retryCount: message.retryCount,
+      })
       return Ok(undefined)
     } catch (sendError) {
       const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error'
@@ -122,55 +129,6 @@ export class QueueService {
       name: pet.name,
       type: pet.type,
       sourceUrl: pet.sourceUrl || '',
-    }
-  }
-
-  /**
-   * PetDispatchDataをPetRecordに変換（Queue処理用）
-   *
-   * @param pet - 変換元のPetDispatchDataオブジェクト
-   * @returns データベース互換用のPetRecord
-   * @description キューメッセージからデータベースレコード形式に変換
-   * 不足するフィールドはnullまたはデフォルト値で補完
-   */
-  static convertDispatchDataToPet(pet: PetDispatchData): Pet {
-    const now = new Date().toISOString()
-    // 統一されたPet型の全フィールドを設定
-    return {
-      id: pet.id,
-      type: pet.type,
-      name: pet.name,
-      breed: null,
-      age: null,
-      gender: 'unknown' as const,
-      size: null,
-      weight: null,
-      color: null,
-      description: null,
-      location: null,
-      prefecture: null,
-      city: null,
-      medicalInfo: null,
-      vaccinationStatus: null,
-      isNeutered: 0,
-      personality: null,
-      goodWithKids: 0,
-      goodWithDogs: 0,
-      goodWithCats: 0,
-      adoptionFee: 0,
-      shelterName: null,
-      shelterContact: null,
-      sourceUrl: pet.sourceUrl,
-      sourceId: 'pet-home',
-      careRequirements: null,
-      isVaccinated: 0,
-      isFivFelvTested: 0,
-      apartmentFriendly: 0,
-      needsYard: 0,
-      hasJpeg: 0,
-      hasWebp: 0,
-      createdAt: now,
-      updatedAt: now,
     }
   }
 

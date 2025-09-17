@@ -11,15 +11,15 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # -----------------------------------------------------------------------------
-# Default Environment Variables
+# Default Environment Variables (統一プレフィックス: PAWMATCH_)
 # -----------------------------------------------------------------------------
 [vars]
-NODE_ENV = "production"
-GITHUB_OWNER = "elchika-inc"
-GITHUB_REPO = "pawmatch"
-WORKFLOW_FILE = "screenshot-capture.yml"
-API_URL = "https://pawmatch-api.elchika.app"
-PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+PAWMATCH_NODE_ENV = "production"
+PAWMATCH_GITHUB_OWNER = "elchika-inc"
+PAWMATCH_GITHUB_REPO = "pawmatch"
+PAWMATCH_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
+PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
+# Note: Use `wrangler secret put PAWMATCH_API_KEY --env production` for production
 
 # -----------------------------------------------------------------------------
 # Queue Configuration
@@ -68,12 +68,8 @@ enabled = true
 name = "pawmatch-dispatcher"
 
 [env.production.vars]
-NODE_ENV = "production"
-GITHUB_OWNER = "elchika-inc"
-GITHUB_REPO = "pawmatch"
-WORKFLOW_FILE = "screenshot-capture.yml"
-API_URL = "https://pawmatch-api.elchika.app"
-PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+PAWMATCH_NODE_ENV = "production"
+# Other variables inherit from default [vars] section
 
 # Production Queue Configuration
 [[env.production.queues.producers]]
@@ -100,12 +96,19 @@ queue = "pawmatch-dispatch-dlq"
 name = "pawmatch-dispatcher-dev"
 
 [env.development.vars]
-NODE_ENV = "development"
-GITHUB_OWNER = "elchika-inc"
-GITHUB_REPO = "pawmatch"
-WORKFLOW_FILE = "screenshot-capture.yml"
-API_URL = "http://localhost:9789"
-PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
+PAWMATCH_NODE_ENV = "development"
+PAWMATCH_API_URL = "http://localhost:9789"
+PAWMATCH_API_KEY = "development-api-key-for-local-testing"
+
+# -----------------------------------------------------------------------------
+# Staging Environment
+# -----------------------------------------------------------------------------
+[env.staging]
+name = "pawmatch-dispatcher-staging"
+
+[env.staging.vars]
+PAWMATCH_NODE_ENV = "staging"
+PAWMATCH_API_URL = "https://staging-pawmatch-api.elchika.app"
 
 # -----------------------------------------------------------------------------
 # Local Development Server

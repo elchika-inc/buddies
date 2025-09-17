@@ -8,13 +8,14 @@ import type { Env, DispatchMessage } from '../types'
 import { GitHubService, RateLimitError } from '../services/GithubService'
 import { QueueService } from '../services/QueueService'
 import { ErrorHandler, AppError } from '../../../shared/types/errors'
+import { getLogger } from '../utils/logger'
 
 export class QueueHandler {
   private readonly githubService: GitHubService
   private readonly queueService: QueueService
   private readonly maxRetries = 3
 
-  constructor(env: Env) {
+  constructor(private readonly env: Env) {
     this.githubService = new GitHubService(env)
     this.queueService = new QueueService(env)
   }
@@ -39,7 +40,8 @@ export class QueueHandler {
    */
   private async processMessage(message: Message<DispatchMessage>): Promise<void> {
     const { type, batchId } = message.body
-    console.log(`Processing ${type} message: ${batchId}`)
+    const logger = getLogger(this.env)
+    logger.info('Processing message', { type, batchId })
 
     switch (type) {
       case 'screenshot':
@@ -52,11 +54,11 @@ export class QueueHandler {
 
       case 'crawler':
         // Crawler機能は現在未実装のため、メッセージを確認のみ
-        console.log(`Crawler message received: ${batchId}`)
+        logger.info('Crawler message received', { batchId })
         break
 
       default:
-        console.warn(`Unknown message type: ${type}`)
+        logger.warn('Unknown message type', { type, batchId })
     }
   }
 
@@ -67,13 +69,13 @@ export class QueueHandler {
     const { pets, batchId } = message
 
     if (!pets?.length) {
-      console.log('No pets to process')
+      const logger = getLogger(this.env)
+      logger.debug('No pets to process', { batchId })
       return
     }
 
-    // PetDispatchDataをPetに変換してGitHub Actionsを起動
-    const petRecords = pets.map(QueueService.convertDispatchDataToPet)
-    const result = await this.githubService.triggerWorkflow(petRecords, batchId)
+    // GitHub Actionsを起動（petsは既にPetDispatchData型）
+    const result = await this.githubService.triggerWorkflow(pets, batchId)
 
     if (!result.success) {
       throw result.error
@@ -87,7 +89,8 @@ export class QueueHandler {
     const { conversionData, batchId, workflowFile = 'image-conversion.yml' } = message
 
     if (!conversionData?.length) {
-      console.log('No conversion data to process')
+      const logger = getLogger(this.env)
+      logger.debug('No conversion data to process', { batchId })
       return
     }
 
@@ -144,7 +147,8 @@ export class QueueHandler {
 
     if (result.success) {
       message.ack()
-      console.log(`Retry scheduled after ${delaySeconds}s`)
+      const logger = getLogger(this.env)
+      logger.info('Retry scheduled', { delaySeconds, batchId: message.body.batchId })
     } else {
       message.retry()
     }
@@ -157,7 +161,8 @@ export class QueueHandler {
     const result = await this.queueService.sendToDLQ(message.body, error)
 
     if (!result.success) {
-      console.error('DLQ send failed:', result.error.message)
+      const logger = getLogger(this.env)
+      logger.error('DLQ send failed', result.error, { batchId: message.body.batchId })
     }
 
     message.ack() // DLQ送信の成否に関わらず処理済みとする

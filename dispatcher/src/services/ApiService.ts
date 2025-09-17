@@ -12,8 +12,9 @@ export class ApiService {
   private readonly apiKey: string | undefined
 
   constructor(env: Env) {
-    this.apiUrl = env.API_URL || 'https://pawmatch-api.elchika.app'
-    this.apiKey = env.PUBLIC_API_KEY || env.API_KEY || undefined
+    // 新しいプレフィックス付き環境変数を優先、旧名にフォールバック
+    this.apiUrl = env.PAWMATCH_API_URL || env.API_URL || 'https://pawmatch-api.elchika.app'
+    this.apiKey = env.PAWMATCH_API_KEY || env.PUBLIC_API_KEY || env.API_KEY || undefined
   }
 
   /**
@@ -34,7 +35,7 @@ export class ApiService {
       }
 
       // レスポンスをJSONとしてパース
-      const data = await response.json()
+      const data = (await response.json()) as any
 
       // 型検証
       if (!isApiStatsResponse(data)) {
@@ -112,7 +113,7 @@ export class ApiService {
       if (isApiPetData(apiPet)) {
         records.push(this.convertApiPetToPet(apiPet))
       } else {
-        console.warn('Invalid pet data skipped:', apiPet)
+        // 無効なペットデータはスキップ
       }
     }
 
@@ -165,15 +166,84 @@ export class ApiService {
   }
 
   /**
+   * JPEG画像を持つペットを取得（WebP変換対象）
+   */
+  async fetchPetsForConversion(limit = 50): Promise<Result<Pet[]>> {
+    try {
+      const response = await this.makeApiRequest('/api/pets?hasJpeg=true&hasWebp=false')
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      const data = (await response.json()) as any
+
+      if (!data.success || !Array.isArray(data.data)) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response for conversion pets',
+          data
+        )
+        return Err(error)
+      }
+
+      const pets = (data.data as any[])
+        .slice(0, limit)
+        .map((apiPet: any) => this.convertApiPetToPet(apiPet))
+      return Ok(pets)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch pets for conversion')
+      ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
+   * ペットのステータスを更新
+   */
+  async updateStatus(petIds: string[], status: string): Promise<Result<void>> {
+    try {
+      const response = await fetch(`${this.apiUrl}/api/pets/update-status`, {
+        method: 'POST',
+        headers: this.buildApiHeaders(),
+        body: JSON.stringify({
+          petIds,
+          status,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Status update failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      return Ok(undefined)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to update pet status')
+      ErrorHandler.log(wrappedError, { petIds, status })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
    * ディスパッチ履歴を記録（将来の実装用）
    */
   async recordDispatchHistory(
-    batchId: string,
-    petCount: number,
-    status: string
+    _batchId: string,
+    _petCount: number,
+    _status: string
   ): Promise<Result<void>> {
     // TODO: 履歴記録APIが実装されたら追加
-    console.log(`Dispatch history recorded: ${batchId}, count: ${petCount}, status: ${status}`)
+    // 今後実装予定
     return Ok(undefined)
   }
 }

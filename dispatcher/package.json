@@ -8,18 +8,43 @@
     "dev": "wrangler dev --local",
     "build": "wrangler build",
     "deploy": "wrangler deploy --env production",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:dev": "wrangler deploy --env development",
     "tail": "wrangler tail",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,json}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist .wrangler node_modules/.cache",
+    "precommit": "npm run type-check && npm run lint && npm run format:check",
+    "prepare": "husky"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",
-    "hono": "^4.9.4"
+    "hono": "^4.9.4",
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@eslint/js": "^9.35.0",
     "@types/node": "^20.16.0",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4",
     "wrangler": "^4.33.0"
   }
 }

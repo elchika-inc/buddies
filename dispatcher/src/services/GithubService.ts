@@ -24,17 +24,26 @@ export class GitHubService {
   private readonly githubRepo: string
   private readonly workflowFile: string
 
-  constructor(env: Env) {
-    this.githubToken = env.GITHUB_TOKEN
-    this.githubOwner = env.GITHUB_OWNER
-    this.githubRepo = env.GITHUB_REPO
-    this.workflowFile = env.WORKFLOW_FILE
+  constructor(tokenOrEnv: string | Env) {
+    if (typeof tokenOrEnv === 'string') {
+      // トークンのみが渡された場合
+      this.githubToken = tokenOrEnv
+      this.githubOwner = 'elchika-inc'
+      this.githubRepo = 'pawmatch'
+      this.workflowFile = 'screenshot-capture.yml'
+    } else {
+      // Env全体が渡された場合
+      this.githubToken = tokenOrEnv.PAWMATCH_GITHUB_TOKEN || tokenOrEnv.GITHUB_TOKEN || ''
+      this.githubOwner = tokenOrEnv.PAWMATCH_GITHUB_OWNER || 'elchika-inc'
+      this.githubRepo = tokenOrEnv.PAWMATCH_GITHUB_REPO || 'pawmatch'
+      this.workflowFile = tokenOrEnv.PAWMATCH_GITHUB_WORKFLOW_FILE || 'screenshot-capture.yml'
+    }
   }
 
   /**
    * GitHub Actionsワークフローをトリガー
    */
-  async triggerWorkflow(pets: Pet[], batchId: string): Promise<Result<void>> {
+  async triggerWorkflow(pets: any[], batchId: string): Promise<Result<void>> {
     try {
       const url = this.buildWorkflowUrl()
       const payload = this.buildWorkflowPayload(pets, batchId)
@@ -49,6 +58,7 @@ export class GitHubService {
         return await this.handleErrorResponse(response)
       }
 
+      // eslint-disable-next-line no-console
       console.log(`GitHub workflow triggered successfully for batch: ${batchId}`)
       return Ok(undefined)
     } catch (error) {
@@ -114,7 +124,7 @@ export class GitHubService {
         rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
         rateLimitReset: response.headers.get('x-ratelimit-reset'),
       })
-    } catch (e) {
+    } catch {
       console.error('Failed to read error response body')
     }
 
@@ -193,6 +203,7 @@ export class GitHubService {
         return await this.handleErrorResponse(response)
       }
 
+      // eslint-disable-next-line no-console
       console.log(`Image conversion workflow triggered successfully for batch: ${batchId}`)
       return Ok(undefined)
     } catch (error) {

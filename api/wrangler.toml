@@ -30,6 +30,15 @@ CRAWLER_API_KEY = "crawler-secret-key-2024"
 binding = "DISPATCHER"
 service = "pawmatch-dispatcher"
 
+[[services]]
+binding = "CRAWLER_SERVICE"
+service = "pawmatch-crawler"
+
+# Queue Producer (Crawler Queue)
+[[queues.producers]]
+binding = "CRAWLER_QUEUE"
+queue = "pawmatch-crawler-queue"
+
 # KV Namespace (API Key Cache)
 [[kv_namespaces]]
 binding = "API_KEYS_CACHE"

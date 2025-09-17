@@ -4,6 +4,7 @@ import type { MessageBatch, ScheduledController, ExecutionContext } from '@cloud
 import type { CrawlResult, CrawlerStateRecord, Pet } from '../../shared/types/index'
 import { PetHomeCrawler } from './Crawler'
 import { Result } from '../../shared/types/result'
+import type { CrawlMessage, DLQMessage } from './types/queue'
 
 // Env型定義
 export interface Env {
@@ -13,6 +14,7 @@ export interface Env {
   PAWMATCH_DOG_PETHOME_QUEUE: Queue // wrangler.tomlに合わせて修正
   PAWMATCH_CAT_PETHOME_DLQ: Queue // DLQ用
   PAWMATCH_DOG_PETHOME_DLQ: Queue // DLQ用
+  PAWMATCH_CRAWLER_DLQ: Queue // Main Crawler DLQ
   ALLOWED_ORIGIN?: string
   USE_LOCAL_IMAGES?: string
   API_URL?: string
@@ -233,77 +235,77 @@ async function getPets(
 }
 
 /**
- * シンプルキューハンドリング
+ * DLQへメッセージ送信
  */
-async function handleQueueMessage(
-  env: Env,
-  petType: 'dog' | 'cat'
-): Promise<Result<CrawlResult, Error>> {
-  return crawlPets(env, petType, 10) // デフォルト10件
-}
-
-// Cron Trigger処理
-export default {
-  async scheduled(
-    _controller: ScheduledController,
-    env: Env,
-    _ctx: ExecutionContext
-  ): Promise<void> {
-    console.log('Scheduled crawl started at', new Date().toISOString())
-
-    // PetHomeCrawlerを使用して新しいService Bindingsアーキテクチャで実行
-    const crawler = new PetHomeCrawler(env)
-
-    try {
-      // 犬の情報をクロール
-      const dogResult = await crawler.crawl('dog', 10)
-      console.log('Dog crawl result:', {
-        success: dogResult.success,
-        totalPets: dogResult.totalPets,
-        newPets: dogResult.newPets,
-        updatedPets: dogResult.updatedPets,
-        errors: dogResult.errors.length,
-      })
-
-      // 猫の情報をクロール
-      const catResult = await crawler.crawl('cat', 10)
-      console.log('Cat crawl result:', {
-        success: catResult.success,
-        totalPets: catResult.totalPets,
-        newPets: catResult.newPets,
-        updatedPets: catResult.updatedPets,
-        errors: catResult.errors.length,
-      })
-    } catch (error) {
-      console.error(
-        'Scheduled crawl failed:',
-        error instanceof Error ? error.message : String(error)
-      )
+async function sendToDLQ(env: Env, originalMessage: CrawlMessage, error: string): Promise<void> {
+  try {
+    const dlqMessage: DLQMessage = {
+      originalMessage,
+      error,
+      failedAt: new Date().toISOString(),
+      attempts: (originalMessage.retryCount || 0) + 1,
     }
 
-    console.log('Scheduled crawl completed at', new Date().toISOString())
-  },
+    await env.PAWMATCH_CRAWLER_DLQ.send(dlqMessage)
+    console.log('Message sent to DLQ:', dlqMessage)
+  } catch (error) {
+    console.error('Failed to send message to DLQ:', error)
+  }
+}
 
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    return app.fetch(request, env, ctx)
-  },
+// Cloudflare Workers エクスポート
+export default {
+  // HTTPリクエストハンドラー
+  fetch: app.fetch,
 
-  // Queue Consumer - 猫と犬それぞれのQueueを処理
-  async queue(
-    batch: MessageBatch<{ petType: 'dog' | 'cat' }>,
-    env: Env,
-    _ctx: ExecutionContext
-  ): Promise<void> {
+  // Queue Consumer (APIからのCrawlerトリガー)
+  async queue(batch: MessageBatch<CrawlMessage>, env: Env): Promise<void> {
+    console.log(`Processing ${batch.messages.length} crawler queue messages`)
+
+    const crawler = new PetHomeCrawler(env)
+
     for (const message of batch.messages) {
-      const petType = message.body.petType || 'cat'
-      const result = await handleQueueMessage(env, petType)
+      try {
+        const { petType, limit, source } = message.body
+        console.log(`Processing crawl request: ${petType}, limit: ${limit}, source: ${source}`)
 
-      if (Result.isOk(result)) {
-        message.ack()
-      } else {
-        console.error(`Queue processing failed for ${petType}:`, result.error)
+        // クロール実行
+        const result = await crawler.crawl(petType, limit)
+
+        if (result.success) {
+          console.log(`Successfully crawled ${petType}:`, {
+            totalPets: result.totalPets,
+            newPets: result.newPets,
+            updatedPets: result.updatedPets,
+          })
+          message.ack()
+        } else {
+          console.error(`Failed to crawl ${petType}:`, result.errors)
+
+          // リトライ回数をチェック
+          const retryCount = message.body.retryCount || 0
+          if (retryCount >= 3) {
+            // DLQに送信
+            await sendToDLQ(env, message.body, result.errors.join(', '))
+            message.ack() // DLQに送信したらackして処理済みにする
+          } else {
+            // リトライ
+            message.retry()
+          }
+        }
+      } catch (error) {
+        console.error('Error processing crawler message:', error)
         message.retry()
       }
     }
+  },
+
+  // 旧Cron処理（現在は使用しない）
+  async scheduled(
+    _controller: ScheduledController,
+    _env: Env,
+    _ctx: ExecutionContext
+  ): Promise<void> {
+    console.warn('Scheduled crawl is deprecated. Crawler should be triggered via Queue from API.')
   },
 }

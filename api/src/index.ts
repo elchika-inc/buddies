@@ -11,7 +11,7 @@ import apiKeysRoutes from './routes/apiKeys'
 import conversionRoutes from './routes/conversion'
 import type { Env } from './types'
 import type { ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
-import type { ApiErrorResponse, DispatcherCrawlerResponse } from './types/responses'
+import type { ApiErrorResponse } from './types/responses'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -43,6 +43,99 @@ app.route('/api/keys', apiKeysRoutes)
 
 // 内部APIルート
 app.route('/crawler', crawlerRoutes)
+
+// 手動トリガーエンドポイント（APIキー不要）
+app.post('/api/crawler', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const { petType = 'both', limit = 10 } = body as {
+      petType?: 'dog' | 'cat' | 'both'
+      limit?: number
+    }
+
+    // バリデーション
+    if (!['dog', 'cat', 'both'].includes(petType)) {
+      return c.json(
+        {
+          success: false,
+          error: 'Invalid petType. Must be "dog", "cat", or "both"',
+        },
+        400
+      )
+    }
+
+    if (limit < 1 || limit > 100) {
+      return c.json(
+        {
+          success: false,
+          error: 'Invalid limit. Must be between 1 and 100',
+        },
+        400
+      )
+    }
+
+    // Queue経由でCrawlerを起動
+    if (c.env.CRAWLER_QUEUE) {
+      const messages = []
+
+      if (petType === 'dog' || petType === 'both') {
+        messages.push({
+          type: 'crawl' as const,
+          petType: 'dog' as const,
+          limit,
+          timestamp: new Date().toISOString(),
+          source: 'api' as const,
+        })
+      }
+
+      if (petType === 'cat' || petType === 'both') {
+        messages.push({
+          type: 'crawl' as const,
+          petType: 'cat' as const,
+          limit,
+          timestamp: new Date().toISOString(),
+          source: 'api' as const,
+        })
+      }
+
+      // Queueにメッセージを送信
+      const results = []
+      for (const message of messages) {
+        await c.env.CRAWLER_QUEUE.send(message)
+        results.push({
+          petType: message.petType,
+          queued: true,
+        })
+        console.log(`Crawler queue message sent for ${message.petType} via API`)
+      }
+
+      return c.json({
+        success: true,
+        message: 'Crawler triggered successfully via Queue',
+        results,
+        totalQueued: results.length,
+      })
+    } else {
+      return c.json(
+        {
+          success: false,
+          error: 'CRAWLER_QUEUE not configured',
+        },
+        503
+      )
+    }
+  } catch (error) {
+    console.error('Error triggering crawler:', error)
+    return c.json(
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    )
+  }
+})
 
 // ========================================
 // エラーハンドリング
@@ -88,30 +181,35 @@ export default {
     console.log('API Cron triggered at', new Date().toISOString())
 
     try {
-      // Dispatcher経由でCrawlerを起動
-      if (env.DISPATCHER) {
-        const response = await env.DISPATCHER.fetch(
-          new Request('https://dispatcher.internal/trigger-crawler', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: 'both',
-              limit: 10,
-            }),
-          })
-        )
+      // Crawlerを直接Queueで起動（Service Binding経由）
+      if (env.CRAWLER_QUEUE) {
+        // 犬と猫を別々のメッセージとして送信
+        const messages = [
+          {
+            type: 'crawl' as const,
+            petType: 'dog' as const,
+            limit: 10,
+            timestamp: new Date().toISOString(),
+            source: 'cron',
+          },
+          {
+            type: 'crawl' as const,
+            petType: 'cat' as const,
+            limit: 10,
+            timestamp: new Date().toISOString(),
+            source: 'cron',
+          },
+        ]
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Failed to trigger crawler via dispatcher:', errorText)
-        } else {
-          const result = (await response.json()) as DispatcherCrawlerResponse
-          console.log('Crawler triggered successfully:', result)
+        // Queueにメッセージを送信
+        for (const message of messages) {
+          await env.CRAWLER_QUEUE.send(message)
+          console.log(`Crawler queue message sent for ${message.petType}`)
         }
+
+        console.log('Crawler triggered successfully via Queue')
       } else {
-        console.error('DISPATCHER service binding not configured')
+        console.error('CRAWLER_QUEUE not configured')
       }
     } catch (error) {
       console.error('Error triggering crawler from cron:', error)
