@@ -24,13 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Frontend linter
-        run: npm run lint:app
-        continue-on-error: true
-
-      - name: Run Dispatcher linter
-        run: npm run lint:dispatcher
-        continue-on-error: true
+      - name: Run linters for all workspaces
+        run: npm run lint:all
 
   type-check:
     name: Type Check
@@ -49,17 +44,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Frontend type check
-        run: npm run type-check:app
-
-      - name: Run API type check
-        run: npm run type-check:api
-
-      - name: Run Crawler type check
-        run: npm run type-check:crawler
-
-      - name: Run Dispatcher type check
-        run: npm run type-check:dispatcher
+      - name: Run type check for all workspaces
+        run: npm run type-check:all
 
   test:
     name: Test
@@ -78,12 +64,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Frontend tests
-        run: npm run test:app
-        continue-on-error: true # テストがまだ実装されていない場合のため
-
-      - name: Run Dispatcher tests
-        run: npm run test:dispatcher
+      - name: Run tests for all workspaces
+        run: npm run test:all
         continue-on-error: true # テストがまだ実装されていない場合のため
 
   build:

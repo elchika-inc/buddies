@@ -1,0 +1,25 @@
+{
+  "name": "@pawmatch/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared types and utilities for PawMatch",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint 'types/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'types/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'types/**/*.{ts,tsx,json}'",
+    "format:check": "prettier --check 'types/**/*.{ts,tsx,json}'",
+    "test": "echo \"No tests for shared types\""
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^20.16.0",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.44.0"
+  }
+}

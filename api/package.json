@@ -15,6 +15,11 @@
     "check:workers": "./scripts/check-api.sh workers",
     "check:all": "npm run check:workers && npm run check",
     "type-check": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,json}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
+    "test": "vitest run",
     "prepare": "husky"
   },
   "dependencies": {
@@ -24,15 +29,21 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",
+    "@eslint/js": "^9.35.0",
     "@hono/node-server": "^1.0.0",
     "@types/node": "^20.16.0",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.31.4",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
+    "prettier": "^3.6.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.44.0",
+    "vitest": "^3.2.4",
     "wrangler": "^4.33.0"
   },
   "description": "PawMatchアプリケーション用のAPIサーバー。Cloudflare Workers上で動作します。",
