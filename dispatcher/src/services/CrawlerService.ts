@@ -1,35 +1,34 @@
 /**
  * クローラーサービス
- * GitHub Actionsのクローラーワークフローをトリガー
+ * Cloudflare Crawler Workerを呼び出してペットデータを収集
  */
 
-import { GitHubService } from './GithubService'
 import { QueueService } from './QueueService'
-import { Result } from '../types/result'
-import type { Env, PetDispatchData } from '../types'
+import type { Env } from '../types'
 import { BATCH_LIMITS } from '../constants'
 
 export interface CrawlerResponse {
   success: boolean
   message?: string
   error?: string
-  workflowRunId?: number
   type?: string
   limit?: number
   batchId?: string
+  crawledCount?: number
 }
 
 export class CrawlerService {
-  private githubService: GitHubService
+  private apiUrl: string
 
   constructor(env: Env) {
-    // 新しいプレフィックス付き環境変数を優先、旧名にフォールバック
-    const githubToken = env.PAWMATCH_GITHUB_TOKEN || env.GITHUB_TOKEN || ''
-    this.githubService = new GitHubService(githubToken)
+    // APIのURLから基本URLを取得
+    const baseUrl = env.PAWMATCH_API_URL || env.API_URL || 'https://pawmatch-api.elchika.app'
+    // Crawler WorkerのURL（APIと同じドメインの/api/crawler/trigger）
+    this.apiUrl = baseUrl
   }
 
   /**
-   * クローラーワークフローをトリガー
+   * Crawler Workerをトリガー
    * @param type - ペットタイプ（dog, cat, both）
    * @param limit - 取得するペットの最大数
    */
@@ -41,24 +40,41 @@ export class CrawlerService {
       // バッチIDを生成
       const batchId = QueueService.generateBatchId('crawler')
 
-      // GitHub Actionsワークフローをトリガー（簡略化）
-      const pets: PetDispatchData[] = [] // クローラーは空のペット配列でトリガー
-      const result = await this.githubService.triggerWorkflow(pets, batchId)
+      // Crawler Workerを呼び出し
+      const response = await fetch(`${this.apiUrl}/api/crawler/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          petType: type,
+          limit,
+          batchId,
+        }),
+      })
 
-      if (Result.isErr(result)) {
-        console.error('Failed to trigger crawler workflow:', result.error)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Failed to trigger crawler:', errorText)
         return {
           success: false,
-          error: result.error.message,
+          error: `Crawler trigger failed: ${response.status} ${errorText}`,
         }
       }
 
+      const result = (await response.json()) as {
+        success: boolean
+        crawledCount?: number
+        message?: string
+      }
+
       return {
-        success: true,
-        message: 'Crawler workflow triggered successfully',
+        success: result.success,
+        message: result.message || 'Crawler triggered successfully',
         type,
         limit,
         batchId,
+        crawledCount: result.crawledCount,
       }
     } catch (error) {
       console.error('Crawler trigger error:', error)

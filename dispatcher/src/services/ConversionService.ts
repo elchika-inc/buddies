@@ -115,6 +115,11 @@ export class ConversionService {
       const message = {
         type: 'conversion' as const,
         pets: petDispatchData,
+        conversionData: petDispatchData.map((pet) => ({
+          id: pet.id,
+          type: pet.type,
+          screenshotKey: `pets/${pet.type}s/${pet.id}/screenshot.png`,
+        })),
         batchId,
         retryCount: 0,
         timestamp: new Date().toISOString(),

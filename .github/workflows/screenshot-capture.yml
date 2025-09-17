@@ -17,11 +17,7 @@ on:
         required: false
         default: '10'
         type: string
-      trigger_conversion:
-        description: 'Trigger conversion workflow after capture'
-        required: false
-        default: 'true'
-        type: boolean
+      # trigger_conversion removed - now handled by Conversion Queue
 
 jobs:
   capture-screenshots:
@@ -103,7 +99,7 @@ jobs:
           retention-days: 7
 
       - name: Send conversion request to Dispatcher Queue
-        if: steps.prepare-pets.outputs.pet_count > 0 && (github.event.inputs.trigger_conversion == 'true' || github.event.inputs.trigger_conversion == true)
+        if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
@@ -154,6 +150,4 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         run: |
           echo "✅ Screenshot capture completed for ${{ steps.prepare-pets.outputs.pet_count }} pets"
-          if [ "${{ github.event.inputs.trigger_conversion }}" == "true" ] || [ "${{ github.event.inputs.trigger_conversion }}" == true ]; then
-            echo "🔄 Image conversion workflow has been triggered"
-          fi
+          echo "📤 Conversion request sent to Dispatcher Queue"
