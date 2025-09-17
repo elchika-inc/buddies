@@ -4,6 +4,7 @@
  */
 
 import type { Context } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { Result } from './result'
 
 /**
@@ -150,7 +151,7 @@ export class ErrorHandler {
   /**
    * Resultエラーを処理してレスポンスを返す
    */
-  static handleResult<T>(c: Context, result: Result<T>, successStatus = 200): Response {
+  static handleResult<T>(c: Context, result: Result<T>, successStatus: ContentfulStatusCode = 200): Response {
     if (Result.isSuccess(result)) {
       return c.json(
         {
@@ -162,7 +163,7 @@ export class ErrorHandler {
     }
 
     const appError = this.toAppError(result.error)
-    return c.json(appError.toResponse(), appError.statusCode)
+    return c.json(appError.toResponse(), appError.statusCode as ContentfulStatusCode)
   }
 
   /**
@@ -196,7 +197,7 @@ export async function errorMiddleware(c: Context, next: () => Promise<void>): Pr
 
     return c.json(
       appError.toResponse(),
-      appError.statusCode as 400 | 401 | 403 | 404 | 409 | 500 | 503
+      appError.statusCode as ContentfulStatusCode
     )
   }
 }
