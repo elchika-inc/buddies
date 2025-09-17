@@ -45,10 +45,11 @@ queue = "pawmatch-dispatch-dlq"
 # -----------------------------------------------------------------------------
 # Triggers
 # -----------------------------------------------------------------------------
-[triggers]
-crons = [
-  "15 */4 * * *"  # 15 minutes after crawler, every 4 hours (screenshot processing)
-]
+# [triggers]
+# Cronトリガーは無効化 - API経由でのトリガーのみを使用
+# crons = [
+#   "15 */4 * * *"  # 15 minutes after crawler, every 4 hours (screenshot processing)
+# ]
 
 # -----------------------------------------------------------------------------
 # Observability

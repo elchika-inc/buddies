@@ -183,17 +183,27 @@ export class QueueService {
    * cronの場合は日付を含む形式、dispatchの場合はタイムスタンプのみ
    */
   static generateBatchId(prefix: 'dispatch' | 'cron' | 'conversion' | 'crawler'): string {
+    const now = new Date()
+    const dateStr = now.toISOString().split('T')[0]
+
     if (prefix === 'cron') {
-      const dateStr = new Date().toISOString().split('T')[0]
-      return `cron-${dateStr}-${Date.now()}`
+      // cronの場合: 分単位でグループ化（同じ分内は同一ID）
+      const hourMinute = now.toISOString().substring(11, 16).replace(':', '')
+      return `cron-${dateStr}-${hourMinute}`
     }
     if (prefix === 'conversion') {
-      return `conversion-${Date.now()}`
+      // conversionの場合: 5分単位でグループ化
+      const fiveMinuteInterval = Math.floor(now.getTime() / (1000 * 60 * 5))
+      return `conversion-${dateStr}-${fiveMinuteInterval}`
     }
     if (prefix === 'crawler') {
-      return `crawler-${Date.now()}`
+      // crawlerの場合: 5分単位でグループ化
+      const fiveMinuteInterval = Math.floor(now.getTime() / (1000 * 60 * 5))
+      return `crawler-${dateStr}-${fiveMinuteInterval}`
     }
-    return `dispatch-${Date.now()}`
+    // dispatchの場合: 5分単位でグループ化
+    const fiveMinuteInterval = Math.floor(now.getTime() / (1000 * 60 * 5))
+    return `dispatch-${dateStr}-${fiveMinuteInterval}`
   }
 
   /**

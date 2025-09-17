@@ -317,24 +317,12 @@ export default {
   },
 
   /**
-   * Cronジョブハンドラー
+   * Cronジョブハンドラー（現在は無効化）
+   * 注: DispatcherのCronトリガーは無効化されています。
+   * Screenshot処理はAPI経由またはQueue経由でトリガーされます。
    */
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
-    try {
-      // Scheduled execution triggered
-
-      // /scheduledエンドポイントを呼び出し
-      const response = await app.fetch(
-        new Request('http://dispatcher/scheduled', {
-          method: 'POST',
-        }),
-        env
-      )
-
-      await response.json()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('Scheduled execution error:', errorMessage)
-    }
+  async scheduled(_event: ScheduledEvent, _env: Env): Promise<void> {
+    console.warn('Dispatcher scheduled handler called but should be disabled')
+    // Cronトリガーは無効化されているため、このハンドラーは呼ばれないはずです
   },
 }
