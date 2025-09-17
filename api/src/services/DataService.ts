@@ -109,6 +109,6 @@ export class DataService {
   async clearCache(): Promise<void> {
     await this.metadataService.deleteMetadata('pet_statistics')
     await this.metadataService.deleteMetadata('data_readiness')
-    console.log('Cache cleared')
+    console.warn('Cache cleared')
   }
 }

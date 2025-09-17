@@ -48,7 +48,7 @@ export class AdminController {
    */
   async updatePetFlags(c: Context<{ Bindings: Env }>): Promise<Response> {
     try {
-      console.log('[update-flags] Processing request')
+      console.warn('[update-flags] Processing request')
 
       const body = await c.req.json<UpdateFlagsRequest>()
 
@@ -64,7 +64,7 @@ export class AdminController {
       }
 
       const { petType, petIds, flags } = body
-      console.log(`[update-flags] Updating ${petIds.length} ${petType} records`)
+      console.warn(`[update-flags] Updating ${petIds.length} ${petType} records`)
 
       // フラグの更新フィールドを構築
       const updateFields = this.buildUpdateFields(flags)
@@ -82,7 +82,7 @@ export class AdminController {
       // バッチ更新の実行
       const totalUpdated = await this.batchUpdatePets(petIds, petType, updateFields)
 
-      console.log(`[update-flags] Total updated: ${totalUpdated}/${petIds.length}`)
+      console.warn(`[update-flags] Total updated: ${totalUpdated}/${petIds.length}`)
 
       return c.json<UpdateResult>({
         success: true,
@@ -109,7 +109,7 @@ export class AdminController {
    */
   async updateImages(c: Context<{ Bindings: Env }>): Promise<Response> {
     try {
-      console.log('[update-images] Request received')
+      console.warn('[update-images] Request received')
 
       const body = await c.req.json<UpdateImagesRequest>()
 
@@ -124,11 +124,11 @@ export class AdminController {
         )
       }
 
-      console.log(`[update-images] Processing ${body.results.length} results`)
+      console.warn(`[update-images] Processing ${body.results.length} results`)
 
       const { updatedCount, errors } = await this.processImageUpdates(body.results)
 
-      console.log(
+      console.warn(
         `[update-images] Update complete - updated: ${updatedCount}, errors: ${errors.length}`
       )
 
@@ -222,7 +222,7 @@ export class AdminController {
         .run()
 
       totalUpdated += result.meta.changes || 0
-      console.log(
+      console.warn(
         `[update-flags] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${result.meta.changes} updated`
       )
     }
@@ -245,7 +245,7 @@ export class AdminController {
           const hasJpeg = result.jpegUrl ? 1 : 0
           const hasWebp = result.webpUrl ? 1 : 0
 
-          console.log(
+          console.warn(
             `[update-images] Updating pet ${result.petId}: hasJpeg=${hasJpeg}, hasWebp=${hasWebp}`
           )
 
@@ -265,9 +265,9 @@ export class AdminController {
 
           if (updateResult.meta.changes > 0) {
             updatedCount++
-            console.log(`[update-images] Successfully updated pet ${result.petId}`)
+            console.warn(`[update-images] Successfully updated pet ${result.petId}`)
           } else {
-            console.log(
+            console.warn(
               `[update-images] No rows updated for pet ${result.petId} - pet may not exist`
             )
             errors.push({
@@ -283,7 +283,7 @@ export class AdminController {
           })
         }
       } else {
-        console.log(
+        console.warn(
           `[update-images] Skipping result - success: ${result.success}, petId: ${result.petId}`
         )
       }

@@ -35,7 +35,7 @@ export class ApiService {
       }
 
       // レスポンスをJSONとしてパース
-      const data = (await response.json()) as any
+      const data = (await response.json()) as unknown
 
       // 型検証
       if (!isApiStatsResponse(data)) {
@@ -181,20 +181,21 @@ export class ApiService {
         return Err(error)
       }
 
-      const data = (await response.json()) as any
+      const data = (await response.json()) as unknown
+      const typedData = data as { success?: boolean; data?: unknown }
 
-      if (!data.success || !Array.isArray(data.data)) {
+      if (!typedData.success || !Array.isArray(typedData.data)) {
         const error = new ExternalServiceError(
           'PawMatch API',
           'Invalid API response for conversion pets',
-          data
+          typedData
         )
         return Err(error)
       }
 
-      const pets = (data.data as any[])
+      const pets = (typedData.data as unknown[])
         .slice(0, limit)
-        .map((apiPet: any) => this.convertApiPetToPet(apiPet))
+        .map((apiPet: unknown) => this.convertApiPetToPet(apiPet as ApiPetData))
       return Ok(pets)
     } catch (error) {
       const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch pets for conversion')

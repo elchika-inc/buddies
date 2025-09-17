@@ -39,7 +39,7 @@ export class ImageStorageService {
         })
       } else {
         // ReadableStreamの場合（型アサーションを使用）
-        await this.r2.put(key, data as any, {
+        await this.r2.put(key, data as ReadableStream<Uint8Array>, {
           httpMetadata: {
             contentType,
           },

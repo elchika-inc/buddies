@@ -16,5 +16,5 @@ export interface Env {
   PAWMATCH_DOG_PETHOME_QUEUE?: Queue
   PAWMATCH_CAT_PETHOME_DLQ?: Queue
   PAWMATCH_DOG_PETHOME_DLQ?: Queue
-  API_SERVICE?: any // Service Binding for API service
+  API_SERVICE?: Fetcher // Service Binding for API service
 }

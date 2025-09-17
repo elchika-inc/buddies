@@ -31,7 +31,12 @@ export class ImageController {
         formData = await c.req.formData()
       } else {
         // その他の場合はJSONとして処理
-        const body = (await c.req.json()) as any
+        const body = (await c.req.json()) as {
+          image?: string
+          mimeType?: string
+          filename?: string
+          type?: string
+        }
         formData = new FormData()
 
         if (body.image) {
@@ -126,7 +131,7 @@ export class ImageController {
       const userAgent = c.req.header('user-agent') || ''
       const requestId = crypto.randomUUID().substring(0, 8)
 
-      console.log(`[${requestId}] uploadBatch started`, {
+      console.warn(`[${requestId}] uploadBatch started`, {
         method: c.req.method,
         contentType,
         userAgent,
@@ -136,12 +141,12 @@ export class ImageController {
 
       // リクエストボディの解析を試行 - 詳細なエラーハンドリング付き
       let rawBody = ''
-      let parsedBody: any
+      let parsedBody: unknown
 
       try {
         // まず生のテキストとして読み取り
         rawBody = await c.req.text()
-        console.log(`[${requestId}] Raw request body size: ${rawBody.length} bytes`)
+        console.warn(`[${requestId}] Raw request body size: ${rawBody.length} bytes`)
 
         if (!rawBody || rawBody.length === 0) {
           throw new ValidationError('Empty request body')
@@ -149,7 +154,7 @@ export class ImageController {
 
         // JSONとして解析を試行
         parsedBody = JSON.parse(rawBody)
-        console.log(`[${requestId}] JSON parsing successful`)
+        console.warn(`[${requestId}] JSON parsing successful`)
       } catch (parseError) {
         console.error(`[${requestId}] JSON parsing failed:`, {
           error: parseError instanceof Error ? parseError.message : 'Unknown parsing error',
@@ -182,7 +187,7 @@ export class ImageController {
         }>
       }
 
-      console.log(`[${requestId}] Request body structure:`, {
+      console.warn(`[${requestId}] Request body structure:`, {
         hasUploads: !!body.uploads,
         uploadsType: typeof body.uploads,
         uploadsLength: Array.isArray(body.uploads) ? body.uploads.length : 'not array',
@@ -254,7 +259,7 @@ export class ImageController {
           )
         }
 
-        console.log(`[${requestId}] Validating upload ${i}:`, {
+        console.warn(`[${requestId}] Validating upload ${i}:`, {
           hasPetId: !!upload.petId,
           hasImageData: !!upload.imageData,
           hasMimeType: !!upload.mimeType,
@@ -317,7 +322,7 @@ export class ImageController {
           if (decoded.length === 0) {
             throw new Error('Decoded data is empty')
           }
-          console.log(
+          console.warn(
             `[${requestId}] Upload ${i} base64 data valid, decoded size: ${decoded.length}`
           )
         } catch (decodeError) {
@@ -348,7 +353,7 @@ export class ImageController {
       }
 
       // アップロード処理の実行
-      console.log(`[${requestId}] Starting upload process for ${body.uploads.length} items`)
+      console.warn(`[${requestId}] Starting upload process for ${body.uploads.length} items`)
       const results = []
 
       for (let i = 0; i < body.uploads.length; i++) {
@@ -363,7 +368,7 @@ export class ImageController {
         const uploadStart = Date.now()
 
         try {
-          console.log(`[${requestId}] Processing upload ${i} for pet ${upload.petId}`)
+          console.warn(`[${requestId}] Processing upload ${i} for pet ${upload.petId}`)
 
           // ペット情報を取得
           const pet = await this.db
@@ -383,7 +388,7 @@ export class ImageController {
           }
 
           const petType = pet['type'] as string
-          console.log(`[${requestId}] Pet found: ${upload.petId} (${petType})`)
+          console.warn(`[${requestId}] Pet found: ${upload.petId} (${petType})`)
 
           // Base64データをデコード
           const imageBuffer = Uint8Array.from(atob(upload.imageData!), (c) => c.charCodeAt(0))
@@ -393,7 +398,7 @@ export class ImageController {
           const filename = isPng ? 'screenshot.png' : isWebp ? 'optimized.webp' : 'original.jpg'
           const key = `pets/${petType}s/${upload.petId}/${filename}`
 
-          console.log(`[${requestId}] Uploading to R2: ${key} (${imageBuffer.length} bytes)`)
+          console.warn(`[${requestId}] Uploading to R2: ${key} (${imageBuffer.length} bytes)`)
 
           // R2にアップロード
           await this.bucket.put(key, imageBuffer, {
@@ -409,7 +414,7 @@ export class ImageController {
             },
           })
 
-          console.log(`[${requestId}] R2 upload successful: ${key}`)
+          console.warn(`[${requestId}] R2 upload successful: ${key}`)
 
           // データベースのフラグを更新
           if (isWebp) {
@@ -417,7 +422,7 @@ export class ImageController {
               .prepare('UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?')
               .bind(upload.petId)
               .run()
-            console.log(`[${requestId}] Updated hasWebp flag for ${upload.petId}`)
+            console.warn(`[${requestId}] Updated hasWebp flag for ${upload.petId}`)
           } else {
             const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
             await this.db
@@ -426,11 +431,11 @@ export class ImageController {
               )
               .bind(imageUrl, upload.petId)
               .run()
-            console.log(`[${requestId}] Updated hasJpeg flag and imageUrl for ${upload.petId}`)
+            console.warn(`[${requestId}] Updated hasJpeg flag and imageUrl for ${upload.petId}`)
           }
 
           const uploadDuration = Date.now() - uploadStart
-          console.log(`[${requestId}] Upload ${i} completed in ${uploadDuration}ms`)
+          console.warn(`[${requestId}] Upload ${i} completed in ${uploadDuration}ms`)
 
           results.push({
             petId: upload.petId,
@@ -462,7 +467,7 @@ export class ImageController {
       const successful = results.filter((r) => r.success).length
       const failed = results.filter((r) => !r.success).length
 
-      console.log(`[${requestId}] uploadBatch completed:`, {
+      console.warn(`[${requestId}] uploadBatch completed:`, {
         total: body.uploads.length,
         successful,
         failed,

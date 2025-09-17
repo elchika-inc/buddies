@@ -21,7 +21,7 @@ export class ImageStatusController {
     const requestId = generateRequestId()
 
     try {
-      console.log(`[${requestId}] updateStatus started`, {
+      console.warn(`[${requestId}] updateStatus started`, {
         method: c.req.method,
         url: c.req.url,
         timestamp: new Date().toISOString(),
@@ -29,7 +29,7 @@ export class ImageStatusController {
 
       // リクエストボディの取得と検証
       const body = await c.req.json()
-      console.log(`[${requestId}] Request body received`, {
+      console.warn(`[${requestId}] Request body received`, {
         bodyKeys: Object.keys(body),
         petId: body.petId,
         petType: body.petType,
@@ -46,7 +46,7 @@ export class ImageStatusController {
       }
 
       const { petId, petType, screenshotKey, hasScreenshot } = parsed.data
-      console.log(`[${requestId}] Updating screenshot status`, {
+      console.warn(`[${requestId}] Updating screenshot status`, {
         petId,
         petType,
         screenshotKey,
@@ -72,7 +72,7 @@ export class ImageStatusController {
         )
       }
 
-      console.log(`[${requestId}] Screenshot status updated successfully`, {
+      console.warn(`[${requestId}] Screenshot status updated successfully`, {
         petId,
         petType,
         screenshotKey,

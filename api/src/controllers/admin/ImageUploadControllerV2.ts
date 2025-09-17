@@ -290,7 +290,7 @@ export class ImageUploadControllerV2 {
         }
       }
 
-      console.log(
+      console.warn(
         `[batch-upload] Batch ${request.batchId} complete: ${successful}/${request.results.length} successful`
       )
 

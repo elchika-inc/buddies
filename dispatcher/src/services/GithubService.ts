@@ -43,7 +43,7 @@ export class GitHubService {
   /**
    * GitHub Actionsワークフローをトリガー
    */
-  async triggerWorkflow(pets: any[], batchId: string): Promise<Result<void>> {
+  async triggerWorkflow(pets: Pet[], batchId: string): Promise<Result<void>> {
     try {
       const url = this.buildWorkflowUrl()
       const payload = this.buildWorkflowPayload(pets, batchId)
@@ -232,7 +232,7 @@ export class GitHubService {
         return Err(new Error(`Failed to check workflow status: ${response.status}`))
       }
 
-      const data = (await response.json()) as { status?: string }
+      const data = (await response.json()) as unknown as { status?: string }
       return Ok(data.status || 'unknown')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'

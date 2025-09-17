@@ -18,7 +18,7 @@ export class EnvironmentKeyStrategy implements AuthStrategy {
     const isValid = validKeys.includes(key)
 
     if (isValid) {
-      console.log('[EnvironmentKeyStrategy] Key validated successfully')
+      console.warn('[EnvironmentKeyStrategy] Key validated successfully')
     }
 
     return isValid

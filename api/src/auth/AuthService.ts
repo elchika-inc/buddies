@@ -20,7 +20,7 @@ export class AuthService {
       try {
         const isValid = await strategy.validate(key, context)
         if (isValid) {
-          console.log(`[AuthService] Key validated by ${strategy.name} strategy`)
+          console.warn(`[AuthService] Key validated by ${strategy.name} strategy`)
           return true
         }
       } catch (error) {

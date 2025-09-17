@@ -106,7 +106,7 @@ app.post('/api/crawler', async (c) => {
           petType: message.petType,
           queued: true,
         })
-        console.log(`Crawler queue message sent for ${message.petType} via API`)
+        console.warn(`Crawler queue message sent for ${message.petType} via API`)
       }
 
       return c.json({
@@ -178,7 +178,7 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    console.log('API Cron triggered at', new Date().toISOString())
+    console.warn('API Cron triggered at', new Date().toISOString())
 
     try {
       // Crawlerを直接Queueで起動（Service Binding経由）
@@ -204,10 +204,10 @@ export default {
         // Queueにメッセージを送信
         for (const message of messages) {
           await env.CRAWLER_QUEUE.send(message)
-          console.log(`Crawler queue message sent for ${message.petType}`)
+          console.warn(`Crawler queue message sent for ${message.petType}`)
         }
 
-        console.log('Crawler triggered successfully via Queue')
+        console.warn('Crawler triggered successfully via Queue')
       } else {
         console.error('CRAWLER_QUEUE not configured')
       }

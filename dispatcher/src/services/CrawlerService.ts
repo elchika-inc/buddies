@@ -6,7 +6,7 @@
 import { GitHubService } from './GithubService'
 import { QueueService } from './QueueService'
 import { Result } from '../types/result'
-import type { Env } from '../types'
+import type { Env, Pet } from '../types'
 import { BATCH_LIMITS } from '../constants'
 
 export interface CrawlerResponse {
@@ -42,7 +42,7 @@ export class CrawlerService {
       const batchId = QueueService.generateBatchId('crawler')
 
       // GitHub Actionsワークフローをトリガー（簡略化）
-      const pets: any[] = [] // クローラーは空のペット配列でトリガー
+      const pets: Pet[] = [] // クローラーは空のペット配列でトリガー
       const result = await this.githubService.triggerWorkflow(pets, batchId)
 
       if (Result.isErr(result)) {

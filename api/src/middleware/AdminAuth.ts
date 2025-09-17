@@ -84,7 +84,7 @@ export async function adminAuth(c: Context<{ Bindings: Env }>, next: Next) {
     }
 
     // 認証成功をログに記録
-    console.log('[AdminAuth] Authentication successful', {
+    console.warn('[AdminAuth] Authentication successful', {
       method: Object.entries(authMethods)
         .filter(([_, valid]) => valid)
         .map(([method]) => method)
@@ -108,7 +108,7 @@ export async function adminAuth(c: Context<{ Bindings: Env }>, next: Next) {
 
     // レスポンスタイムをログに記録
     const duration = Date.now() - startTime
-    console.log('[AdminAuth] Request completed', {
+    console.warn('[AdminAuth] Request completed', {
       duration,
       status: c.res.status,
       path: c.req.path,

@@ -150,7 +150,7 @@ export class ImageManagementService {
               .run()
 
             updated++
-            console.log(`[ImageManagementService] Updated flags for pet ${petId}`)
+            console.warn(`[ImageManagementService] Updated flags for pet ${petId}`)
           }
         } catch (error) {
           const errorMessage = `Failed to sync pet ${pet['id']}: ${error}`

@@ -247,7 +247,7 @@ async function sendToDLQ(env: Env, originalMessage: CrawlMessage, error: string)
     }
 
     await env.PAWMATCH_CRAWLER_DLQ.send(dlqMessage)
-    console.log('Message sent to DLQ:', dlqMessage)
+    console.warn('Message sent to DLQ:', dlqMessage)
   } catch (error) {
     console.error('Failed to send message to DLQ:', error)
   }
@@ -260,20 +260,20 @@ export default {
 
   // Queue Consumer (APIからのCrawlerトリガー)
   async queue(batch: MessageBatch<CrawlMessage>, env: Env): Promise<void> {
-    console.log(`Processing ${batch.messages.length} crawler queue messages`)
+    console.warn(`Processing ${batch.messages.length} crawler queue messages`)
 
     const crawler = new PetHomeCrawler(env)
 
     for (const message of batch.messages) {
       try {
         const { petType, limit, source } = message.body
-        console.log(`Processing crawl request: ${petType}, limit: ${limit}, source: ${source}`)
+        console.warn(`Processing crawl request: ${petType}, limit: ${limit}, source: ${source}`)
 
         // クロール実行
         const result = await crawler.crawl(petType, limit)
 
         if (result.success) {
-          console.log(`Successfully crawled ${petType}:`, {
+          console.warn(`Successfully crawled ${petType}:`, {
             totalPets: result.totalPets,
             newPets: result.newPets,
             updatedPets: result.updatedPets,

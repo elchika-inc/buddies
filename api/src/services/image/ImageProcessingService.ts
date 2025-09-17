@@ -10,7 +10,7 @@ export class ImageProcessingService {
   async convertToWebP(jpegData: ArrayBuffer): Promise<ArrayBuffer> {
     // Cloudflare Workersでは直接画像変換できないため、
     // 実際の変換は外部サービスまたはCloudflare Image Resizingを使用
-    console.log('[ImageProcessingService] WebP conversion requested')
+    console.warn('[ImageProcessingService] WebP conversion requested')
 
     // 現在はJPEGデータをそのまま返す（実装は外部サービスに依存）
     return jpegData
