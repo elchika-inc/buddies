@@ -140,6 +140,20 @@ database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
 # Production Queue Configuration
+# Main Crawler Queue (APIから起動)
+[[env.production.queues.consumers]]
+queue = "pawmatch-crawler-queue"
+max_batch_size = 5
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-crawler-dlq"
+max_concurrency = 2
+
+# Dead Letter Queue for Crawler
+[[env.production.queues.producers]]
+binding = "PAWMATCH_CRAWLER_DLQ"
+queue = "pawmatch-crawler-dlq"
+
 [[env.production.queues.producers]]
 binding = "PAWMATCH_CAT_PETHOME_QUEUE"
 queue = "pawmatch-cat-pethome-queue"

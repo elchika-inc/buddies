@@ -4,156 +4,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-PawMatch - 保護犬・保護猫と里親をマッチングするTinder風Webアプリケーション。Cloudflare インフラストラクチャ上で動作するフルスタックアプリケーション。
+PawMatchは保護犬・保護猫とユーザーをマッチングするTinder風Webアプリケーションです。マルチワークスペース構成で、Cloudflare環境上で動作します。
 
-## アーキテクチャ
+## 必須開発コマンド
 
-### マイクロサービス構成
-
-- **Frontend** (`/frontend`): Next.js 14 + TypeScript、Cloudflare Pages上で動作
-- **API** (`/api`): Hono + Cloudflare Workers、D1データベースとR2ストレージを使用
-- **Crawler** (`/crawler`): ペット情報収集サービス、Cloudflare Workers上で動作
-- **Dispatcher** (`/dispatcher`): タスクスケジューリングサービス、Cloudflare Workers上で動作
-
-### データフロー
-
-1. Crawler → Dispatcher経由でタスクをキューイング → APIへデータ送信
-2. Frontend → API経由でペットデータ取得 → ユーザーへ表示
-3. 画像はCloudflare R2に保存、D1データベースでメタデータ管理
-
-## 開発コマンド
-
-### 初期セットアップ
+### 基本コマンド
 
 ```bash
-npm install
-cp frontend/.env.local.example frontend/.env.local
-cp api/.env.local.example api/.env.local
-npm run db:init     # D1データベース初期化
-npm run db:migrate  # マイグレーション実行
+# 開発サーバー起動
+npm run dev           # frontend(3004)とAPI(8787)を同時起動
+npm run dev:all       # 全サービス同時起動
+
+# ビルド・検証
+npm run build         # frontendのビルド
+npm run type-check    # 全ワークスペースの型チェック
+npm run lint          # 全ワークスペースのlint実行
+npm run lint:fix      # lint自動修正
+npm run test          # 全ワークスペースのテスト実行
+
+# 個別ワークスペースの操作
+npm run type-check:app       # frontend
+npm run type-check:api       # api
+npm run type-check:crawler   # crawler
+npm run type-check:dispatcher # dispatcher
+npm run type-check:shared    # shared
+
+# デプロイ
+npm run deploy:dog    # DogMatchデプロイ (Cloudflare Pages)
+npm run deploy:cat    # CatMatchデプロイ (Cloudflare Pages)
+npm run deploy:api    # APIデプロイ (Cloudflare Workers)
+npm run deploy:crawler # Crawlerデプロイ (Cloudflare Workers)
+npm run deploy:dispatcher # Dispatcherデプロイ (Cloudflare Workers)
+
+# データベース操作
+npm run db:push       # ローカルDBへマイグレーション適用
+npm run db:studio     # Drizzle Studio起動
+npm run db:generate   # マイグレーションファイル生成
 ```
 
-### 開発サーバー
+## アーキテクチャ構造
 
-```bash
-npm run dev:all     # 全サービス同時起動（推奨）
-npm run dev:app     # Frontend のみ (port 3004)
-npm run dev:api     # API のみ (port 9789)
-```
+### ワークスペース構成
 
-### ビルド・検証
+- **frontend** (`@pawmatch/frontend`) - Next.js 14ベースのフロントエンド、Cloudflare Pagesにデプロイ
+- **api** (`@pawmatch/api`) - HonoベースのREST API、Cloudflare Workers上で動作
+- **crawler** (`@pawmatch/crawler`) - ペット情報収集クローラー、Cloudflare Workers
+- **dispatcher** (`@pawmatch/dispatcher`) - タスクディスパッチャー、Cloudflare Workers
+- **shared** (`@pawmatch/shared`) - 共有型定義・ユーティリティ
 
-```bash
-npm run build       # Frontend ビルド
-npm run type-check  # 全ワークスペースの型チェック
-npm run lint        # ESLint実行
-npm run lint:fix    # ESLint自動修正
-```
+### 技術スタック
 
-### テスト実行
-
-```bash
-npm run test        # 全ワークスペースのテスト実行
-npm run test:app    # Frontend のテストのみ
-```
-
-### データベース操作
-
-```bash
-npm run db:migrate       # ローカルマイグレーション
-npm run db:migrate:prod  # 本番マイグレーション
-npm run db:studio        # Drizzle Studio起動（DBビューア）
-npm run db:reset         # ローカルDB完全リセット
-```
-
-### デプロイ
-
-```bash
-npm run deploy:dog   # DogMatchアプリデプロイ
-npm run deploy:cat   # CatMatchアプリデプロイ
-npm run deploy:api   # APIデプロイ
-npm run deploy:all   # 全サービスデプロイ
-```
-
-## 技術スタック詳細
-
-### Frontend
-
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: TailwindCSS + Radix UI
-- **State**: React Hooks + localStorage
-- **Icons**: Lucide React + FontAwesome
-- **Animation**: Framer Motion
-- **PWA**: next-pwa
-
-### API
-
-- **Framework**: Hono
-- **Database**: Cloudflare D1 (SQLite) + Drizzle ORM
+- **Frontend**: Next.js 14, TypeScript, TailwindCSS, React Query
+- **Backend**: Hono (Cloudflare Workers), Drizzle ORM, Zod
+- **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2
-- **Cache**: Cloudflare KV
-- **Validation**: Zod
-- **認証**: APIキーベース（ヘッダー認証）
+- **Queue**: Cloudflare Queues
+- **Deployment**: Cloudflare Pages/Workers
 
-### 共通
+### API通信パターン
 
-- **TypeScript**: 厳格モード有効
-- **パッケージマネージャ**: npm workspaces
-- **モノレポ管理**: ルートpackage.jsonでworkspace管理
+- フロントエンドは`NEXT_PUBLIC_API_URL`環境変数で指定されたAPIエンドポイントと通信
+- 認証はAPIキー（`x-api-key`ヘッダー）を使用
+- CORSは`api/src/middleware/setup.ts`で設定
 
-## 重要な環境変数
+### データベース構造
 
-### Frontend (.env.local)
+- Drizzle ORMを使用し、スキーマは`api/src/db/schema/`に定義
+- マイグレーションは`api/database/migrations/`に配置
+- ローカル開発時はWranglerのD1エミュレータを使用
 
-- `NEXT_PUBLIC_ENVIRONMENT`: development/production
-- `NEXT_PUBLIC_ANIMALS_API`: APIエンドポイントURL
-- `NEXT_PUBLIC_API_KEY`: API認証キー
-- `NEXT_PUBLIC_PET_TYPE`: dog/cat (アプリケーションタイプ)
+### 環境変数設定
 
-### API (.dev.vars)
+開発時に必要な`.env`ファイル:
 
-- `ALLOWED_ORIGIN`: CORS許可オリジン
-- `USE_LOCAL_IMAGES`: ローカル画像使用フラグ
+- `frontend/.env.local` - Next.js環境変数（PET_TYPE、API_URL等）
+- `api/.dev.vars` - Wrangler開発用環境変数（API_KEY、DB設定等）
 
-### Cloudflare設定 (wrangler.toml)
+### サービス間連携
 
-- D1データベース: pawmatch-db
-- R2バケット: pawmatch-images
-- KVネームスペース: API_KEYS_CACHE
-
-## ディレクトリ構造とルーティング
-
-### API エンドポイント
-
-- `/api/pets` - ペット情報CRUD
-- `/api/images` - 画像管理
-- `/api/stats` - 統計情報
-- `/api/admin` - 管理機能
-- `/api/keys` - APIキー管理
-- `/crawler` - 内部クローラー用エンドポイント
-
-### Frontend ルーティング
-
-- App RouterによるNext.js 14標準構成
-- `/` - メインのマッチングアプリ
-- 動的ルーティングなし（SPAとして動作）
+- APIはDispatcher/Crawlerサービスとサービスバインディングで連携
+- Crawler QueueをProducerとして使用
+- 画像はR2バケット（IMAGES_BUCKET）に保存
 
 ## 開発時の注意事項
 
-### Cloudflare Workers環境
-
-- Node.js互換性フラグ有効（`nodejs_compat`）
-- Web API標準準拠
-- グローバル変数の使用制限あり
-
-### 型安全性
-
-- TypeScript strictモード使用
-- Zodによるランタイム検証
-- Drizzle ORMの型推論活用
-
-### エラーハンドリング
-
-- Resultパターン使用（`Result<T, E>`型）
-- 構造化エラーレスポンス
-- 適切なHTTPステータスコード返却
+1. **型チェック**: コード変更後は必ず`npm run type-check`を実行
+2. **Lint**: コミット前に`npm run lint`でエラーがないことを確認
+3. **環境変数**: `.env.example`を参考に必要な環境変数を設定
+4. **Cloudflare互換性**: Node.js APIの使用時は`nodejs_compat`フラグが必要
+5. **ワークスペース**: npm workspacesを使用しているため、依存関係の追加は適切なワークスペースで実行
