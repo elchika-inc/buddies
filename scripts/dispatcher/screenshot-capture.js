@@ -107,11 +107,15 @@ async function captureScreenshot(page, pet) {
       const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png --remote`
       console.log(`  📤 Uploading to R2: ${screenshotKey}`)
 
-      const { stdout, stderr } = await execAsync(uploadCommand)
-      if (stderr) {
+      const { stdout, stderr } = await execAsync(uploadCommand, {
+        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      })
+      if (stderr && !stderr.includes('wrangler') && !stderr.includes('⛅')) {
         console.error(`  ⚠️ R2 upload stderr: ${stderr}`)
       }
-      console.log(`  ☁️ R2 upload complete: ${stdout}`)
+      if (stdout) {
+        console.log(`  ☁️ R2 upload complete: ${stdout}`)
+      }
 
       // APIを呼び出してフラグを更新
       console.log(`  🔄 Updating screenshot status via API...`)
@@ -144,6 +148,13 @@ async function captureScreenshot(page, pet) {
         .catch((err) => console.warn(`  ⚠️ Failed to delete temp file: ${err.message}`))
     } catch (uploadError) {
       console.error(`  ❌ R2 upload failed: ${uploadError.message}`)
+      if (uploadError.stderr) {
+        console.error(`  📝 Command stderr: ${uploadError.stderr}`)
+      }
+      if (uploadError.stdout) {
+        console.error(`  📝 Command stdout: ${uploadError.stdout}`)
+      }
+      console.error(`  📝 Exit code: ${uploadError.code}`)
       // 一時ファイルを削除
       await fs.unlink(tempFilePath).catch(() => {})
       throw uploadError
