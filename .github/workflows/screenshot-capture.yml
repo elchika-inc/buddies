@@ -102,37 +102,52 @@ jobs:
             pets_to_process.json
           retention-days: 7
 
-      - name: Trigger conversion workflow
+      - name: Send conversion request to Dispatcher Queue
         if: steps.prepare-pets.outputs.pet_count > 0 && (github.event.inputs.trigger_conversion == 'true' || github.event.inputs.trigger_conversion == true)
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('scripts/logs/capture-results.json', 'utf8'));
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          DISPATCHER_URL: ${{ secrets.DISPATCHER_URL || 'https://pawmatch-dispatcher.elchika-inc.workers.dev' }}
+        run: |
+          # 結果ファイルを読み込み
+          RESULTS=$(cat scripts/logs/capture-results.json)
 
-            // 成功したペットのみを抽出
-            const successfulPets = results.results
-              .filter(r => r.success)
-              .map(r => ({
-                id: r.pet_id,
-                type: r.pet_type,
-                screenshotKey: r.screenshotKey
-              }));
+          # 成功したペットのみを抽出
+          SUCCESSFUL_PETS=$(echo "$RESULTS" | jq '[.results[] | select(.success) | {
+            id: .pet_id,
+            type: .pet_type,
+            screenshotKey: .screenshotKey
+          }]')
 
-            if (successfulPets.length > 0) {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'image-conversion.yml',
-                ref: 'main',
-                inputs: {
-                  pets_data: JSON.stringify(successfulPets),
-                  batch_id: results.batchId,
-                  source: 'screenshot-capture'
-                }
-              });
-              console.log(`✅ Triggered conversion for ${successfulPets.length} pets`);
-            }
+          PET_COUNT=$(echo "$SUCCESSFUL_PETS" | jq 'length')
+          BATCH_ID=$(echo "$RESULTS" | jq -r '.batchId')
+
+          if [ "$PET_COUNT" -gt 0 ]; then
+            echo "📤 Sending conversion request to Dispatcher for $PET_COUNT pets"
+
+            # Dispatcher Workerのconversion endpointに送信
+            DISPATCHER_URL="${DISPATCHER_URL:-https://pawmatch-dispatcher.elchika-inc.workers.dev}"
+            RESPONSE=$(curl -s -X POST "${DISPATCHER_URL}/dispatch-conversion" \
+              -H "Content-Type: application/json" \
+              -H "X-API-Key: ${API_KEY}" \
+              -d "{
+                \"pets\": $SUCCESSFUL_PETS,
+                \"batchId\": \"$BATCH_ID-conversion\",
+                \"source\": \"screenshot-capture\"
+              }")
+
+            echo "Response: $RESPONSE"
+
+            if echo "$RESPONSE" | jq -e '.success' > /dev/null; then
+              echo "✅ Conversion request sent to Dispatcher Queue for $PET_COUNT pets"
+            else
+              echo "⚠️ Failed to send conversion request to Dispatcher"
+              echo "$RESPONSE"
+            fi
+          else
+            echo "ℹ️ No successful screenshots to convert"
+          fi
 
       - name: Summary
         if: steps.prepare-pets.outputs.pet_count > 0

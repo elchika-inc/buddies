@@ -42,6 +42,23 @@ dead_letter_queue = "pawmatch-dispatch-dlq"
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
 
+# Conversion Queue
+[[queues.producers]]
+binding = "PAWMATCH_CONVERSION_QUEUE"
+queue = "pawmatch-conversion-queue"
+
+[[queues.consumers]]
+queue = "pawmatch-conversion-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-conversion-dlq"
+
+# Conversion Dead Letter Queue
+[[queues.producers]]
+binding = "PAWMATCH_CONVERSION_DLQ"
+queue = "pawmatch-conversion-dlq"
+
 # -----------------------------------------------------------------------------
 # Triggers
 # -----------------------------------------------------------------------------
@@ -86,6 +103,23 @@ dead_letter_queue = "pawmatch-dispatch-dlq"
 [[env.production.queues.producers]]
 binding = "PAWMATCH_DISPATCH_DLQ"
 queue = "pawmatch-dispatch-dlq"
+
+# Conversion Queue
+[[env.production.queues.producers]]
+binding = "PAWMATCH_CONVERSION_QUEUE"
+queue = "pawmatch-conversion-queue"
+
+[[env.production.queues.consumers]]
+queue = "pawmatch-conversion-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "pawmatch-conversion-dlq"
+
+# Conversion Dead Letter Queue
+[[env.production.queues.producers]]
+binding = "PAWMATCH_CONVERSION_DLQ"
+queue = "pawmatch-conversion-dlq"
 
 # NOTE: Dispatcher does not use D1 or R2 directly (uses API instead)
 
