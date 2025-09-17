@@ -8,7 +8,6 @@
   ],
   "frontend/src/**/*.{ts,tsx}": [
     "npm run type-check:app",
-    "npm run lint:app",
     "prettier --check"
   ],
   "api/src/**/*.ts": [

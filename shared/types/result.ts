@@ -103,7 +103,7 @@ export const Result = {
     if (result.success) {
       return result.data
     }
-    throw result.error
+    throw (result as { success: false; error: E }).error
   },
 }
 

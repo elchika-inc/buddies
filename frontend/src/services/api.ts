@@ -3,13 +3,12 @@
  * ペット情報の取得を担当するサービス層
  */
 
-import { FrontendPet } from '@/types/pet'
+import { FrontendPet } from '../types/pet'
 import type { Pet as SharedPet } from '../../../shared/types'
-import { getPetType } from '@/config/petConfig'
+import { getPetType } from '../config/petConfig'
 
 /** APIのベースURL（環境変数から取得、デフォルトは本番環境） */
-const API_BASE_URL =
-  process.env['NEXT_PUBLIC_PAWMATCH_API_URL'] || 'https://pawmatch-api.elchika.app'
+const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || 'https://pawmatch-api.elchika.app'
 
 /** API共通レスポンス型 */
 interface ApiResponse<T> {
@@ -65,7 +64,9 @@ class PetApi {
   async fetchPets(offset: number = 0, limit: number = 10): Promise<FrontendPetsResponse> {
     // ペットタイプ（犬/猫）を取得
     const petType = getPetType()
-    const url = `${this.baseUrl}/api/pets/type/${petType}?offset=${offset}&limit=${limit}`
+    // offsetからpageを計算（1ベースのページ番号）
+    const page = Math.floor(offset / limit) + 1
+    const url = `${this.baseUrl}/api/pets/type/${petType}?page=${page}&limit=${limit}`
 
     try {
       // APIリクエスト（APIキー認証付き）
