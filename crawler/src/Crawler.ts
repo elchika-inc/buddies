@@ -20,10 +20,12 @@ export interface Env {
   DB: D1Database
   /** R2ストレージバケット */
   IMAGES_BUCKET: R2Bucket // wrangler.tomlに合わせて修正
-  /** ペットホーム猫用キュー */
-  PAWMATCH_CAT_PETHOME_QUEUE: Queue
-  /** ペットホーム犬用キュー */
-  PAWMATCH_DOG_PETHOME_QUEUE: Queue
+  /** Screenshot Queue (責務ベース) */
+  PAWMATCH_SCREENSHOT_QUEUE: Queue
+  /** Screenshot DLQ */
+  PAWMATCH_SCREENSHOT_DLQ?: Queue
+  /** Crawler DLQ */
+  PAWMATCH_CRAWLER_DLQ?: Queue
   /** APIサービスBinding */
   API_SERVICE?: Fetcher
   /** CORS許可オリジン */

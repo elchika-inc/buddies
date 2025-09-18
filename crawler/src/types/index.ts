@@ -12,9 +12,9 @@ export interface Env {
   PET_HOME_BASE_URL: string
   GITHUB_ACTIONS?: string
   CRAWLER_API_KEY?: string
-  PAWMATCH_CAT_PETHOME_QUEUE?: Queue
-  PAWMATCH_DOG_PETHOME_QUEUE?: Queue
-  PAWMATCH_CAT_PETHOME_DLQ?: Queue
-  PAWMATCH_DOG_PETHOME_DLQ?: Queue
+  // Responsibility-based Queues
+  PAWMATCH_CRAWLER_DLQ?: Queue
+  PAWMATCH_SCREENSHOT_QUEUE?: Queue
+  PAWMATCH_SCREENSHOT_DLQ?: Queue
   API_SERVICE?: Fetcher // Service Binding for API service
 }

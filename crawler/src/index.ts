@@ -9,12 +9,11 @@ import type { CrawlMessage, DLQMessage } from './types/queue'
 // Env型定義
 export interface Env {
   DB: D1Database
-  IMAGES_BUCKET: R2Bucket // wrangler.tomlに合わせて修正
-  PAWMATCH_CAT_PETHOME_QUEUE: Queue // wrangler.tomlに合わせて修正
-  PAWMATCH_DOG_PETHOME_QUEUE: Queue // wrangler.tomlに合わせて修正
-  PAWMATCH_CAT_PETHOME_DLQ: Queue // DLQ用
-  PAWMATCH_DOG_PETHOME_DLQ: Queue // DLQ用
+  IMAGES_BUCKET: R2Bucket
+  // Responsibility-based Queues
   PAWMATCH_CRAWLER_DLQ: Queue // Main Crawler DLQ
+  PAWMATCH_SCREENSHOT_QUEUE: Queue // Screenshot Queue (責任ベース)
+  PAWMATCH_SCREENSHOT_DLQ: Queue // Screenshot DLQ
   ALLOWED_ORIGIN?: string
   USE_LOCAL_IMAGES?: string
   API_URL?: string

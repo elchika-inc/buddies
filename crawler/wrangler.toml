@@ -43,7 +43,7 @@ database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
 # -----------------------------------------------------------------------------
-# Queue Configuration
+# Queue Configuration (Responsibility-based)
 # -----------------------------------------------------------------------------
 
 # Main Crawler Queue (APIから起動)
@@ -55,45 +55,20 @@ max_retries = 3
 dead_letter_queue = "pawmatch-crawler-dlq"
 max_concurrency = 2
 
-# Dead Letter Queue for Crawler
+# Crawler Queue Producer (for DLQ)
 [[queues.producers]]
 binding = "PAWMATCH_CRAWLER_DLQ"
 queue = "pawmatch-crawler-dlq"
 
-# Cat Queue (PetHome)
+# Screenshot Queue (Crawlerが処理済みデータを送信)
 [[queues.producers]]
-binding = "PAWMATCH_CAT_PETHOME_QUEUE"
-queue = "pawmatch-cat-pethome-queue"
+binding = "PAWMATCH_SCREENSHOT_QUEUE"
+queue = "pawmatch-screenshot-queue"
 
-[[queues.consumers]]
-queue = "pawmatch-cat-pethome-queue"
-max_batch_size = 1
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "pawmatch-cat-pethome-dlq"
-max_concurrency = 1
-
-# Dog Queue (PetHome)
+# Screenshot DLQ
 [[queues.producers]]
-binding = "PAWMATCH_DOG_PETHOME_QUEUE"
-queue = "pawmatch-dog-pethome-queue"
-
-[[queues.consumers]]
-queue = "pawmatch-dog-pethome-queue"
-max_batch_size = 1
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "pawmatch-dog-pethome-dlq"
-max_concurrency = 1
-
-# Dead Letter Queues
-[[queues.producers]]
-binding = "PAWMATCH_CAT_PETHOME_DLQ"
-queue = "pawmatch-cat-pethome-dlq"
-
-[[queues.producers]]
-binding = "PAWMATCH_DOG_PETHOME_DLQ"
-queue = "pawmatch-dog-pethome-dlq"
+binding = "PAWMATCH_SCREENSHOT_DLQ"
+queue = "pawmatch-screenshot-dlq"
 
 # -----------------------------------------------------------------------------
 # Triggers
@@ -140,7 +115,7 @@ database_name = "pawmatch-db"
 database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
 migrations_dir = "../database/migrations"
 
-# Production Queue Configuration
+# Production Queue Configuration (Responsibility-based)
 # Main Crawler Queue (APIから起動)
 [[env.production.queues.consumers]]
 queue = "pawmatch-crawler-queue"
@@ -150,42 +125,20 @@ max_retries = 3
 dead_letter_queue = "pawmatch-crawler-dlq"
 max_concurrency = 2
 
-# Dead Letter Queue for Crawler
+# Crawler Queue Producer (for DLQ)
 [[env.production.queues.producers]]
 binding = "PAWMATCH_CRAWLER_DLQ"
 queue = "pawmatch-crawler-dlq"
 
+# Screenshot Queue (Crawlerが処理済みデータを送信)
 [[env.production.queues.producers]]
-binding = "PAWMATCH_CAT_PETHOME_QUEUE"
-queue = "pawmatch-cat-pethome-queue"
+binding = "PAWMATCH_SCREENSHOT_QUEUE"
+queue = "pawmatch-screenshot-queue"
 
-[[env.production.queues.consumers]]
-queue = "pawmatch-cat-pethome-queue"
-max_batch_size = 1
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "pawmatch-cat-pethome-dlq"
-max_concurrency = 1
-
+# Screenshot DLQ
 [[env.production.queues.producers]]
-binding = "PAWMATCH_DOG_PETHOME_QUEUE"
-queue = "pawmatch-dog-pethome-queue"
-
-[[env.production.queues.consumers]]
-queue = "pawmatch-dog-pethome-queue"
-max_batch_size = 1
-max_batch_timeout = 30
-max_retries = 3
-dead_letter_queue = "pawmatch-dog-pethome-dlq"
-max_concurrency = 1
-
-[[env.production.queues.producers]]
-binding = "PAWMATCH_CAT_PETHOME_DLQ"
-queue = "pawmatch-cat-pethome-dlq"
-
-[[env.production.queues.producers]]
-binding = "PAWMATCH_DOG_PETHOME_DLQ"
-queue = "pawmatch-dog-pethome-dlq"
+binding = "PAWMATCH_SCREENSHOT_DLQ"
+queue = "pawmatch-screenshot-dlq"
 
 # -----------------------------------------------------------------------------
 # Development Environment
