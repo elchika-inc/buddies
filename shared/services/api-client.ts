@@ -6,7 +6,7 @@
  */
 
 import { ServiceClient, ServiceBinding } from '../types/service-binding'
-import { Result } from '../types/result'
+import { Result, Ok, Err } from '../types/result'
 import type { Pet } from '../types'
 
 /**
@@ -69,13 +69,39 @@ export class ApiServiceClient extends ServiceClient {
     data: CrawlerSubmitData,
     apiKey: string
   ): Promise<Result<CrawlerSubmitResult, Error>> {
-    return this.request<CrawlerSubmitResult>('/crawler/submit', {
-      method: 'POST',
-      headers: {
-        'X-API-Key': apiKey,
-      },
-      body: JSON.stringify(data),
-    })
+    if (!this.binding) {
+      return Err(new Error('Service binding not configured'))
+    }
+
+    try {
+      const url = `http://internal/crawler/submit`
+      const request = new Request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': apiKey,
+        },
+        body: JSON.stringify(data),
+      })
+
+      const response = await this.binding.fetch(request)
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        return Err(new Error(`Service request failed: ${response.status} - ${errorData}`))
+      }
+
+      // APIは直接CrawlerSubmitResult形式で返すため、dataプロパティでラップしない
+      const result = (await response.json()) as CrawlerSubmitResult
+
+      if (!result.success) {
+        return Err(new Error(result.message || 'Crawler submission failed'))
+      }
+
+      return Ok(result)
+    } catch (error) {
+      return Err(error instanceof Error ? error : new Error('Unknown error'))
+    }
   }
 
   /**

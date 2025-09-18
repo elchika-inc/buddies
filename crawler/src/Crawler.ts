@@ -174,11 +174,23 @@ export class PetHomeCrawler {
       this.env.CRAWLER_API_KEY || ''
     )
 
-    if (Result.isOk(result) && result.data) {
+    if (Result.isOk(result)) {
+      // result.dataはCrawlerSubmitResult型そのものを返すはずだが、
+      // ServiceClientがdata wrapperを追加している可能性がある
+      const data = result.data
+      if (!data) {
+        return {
+          success: false,
+          newPets: 0,
+          updatedPets: 0,
+          errors: ['No data returned from API'],
+        }
+      }
+
       return {
-        success: result.data.success ?? false,
-        newPets: result.data.newPets ?? 0,
-        updatedPets: result.data.updatedPets ?? 0,
+        success: data.success ?? false,
+        newPets: data.newPets ?? 0,
+        updatedPets: data.updatedPets ?? 0,
         errors: [],
       }
     } else {
@@ -186,7 +198,7 @@ export class PetHomeCrawler {
         success: false,
         newPets: 0,
         updatedPets: 0,
-        errors: [Result.isOk(result) ? 'No data returned from API' : result.error.message],
+        errors: [result.error.message],
       }
     }
   }
