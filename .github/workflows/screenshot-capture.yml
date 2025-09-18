@@ -159,13 +159,10 @@ jobs:
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
 
-          # スクリーンショット結果の配列を作成
-          SCREENSHOT_RESULTS=$(echo "$RESULTS" | jq '[.results[] | {
-            pet_id: .pet_id,
-            pet_type: .pet_type,
-            success: .success,
-            screenshotKey: .screenshotKey,
-            hasJpeg: (if .success then 1 else 0 end)
+          # Dispatcherが期待するフォーマットに変換 (pets配列: {id, hasJpeg})
+          PETS_FOR_CONVERSION=$(echo "$RESULTS" | jq '[.results[] | select(.success) | {
+            id: .pet_id,
+            hasJpeg: 1
           }]')
 
           SUCCESS_COUNT=$(echo "$RESULTS" | jq '[.results[] | select(.success)] | length')
@@ -179,7 +176,7 @@ jobs:
               -H "Content-Type: application/json" \
               -H "X-API-Key: ${API_KEY}" \
               -d "{
-                \"screenshotResults\": $SCREENSHOT_RESULTS,
+                \"pets\": $PETS_FOR_CONVERSION,
                 \"batchId\": \"$BATCH_ID-conversion\",
                 \"source\": \"screenshot-capture\"
               }")
