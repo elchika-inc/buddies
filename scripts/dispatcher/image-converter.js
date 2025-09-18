@@ -98,7 +98,7 @@ async function convertImage(pet) {
         .jpeg({ quality: 85, progressive: true })
         .toBuffer()
 
-      const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`
+      const jpegKey = `${pet.type}s/originals/${pet.id}.jpg`
 
       await r2Client.send(
         new PutObjectCommand({
@@ -129,7 +129,7 @@ async function convertImage(pet) {
     if (pet.mode === 'all' || pet.mode === 'missing-webp') {
       const webpBuffer = await sharpInstance.clone().webp({ quality: 80 }).toBuffer()
 
-      const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`
+      const webpKey = `${pet.type}s/optimized/${pet.id}.webp`
 
       await r2Client.send(
         new PutObjectCommand({
