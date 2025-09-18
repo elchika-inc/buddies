@@ -143,7 +143,11 @@ export class QueueHandler {
       retryCount: (message.body.retryCount || 0) + 1,
     }
 
-    const result = await this.queueService.sendRetryMessage(retryMessage, delaySeconds)
+    const result = await this.queueService.sendRetryMessage(
+      retryMessage,
+      'screenshot',
+      delaySeconds
+    )
 
     if (result.success) {
       message.ack()
@@ -158,7 +162,7 @@ export class QueueHandler {
    * DLQ送信
    */
   private async sendToDLQ(message: Message<DispatchMessage>, error: AppError): Promise<void> {
-    const result = await this.queueService.sendToDLQ(message.body, error)
+    const result = await this.queueService.sendToDLQ(message.body, error, 'screenshot')
 
     if (!result.success) {
       const logger = getLogger(this.env)

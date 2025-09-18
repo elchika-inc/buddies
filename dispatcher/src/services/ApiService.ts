@@ -18,12 +18,13 @@ export class ApiService {
   }
 
   /**
-   * 画像がないペットを取得（API経由でのみ取得）
+   * 画像がないペット（Screenshot不足）を取得 - 犬用
    */
-  async fetchPetsWithoutImages(limit = 30): Promise<Result<Pet[]>> {
+  async fetchDogsWithoutScreenshots(limit = 30, sourceId = 'pet-home'): Promise<Result<Pet[]>> {
     try {
-      // API経由でデータ取得（D1とR2は使用しない）
-      const response = await this.makeApiRequest('/api/stats')
+      const response = await this.makeApiRequest(
+        `/api/stats/dogs/missing-screenshots?limit=${limit}&sourceId=${sourceId}`
+      )
 
       if (!response.ok) {
         const error = new ExternalServiceError(
@@ -56,18 +57,210 @@ export class ApiService {
         return Err(error)
       }
 
-      if (!data.data?.missingImages) {
+      // 新しいエンドポイントのレスポンス形式に対応
+      const petData = data.data?.pets || data.data?.missingImages
+      if (!petData) {
         return Ok([]) // データがない場合は空配列を返す
       }
 
       // ペットデータを変換
-      const pets = this.convertApiPetsToPets(data.data.missingImages, limit)
+      const pets = this.convertApiPetsToPets(petData, limit)
       return Ok(pets)
     } catch (error) {
-      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch pets')
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch dogs without screenshots')
       ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
       return Err(wrappedError)
     }
+  }
+
+  /**
+   * 画像がないペット（Screenshot不足）を取得 - 猫用
+   */
+  async fetchCatsWithoutScreenshots(limit = 30, sourceId = 'pet-home'): Promise<Result<Pet[]>> {
+    try {
+      const response = await this.makeApiRequest(
+        `/api/stats/cats/missing-screenshots?limit=${limit}&sourceId=${sourceId}`
+      )
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      // レスポンスをJSONとしてパース
+      const data = (await response.json()) as unknown
+
+      // 型検証
+      if (!isApiStatsResponse(data)) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response structure',
+          data
+        )
+        return Err(error)
+      }
+
+      if (!data.success) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          data.error || 'API request was not successful',
+          data
+        )
+        return Err(error)
+      }
+
+      // 新しいエンドポイントのレスポンス形式に対応
+      const petData = data.data?.pets || data.data?.missingImages
+      if (!petData) {
+        return Ok([]) // データがない場合は空配列を返す
+      }
+
+      // ペットデータを変換
+      const pets = this.convertApiPetsToPets(petData, limit)
+      return Ok(pets)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch cats without screenshots')
+      ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
+   * 画像がないペット（Conversion不足）を取得 - 犬用
+   */
+  async fetchDogsWithoutConversions(limit = 30, sourceId = 'pet-home'): Promise<Result<Pet[]>> {
+    try {
+      const response = await this.makeApiRequest(
+        `/api/stats/dogs/missing-conversions?limit=${limit}&sourceId=${sourceId}`
+      )
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      // レスポンスをJSONとしてパース
+      const data = (await response.json()) as unknown
+
+      // 型検証
+      if (!isApiStatsResponse(data)) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response structure',
+          data
+        )
+        return Err(error)
+      }
+
+      if (!data.success) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          data.error || 'API request was not successful',
+          data
+        )
+        return Err(error)
+      }
+
+      // 新しいエンドポイントのレスポンス形式に対応
+      const petData = data.data?.pets || data.data?.missingImages
+      if (!petData) {
+        return Ok([]) // データがない場合は空配列を返す
+      }
+
+      // ペットデータを変換
+      const pets = this.convertApiPetsToPets(petData, limit)
+      return Ok(pets)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch dogs without conversions')
+      ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
+   * 画像がないペット（Conversion不足）を取得 - 猫用
+   */
+  async fetchCatsWithoutConversions(limit = 30, sourceId = 'pet-home'): Promise<Result<Pet[]>> {
+    try {
+      const response = await this.makeApiRequest(
+        `/api/stats/cats/missing-conversions?limit=${limit}&sourceId=${sourceId}`
+      )
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      // レスポンスをJSONとしてパース
+      const data = (await response.json()) as unknown
+
+      // 型検証
+      if (!isApiStatsResponse(data)) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response structure',
+          data
+        )
+        return Err(error)
+      }
+
+      if (!data.success) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          data.error || 'API request was not successful',
+          data
+        )
+        return Err(error)
+      }
+
+      // 新しいエンドポイントのレスポンス形式に対応
+      const petData = data.data?.pets || data.data?.missingImages
+      if (!petData) {
+        return Ok([]) // データがない場合は空配列を返す
+      }
+
+      // ペットデータを変換
+      const pets = this.convertApiPetsToPets(petData, limit)
+      return Ok(pets)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch cats without conversions')
+      ErrorHandler.log(wrappedError, { limit, apiUrl: this.apiUrl })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
+   * 画像がないペットを取得（API経由でのみ取得） - 旧メソッド（後方互換性のため残す）
+   */
+  async fetchPetsWithoutImages(limit = 30, sourceId = 'pet-home'): Promise<Result<Pet[]>> {
+    // 両方のペットを取得して結合
+    const [dogsResult, catsResult] = await Promise.all([
+      this.fetchDogsWithoutScreenshots(limit / 2, sourceId),
+      this.fetchCatsWithoutScreenshots(limit / 2, sourceId),
+    ])
+
+    if (Result.isFailure(dogsResult) && Result.isFailure(catsResult)) {
+      return dogsResult // エラーを返す
+    }
+
+    const pets = [
+      ...(Result.isSuccess(dogsResult) ? dogsResult.data : []),
+      ...(Result.isSuccess(catsResult) ? catsResult.data : []),
+    ]
+
+    return Ok(pets)
   }
 
   /**

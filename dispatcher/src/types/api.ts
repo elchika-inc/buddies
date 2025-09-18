@@ -17,7 +17,11 @@ export interface ApiStatsResponse {
   success: boolean
   data?: {
     missingImages?: ApiPetData[]
+    pets?: ApiPetData[] // 新しいエンドポイント用
     totalCount?: number
+    count?: number
+    type?: 'dog' | 'cat'
+    missing?: 'screenshots' | 'conversions'
   }
   error?: string
 }

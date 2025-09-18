@@ -11,14 +11,12 @@ import { Result, Ok, Err } from '../types/result'
 import { getLogger } from '../utils/logger'
 
 export class QueueService {
-  /** メインキューインスタンス */
-  private readonly queue: Env['PAWMATCH_DISPATCH_QUEUE']
-  /** 失敗メッセージ用DLQインスタンス */
-  private readonly dlq: Env['PAWMATCH_DISPATCH_DLQ']
-  /** Conversionキューインスタンス */
+  /** Screenshot Queue (責務ベース) */
+  private readonly screenshotQueue: Env['PAWMATCH_SCREENSHOT_QUEUE']
+  private readonly screenshotDlq: Env['PAWMATCH_SCREENSHOT_DLQ']
+  /** Conversion Queue (責務ベース) */
   private readonly conversionQueue: Env['PAWMATCH_CONVERSION_QUEUE']
-  // /** Conversion DLQインスタンス (将来使用予定) */
-  // private readonly _conversionDlq: Env['PAWMATCH_CONVERSION_DLQ']
+  private readonly conversionDlq: Env['PAWMATCH_CONVERSION_DLQ']
 
   /**
    * コンストラクタ
@@ -26,25 +24,31 @@ export class QueueService {
    * @param env - Cloudflare Workers環境変数
    */
   constructor(env: Env) {
-    this.queue = env.PAWMATCH_DISPATCH_QUEUE
-    this.dlq = env.PAWMATCH_DISPATCH_DLQ
+    // Screenshot Queue
+    this.screenshotQueue = env.PAWMATCH_SCREENSHOT_QUEUE
+    this.screenshotDlq = env.PAWMATCH_SCREENSHOT_DLQ
+
+    // Conversion Queue
     this.conversionQueue = env.PAWMATCH_CONVERSION_QUEUE
-    // this._conversionDlq = env.PAWMATCH_CONVERSION_DLQ
+    this.conversionDlq = env.PAWMATCH_CONVERSION_DLQ
   }
 
   /**
-   * ディスパッチメッセージをキューに送信
+   * Screenshotメッセージをキューに送信
    *
    * @param pets - 処理対象のペットデータ配列
    * @param batchId - バッチ処理用の一意識別子
+   * @param sourceId - データソース（例: 'pet-home', 'anifare'）
+   * @param petType - ペットのタイプ（dog/cat/all）
    * @param retryCount - リトライ回数（デフォルト: 0）
    * @returns 送信結果
-   * @description ペットのスクリーンショット処理メッセージをキューに送信
-   * GitHub Actionsによる画像処理をトリガーする
+   * @description Screenshot Queueにメッセージを送信（sourceIdとpetTypeをメッセージに含める）
    */
-  async sendDispatchMessage(
+  async sendScreenshotMessage(
     pets: PetDispatchData[],
     batchId: string,
+    sourceId: string = 'pet-home',
+    petType: 'dog' | 'cat' | 'all' = 'all',
     retryCount = 0
   ): Promise<Result<void>> {
     try {
@@ -54,37 +58,15 @@ export class QueueService {
         batchId,
         retryCount,
         timestamp: new Date().toISOString(),
+        sourceId,
+        petType,
       }
 
-      await this.queue.send(message)
+      await this.screenshotQueue.send(message)
       return Ok(undefined)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return Err(new Error(`Failed to send message to queue: ${errorMessage}`))
-    }
-  }
-
-  /**
-   * リトライメッセージをキューに送信（遅延付き）
-   *
-   * @param message - リトライするメッセージ
-   * @param delaySeconds - 遅延秒数
-   * @returns 送信結果
-   * @description 失敗したメッセージを指定した遅延時間後に再送
-   * リトライ回数をインクリメントして送信
-   */
-  async sendRetryMessage(message: DispatchMessage, delaySeconds: number): Promise<Result<void>> {
-    try {
-      const retryMessage: DispatchMessage = {
-        ...message,
-        retryCount: (message.retryCount || 0) + 1,
-      }
-
-      await this.queue.send(retryMessage, { delaySeconds })
-      return Ok(undefined)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return Err(new Error(`Failed to send retry message: ${errorMessage}`))
+      return Err(new Error(`Failed to send message to screenshot queue: ${errorMessage}`))
     }
   }
 
@@ -92,12 +74,23 @@ export class QueueService {
    * Conversionメッセージをキューに送信
    *
    * @param message - Conversion処理用メッセージ
+   * @param sourceId - データソース（例: 'pet-home', 'anifare'）
+   * @param petType - ペットのタイプ（dog/cat/all）
    * @returns 送信結果
-   * @description 画像変換処理メッセージをConversion Queueに送信
+   * @description Conversion Queueにメッセージを送信（sourceIdとpetTypeをメッセージに含める）
    */
-  async sendConversionMessage(message: DispatchMessage): Promise<Result<void>> {
+  async sendConversionMessage(
+    message: DispatchMessage,
+    sourceId: string = 'pet-home',
+    petType: 'dog' | 'cat' | 'all' = 'all'
+  ): Promise<Result<void>> {
     try {
-      await this.conversionQueue.send(message)
+      const enrichedMessage: DispatchMessage = {
+        ...message,
+        sourceId,
+        petType,
+      }
+      await this.conversionQueue.send(enrichedMessage)
       return Ok(undefined)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -106,15 +99,48 @@ export class QueueService {
   }
 
   /**
+   * リトライメッセージをキューに送信（遅延付き）
+   *
+   * @param message - リトライするメッセージ
+   * @param queueType - キューのタイプ（screenshot/conversion）
+   * @param delaySeconds - 遅延秒数
+   * @returns 送信結果
+   * @description 失敗したメッセージを指定した遅延時間後に再送
+   */
+  async sendRetryMessage(
+    message: DispatchMessage,
+    queueType: 'screenshot' | 'conversion',
+    delaySeconds: number
+  ): Promise<Result<void>> {
+    try {
+      const retryMessage: DispatchMessage = {
+        ...message,
+        retryCount: (message.retryCount || 0) + 1,
+      }
+
+      const queue = queueType === 'screenshot' ? this.screenshotQueue : this.conversionQueue
+      await queue.send(retryMessage, { delaySeconds })
+      return Ok(undefined)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`Failed to send retry message to ${queueType} queue: ${errorMessage}`))
+    }
+  }
+
+  /**
    * DLQに失敗メッセージを送信
    *
    * @param message - 失敗したメッセージ
    * @param error - エラー情報
+   * @param queueType - キューのタイプ（screenshot/conversion）
    * @returns 送信結果
    * @description 最大リトライ回数を超えたメッセージをDLQ（Dead Letter Queue）に送信
-   * 後の手動デバッグやエラー分析のために保存
    */
-  async sendToDLQ(message: DispatchMessage, error: Error): Promise<Result<void>> {
+  async sendToDLQ(
+    message: DispatchMessage,
+    error: Error,
+    queueType: 'screenshot' | 'conversion'
+  ): Promise<Result<void>> {
     try {
       const dlqMessage: DLQMessage = {
         ...message,
@@ -122,19 +148,67 @@ export class QueueService {
         failedAt: new Date().toISOString(),
       }
 
-      await this.dlq.send(dlqMessage)
+      const dlq = queueType === 'screenshot' ? this.screenshotDlq : this.conversionDlq
+      await dlq.send(dlqMessage)
 
       // DLQメッセージは重要なのでwarnレベルで記録
       const logger = getLogger()
       logger.warn('Message sent to DLQ', {
+        queueType,
         batchId: message.batchId,
         error: error.message,
         retryCount: message.retryCount,
+        sourceId: message.sourceId,
+        petType: message.petType,
       })
       return Ok(undefined)
     } catch (sendError) {
       const errorMessage = sendError instanceof Error ? sendError.message : 'Unknown error'
-      return Err(new Error(`Failed to send message to DLQ: ${errorMessage}`))
+      return Err(new Error(`Failed to send message to ${queueType} DLQ: ${errorMessage}`))
+    }
+  }
+
+  /**
+   * 複数のペットタイプのメッセージを送信
+   *
+   * @param dogPets - 犬のペットデータ
+   * @param catPets - 猫のペットデータ
+   * @param batchId - バッチID
+   * @param sourceId - データソース
+   * @returns 送信結果
+   */
+  async sendMixedScreenshotMessages(
+    dogPets: PetDispatchData[],
+    catPets: PetDispatchData[],
+    batchId: string,
+    sourceId: string = 'pet-home'
+  ): Promise<Result<void>> {
+    try {
+      const promises: Promise<Result<void>>[] = []
+
+      // 犬のデータがある場合
+      if (dogPets.length > 0) {
+        promises.push(this.sendScreenshotMessage(dogPets, batchId, sourceId, 'dog'))
+      }
+
+      // 猫のデータがある場合
+      if (catPets.length > 0) {
+        promises.push(this.sendScreenshotMessage(catPets, batchId, sourceId, 'cat'))
+      }
+
+      const results = await Promise.all(promises)
+
+      // すべての結果をチェック
+      for (const result of results) {
+        if (Result.isFailure(result)) {
+          return result
+        }
+      }
+
+      return Ok(undefined)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      return Err(new Error(`Failed to send mixed screenshot messages: ${errorMessage}`))
     }
   }
 

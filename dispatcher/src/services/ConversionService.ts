@@ -124,7 +124,8 @@ export class ConversionService {
         retryCount: 0,
         timestamp: new Date().toISOString(),
       }
-      const sendResult = await this.queueService.sendConversionMessage(message)
+      // sourceIdとpetTypeを追加（デフォルト値を使用）
+      const sendResult = await this.queueService.sendConversionMessage(message, 'pet-home', 'all')
 
       if (Result.isErr(sendResult)) {
         console.error('Failed to send conversion message to queue:', sendResult.error)

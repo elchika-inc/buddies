@@ -11,8 +11,10 @@ export { isPet } from '../../../shared/types'
 
 export interface Env {
   // D1とR2は使用しない（APIのみ使用）
-  PAWMATCH_DISPATCH_QUEUE: Queue<DispatchMessage>
-  PAWMATCH_DISPATCH_DLQ: Queue<DispatchMessage>
+
+  // Responsibility-based Queues
+  PAWMATCH_SCREENSHOT_QUEUE: Queue<DispatchMessage>
+  PAWMATCH_SCREENSHOT_DLQ: Queue<DispatchMessage>
   PAWMATCH_CONVERSION_QUEUE: Queue<DispatchMessage>
   PAWMATCH_CONVERSION_DLQ: Queue<DispatchMessage>
 
@@ -44,6 +46,9 @@ export interface DispatchMessage {
   workflowFile?: string // 画像変換用のワークフローファイル指定
   conversionData?: ConversionData[] // 画像変換用のデータ
   crawlerData?: CrawlerData // Crawler起動用のデータ
+  // 責務ベースQueueでのメタデータ
+  sourceId?: string // データソース（例: 'pet-home', 'anifare'）
+  petType?: 'dog' | 'cat' | 'all' // ペットタイプ
 }
 
 export interface CrawlerData {

@@ -69,6 +69,146 @@ export class HealthController {
   }
 
   /**
+   * 犬のScreenshot不足データを取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} Screenshot不足の犬データ
+   */
+  async getDogsWithoutScreenshots(c: Context) {
+    try {
+      const limit = Number(c.req.query('limit')) || 50
+      const sourceId = c.req.query('sourceId') || 'pet-home' // デフォルトはpet-home
+      const result = await this.db
+        .prepare(
+          `SELECT id, name, type, sourceUrl
+           FROM pets
+           WHERE type = 'dog' AND sourceId = ? AND hasJpeg = 0 AND hasWebp = 0
+           LIMIT ?`
+        )
+        .bind(sourceId, limit)
+        .all()
+
+      return c.json(
+        successResponse({
+          pets: result.results || [],
+          count: result.results?.length || 0,
+          type: 'dog',
+          missing: 'screenshots',
+          sourceId,
+        })
+      )
+    } catch (error) {
+      console.error('Get dogs without screenshots error:', error)
+      return c.json(errorResponse('Failed to get dogs without screenshots', 'DB_ERROR'), 500)
+    }
+  }
+
+  /**
+   * 猫のScreenshot不足データを取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} Screenshot不足の猫データ
+   */
+  async getCatsWithoutScreenshots(c: Context) {
+    try {
+      const limit = Number(c.req.query('limit')) || 50
+      const sourceId = c.req.query('sourceId') || 'pet-home' // デフォルトはpet-home
+      const result = await this.db
+        .prepare(
+          `SELECT id, name, type, sourceUrl
+           FROM pets
+           WHERE type = 'cat' AND sourceId = ? AND hasJpeg = 0 AND hasWebp = 0
+           LIMIT ?`
+        )
+        .bind(sourceId, limit)
+        .all()
+
+      return c.json(
+        successResponse({
+          pets: result.results || [],
+          count: result.results?.length || 0,
+          type: 'cat',
+          missing: 'screenshots',
+          sourceId,
+        })
+      )
+    } catch (error) {
+      console.error('Get cats without screenshots error:', error)
+      return c.json(errorResponse('Failed to get cats without screenshots', 'DB_ERROR'), 500)
+    }
+  }
+
+  /**
+   * 犬のConversion不足データを取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} Conversion不足の犬データ
+   */
+  async getDogsWithoutConversions(c: Context) {
+    try {
+      const limit = Number(c.req.query('limit')) || 50
+      const sourceId = c.req.query('sourceId') || 'pet-home' // デフォルトはpet-home
+      const result = await this.db
+        .prepare(
+          `SELECT id, name, type, sourceUrl, screenshotKey
+           FROM pets
+           WHERE type = 'dog' AND sourceId = ? AND screenshotKey IS NOT NULL AND (hasJpeg = 0 OR hasWebp = 0)
+           LIMIT ?`
+        )
+        .bind(sourceId, limit)
+        .all()
+
+      return c.json(
+        successResponse({
+          pets: result.results || [],
+          count: result.results?.length || 0,
+          type: 'dog',
+          missing: 'conversions',
+          sourceId,
+        })
+      )
+    } catch (error) {
+      console.error('Get dogs without conversions error:', error)
+      return c.json(errorResponse('Failed to get dogs without conversions', 'DB_ERROR'), 500)
+    }
+  }
+
+  /**
+   * 猫のConversion不足データを取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} Conversion不足の猫データ
+   */
+  async getCatsWithoutConversions(c: Context) {
+    try {
+      const limit = Number(c.req.query('limit')) || 50
+      const sourceId = c.req.query('sourceId') || 'pet-home' // デフォルトはpet-home
+      const result = await this.db
+        .prepare(
+          `SELECT id, name, type, sourceUrl, screenshotKey
+           FROM pets
+           WHERE type = 'cat' AND sourceId = ? AND screenshotKey IS NOT NULL AND (hasJpeg = 0 OR hasWebp = 0)
+           LIMIT ?`
+        )
+        .bind(sourceId, limit)
+        .all()
+
+      return c.json(
+        successResponse({
+          pets: result.results || [],
+          count: result.results?.length || 0,
+          type: 'cat',
+          missing: 'conversions',
+          sourceId,
+        })
+      )
+    } catch (error) {
+      console.error('Get cats without conversions error:', error)
+      return c.json(errorResponse('Failed to get cats without conversions', 'DB_ERROR'), 500)
+    }
+  }
+
+  /**
    * 統計情報を取得
    *
    * @param {Context} c - Honoコンテキスト
@@ -110,19 +250,22 @@ export class HealthController {
 
         debugInfo['keyStats'] = keyStats.results?.[0]
 
+        // sourceIdをクエリパラメータから取得（デフォルトはpet-home）
+        const sourceId = c.req.query('sourceId') || 'pet-home'
+
         // 犬と猫を均等に取得するために、UNIONを使用
         const petsWithoutImages = await this.db
           .prepare(
             `WITH dogs_without_images AS (
                SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
                FROM pets
-               WHERE hasJpeg = 0 AND hasWebp = 0 AND type = 'dog'
+               WHERE sourceId = ? AND hasJpeg = 0 AND hasWebp = 0 AND type = 'dog'
                LIMIT 25
              ),
              cats_without_images AS (
                SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
                FROM pets
-               WHERE hasJpeg = 0 AND hasWebp = 0 AND type = 'cat'
+               WHERE sourceId = ? AND hasJpeg = 0 AND hasWebp = 0 AND type = 'cat'
                LIMIT 25
              )
              SELECT * FROM dogs_without_images
@@ -130,6 +273,7 @@ export class HealthController {
              SELECT * FROM cats_without_images
              ORDER BY type, id`
           )
+          .bind(sourceId, sourceId)
           .all()
 
         debugInfo['queryResultCount'] = petsWithoutImages.results?.length || 0

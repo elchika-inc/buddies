@@ -26,27 +26,34 @@ export class DispatchService {
    * バッチを作成してキューに送信
    * @param limit - 処理するペットの最大数
    * @param prefix - バッチIDのプレフィックス
+   * @param sourceId - データソース（デフォルト: 'pet-home'）
    */
   async createAndSendBatch(
     limit: number,
-    prefix: BatchIdPrefix
+    prefix: BatchIdPrefix,
+    sourceId: string = 'pet-home'
   ): Promise<DispatchResponse | ErrorResponse> {
     try {
-      // 画像がないペットを取得
-      const result = await this.apiService.fetchPetsWithoutImages(limit)
+      // 犬と猫のスクリーンショット不足データを別々に取得
+      const [dogsResult, catsResult] = await Promise.all([
+        this.apiService.fetchDogsWithoutScreenshots(Math.floor(limit / 2), sourceId),
+        this.apiService.fetchCatsWithoutScreenshots(Math.ceil(limit / 2), sourceId),
+      ])
 
-      if (Result.isErr(result)) {
+      // エラー処理
+      if (Result.isErr(dogsResult) && Result.isErr(catsResult)) {
         const logger = getLogger(this.env)
-        logger.error('Failed to fetch pets', result.error)
+        logger.error('Failed to fetch both dogs and cats', dogsResult.error)
         return {
           success: false,
-          error: result.error.message,
+          error: 'Failed to fetch pets: ' + dogsResult.error.message,
         } as ErrorResponse
       }
 
-      const pets = Result.isOk(result) ? result.data : []
+      const dogs = Result.isOk(dogsResult) ? dogsResult.data : []
+      const cats = Result.isOk(catsResult) ? catsResult.data : []
 
-      if (pets.length === 0) {
+      if (dogs.length === 0 && cats.length === 0) {
         return {
           success: true,
           message: 'No pets without images found',
@@ -58,11 +65,17 @@ export class DispatchService {
       // バッチIDを生成
       const batchId = QueueService.generateBatchId(prefix)
 
-      // ペットデータをキュー用形式に変換
-      const petDispatchData = pets.map(QueueService.convertPetToDispatchData)
+      // 犬と猫のデータを別々にキュー用形式に変換
+      const dogDispatchData = dogs.map(QueueService.convertPetToDispatchData)
+      const catDispatchData = cats.map(QueueService.convertPetToDispatchData)
 
-      // キューにメッセージを送信
-      const sendResult = await this.queueService.sendDispatchMessage(petDispatchData, batchId)
+      // キューにメッセージを送信（新しいsendMixedScreenshotMessagesを使用）
+      const sendResult = await this.queueService.sendMixedScreenshotMessages(
+        dogDispatchData,
+        catDispatchData,
+        batchId,
+        sourceId
+      )
 
       if (Result.isErr(sendResult)) {
         const logger = getLogger(this.env)
@@ -73,8 +86,11 @@ export class DispatchService {
         } as ErrorResponse
       }
 
+      // 全ペットのリストを結合
+      const allPets = [...dogs, ...cats]
+
       // ペットのステータスを更新
-      const updateResult = await this.updatePetsStatus(pets)
+      const updateResult = await this.updatePetsStatus(allPets)
 
       if (Result.isErr(updateResult)) {
         const logger = getLogger(this.env)
@@ -85,9 +101,9 @@ export class DispatchService {
       return {
         success: true,
         batchId,
-        count: pets.length,
+        count: allPets.length,
         message: 'Batch queued for processing',
-        pets: pets.map((p: Pet) => ({
+        pets: allPets.map((p: Pet) => ({
           id: p.id,
           name: p.name,
         })),
