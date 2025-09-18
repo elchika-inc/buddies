@@ -42,7 +42,9 @@ export const ConversionRequestSchema = z.object({
     .array(
       z.object({
         id: z.string().min(1, 'Pet ID is required'),
-        hasJpeg: z.number().min(0).max(1),
+        type: z.enum(['dog', 'cat']),
+        screenshotKey: z.string().optional(),
+        hasJpeg: z.number().min(0).max(1).optional(), // 後方互換性のため optional に
       })
     )
     .optional()

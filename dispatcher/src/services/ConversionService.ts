@@ -33,7 +33,12 @@ export class ConversionService {
    * @param limit - 処理するペットの最大数
    */
   async dispatchConversion(
-    pets?: Array<{ id: string; hasJpeg: number }>,
+    pets?: Array<{
+      id: string
+      type?: 'dog' | 'cat'
+      screenshotKey?: string
+      hasJpeg?: number
+    }>,
     limit: number = BATCH_LIMITS.DEFAULT_CONVERSION
   ): Promise<ConversionResponse> {
     try {
@@ -54,46 +59,53 @@ export class ConversionService {
         targetPets = Result.isOk(fetchResult) ? fetchResult.data : []
       } else {
         // 指定されたペット情報から必要な形式に変換
-        targetPets = pets
-          .filter((p) => p.hasJpeg === 1)
-          .slice(0, limit)
-          .map((p) => ({
-            id: p.id,
-            name: `Pet ${p.id}`,
-            type: 'dog', // デフォルト値
-            sourceUrl: '',
-            // 他の必須フィールドはデフォルト値で埋める
-            breed: null,
-            age: null,
-            gender: 'unknown' as const,
-            size: null,
-            weight: null,
-            color: null,
-            description: null,
-            location: null,
-            prefecture: null,
-            city: null,
-            medicalInfo: null,
-            vaccinationStatus: null,
-            isNeutered: 0,
-            personality: null,
-            goodWithKids: 0,
-            goodWithDogs: 0,
-            goodWithCats: 0,
-            adoptionFee: 0,
-            shelterName: null,
-            shelterContact: null,
-            sourceId: 'conversion',
-            careRequirements: null,
-            isVaccinated: 0,
-            isFivFelvTested: 0,
-            apartmentFriendly: 0,
-            needsYard: 0,
-            hasJpeg: 1,
-            hasWebp: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }))
+        // 新フォーマット（screenshotKey付き）と旧フォーマット（hasJpeg付き）の両方に対応
+        const filteredPets = pets.filter((p) => {
+          // screenshotKeyがある場合は変換対象
+          if (p.screenshotKey) return true
+          // hasJpegが1の場合も変換対象（後方互換性）
+          if (p.hasJpeg === 1) return true
+          return false
+        })
+
+        targetPets = filteredPets.slice(0, limit).map((p) => ({
+          id: p.id,
+          name: `Pet ${p.id}`,
+          type: p.type || 'dog', // typeが指定されていればそれを使用
+          sourceUrl: '',
+          screenshotKey: p.screenshotKey, // 新フォーマットのキーを保持
+          // 他の必須フィールドはデフォルト値で埋める
+          breed: null,
+          age: null,
+          gender: 'unknown' as const,
+          size: null,
+          weight: null,
+          color: null,
+          description: null,
+          location: null,
+          prefecture: null,
+          city: null,
+          medicalInfo: null,
+          vaccinationStatus: null,
+          isNeutered: 0,
+          personality: null,
+          goodWithKids: 0,
+          goodWithDogs: 0,
+          goodWithCats: 0,
+          adoptionFee: 0,
+          shelterName: null,
+          shelterContact: null,
+          sourceId: 'conversion',
+          careRequirements: null,
+          isVaccinated: 0,
+          isFivFelvTested: 0,
+          apartmentFriendly: 0,
+          needsYard: 0,
+          hasJpeg: 1,
+          hasWebp: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }))
       }
 
       if (targetPets.length === 0) {
