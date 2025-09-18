@@ -1,22 +1,22 @@
 {
   "dispatcher/src/**/*.{ts,tsx}": [
     "npm run lint:dispatcher",
-    "prettier --check"
+    "prettier --write"
   ],
   "dispatcher/**/*.json": [
-    "prettier --check"
+    "prettier --write"
   ],
   "frontend/src/**/*.{ts,tsx}": [
     "npm run type-check:app",
-    "prettier --check"
+    "prettier --write"
   ],
   "api/src/**/*.ts": [
-    "prettier --check"
+    "prettier --write"
   ],
   "crawler/src/**/*.ts": [
-    "prettier --check"
+    "prettier --write"
   ],
   "*.{md,yml,yaml}": [
-    "prettier --check"
+    "prettier --write"
   ]
 }

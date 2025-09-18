@@ -91,7 +91,26 @@
   },
   "packageManager": "npm@10.8.2",
   "lint-staged": {
-    "*.{js,ts,tsx,json,md}": [
+    "dispatcher/src/**/*.{ts,tsx}": [
+      "npm run lint:dispatcher",
+      "prettier --write"
+    ],
+    "dispatcher/**/*.json": [
+      "prettier --write"
+    ],
+    "frontend/src/**/*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "api/src/**/*.ts": [
+      "prettier --write"
+    ],
+    "crawler/src/**/*.ts": [
+      "prettier --write"
+    ],
+    "shared/**/*.ts": [
+      "prettier --write"
+    ],
+    "*.{md,yml,yaml,json}": [
       "prettier --write"
     ]
   }
