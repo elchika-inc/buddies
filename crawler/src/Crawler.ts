@@ -174,11 +174,11 @@ export class PetHomeCrawler {
       this.env.CRAWLER_API_KEY || ''
     )
 
-    if (Result.isOk(result)) {
+    if (Result.isOk(result) && result.data) {
       return {
-        success: result.data.success,
-        newPets: result.data.newPets,
-        updatedPets: result.data.updatedPets,
+        success: result.data.success ?? false,
+        newPets: result.data.newPets ?? 0,
+        updatedPets: result.data.updatedPets ?? 0,
         errors: [],
       }
     } else {
@@ -186,7 +186,7 @@ export class PetHomeCrawler {
         success: false,
         newPets: 0,
         updatedPets: 0,
-        errors: [result.error.message],
+        errors: [Result.isOk(result) ? 'No data returned from API' : result.error.message],
       }
     }
   }
