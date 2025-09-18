@@ -100,25 +100,30 @@ async function captureScreenshot(page, pet) {
     await fs.writeFile(tempFilePath, screenshotBuffer)
     console.log(`  💾 Saved screenshot to temp file: ${tempFilePath}`)
 
-    // wrangler r2コマンドでR2にアップロード
-    const { exec } = await import('child_process')
-    const { promisify } = await import('util')
-    const execAsync = promisify(exec)
+    // AWS S3 SDKでR2にアップロード
+    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3')
 
     try {
-      // wrangler@latestを使用して最新バージョンで実行（--remoteフラグを追加）
-      const uploadCommand = `CLOUDFLARE_API_TOKEN=${process.env.CLOUDFLARE_API_TOKEN || 'EsGXyRrfvFxsDc3b4jXOe2WCAeO-eFHDHldtLU31'} npx wrangler@latest r2 object put pawmatch-images/${screenshotKey} --file=${tempFilePath} --content-type=image/png --remote`
+      const s3Client = new S3Client({
+        region: 'auto',
+        endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID || process.env.CLOUDFLARE_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || process.env.CLOUDFLARE_SECRET_ACCESS_KEY || '',
+        },
+      })
+
       console.log(`  📤 Uploading to R2: ${screenshotKey}`)
 
-      const { stdout, stderr } = await execAsync(uploadCommand, {
-        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      const putCommand = new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME || 'pawmatch-images',
+        Key: screenshotKey,
+        Body: screenshotBuffer,
+        ContentType: 'image/png',
       })
-      if (stderr && !stderr.includes('wrangler') && !stderr.includes('⛅')) {
-        console.error(`  ⚠️ R2 upload stderr: ${stderr}`)
-      }
-      if (stdout) {
-        console.log(`  ☁️ R2 upload complete: ${stdout}`)
-      }
+
+      await s3Client.send(putCommand)
+      console.log(`  ☁️ R2 upload complete: ${screenshotKey}`)
 
       // APIを呼び出してフラグを更新
       console.log(`  🔄 Updating screenshot status via API...`)
@@ -151,13 +156,7 @@ async function captureScreenshot(page, pet) {
         .catch((err) => console.warn(`  ⚠️ Failed to delete temp file: ${err.message}`))
     } catch (uploadError) {
       console.error(`  ❌ R2 upload failed: ${uploadError.message}`)
-      if (uploadError.stderr) {
-        console.error(`  📝 Command stderr: ${uploadError.stderr}`)
-      }
-      if (uploadError.stdout) {
-        console.error(`  📝 Command stdout: ${uploadError.stdout}`)
-      }
-      console.error(`  📝 Exit code: ${uploadError.code}`)
+      console.error(`  📝 Error details: ${JSON.stringify(uploadError)}`)
       // 一時ファイルを削除
       await fs.unlink(tempFilePath).catch(() => {})
       throw uploadError
