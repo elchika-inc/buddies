@@ -1,180 +1,131 @@
 /**
- * HTTPフェッチャーサービス
- *
- * HTTP通信とページ取得を担当
- * リトライ、タイムアウト、レート制限の処理を一元化
+ * HTTP通信専用クラス
+ * ページ取得のみに責任を持つ
  */
 
-import { Result, Ok, Err } from '../../../shared/types/result'
+import { Result } from '@pawmatch/shared/types/result'
 
-/**
- * フェッチオプション
- */
 export interface FetchOptions {
+  headers?: Record<string, string>
   timeout?: number
-  userAgent?: string
-  retries?: number
-  retryDelay?: number
+  retryCount?: number
 }
 
-/**
- * HTTPフェッチャークラス
- */
+export interface FetchResult {
+  content: string
+  statusCode: number
+  headers: Headers
+}
+
 export class HttpFetcher {
-  private static readonly DEFAULT_USER_AGENT =
-    'Mozilla/5.0 (compatible; PawMatchCrawler/1.0; +https://pawmatch.jp/bot)'
-  private static readonly DEFAULT_TIMEOUT = 15000
-  private static readonly DEFAULT_RETRIES = 3
-  private static readonly DEFAULT_RETRY_DELAY = 1000
-
-  /**
-   * ページを取得
-   */
-  static async fetchPage(url: string, options: FetchOptions = {}): Promise<Result<string, Error>> {
-    const {
-      timeout = this.DEFAULT_TIMEOUT,
-      userAgent = this.DEFAULT_USER_AGENT,
-      retries = this.DEFAULT_RETRIES,
-      retryDelay = this.DEFAULT_RETRY_DELAY,
-    } = options
-
-    let lastError: Error | null = null
-
-    for (let attempt = 0; attempt < retries; attempt++) {
-      if (attempt > 0) {
-        // リトライ前に待機
-        await this.delay(retryDelay * attempt)
-      }
-
-      try {
-        const response = await fetch(url, {
-          headers: { 'User-Agent': userAgent },
-          signal: AbortSignal.timeout(timeout),
-        })
-
-        if (!response.ok) {
-          lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
-
-          // 4xxエラーはリトライしない
-          if (response.status >= 400 && response.status < 500) {
-            return Err(lastError)
-          }
-
-          continue
-        }
-
-        const text = await response.text()
-        return Ok(text)
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown fetch error')
-
-        // タイムアウトエラーの場合はリトライ
-        if (error instanceof Error && error.name === 'AbortError') {
-          continue
-        }
-
-        // ネットワークエラーの場合もリトライ
-        if (error instanceof Error && error.name === 'NetworkError') {
-          continue
-        }
-      }
-    }
-
-    return Err(lastError || new Error(`Failed to fetch after ${retries} attempts`))
+  private defaultHeaders: Record<string, string> = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'ja,en-US;q=0.9,en;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
   }
 
   /**
-   * 複数のページを並列取得
+   * URLからHTMLコンテンツを取得
    */
-  static async fetchPages(
-    urls: string[],
-    options: FetchOptions = {}
-  ): Promise<Result<Map<string, string>, Error>> {
-    const results = new Map<string, string>()
-    const errors: string[] = []
-
-    const fetchPromises = urls.map(async (url) => {
-      const result = await this.fetchPage(url, options)
-
-      if (Result.isOk(result)) {
-        results.set(url, result.data)
-      } else {
-        errors.push(`${url}: ${result.error.message}`)
-      }
-    })
-
-    await Promise.all(fetchPromises)
-
-    if (errors.length > 0) {
-      return Err(new Error(`Failed to fetch some pages:\n${errors.join('\n')}`))
+  async fetchPage(url: string, options?: FetchOptions): Promise<Result<FetchResult>> {
+    const headers = {
+      ...this.defaultHeaders,
+      ...options?.headers,
     }
 
-    return Ok(results)
+    const timeout = options?.timeout ?? 30000
+    const retryCount = options?.retryCount ?? 3
+
+    return this.fetchWithRetry(url, headers, timeout, retryCount)
   }
 
   /**
-   * 画像を取得
+   * リトライ機能付きフェッチ
    */
-  static async fetchImage(
+  private async fetchWithRetry(
     url: string,
-    options: FetchOptions = {}
-  ): Promise<Result<ArrayBuffer, Error>> {
-    const { timeout = 10000, userAgent = this.DEFAULT_USER_AGENT, retries = 2 } = options
-
+    headers: Record<string, string>,
+    timeout: number,
+    retryCount: number
+  ): Promise<Result<FetchResult>> {
     let lastError: Error | null = null
 
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
       if (attempt > 0) {
-        await this.delay(1000 * attempt)
+        // リトライ前に待機（指数バックオフ）
+        await this.delay(Math.min(1000 * Math.pow(2, attempt - 1), 10000))
       }
 
-      try {
-        const response = await fetch(url, {
-          headers: { 'User-Agent': userAgent },
-          signal: AbortSignal.timeout(timeout),
-        })
+      const result = await this.singleFetch(url, headers, timeout)
 
-        if (!response.ok) {
-          lastError = new Error(`HTTP ${response.status}: ${response.statusText}`)
-          continue
-        }
-
-        const buffer = await response.arrayBuffer()
-        return Ok(buffer)
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown fetch error')
+      if (result.success) {
+        return result
       }
+
+      lastError = result.error
+      console.log('フェッチ失敗:', lastError.message)
     }
 
-    return Err(lastError || new Error(`Failed to fetch image after ${retries} attempts`))
+    return Result.err(lastError || new Error('フェッチに失敗しました'))
+  }
+
+  /**
+   * 単一のフェッチ操作
+   */
+  private async singleFetch(
+    url: string,
+    headers: Record<string, string>,
+    timeout: number
+  ): Promise<Result<FetchResult>> {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    try {
+      const response = await fetch(url, {
+        headers,
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        return Result.err(new Error('HTTPエラー: ' + response.status + ' ' + response.statusText))
+      }
+
+      const content = await response.text()
+
+      return Result.ok({
+        content,
+        statusCode: response.status,
+        headers: response.headers,
+      })
+    } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return Result.err(new Error('タイムアウト: ' + timeout + 'ms'))
+        }
+        return Result.err(error)
+      }
+
+      return Result.err(new Error('不明なエラーが発生しました'))
+    }
+  }
+
+  /**
+   * 複数URLを並列で取得
+   */
+  async fetchMultiple(urls: string[], options?: FetchOptions): Promise<Result<FetchResult>[]> {
+    return Promise.all(urls.map((url) => this.fetchPage(url, options)))
   }
 
   /**
    * 遅延処理
    */
-  private static delay(ms: number): Promise<void> {
+  private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
-  /**
-   * レート制限付きフェッチャーを作成
-   */
-  static createRateLimitedFetcher(
-    requestsPerSecond: number
-  ): (url: string, options?: FetchOptions) => Promise<Result<string, Error>> {
-    const minInterval = 1000 / requestsPerSecond
-    let lastFetchTime = 0
-
-    return async (url: string, options?: FetchOptions) => {
-      const now = Date.now()
-      const timeSinceLastFetch = now - lastFetchTime
-
-      if (timeSinceLastFetch < minInterval) {
-        await this.delay(minInterval - timeSinceLastFetch)
-      }
-
-      lastFetchTime = Date.now()
-      return this.fetchPage(url, options)
-    }
   }
 }

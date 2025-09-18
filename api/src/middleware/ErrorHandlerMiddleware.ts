@@ -6,6 +6,7 @@
 
 import { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
+import { Result } from '@pawmatch/shared/types/result'
 import { PawMatchError } from '../utils/ErrorHandler'
 import { errorResponse } from '../utils/ResponseFormatter'
 import type { JsonValue } from '../types/common'
@@ -104,35 +105,39 @@ function logError(error: unknown, context: Context): void {
  * @description 全てのルートでエラーをキャッチし、統一的なエラーレスポンスを返す
  */
 export async function errorHandlerMiddleware(c: Context, next: Next): Promise<Response> {
-  try {
+  const result = await Result.tryCatchAsync(async () => {
     await next()
     return c.res
-  } catch (error) {
-    // エラーログの出力
-    logError(error, c)
+  })
 
-    // エラー詳細の取得
-    const details = getErrorDetails(error)
-
-    // エラーレスポンスの生成
-    const response = errorResponse(details.message, details.code, details.details as JsonValue)
-
-    // レスポンスヘッダーの設定
-    c.header('Content-Type', 'application/json')
-    c.header('X-Error-Code', details.code)
-
-    // CORSヘッダーの設定（エラー時も必要）
-    const origin = c.env?.ALLOWED_ORIGIN || '*'
-    c.header('Access-Control-Allow-Origin', origin)
-    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-
-    // エラーレスポンスを返す
-    return c.json(
-      response,
-      details.status as 200 | 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503
-    )
+  if (result.success) {
+    return result.data
   }
+
+  // エラーログの出力
+  logError(result.error, c)
+
+  // エラー詳細の取得
+  const details = getErrorDetails(result.error)
+
+  // エラーレスポンスの生成
+  const response = errorResponse(details.message, details.code, details.details as JsonValue)
+
+  // レスポンスヘッダーの設定
+  c.header('Content-Type', 'application/json')
+  c.header('X-Error-Code', details.code)
+
+  // CORSヘッダーの設定（エラー時も必要）
+  const origin = c.env?.ALLOWED_ORIGIN || '*'
+  c.header('Access-Control-Allow-Origin', origin)
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  // エラーレスポンスを返す
+  return c.json(
+    response,
+    details.status as 200 | 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500 | 502 | 503
+  )
 }
 
 /**

@@ -1,297 +1,264 @@
 /**
- * ペットデータベース操作専門クラス
+ * ペットデータのDB操作専用クラス
+ * データの永続化のみに責任を持つ
  */
 
-import type { D1Database } from '@cloudflare/workers-types'
-import { Pet } from '../../../shared/types/unified'
+import { Result } from '@pawmatch/shared/types/result'
+import type { Pet } from '@pawmatch/shared/types'
 
-export interface QueryResult<T> {
-  success: boolean
-  data?: T
-  error?: string
+export interface SavePetOptions {
+  upsert?: boolean
+  skipDuplicates?: boolean
 }
 
-export interface PaginationOptions {
-  limit: number
-  offset: number
-  orderBy?: string
-  orderDirection?: 'ASC' | 'DESC'
+export interface SaveResult {
+  saved: number
+  skipped: number
+  failed: number
+  errors: Array<{ pet: Pet; error: string }>
 }
 
 export class PetRepository {
   constructor(private db: D1Database) {}
 
   /**
-   * ペットの存在確認
+   * ペットを保存
    */
-  async checkExisting(id: string): Promise<boolean> {
+  async savePet(pet: Pet, options?: SavePetOptions): Promise<Result<Pet>> {
     try {
-      const result = await this.db.prepare('SELECT id FROM pets WHERE id = ?').bind(id).first()
+      if (options?.upsert) {
+        return this.upsertPet(pet)
+      }
 
-      return result !== null
+      const existingPet = await this.findById(pet.id)
+      if (existingPet.success) {
+        if (options?.skipDuplicates) {
+          return Result.ok(existingPet.data)
+        }
+        return Result.err(new Error('ペットは既に存在します'))
+      }
+
+      return this.insertPet(pet)
     } catch (error) {
-      console.error('Check existing error:', error)
-      return false
+      return Result.err(error instanceof Error ? error : new Error('保存エラー'))
     }
   }
 
   /**
-   * ペットの作成
+   * 複数のペットを保存
    */
-  async create(pet: Pet): Promise<QueryResult<void>> {
+  async savePets(pets: Pet[], options?: SavePetOptions): Promise<Result<SaveResult>> {
+    const result: SaveResult = {
+      saved: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [],
+    }
+
+    for (const pet of pets) {
+      const saveResult = await this.savePet(pet, options)
+
+      if (saveResult.success) {
+        result.saved++
+      } else {
+        result.failed++
+        result.errors.push({
+          pet,
+          error: saveResult.error.message,
+        })
+      }
+    }
+
+    return Result.ok(result)
+  }
+
+  /**
+   * IDでペットを検索
+   */
+  async findById(id: string): Promise<Result<Pet>> {
     try {
-      const fields = Object.keys(pet).filter((key) => pet[key as keyof Pet] !== undefined)
-      const values = fields.map((key) => pet[key as keyof Pet])
-      const placeholders = fields.map(() => '?').join(', ')
+      const pet = await this.db.prepare('SELECT * FROM pets WHERE id = ?').bind(id).first()
 
-      const query = `
-        INSERT INTO pets (${fields.join(', ')})
-        VALUES (${placeholders})
-      `
+      if (!pet) {
+        return Result.err(new Error('ペットが見つかりません'))
+      }
 
+      return Result.ok(this.dbRecordToPet(pet as Record<string, unknown>))
+    } catch (error) {
+      return Result.err(error instanceof Error ? error : new Error('検索エラー'))
+    }
+  }
+
+  /**
+   * ペットを挿入
+   */
+  private async insertPet(pet: Pet): Promise<Result<Pet>> {
+    try {
       await this.db
-        .prepare(query)
-        .bind(...values)
-        .run()
-
-      return { success: true }
-    } catch (error) {
-      console.error('Create pet error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * ペットの更新
-   */
-  async update(pet: Pet): Promise<QueryResult<void>> {
-    try {
-      const fields = Object.keys(pet).filter(
-        (key) => key !== 'id' && pet[key as keyof Pet] !== undefined
-      )
-      const setClause = fields.map((field) => `${field} = ?`).join(', ')
-      const values = fields.map((key) => pet[key as keyof Pet])
-      values.push(pet.id) // WHERE句用
-
-      const query = `
-        UPDATE pets
-        SET ${setClause}, updatedAt = datetime('now')
-        WHERE id = ?
-      `
-
-      await this.db
-        .prepare(query)
-        .bind(...values)
-        .run()
-
-      return { success: true }
-    } catch (error) {
-      console.error('Update pet error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * ペットの削除
-   */
-  async delete(id: string): Promise<QueryResult<void>> {
-    try {
-      await this.db.prepare('DELETE FROM pets WHERE id = ?').bind(id).run()
-
-      return { success: true }
-    } catch (error) {
-      console.error('Delete pet error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * ペットの取得（ID指定）
-   */
-  async findById(id: string): Promise<QueryResult<Pet>> {
-    try {
-      const result = await this.db.prepare('SELECT * FROM pets WHERE id = ?').bind(id).first<Pet>()
-
-      if (!result) {
-        return {
-          success: false,
-          error: 'Pet not found',
-        }
-      }
-
-      return {
-        success: true,
-        data: result,
-      }
-    } catch (error) {
-      console.error('Find by ID error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * ペット一覧の取得
-   */
-  async findAll(options?: PaginationOptions): Promise<QueryResult<Pet[]>> {
-    try {
-      const limit = options?.limit || 100
-      const offset = options?.offset || 0
-      const orderBy = options?.orderBy || 'createdAt'
-      const orderDirection = options?.orderDirection || 'DESC'
-
-      const query = `
-        SELECT * FROM pets
-        ORDER BY ${orderBy} ${orderDirection}
-        LIMIT ? OFFSET ?
-      `
-
-      const result = await this.db.prepare(query).bind(limit, offset).all<Pet>()
-
-      return {
-        success: true,
-        data: result.results || [],
-      }
-    } catch (error) {
-      console.error('Find all error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * 条件検索
-   */
-  async findByCondition(
-    condition: Partial<Pet>,
-    options?: PaginationOptions
-  ): Promise<QueryResult<Pet[]>> {
-    try {
-      const whereConditions: string[] = []
-      const values: unknown[] = []
-
-      Object.entries(condition).forEach(([key, value]) => {
-        if (value !== undefined) {
-          whereConditions.push(`${key} = ?`)
-          values.push(value)
-        }
-      })
-
-      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
-
-      const limit = options?.limit || 100
-      const offset = options?.offset || 0
-      const orderBy = options?.orderBy || 'createdAt'
-      const orderDirection = options?.orderDirection || 'DESC'
-
-      values.push(limit, offset)
-
-      const query = `
-        SELECT * FROM pets
-        ${whereClause}
-        ORDER BY ${orderBy} ${orderDirection}
-        LIMIT ? OFFSET ?
-      `
-
-      const result = await this.db
-        .prepare(query)
-        .bind(...values)
-        .all<Pet>()
-
-      return {
-        success: true,
-        data: result.results || [],
-      }
-    } catch (error) {
-      console.error('Find by condition error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * バッチ作成
-   */
-  async createBatch(pets: Pet[]): Promise<QueryResult<number>> {
-    try {
-      let successCount = 0
-
-      // トランザクション風の処理
-      for (const pet of pets) {
-        const result = await this.create(pet)
-        if (result.success) {
-          successCount++
-        }
-      }
-
-      return {
-        success: true,
-        data: successCount,
-      }
-    } catch (error) {
-      console.error('Create batch error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
-    }
-  }
-
-  /**
-   * 統計情報の取得
-   */
-  async getStatistics(): Promise<
-    QueryResult<{
-      total: number
-      dogs: number
-      cats: number
-      available: number
-    }>
-  > {
-    try {
-      const stats = await this.db
         .prepare(
-          `
-        SELECT 
-          COUNT(*) as total,
-          SUM(CASE WHEN type = 'dog' THEN 1 ELSE 0 END) as dogs,
-          SUM(CASE WHEN type = 'cat' THEN 1 ELSE 0 END) as cats,
-          SUM(CASE WHEN is_available = 1 THEN 1 ELSE 0 END) as available
-        FROM pets
-      `
+          `INSERT INTO pets (
+            id, type, name, breed, age, gender, size, weight,
+            color, description, location, prefecture, city,
+            medicalInfo, vaccinationStatus, isNeutered, isVaccinated,
+            personality, goodWithKids, goodWithDogs, goodWithCats,
+            shelterName, shelterContact, sourceUrl, sourceId,
+            careRequirements, imageUrl, hasJpeg, hasWebp,
+            createdAt, updatedAt
+          ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?
+          )`
         )
-        .first<{
-          total: number
-          dogs: number
-          cats: number
-          available: number
-        }>()
+        .bind(
+          pet.id,
+          pet.type,
+          pet.name,
+          pet.breed || null,
+          pet.age || null,
+          pet.gender || null,
+          pet.size || null,
+          pet.weight || null,
+          pet.color || null,
+          pet.description || null,
+          pet.location || null,
+          pet.prefecture || null,
+          pet.city || null,
+          pet.medicalInfo || null,
+          pet.vaccinationStatus || null,
+          pet.isNeutered || 0,
+          pet.isVaccinated || 0,
+          pet.personality || null,
+          pet.goodWithKids || 0,
+          pet.goodWithDogs || 0,
+          pet.goodWithCats || 0,
+          pet.shelterName || null,
+          pet.shelterContact || null,
+          pet.sourceUrl || null,
+          pet.sourceId || 'pet-home',
+          pet.careRequirements || null,
+          pet.imageUrl || null,
+          pet.hasJpeg || 0,
+          pet.hasWebp || 0,
+          pet.createdAt || new Date().toISOString(),
+          pet.updatedAt || new Date().toISOString()
+        )
+        .run()
 
-      return {
-        success: true,
-        data: stats || { total: 0, dogs: 0, cats: 0, available: 0 },
-      }
+      return Result.ok(pet)
     } catch (error) {
-      console.error('Get statistics error:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
+      return Result.err(error instanceof Error ? error : new Error('挿入エラー'))
     }
+  }
+
+  /**
+   * ペットを更新または挿入
+   */
+  private async upsertPet(pet: Pet): Promise<Result<Pet>> {
+    try {
+      await this.db
+        .prepare(
+          `INSERT OR REPLACE INTO pets (
+            id, type, name, breed, age, gender, size, weight,
+            color, description, location, prefecture, city,
+            medicalInfo, vaccinationStatus, isNeutered, isVaccinated,
+            personality, goodWithKids, goodWithDogs, goodWithCats,
+            shelterName, shelterContact, sourceUrl, sourceId,
+            careRequirements, imageUrl, hasJpeg, hasWebp,
+            createdAt, updatedAt
+          ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            COALESCE((SELECT createdAt FROM pets WHERE id = ?), ?),
+            ?
+          )`
+        )
+        .bind(
+          pet.id,
+          pet.type,
+          pet.name,
+          pet.breed || null,
+          pet.age || null,
+          pet.gender || null,
+          pet.size || null,
+          pet.weight || null,
+          pet.color || null,
+          pet.description || null,
+          pet.location || null,
+          pet.prefecture || null,
+          pet.city || null,
+          pet.medicalInfo || null,
+          pet.vaccinationStatus || null,
+          pet.isNeutered || 0,
+          pet.isVaccinated || 0,
+          pet.personality || null,
+          pet.goodWithKids || 0,
+          pet.goodWithDogs || 0,
+          pet.goodWithCats || 0,
+          pet.shelterName || null,
+          pet.shelterContact || null,
+          pet.sourceUrl || null,
+          pet.sourceId || 'pet-home',
+          pet.careRequirements || null,
+          pet.imageUrl || null,
+          pet.hasJpeg || 0,
+          pet.hasWebp || 0,
+          pet.id,
+          new Date().toISOString(),
+          new Date().toISOString()
+        )
+        .run()
+
+      return Result.ok(pet)
+    } catch (error) {
+      return Result.err(error instanceof Error ? error : new Error('更新エラー'))
+    }
+  }
+
+  /**
+   * DBレコードをPetオブジェクトに変換
+   */
+  private dbRecordToPet(record: Record<string, unknown>): Pet {
+    return {
+      id: record['id'] as string,
+      type: record['type'] as 'dog' | 'cat',
+      name: record['name'] as string,
+      breed: record['breed'] as string | undefined,
+      age: record['age'] as string | undefined,
+      gender: record['gender'] as Pet['gender'] | undefined,
+      size: record['size'] as Pet['size'] | undefined,
+      weight: record['weight'] as number | undefined,
+      color: record['color'] as string | undefined,
+      description: record['description'] as string | undefined,
+      location: record['location'] as string | undefined,
+      prefecture: record['prefecture'] as string | undefined,
+      city: record['city'] as string | undefined,
+      medicalInfo: record['medicalInfo'] as string | undefined,
+      vaccinationStatus: record['vaccinationStatus'] as string | undefined,
+      isNeutered: (record['isNeutered'] as number) || 0,
+      isVaccinated: (record['isVaccinated'] as number) || 0,
+      personality: record['personality'] as string | undefined,
+      goodWithKids: (record['goodWithKids'] as number) || 0,
+      goodWithDogs: (record['goodWithDogs'] as number) || 0,
+      goodWithCats: (record['goodWithCats'] as number) || 0,
+      shelterName: record['shelterName'] as string | undefined,
+      shelterContact: record['shelterContact'] as string | undefined,
+      sourceUrl: record['sourceUrl'] as string | undefined,
+      sourceId: (record['sourceId'] as string) || 'pet-home',
+      careRequirements: record['careRequirements'] as string | undefined,
+      imageUrl: record['imageUrl'] as string | undefined,
+      hasJpeg: (record['hasJpeg'] as number) || 0,
+      hasWebp: (record['hasWebp'] as number) || 0,
+      createdAt: record['createdAt'] as string,
+      updatedAt: record['updatedAt'] as string,
+    } as Pet
   }
 }

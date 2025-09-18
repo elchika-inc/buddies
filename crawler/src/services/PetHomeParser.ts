@@ -1,147 +1,183 @@
 /**
- * PetHomeサイトのHTML解析専門クラス
+ * HTMLパース専用クラス
+ * ペットホームのHTML解析のみに責任を持つ
  */
 
+import { Result } from '@pawmatch/shared/types/result'
 import * as cheerio from 'cheerio'
 
-export interface PetBasicInfo {
+export interface ParsedPetInfo {
   id: string
-  type: 'dog' | 'cat'
   name: string
-  detailUrl: string
-}
-
-export interface PetDetailInfo extends PetBasicInfo {
+  type: 'dog' | 'cat'
   breed?: string
   age?: string
-  gender?: 'male' | 'female' | 'unknown'
+  gender?: string
   location?: string
   prefecture?: string
   city?: string
   description?: string
-  personality?: string[]
   imageUrl?: string
-  images?: string[]
-  isVaccinated?: boolean
-  isCastrated?: boolean
-  medicalHistory?: string
-  healthNotes?: string
+  detailUrl?: string
+  shelterName?: string
+  personality?: string
+  medicalInfo?: string
+  vaccinationStatus?: string
+  isNeutered?: number
 }
 
 export class PetHomeParser {
   /**
-   * ペット一覧ページのHTML解析
+   * ペット一覧ページをパース
    */
-  parsePetList(html: string): PetBasicInfo[] {
-    const $ = cheerio.load(html)
-    const pets: PetBasicInfo[] = []
+  parsePetListPage(html: string): Result<ParsedPetInfo[]> {
+    try {
+      const $ = cheerio.load(html)
+      const pets: ParsedPetInfo[] = []
 
-    $('.pet-item').each((_, element) => {
-      const $item = $(element)
-      const id = $item.attr('data-pet-id')
-      const detailUrl = $item.find('a.pet-link').attr('href')
-      const name = $item.find('.pet-name').text().trim()
-      const type = $item.hasClass('dog-item') ? 'dog' : 'cat'
-
-      if (id && detailUrl && name) {
-        pets.push({
-          id,
-          type,
-          name,
-          detailUrl,
-        })
-      }
-    })
-
-    return pets
-  }
-
-  /**
-   * ペット詳細ページのHTML解析
-   */
-  parsePetDetail(html: string, basicInfo: PetBasicInfo): PetDetailInfo {
-    const $ = cheerio.load(html)
-
-    const detail: PetDetailInfo = {
-      ...basicInfo,
-      breed: this.extractText($, '.breed-info'),
-      age: this.extractText($, '.age-info'),
-      gender: this.extractGender($, '.gender-info'),
-      location: this.extractText($, '.location-full'),
-      prefecture: this.extractText($, '.prefecture'),
-      city: this.extractText($, '.city'),
-      description: this.extractText($, '.pet-description'),
-      personality: this.extractPersonality($, '.personality-tags'),
-      imageUrl: this.extractImageUrl($, '.main-image img'),
-      images: this.extractImages($, '.gallery-images img'),
-      isVaccinated: this.extractBoolean($, '.vaccination-status'),
-      isCastrated: this.extractBoolean($, '.castration-status'),
-      medicalHistory: this.extractText($, '.medical-history'),
-      healthNotes: this.extractText($, '.health-notes'),
-    }
-
-    return detail
-  }
-
-  /**
-   * 次のページのURLを取得
-   */
-  getNextPageUrl(html: string): string | null {
-    const $ = cheerio.load(html)
-    const nextPageLink = $('.pagination .next-page').attr('href')
-    return nextPageLink || null
-  }
-
-  /**
-   * ペット総数を取得
-   */
-  getTotalCount(html: string): number {
-    const $ = cheerio.load(html)
-    const countText = $('.total-count').text()
-    const match = countText.match(/\d+/)
-    return match ? parseInt(match[0], 10) : 0
-  }
-
-  // ヘルパーメソッド
-  private extractText($: cheerio.CheerioAPI, selector: string): string | undefined {
-    const text = $(selector).text().trim()
-    return text || undefined
-  }
-
-  private extractGender($: cheerio.CheerioAPI, selector: string): 'male' | 'female' | 'unknown' {
-    const text = $(selector).text().trim().toLowerCase()
-    if (text.includes('オス') || text.includes('male')) return 'male'
-    if (text.includes('メス') || text.includes('female')) return 'female'
-    return 'unknown'
-  }
-
-  private extractPersonality($: cheerio.CheerioAPI, selector: string): string[] {
-    const tags: string[] = []
-    $(selector)
-      .find('.tag')
-      .each((_, el) => {
-        const tag = $(el).text().trim()
-        if (tag) tags.push(tag)
+      $('.pet-list-item').each((_, element) => {
+        const petInfo = this.parsePetListItem($, element)
+        if (petInfo) {
+          pets.push(petInfo)
+        }
       })
-    return tags
+
+      return Result.ok(pets)
+    } catch (error) {
+      return Result.err(error instanceof Error ? error : new Error('パースエラー'))
+    }
   }
 
-  private extractImageUrl($: cheerio.CheerioAPI, selector: string): string | undefined {
-    const url = $(selector).attr('src') || $(selector).attr('data-src')
-    return url || undefined
+  /**
+   * ペット詳細ページをパース
+   */
+  parsePetDetailPage(html: string): Result<ParsedPetInfo> {
+    try {
+      const $ = cheerio.load(html)
+
+      const petInfo: ParsedPetInfo = {
+        id: this.extractId($),
+        name: this.extractName($),
+        type: this.extractType($),
+        breed: this.extractBreed($),
+        age: this.extractAge($),
+        gender: this.extractGender($),
+        location: this.extractLocation($),
+        prefecture: this.extractPrefecture($),
+        city: this.extractCity($),
+        description: this.extractDescription($),
+        imageUrl: this.extractImageUrl($),
+        shelterName: this.extractShelterName($),
+        personality: this.extractPersonality($),
+        medicalInfo: this.extractMedicalInfo($),
+        vaccinationStatus: this.extractVaccinationStatus($),
+        isNeutered: this.extractNeuteredStatus($),
+      }
+
+      return Result.ok(petInfo)
+    } catch (error) {
+      return Result.err(error instanceof Error ? error : new Error('詳細ページパースエラー'))
+    }
   }
 
-  private extractImages($: cheerio.CheerioAPI, selector: string): string[] {
-    const images: string[] = []
-    $(selector).each((_, el) => {
-      const url = $(el).attr('src') || $(el).attr('data-src')
-      if (url) images.push(url)
-    })
-    return images
+  /**
+   * ペットリストの個別アイテムをパース
+   */
+  private parsePetListItem($: cheerio.CheerioAPI, element: any): ParsedPetInfo | null {
+    try {
+      const $item = $(element)
+
+      return {
+        id: ($item.data('pet-id') as string) || '',
+        name: $item.find('.pet-name').text().trim(),
+        type: $item.hasClass('dog') ? 'dog' : 'cat',
+        breed: $item.find('.pet-breed').text().trim() || undefined,
+        age: $item.find('.pet-age').text().trim() || undefined,
+        location: $item.find('.pet-location').text().trim() || undefined,
+        imageUrl: $item.find('.pet-image img').attr('src') || undefined,
+        detailUrl: $item.find('.pet-link').attr('href') || undefined,
+      }
+    } catch {
+      return null
+    }
   }
 
-  private extractBoolean($: cheerio.CheerioAPI, selector: string): boolean {
-    const text = $(selector).text().trim().toLowerCase()
-    return text.includes('済') || text.includes('yes') || text.includes('完了')
+  // 以下、個別の情報抽出メソッド
+  private extractId($: cheerio.CheerioAPI): string {
+    return ($('[data-pet-id]').data('pet-id') as string) || $('.pet-id').text().trim() || ''
+  }
+
+  private extractName($: cheerio.CheerioAPI): string {
+    return $('.pet-name, h1.name').text().trim() || '名前未設定'
+  }
+
+  private extractType($: cheerio.CheerioAPI): 'dog' | 'cat' {
+    const typeText = $('.pet-type').text().toLowerCase()
+    return typeText.includes('犬') || typeText.includes('dog') ? 'dog' : 'cat'
+  }
+
+  private extractBreed($: cheerio.CheerioAPI): string | undefined {
+    const breed = $('.pet-breed, .breed-info').text().trim()
+    return breed || undefined
+  }
+
+  private extractAge($: cheerio.CheerioAPI): string | undefined {
+    const age = $('.pet-age, .age-info').text().trim()
+    return age || undefined
+  }
+
+  private extractGender($: cheerio.CheerioAPI): string | undefined {
+    const gender = $('.pet-gender, .gender-info').text().trim()
+    return gender || undefined
+  }
+
+  private extractLocation($: cheerio.CheerioAPI): string | undefined {
+    const location = $('.pet-location, .location-info').text().trim()
+    return location || undefined
+  }
+
+  private extractPrefecture($: cheerio.CheerioAPI): string | undefined {
+    const prefecture = $('.prefecture').text().trim()
+    return prefecture || undefined
+  }
+
+  private extractCity($: cheerio.CheerioAPI): string | undefined {
+    const city = $('.city').text().trim()
+    return city || undefined
+  }
+
+  private extractDescription($: cheerio.CheerioAPI): string | undefined {
+    const description = $('.pet-description, .description').text().trim()
+    return description || undefined
+  }
+
+  private extractImageUrl($: cheerio.CheerioAPI): string | undefined {
+    const imageUrl = $('.pet-main-image img, .main-image img').attr('src')
+    return imageUrl || undefined
+  }
+
+  private extractShelterName($: cheerio.CheerioAPI): string | undefined {
+    const shelter = $('.shelter-name, .organization').text().trim()
+    return shelter || undefined
+  }
+
+  private extractPersonality($: cheerio.CheerioAPI): string | undefined {
+    const personality = $('.personality, .character').text().trim()
+    return personality || undefined
+  }
+
+  private extractMedicalInfo($: cheerio.CheerioAPI): string | undefined {
+    const medical = $('.medical-info, .health-info').text().trim()
+    return medical || undefined
+  }
+
+  private extractVaccinationStatus($: cheerio.CheerioAPI): string | undefined {
+    const vaccination = $('.vaccination-status').text().trim()
+    return vaccination || undefined
+  }
+
+  private extractNeuteredStatus($: cheerio.CheerioAPI): number {
+    const neutered = $('.neutered-status').text().toLowerCase()
+    return neutered.includes('済') || neutered.includes('yes') ? 1 : 0
   }
 }

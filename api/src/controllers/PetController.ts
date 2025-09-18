@@ -1,10 +1,11 @@
 import { Context } from 'hono'
 import { validatePetType } from '../utils/validation'
+import { Result } from '@pawmatch/shared/types/result'
 import { NotFoundError, ServiceUnavailableError } from '../utils/ErrorHandler'
 import { successResponse, paginationMeta } from '../utils/ResponseFormatter'
 import { transformPetRecord, ApiPetRecord } from '../utils/DataTransformer'
 import { CONFIG } from '../utils/constants'
-import { isRawPetRecord, isCountResult, ensureArray } from '../utils/TypeGuards'
+import { isValidPetRecord, isCountResult, filterValidItems } from '@pawmatch/shared/types/guards'
 
 // 型定義を追加
 interface PetsResponseByCategoryData {
@@ -35,22 +36,21 @@ export class PetController {
    * @returns {Promise<Response>} ペット一覧のレスポンス
    */
   async getAllPets(c: Context) {
-    try {
-      const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
-      const limit = Math.min(
-        parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
-        CONFIG.LIMITS.MAX_PETS_PER_REQUEST
-      )
-      const offset = (page - 1) * limit
-      const prefecture = c.req.query('prefecture')
+    const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
+    const limit = Math.min(
+      parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
+      CONFIG.LIMITS.MAX_PETS_PER_REQUEST
+    )
+    const offset = (page - 1) * limit
+    const prefecture = c.req.query('prefecture')
 
-      const result = await this.fetchPetsSimple(null, limit, offset, prefecture)
-
-      return c.json(successResponse(result.data, paginationMeta(page, limit, result.total)))
-    } catch (error) {
-      console.error('全ペット取得エラー:', error)
+    const result = await this.fetchPetsSimpleWithResult(null, limit, offset, prefecture)
+    if (!result.success) {
+      console.error('全ペット取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
+
+    return c.json(successResponse(result.data.data, paginationMeta(page, limit, result.data.total)))
   }
 
   /**
@@ -60,27 +60,26 @@ export class PetController {
    * @returns {Promise<Response>} ペット一覧のレスポンス
    */
   async getPetsByType(c: Context) {
-    try {
-      const petType = validatePetType(c.req.param('type'))
-      if (!petType) {
-        throw new NotFoundError('無効なペットタイプです')
-      }
+    const petType = validatePetType(c.req.param('type'))
+    if (!petType) {
+      throw new NotFoundError('無効なペットタイプです')
+    }
 
-      const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
-      const limit = Math.min(
-        parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
-        CONFIG.LIMITS.MAX_PETS_PER_REQUEST
-      )
-      const offset = (page - 1) * limit
-      const prefecture = c.req.query('prefecture')
+    const page = parseInt(c.req.query('page') || String(CONFIG.LIMITS.DEFAULT_PAGE))
+    const limit = Math.min(
+      parseInt(c.req.query('limit') || String(CONFIG.LIMITS.DEFAULT_PETS_PER_REQUEST)),
+      CONFIG.LIMITS.MAX_PETS_PER_REQUEST
+    )
+    const offset = (page - 1) * limit
+    const prefecture = c.req.query('prefecture')
 
-      const result = await this.fetchPetsSimple(petType, limit, offset, prefecture)
-
-      return c.json(successResponse(result.data, paginationMeta(page, limit, result.total)))
-    } catch (error) {
-      console.error('タイプ別ペット取得エラー:', error)
+    const result = await this.fetchPetsSimpleWithResult(petType, limit, offset, prefecture)
+    if (!result.success) {
+      console.error('タイプ別ペット取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
+
+    return c.json(successResponse(result.data.data, paginationMeta(page, limit, result.data.total)))
   }
 
   /**
@@ -110,7 +109,7 @@ export class PetController {
     }
 
     // 型ガードでデータの正当性を確認
-    if (!isRawPetRecord(pet)) {
+    if (!isValidPetRecord(pet)) {
       throw new ServiceUnavailableError('Invalid pet data format')
     }
 
@@ -146,7 +145,7 @@ export class PetController {
     }
 
     // 型ガードで有効なペットデータのみフィルタリング
-    const validPets = ensureArray(dbPets.results, isRawPetRecord)
+    const validPets = filterValidItems(dbPets.results, isValidPetRecord)
 
     if (validPets.length === 0) {
       throw new ServiceUnavailableError('Invalid pet data format')
@@ -154,7 +153,7 @@ export class PetController {
 
     return c.json(
       successResponse({
-        pets: validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet)),
+        pets: validPets.map((pet) => transformPetRecord(pet)),
         type: petType,
         count: validPets.length,
       })
@@ -168,56 +167,57 @@ export class PetController {
    * @returns {Promise<Response>} 更新結果
    */
   async updateImageFlags(c: Context) {
-    try {
-      const body = await c.req.json()
-      const { pets, flagType } = body as {
-        pets: Array<{ id: string; type: string }>
-        flagType: 'hasJpeg' | 'hasWebp'
-      }
-
-      if (!pets || !Array.isArray(pets) || pets.length === 0) {
-        throw new Error('No pets provided')
-      }
-
-      if (!['hasJpeg', 'hasWebp'].includes(flagType)) {
-        throw new Error('Invalid flag type. Must be hasJpeg or hasWebp')
-      }
-
-      const results = []
-      for (const pet of pets) {
-        try {
-          await this.db
-            .prepare(
-              `UPDATE pets SET ${flagType} = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND type = ?`
-            )
-            .bind(pet.id, pet.type)
-            .run()
-
-          results.push({ id: pet.id, type: pet.type, success: true })
-        } catch (error) {
-          console.error(`Failed to update ${flagType} for pet ${pet.id}:`, error)
-          results.push({
-            id: pet.id,
-            type: pet.type,
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          })
-        }
-      }
-
-      const successCount = results.filter((r) => r.success).length
-      return c.json(
-        successResponse({
-          updated: successCount,
-          total: pets.length,
-          results,
-          flagType,
-        })
-      )
-    } catch (error) {
-      console.error('画像フラグ更新エラー:', error)
-      throw new ServiceUnavailableError('画像フラグの更新中にエラーが発生しました')
+    const bodyResult = await Result.tryCatchAsync(async () => c.req.json())
+    if (!bodyResult.success) {
+      throw new ServiceUnavailableError('リクエストボディの解析に失敗しました')
     }
+
+    const { pets, flagType } = bodyResult.data as {
+      pets: Array<{ id: string; type: string }>
+      flagType: 'hasJpeg' | 'hasWebp'
+    }
+
+    if (!pets || !Array.isArray(pets) || pets.length === 0) {
+      throw new ServiceUnavailableError('No pets provided')
+    }
+
+    if (!['hasJpeg', 'hasWebp'].includes(flagType)) {
+      throw new ServiceUnavailableError('Invalid flag type. Must be hasJpeg or hasWebp')
+    }
+
+    const results = []
+    for (const pet of pets) {
+      const updateResult = await Result.tryCatchAsync(async () =>
+        this.db
+          .prepare(
+            `UPDATE pets SET ${flagType} = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND type = ?`
+          )
+          .bind(pet.id, pet.type)
+          .run()
+      )
+
+      if (updateResult.success) {
+        results.push({ id: pet.id, type: pet.type, success: true })
+      } else {
+        console.error(`Failed to update ${flagType} for pet ${pet.id}:`, updateResult.error)
+        results.push({
+          id: pet.id,
+          type: pet.type,
+          success: false,
+          error: updateResult.error instanceof Error ? updateResult.error.message : 'Unknown error',
+        })
+      }
+    }
+
+    const successCount = results.filter((r) => r.success).length
+    return c.json(
+      successResponse({
+        updated: successCount,
+        total: pets.length,
+        results,
+        flagType,
+      })
+    )
   }
 
   /**
@@ -227,46 +227,48 @@ export class PetController {
    * @returns {Promise<Response>} ペット一覧のレスポンス
    */
   async getPetsByIds(c: Context) {
-    try {
-      // クエリパラメーターからIDリストを取得
-      const ids = c.req.queries('ids[]')
-      const sourceId = c.req.query('sourceId') || 'pet-home'
+    // クエリパラメーターからIDリストを取得
+    const ids = c.req.queries('ids[]')
+    const sourceId = c.req.query('sourceId') || 'pet-home'
 
-      if (!ids || ids.length === 0) {
-        return c.json(successResponse({ pets: [] }))
-      }
+    if (!ids || ids.length === 0) {
+      return c.json(successResponse({ pets: [] }))
+    }
 
-      // IN句用のプレースホルダーを作成
-      const placeholders = ids.map(() => '?').join(',')
-      const query = `
-        SELECT * FROM pets
-        WHERE id IN (${placeholders})
-        ORDER BY createdAt DESC
-      `
+    // IN句用のプレースホルダーを作成
+    const placeholders = ids.map(() => '?').join(',')
+    const query = `
+      SELECT * FROM pets
+      WHERE id IN (${placeholders})
+      ORDER BY createdAt DESC
+    `
 
-      const result = await this.db
+    const result = await Result.tryCatchAsync(async () =>
+      this.db
         .prepare(query)
         .bind(...ids)
         .all()
+    )
 
-      if (!result.results) {
-        throw new Error('Database query failed')
-      }
-
-      // 型ガードで有効なペットデータのみ取得
-      const validPets = ensureArray(result.results, isRawPetRecord)
-      const pets = validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet))
-
-      return c.json(
-        successResponse({
-          pets,
-          sourceId,
-        })
-      )
-    } catch (error) {
-      console.error('複数ID取得エラー:', error)
+    if (!result.success) {
+      console.error('複数ID取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
+
+    if (!result.data.results) {
+      throw new ServiceUnavailableError('Database query failed')
+    }
+
+    // 型ガードで有効なペットデータのみ取得
+    const validPets = filterValidItems(result.data.results, isValidPetRecord)
+    const pets = validPets.map((pet) => transformPetRecord(pet))
+
+    return c.json(
+      successResponse({
+        pets,
+        sourceId,
+      })
+    )
   }
 
   /**
@@ -274,6 +276,17 @@ export class PetController {
    *
    * @description 単一のクエリでペットタイプに関わらずデータを取得
    */
+  private async fetchPetsSimpleWithResult(
+    type: string | null,
+    limit: number,
+    offset: number,
+    prefecture?: string
+  ): Promise<Result<{ data: PetsResponseData; total: number }>> {
+    return Result.tryCatchAsync(async () => {
+      return this.fetchPetsSimple(type, limit, offset, prefecture)
+    })
+  }
+
   private async fetchPetsSimple(
     type: string | null,
     limit: number,
@@ -313,13 +326,11 @@ export class PetController {
       throw new Error('Database query failed')
     }
 
-    const total = isCountResult(countResult)
-      ? (countResult['total'] as number) || (countResult['count'] as number)
-      : 0
+    const total = isCountResult(countResult) ? (countResult.total ?? countResult.count ?? 0) : 0
 
     // 型ガードで有効なペットデータのみ取得
-    const validPets = ensureArray(petsResult.results, isRawPetRecord)
-    const pets = validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet))
+    const validPets = filterValidItems(petsResult.results, isValidPetRecord)
+    const pets = validPets.map((pet) => transformPetRecord(pet))
 
     // タイプが指定されていない場合は犬猫を分離して返す
     if (!type) {
