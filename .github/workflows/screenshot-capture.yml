@@ -159,10 +159,11 @@ jobs:
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
 
-          # Dispatcherが期待するフォーマットに変換 (pets配列: {id, hasJpeg})
+          # APIが期待するフォーマットに変換 (pets配列: {id, type, screenshotKey})
           PETS_FOR_CONVERSION=$(echo "$RESULTS" | jq '[.results[] | select(.success) | {
             id: .pet_id,
-            hasJpeg: 1
+            type: .pet_type,
+            screenshotKey: .screenshotKey
           }]')
 
           SUCCESS_COUNT=$(echo "$RESULTS" | jq '[.results[] | select(.success)] | length')
