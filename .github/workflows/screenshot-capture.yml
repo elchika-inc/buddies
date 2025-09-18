@@ -145,38 +145,36 @@ jobs:
             pets_to_process.json
           retention-days: 7
 
-      - name: Send conversion request to Dispatcher Queue
+      - name: Send screenshot results to API for conversion
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
           API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
-          DISPATCHER_URL: ${{ secrets.DISPATCHER_URL || 'https://pawmatch-dispatcher.naoto24kawa.workers.dev' }}
         run: |
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
 
-          # 成功したペットのみを抽出
-          SUCCESSFUL_PETS=$(echo "$RESULTS" | jq '[.results[] | select(.success) | {
-            id: .pet_id,
-            type: .pet_type,
-            screenshotKey: .screenshotKey,
-            hasJpeg: 1
+          # スクリーンショット結果の配列を作成
+          SCREENSHOT_RESULTS=$(echo "$RESULTS" | jq '[.results[] | {
+            pet_id: .pet_id,
+            pet_type: .pet_type,
+            success: .success,
+            screenshotKey: .screenshotKey
           }]')
 
-          PET_COUNT=$(echo "$SUCCESSFUL_PETS" | jq 'length')
+          SUCCESS_COUNT=$(echo "$RESULTS" | jq '[.results[] | select(.success)] | length')
           BATCH_ID=$(echo "$RESULTS" | jq -r '.batchId')
 
-          if [ "$PET_COUNT" -gt 0 ]; then
-            echo "📤 Sending conversion request to Dispatcher for $PET_COUNT pets"
+          if [ "$SUCCESS_COUNT" -gt 0 ]; then
+            echo "📤 Sending screenshot results to API for conversion ($SUCCESS_COUNT successful screenshots)"
 
-            # Dispatcher Workerのconversion endpointに送信
-            DISPATCHER_URL="${DISPATCHER_URL:-https://pawmatch-dispatcher.naoto24kawa.workers.dev}"
-            RESPONSE=$(curl -s -X POST "${DISPATCHER_URL}/dispatch-conversion" \
+            # APIのconversionエンドポイントに送信 (APIがDispatcherに転送)
+            RESPONSE=$(curl -s -X POST "${API_URL}/api/conversion/screenshot" \
               -H "Content-Type: application/json" \
               -H "X-API-Key: ${API_KEY}" \
               -d "{
-                \"pets\": $SUCCESSFUL_PETS,
+                \"screenshotResults\": $SCREENSHOT_RESULTS,
                 \"batchId\": \"$BATCH_ID-conversion\",
                 \"source\": \"screenshot-capture\"
               }")
@@ -184,9 +182,11 @@ jobs:
             echo "Response: $RESPONSE"
 
             if echo "$RESPONSE" | jq -e '.success' > /dev/null; then
-              echo "✅ Conversion request sent to Dispatcher Queue for $PET_COUNT pets"
+              CONVERSION_BATCH_ID=$(echo "$RESPONSE" | jq -r '.batchId // "N/A"')
+              CONVERSION_COUNT=$(echo "$RESPONSE" | jq -r '.count // 0')
+              echo "✅ Conversion triggered via API for $CONVERSION_COUNT pets (Batch ID: $CONVERSION_BATCH_ID)"
             else
-              echo "⚠️ Failed to send conversion request to Dispatcher"
+              echo "⚠️ Failed to trigger conversion via API"
               echo "$RESPONSE"
             fi
           else
