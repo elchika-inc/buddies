@@ -39,7 +39,7 @@ export class QueueService {
    * @param pets - 処理対象のペットデータ配列
    * @param batchId - バッチ処理用の一意識別子
    * @param sourceId - データソース（例: 'pet-home', 'anifare'）
-   * @param petType - ペットのタイプ（dog/cat/all）
+   * @param petType - ペットのタイプ（dog/cat） - 必須パラメータ
    * @param retryCount - リトライ回数（デフォルト: 0）
    * @returns 送信結果
    * @description Screenshot Queueにメッセージを送信（sourceIdとpetTypeをメッセージに含める）
@@ -48,7 +48,7 @@ export class QueueService {
     pets: PetDispatchData[],
     batchId: string,
     sourceId: string = 'pet-home',
-    petType: 'dog' | 'cat' | 'all' = 'all',
+    petType: 'dog' | 'cat',
     retryCount = 0
   ): Promise<Result<void>> {
     try {
@@ -186,14 +186,16 @@ export class QueueService {
     try {
       const promises: Promise<Result<void>>[] = []
 
-      // 犬のデータがある場合
+      // 犬のデータがある場合 - 明示的にdogタイプを指定
       if (dogPets.length > 0) {
-        promises.push(this.sendScreenshotMessage(dogPets, batchId, sourceId, 'dog'))
+        const dogBatchId = `${batchId}-dog`
+        promises.push(this.sendScreenshotMessage(dogPets, dogBatchId, sourceId, 'dog'))
       }
 
-      // 猫のデータがある場合
+      // 猫のデータがある場合 - 明示的にcatタイプを指定
       if (catPets.length > 0) {
-        promises.push(this.sendScreenshotMessage(catPets, batchId, sourceId, 'cat'))
+        const catBatchId = `${batchId}-cat`
+        promises.push(this.sendScreenshotMessage(catPets, catBatchId, sourceId, 'cat'))
       }
 
       const results = await Promise.all(promises)
