@@ -160,7 +160,8 @@ jobs:
             pet_id: .pet_id,
             pet_type: .pet_type,
             success: .success,
-            screenshotKey: .screenshotKey
+            screenshotKey: .screenshotKey,
+            hasJpeg: (if .success then 1 else 0 end)
           }]')
 
           SUCCESS_COUNT=$(echo "$RESULTS" | jq '[.results[] | select(.success)] | length')
