@@ -110,12 +110,25 @@ export class HealthController {
 
         debugInfo['keyStats'] = keyStats.results?.[0]
 
+        // 犬と猫を均等に取得するために、UNIONを使用
         const petsWithoutImages = await this.db
           .prepare(
-            `SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
-             FROM pets 
-             WHERE hasJpeg = 0 AND hasWebp = 0
-             LIMIT 50`
+            `WITH dogs_without_images AS (
+               SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
+               FROM pets
+               WHERE hasJpeg = 0 AND hasWebp = 0 AND type = 'dog'
+               LIMIT 25
+             ),
+             cats_without_images AS (
+               SELECT id, name, type, sourceUrl, hasJpeg, hasWebp, imageUrl
+               FROM pets
+               WHERE hasJpeg = 0 AND hasWebp = 0 AND type = 'cat'
+               LIMIT 25
+             )
+             SELECT * FROM dogs_without_images
+             UNION ALL
+             SELECT * FROM cats_without_images
+             ORDER BY type, id`
           )
           .all()
 
