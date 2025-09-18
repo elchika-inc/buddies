@@ -57,7 +57,10 @@ export class DispatchController {
 
       const result = await this.dispatchService.createAndSendBatch(
         validationResult.data.limit,
-        'dispatch'
+        'dispatch',
+        'pet-home',
+        validationResult.data.petType,
+        validationResult.data.petIds
       )
 
       if (!result.success) {

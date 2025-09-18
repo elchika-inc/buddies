@@ -15,6 +15,8 @@ export const DispatchRequestSchema = z.object({
     .max(BATCH_LIMITS.MAX_ALLOWED, `Limit must not exceed ${BATCH_LIMITS.MAX_ALLOWED}`)
     .optional()
     .default(BATCH_LIMITS.DEFAULT_DISPATCH),
+  petType: z.enum(['dog', 'cat']).optional(),
+  petIds: z.array(z.string()).optional(),
 })
 
 export type DispatchRequest = z.infer<typeof DispatchRequestSchema>

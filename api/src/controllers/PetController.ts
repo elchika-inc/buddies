@@ -221,6 +221,55 @@ export class PetController {
   }
 
   /**
+   * 複数のIDでペットを取得
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} ペット一覧のレスポンス
+   */
+  async getPetsByIds(c: Context) {
+    try {
+      // クエリパラメーターからIDリストを取得
+      const ids = c.req.queries('ids[]')
+      const sourceId = c.req.query('sourceId') || 'pet-home'
+
+      if (!ids || ids.length === 0) {
+        return c.json(successResponse({ pets: [] }))
+      }
+
+      // IN句用のプレースホルダーを作成
+      const placeholders = ids.map(() => '?').join(',')
+      const query = `
+        SELECT * FROM pets
+        WHERE id IN (${placeholders})
+        ORDER BY createdAt DESC
+      `
+
+      const result = await this.db
+        .prepare(query)
+        .bind(...ids)
+        .all()
+
+      if (!result.results) {
+        throw new Error('Database query failed')
+      }
+
+      // 型ガードで有効なペットデータのみ取得
+      const validPets = ensureArray(result.results, isRawPetRecord)
+      const pets = validPets.map((pet: Record<string, unknown>) => transformPetRecord(pet))
+
+      return c.json(
+        successResponse({
+          pets,
+          sourceId,
+        })
+      )
+    } catch (error) {
+      console.error('複数ID取得エラー:', error)
+      throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
+    }
+  }
+
+  /**
    * ペットデータ取得（簡素化版）
    *
    * @description 単一のクエリでペットタイプに関わらずデータを取得

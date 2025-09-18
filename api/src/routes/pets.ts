@@ -32,4 +32,13 @@ pets.put(
   })
 )
 
+// 複数のIDでペット取得（内部API用）
+pets.get(
+  '/by-ids',
+  withEnv(async (c) => {
+    const petController = new PetController(c.env.DB)
+    return petController.getPetsByIds(c)
+  })
+)
+
 export default pets

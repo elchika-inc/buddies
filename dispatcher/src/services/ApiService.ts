@@ -398,6 +398,64 @@ export class ApiService {
   }
 
   /**
+   * 特定のIDのペットを取得
+   */
+  async fetchPetsByIds(petIds: string[], sourceId = 'pet-home'): Promise<Result<Pet[]>> {
+    try {
+      // IDをクエリパラメーターとして送信
+      const idsParam = petIds.map((id) => `ids[]=${encodeURIComponent(id)}`).join('&')
+      const response = await this.makeApiRequest(
+        `/api/pets/by-ids?${idsParam}&sourceId=${sourceId}`
+      )
+
+      if (!response.ok) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          `Request failed with status: ${response.status}`,
+          { status: response.status, statusText: response.statusText }
+        )
+        return Err(error)
+      }
+
+      // レスポンスをJSONとしてパース
+      const data = (await response.json()) as unknown
+
+      // 型検証
+      if (!isApiStatsResponse(data)) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          'Invalid API response structure',
+          data
+        )
+        return Err(error)
+      }
+
+      if (!data.success) {
+        const error = new ExternalServiceError(
+          'PawMatch API',
+          data.error || 'API request was not successful',
+          data
+        )
+        return Err(error)
+      }
+
+      // ペットデータを取得
+      const petData = data.data?.pets || data.data
+      if (!petData || !Array.isArray(petData)) {
+        return Ok([]) // データがない場合は空配列を返す
+      }
+
+      // ペットデータを変換
+      const pets = this.convertApiPetsToPets(petData as ApiPetData[], petIds.length)
+      return Ok(pets)
+    } catch (error) {
+      const wrappedError = ErrorHandler.wrap(error, 'Failed to fetch pets by IDs')
+      ErrorHandler.log(wrappedError, { petIds, apiUrl: this.apiUrl })
+      return Err(wrappedError)
+    }
+  }
+
+  /**
    * ペットのステータスを更新
    */
   async updateStatus(petIds: string[], status: string): Promise<Result<void>> {

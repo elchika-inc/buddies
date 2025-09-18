@@ -44,6 +44,11 @@
     "type-check:dispatcher": "npm run -w @pawmatch/dispatcher type-check",
     "type-check:shared": "npm run -w @pawmatch/shared type-check",
 
+    "// Clean": "=== クリーンアップ ===",
+    "clean:wrangler": "rm -rf api/.wrangler/tmp/* crawler/.wrangler/tmp/* dispatcher/.wrangler/tmp/* 2>/dev/null || true && echo 'Wrangler一時ファイルを削除しました'",
+    "clean:dist": "rm -rf */dist/* && echo 'ビルド成果物を削除しました'",
+    "clean:all": "npm run clean:wrangler && npm run clean:dist && echo '全クリーンアップ完了'",
+
     "// Deploy": "=== デプロイ ===",
     "deploy:dog": "npm run -w @pawmatch/frontend deploy:dog",
     "deploy:cat": "npm run -w @pawmatch/frontend deploy:cat",

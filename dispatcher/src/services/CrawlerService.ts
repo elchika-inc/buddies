@@ -4,6 +4,7 @@
  */
 
 import { QueueService } from './QueueService'
+import { getLogger } from '../utils/logger'
 import type { Env } from '../types'
 import { BATCH_LIMITS } from '../constants'
 
@@ -19,8 +20,10 @@ export interface CrawlerResponse {
 
 export class CrawlerService {
   private apiUrl: string
+  private env: Env
 
   constructor(env: Env) {
+    this.env = env
     // APIのURLから基本URLを取得
     const baseUrl = env.PAWMATCH_API_URL || env.API_URL || 'https://pawmatch-api.elchika.app'
     // Crawler WorkerのURL（APIと同じドメインの/api/crawler/trigger）
@@ -55,11 +58,10 @@ export class CrawlerService {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Failed to trigger crawler:', errorText)
-        return {
-          success: false,
-          error: `Crawler trigger failed: ${response.status} ${errorText}`,
-        }
+        return this.createErrorResponse(
+          `Crawler trigger failed: ${response.status}`,
+          new Error(errorText)
+        )
       }
 
       const result = (await response.json()) as {
@@ -77,12 +79,21 @@ export class CrawlerService {
         crawledCount: result.crawledCount,
       }
     } catch (error) {
-      console.error('Crawler trigger error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return {
-        success: false,
-        error: errorMessage,
-      }
+      return this.createErrorResponse('Crawler trigger error', error as Error)
+    }
+  }
+
+  /**
+   * 統一エラーレスポンス生成
+   */
+  private createErrorResponse(message: string, error: Error): CrawlerResponse {
+    const logger = getLogger(this.env)
+    logger.error(message, error)
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return {
+      success: false,
+      error: `${message}: ${errorMessage}`,
     }
   }
 }

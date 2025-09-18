@@ -6,6 +6,7 @@
 import { ApiService } from './ApiService'
 import { QueueService } from './QueueService'
 import { Result } from '../types/result'
+import { getLogger } from '../utils/logger'
 import type { Env, Pet } from '../types'
 import { BATCH_LIMITS } from '../constants'
 
@@ -21,8 +22,10 @@ export interface ConversionResponse {
 export class ConversionService {
   private apiService: ApiService
   private queueService: QueueService
+  private env: Env
 
   constructor(env: Env) {
+    this.env = env
     this.apiService = new ApiService(env)
     this.queueService = new QueueService(env)
   }
@@ -49,11 +52,7 @@ export class ConversionService {
         const fetchResult = await this.apiService.fetchPetsForConversion(limit)
 
         if (Result.isErr(fetchResult)) {
-          console.error('Failed to fetch pets for conversion:', fetchResult.error)
-          return {
-            success: false,
-            error: fetchResult.error.message,
-          }
+          return this.createErrorResponse('Failed to fetch pets for conversion', fetchResult.error)
         }
 
         targetPets = Result.isOk(fetchResult) ? fetchResult.data : []
@@ -140,11 +139,10 @@ export class ConversionService {
       const sendResult = await this.queueService.sendConversionMessage(message, 'pet-home', 'all')
 
       if (Result.isErr(sendResult)) {
-        console.error('Failed to send conversion message to queue:', sendResult.error)
-        return {
-          success: false,
-          error: sendResult.error.message,
-        }
+        return this.createErrorResponse(
+          'Failed to send conversion message to queue',
+          sendResult.error
+        )
       }
 
       // ペットのステータスを更新
@@ -154,7 +152,7 @@ export class ConversionService {
       )
 
       if (Result.isErr(updateResult)) {
-        console.warn('Failed to update pet status for conversion:', updateResult.error)
+        this.logWarning('Failed to update pet status for conversion', updateResult.error)
         // ステータス更新の失敗は警告のみ（処理は継続）
       }
 
@@ -169,12 +167,29 @@ export class ConversionService {
         })),
       }
     } catch (error) {
-      console.error('Conversion dispatch error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return {
-        success: false,
-        error: errorMessage,
-      }
+      return this.createErrorResponse('Conversion dispatch error', error as Error)
     }
+  }
+
+  /**
+   * 統一エラーレスポンス生成
+   */
+  private createErrorResponse(message: string, error: Error): ConversionResponse {
+    const logger = getLogger(this.env)
+    logger.error(message, error)
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return {
+      success: false,
+      error: `${message}: ${errorMessage}`,
+    }
+  }
+
+  /**
+   * 警告ログ出力
+   */
+  private logWarning(message: string, error: Error): void {
+    const logger = getLogger(this.env)
+    logger.warn(message, { error: error.message })
   }
 }
