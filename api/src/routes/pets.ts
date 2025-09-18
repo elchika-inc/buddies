@@ -23,4 +23,13 @@ pets.get(
   })
 )
 
+// 画像フラグ更新（内部API用）
+pets.put(
+  '/update-image-flags',
+  withEnv(async (c) => {
+    const petController = new PetController(c.env.DB)
+    return petController.updateImageFlags(c)
+  })
+)
+
 export default pets

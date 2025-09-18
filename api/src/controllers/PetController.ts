@@ -162,6 +162,65 @@ export class PetController {
   }
 
   /**
+   * ペットの画像フラグを更新
+   *
+   * @param {Context} c - Honoコンテキスト
+   * @returns {Promise<Response>} 更新結果
+   */
+  async updateImageFlags(c: Context) {
+    try {
+      const body = await c.req.json()
+      const { pets, flagType } = body as {
+        pets: Array<{ id: string; type: string }>
+        flagType: 'hasJpeg' | 'hasWebp'
+      }
+
+      if (!pets || !Array.isArray(pets) || pets.length === 0) {
+        throw new Error('No pets provided')
+      }
+
+      if (!['hasJpeg', 'hasWebp'].includes(flagType)) {
+        throw new Error('Invalid flag type. Must be hasJpeg or hasWebp')
+      }
+
+      const results = []
+      for (const pet of pets) {
+        try {
+          await this.db
+            .prepare(
+              `UPDATE pets SET ${flagType} = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND type = ?`
+            )
+            .bind(pet.id, pet.type)
+            .run()
+
+          results.push({ id: pet.id, type: pet.type, success: true })
+        } catch (error) {
+          console.error(`Failed to update ${flagType} for pet ${pet.id}:`, error)
+          results.push({
+            id: pet.id,
+            type: pet.type,
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          })
+        }
+      }
+
+      const successCount = results.filter((r) => r.success).length
+      return c.json(
+        successResponse({
+          updated: successCount,
+          total: pets.length,
+          results,
+          flagType,
+        })
+      )
+    } catch (error) {
+      console.error('画像フラグ更新エラー:', error)
+      throw new ServiceUnavailableError('画像フラグの更新中にエラーが発生しました')
+    }
+  }
+
+  /**
    * ペットデータ取得（簡素化版）
    *
    * @description 単一のクエリでペットタイプに関わらずデータを取得

@@ -74,6 +74,7 @@ jobs:
           echo "Found ${PET_COUNT} pets to process"
 
       - name: Capture screenshots
+        id: capture-screenshots
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
@@ -87,6 +88,52 @@ jobs:
           node scripts/dispatcher/screenshot-capture.js \
             --batch-file="pets_to_process.json" \
             --batch-id="${{ github.event.inputs.batch_id || format('capture-{0}', github.run_id) }}"
+
+          # 成功したスクリーンショットのペットIDを保存
+          if [ -f "scripts/logs/capture-results.json" ]; then
+            SUCCESS_COUNT=$(cat scripts/logs/capture-results.json | jq '[.results[] | select(.success)] | length')
+            echo "screenshot_success_count=${SUCCESS_COUNT}" >> $GITHUB_OUTPUT
+          else
+            echo "screenshot_success_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update hasJpeg flags in database
+        if: steps.capture-screenshots.outputs.screenshot_success_count > 0
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+        run: |
+          # 成功したスクリーンショットのペット情報を抽出
+          SUCCESSFUL_PETS=$(cat scripts/logs/capture-results.json | jq '[.results[] | select(.success) | {
+            id: .pet_id,
+            type: .pet_type
+          }]')
+
+          PETS_COUNT=$(echo "$SUCCESSFUL_PETS" | jq 'length')
+
+          if [ "$PETS_COUNT" -gt 0 ]; then
+            echo "📤 Updating hasJpeg flag for $PETS_COUNT pets in database"
+
+            # APIエンドポイントを呼び出してhasJpegフラグを更新
+            UPDATE_RESPONSE=$(curl -s -X PUT "${API_URL}/api/pets/update-image-flags" \
+              -H "Content-Type: application/json" \
+              -H "X-API-Key: ${API_KEY}" \
+              -d "{
+                \"pets\": $SUCCESSFUL_PETS,
+                \"flagType\": \"hasJpeg\"
+              }")
+
+            echo "Update response: $UPDATE_RESPONSE"
+
+            if echo "$UPDATE_RESPONSE" | jq -e '.success' > /dev/null; then
+              UPDATED_COUNT=$(echo "$UPDATE_RESPONSE" | jq -r '.data.updated')
+              echo "✅ Successfully updated hasJpeg flag for $UPDATED_COUNT pets"
+            else
+              echo "⚠️ Failed to update hasJpeg flags in database"
+              echo "$UPDATE_RESPONSE"
+            fi
+          fi
 
       - name: Upload logs
         if: always()
