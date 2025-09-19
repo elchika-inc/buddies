@@ -5,7 +5,7 @@
 
 import type { MessageBatch, Message } from '@cloudflare/workers-types'
 import type { Env, DispatchMessage } from '../types'
-import { GitHubService, RateLimitError } from '../services/GitHubService'
+import { GitHubService, RateLimitError } from '../services/GithubService'
 import { QueueService } from '../services/QueueService'
 import { ErrorHandler, AppError } from '../../../shared/types/errors'
 import { getLogger } from '../utils/logger'
@@ -118,7 +118,7 @@ export class QueueHandler {
 
     // Rate Limit エラーの特別処理
     if (error instanceof RateLimitError && retryCount < this.maxRetries) {
-      await this.scheduleRetry(message, error.retryAfter)
+      await this.scheduleRetry(message, (error as RateLimitError).retryAfter)
       return
     }
 
