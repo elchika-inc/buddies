@@ -1,12 +1,13 @@
 import type { Context } from 'hono'
 import type { Env } from '../../types'
+import { getCrawlerConfig } from '../../config/crawler'
 
 export class CrawlerController {
   constructor(private env: Env) {}
 
   async triggerCrawl(c: Context) {
     try {
-      const { type = 'dog', limit = 5 } = await c.req.json().catch(() => ({}))
+      const { type = 'dog', limit = 5, source = 'pet-home' } = await c.req.json().catch(() => ({}))
 
       // Crawlerサービスを直接呼び出し
       if (!this.env.CRAWLER_SERVICE) {
@@ -18,6 +19,9 @@ export class CrawlerController {
           500
         )
       }
+
+      // クローラー設定を取得
+      const crawlerConfig = getCrawlerConfig(source as 'pet-home')
 
       // Service Bindingを使用してCrawlerを起動
       const crawlerResponse = await this.env.CRAWLER_SERVICE.fetch(
@@ -31,6 +35,12 @@ export class CrawlerController {
             type,
             limit,
             source: 'api-trigger',
+            config: {
+              petsPerPage: crawlerConfig.petsPerPage,
+              maxPages: crawlerConfig.maxPages,
+              maxBatchSize: crawlerConfig.maxBatchSize,
+              requestsPerSecond: crawlerConfig.requestsPerSecond,
+            },
           }),
         })
       )

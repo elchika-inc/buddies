@@ -261,12 +261,13 @@ export default {
   async queue(batch: MessageBatch<CrawlMessage>, env: Env): Promise<void> {
     console.warn(`Processing ${batch.messages.length} crawler queue messages`)
 
-    const crawler = new PetHomeCrawler(env)
-
     for (const message of batch.messages) {
       try {
-        const { petType, limit, source } = message.body
+        const { petType, limit, source, config } = message.body
         console.warn(`Processing crawl request: ${petType}, limit: ${limit}, source: ${source}`)
+
+        // 設定を含めてCrawlerを初期化
+        const crawler = new PetHomeCrawler(env, config || {})
 
         // クロール実行
         const result = await crawler.crawl(petType, limit)

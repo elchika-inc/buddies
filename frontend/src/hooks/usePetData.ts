@@ -25,7 +25,7 @@ export function usePetData() {
       if (pageNum === 0) {
         setPets(response.pets)
       } else {
-        setPets(prev => [...prev, ...response.pets])
+        setPets((prev) => [...prev, ...response.pets])
       }
 
       setHasMore(response.pets.length === limit)
@@ -61,7 +61,7 @@ export function usePetData() {
    * 特定のペットを削除
    */
   const removePet = useCallback((petId: string) => {
-    setPets(prev => prev.filter(pet => pet.id !== petId))
+    setPets((prev) => prev.filter((pet) => pet.id !== petId))
   }, [])
 
   /**
@@ -69,7 +69,7 @@ export function usePetData() {
    */
   useEffect(() => {
     fetchPets()
-  }, [])
+  }, [fetchPets])
 
   return {
     pets,

@@ -43,7 +43,7 @@ import * as cheerio from 'cheerio'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { pets } from '../../database/schema/schema'
-import { FETCH_CONFIG, HTTP_CONFIG } from './config/constants'
+import { HTTP_CONFIG } from './config/constants'
 
 /**
  * ペットホームクローラークラス
@@ -55,10 +55,10 @@ import { FETCH_CONFIG, HTTP_CONFIG } from './config/constants'
 export class PetHomeCrawler {
   /** ベースURL */
   private static readonly BASE_URL = 'https://www.pet-home.jp'
-  /** 1ページあたりのペット数 */
-  private static readonly PETS_PER_PAGE = FETCH_CONFIG.PETS_PER_PAGE
-  /** 最大ページ数 */
-  private static readonly MAX_PAGES = FETCH_CONFIG.MAX_PAGES
+  /** デフォルト: 1ページあたりのペット数 */
+  private static readonly DEFAULT_PETS_PER_PAGE = 20
+  /** デフォルト: 最大ページ数 */
+  private static readonly DEFAULT_MAX_PAGES = 10
   /** HTTPリクエスト用ユーザーエージェント */
   private static readonly USER_AGENT = HTTP_CONFIG.USER_AGENT
   /** Drizzle ORMインスタンス */
@@ -68,8 +68,17 @@ export class PetHomeCrawler {
    * コンストラクタ
    *
    * @param env - Cloudflare Workers環境変数
+   * @param config - オプショナルな設定（APIから渡される）
    */
-  constructor(private env: Env) {
+  constructor(
+    private env: Env,
+    private config?: {
+      petsPerPage?: number
+      maxPages?: number
+      maxBatchSize?: number
+      requestsPerSecond?: number
+    }
+  ) {
     this.db = drizzle(this.env.DB)
   }
 
@@ -214,13 +223,13 @@ export class PetHomeCrawler {
    */
   private async fetchPets(petType: 'dog' | 'cat', limit: number): Promise<Pet[]> {
     const pets: Pet[] = []
-    const baseUrl = `${PetHomeCrawler.BASE_URL}/${petType}s/status_2/`
-    const maxPages = Math.min(
-      Math.ceil(limit / PetHomeCrawler.PETS_PER_PAGE),
-      PetHomeCrawler.MAX_PAGES
-    )
+    const petsPerPage = this.config?.petsPerPage || PetHomeCrawler.DEFAULT_PETS_PER_PAGE
+    const maxPages = this.config?.maxPages || PetHomeCrawler.DEFAULT_MAX_PAGES
 
-    for (let page = 1; page <= maxPages && pets.length < limit; page++) {
+    const baseUrl = `${PetHomeCrawler.BASE_URL}/${petType}s/status_2/`
+    const actualMaxPages = Math.min(Math.ceil(limit / petsPerPage), maxPages)
+
+    for (let page = 1; page <= actualMaxPages && pets.length < limit; page++) {
       const html = await this.fetchPage(`${baseUrl}?page=${page}`)
       const pagePets = this.parsePetList(html, petType)
 

@@ -7,10 +7,6 @@
  * ペット取得に関する定数
  */
 export const FETCH_CONFIG = {
-  /** 1ページあたりのペット数 */
-  PETS_PER_PAGE: 20,
-  /** 最大ページ数 */
-  MAX_PAGES: 10,
   /** リクエストタイムアウト（ミリ秒） */
   REQUEST_TIMEOUT: 15000,
   /** リトライ回数 */
@@ -23,10 +19,6 @@ export const FETCH_CONFIG = {
  * バッチ処理設定
  */
 export const BATCH_CONFIG = {
-  /** バッチサイズ */
-  DEFAULT_BATCH_SIZE: 50,
-  /** 最大バッチサイズ */
-  MAX_BATCH_SIZE: 100,
   /** 並列処理数 */
   CONCURRENT_REQUESTS: 5,
 } as const

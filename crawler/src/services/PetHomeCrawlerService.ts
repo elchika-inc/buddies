@@ -20,6 +20,7 @@ export interface CrawlConfig {
   baseUrl?: string
   petsPerPage?: number
   maxPages?: number
+  maxBatchSize?: number
   requestsPerSecond?: number
   saveImages?: boolean
 }
@@ -28,10 +29,11 @@ export interface CrawlConfig {
  * PetHomeCrawlerクラス（リファクタリング版）
  */
 export class PetHomeCrawler {
-  private static readonly BASE_URL = 'https://www.pet-home.jp'
-  private static readonly PETS_PER_PAGE = 20
-  private static readonly MAX_PAGES = 10
-  private static readonly REQUESTS_PER_SECOND = 2
+  private static readonly DEFAULT_BASE_URL = 'https://www.pet-home.jp'
+  private static readonly DEFAULT_PETS_PER_PAGE = 20
+  private static readonly DEFAULT_MAX_PAGES = 10
+  private static readonly DEFAULT_MAX_BATCH_SIZE = 100
+  private static readonly DEFAULT_REQUESTS_PER_SECOND = 2
 
   private readonly apiClient: ApiServiceClient
   private readonly dataPersistence: DataPersistence
@@ -45,10 +47,11 @@ export class PetHomeCrawler {
     this.dataPersistence = new DataPersistence(env)
 
     this.config = {
-      baseUrl: config.baseUrl || PetHomeCrawler.BASE_URL,
-      petsPerPage: config.petsPerPage || PetHomeCrawler.PETS_PER_PAGE,
-      maxPages: config.maxPages || PetHomeCrawler.MAX_PAGES,
-      requestsPerSecond: config.requestsPerSecond || PetHomeCrawler.REQUESTS_PER_SECOND,
+      baseUrl: config.baseUrl || PetHomeCrawler.DEFAULT_BASE_URL,
+      petsPerPage: config.petsPerPage || PetHomeCrawler.DEFAULT_PETS_PER_PAGE,
+      maxPages: config.maxPages || PetHomeCrawler.DEFAULT_MAX_PAGES,
+      maxBatchSize: config.maxBatchSize || PetHomeCrawler.DEFAULT_MAX_BATCH_SIZE,
+      requestsPerSecond: config.requestsPerSecond || PetHomeCrawler.DEFAULT_REQUESTS_PER_SECOND,
       saveImages: config.saveImages ?? true,
     }
   }
@@ -161,26 +164,54 @@ export class PetHomeCrawler {
   }
 
   /**
-   * APIにペット情報を送信
+   * APIにペット情報を送信（バッチ処理対応）
    */
   private async submitToAPI(
     pets: Pet[],
     petType: 'dog' | 'cat'
   ): Promise<Result<CrawlerSubmitResult, Error>> {
     const apiKey = this.env.CRAWLER_API_KEY || ''
+    const batchSize = this.config.maxBatchSize
 
-    return this.apiClient.submitCrawlerData(
-      {
-        source: 'pet-home',
-        petType,
-        pets,
-        crawlStats: {
-          totalProcessed: pets.length,
-          successCount: pets.length,
+    // バッチ処理でAPI送信
+    let totalNewPets = 0
+    let totalUpdatedPets = 0
+    const errors: string[] = []
+
+    for (let i = 0; i < pets.length; i += batchSize) {
+      const batch = pets.slice(i, i + batchSize)
+
+      const result = await this.apiClient.submitCrawlerData(
+        {
+          source: 'pet-home',
+          petType,
+          pets: batch,
+          crawlStats: {
+            totalProcessed: batch.length,
+            successCount: batch.length,
+          },
         },
-      },
-      apiKey
-    )
+        apiKey
+      )
+
+      if (Result.isOk(result)) {
+        totalNewPets += result.data.newPets
+        totalUpdatedPets += result.data.updatedPets
+      } else {
+        errors.push(`Batch ${Math.floor(i / batchSize) + 1} failed: ${result.error.message}`)
+      }
+    }
+
+    if (errors.length > 0) {
+      return Result.err(new Error(errors.join('; ')))
+    }
+
+    return Result.ok({
+      success: true,
+      newPets: totalNewPets,
+      updatedPets: totalUpdatedPets,
+      message: `Successfully processed ${pets.length} pets in ${Math.ceil(pets.length / batchSize)} batches`,
+    })
   }
 
   /**

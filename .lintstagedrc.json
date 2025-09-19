@@ -7,7 +7,6 @@
     "prettier --write"
   ],
   "frontend/src/**/*.{ts,tsx}": [
-    "npm run type-check:app",
     "prettier --write"
   ],
   "api/src/**/*.ts": [

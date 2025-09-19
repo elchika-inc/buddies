@@ -9,6 +9,12 @@ export interface CrawlMessage {
   timestamp: string
   source: 'cron' | 'api' | 'manual'
   retryCount?: number
+  config?: {
+    petsPerPage?: number
+    maxPages?: number
+    maxBatchSize?: number
+    requestsPerSecond?: number
+  }
 }
 
 export interface DLQMessage {
