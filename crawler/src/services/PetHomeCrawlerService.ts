@@ -119,12 +119,12 @@ export class PetHomeCrawler {
     const baseUrl = `${this.config.baseUrl}/${petType}s/status_2/`
     const maxPages = Math.min(Math.ceil(limit / this.config.petsPerPage), this.config.maxPages)
 
-    // レート制限付きフェッチャー
-    const fetchPage = HttpFetcher.createRateLimitedFetcher(this.config.requestsPerSecond)
+    // HttpFetcherインスタンスを作成
+    const httpFetcher = new HttpFetcher()
 
     for (let page = 1; page <= maxPages && pets.length < limit; page++) {
       const url = `${baseUrl}?page=${page}`
-      const pageResult = await fetchPage(url)
+      const pageResult = await httpFetcher.fetchPage(url)
 
       if (Result.isErr(pageResult)) {
         errors.push(`Failed to fetch page ${page}: ${(pageResult.error as Error).message}`)
@@ -132,13 +132,13 @@ export class PetHomeCrawler {
       }
 
       // ペットリストをパース
-      const petList = HtmlParser.parsePetList(pageResult.data)
+      const petList = HtmlParser.parsePetList(pageResult.data.content)
 
       // 各ペットの詳細を取得
       for (const petInfo of petList) {
         if (pets.length >= limit) break
 
-        const detailResult = await fetchPage(petInfo.detailUrl)
+        const detailResult = await httpFetcher.fetchPage(petInfo.detailUrl)
 
         if (Result.isErr(detailResult)) {
           errors.push(
@@ -148,7 +148,7 @@ export class PetHomeCrawler {
         }
 
         // ペット詳細をパース
-        const pet = HtmlParser.parsePetDetail(detailResult.data, petInfo, petType)
+        const pet = HtmlParser.parsePetDetail(detailResult.data.content, petInfo, petType)
         pets.push(pet)
       }
     }

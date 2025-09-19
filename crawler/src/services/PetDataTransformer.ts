@@ -3,7 +3,10 @@
  */
 
 import { Pet, createDefaultPet } from '../../../shared/types/unified'
-import { PetDetailInfo } from './PetHomeParser'
+import { ParsedPetInfo } from './PetHomeParser'
+
+// PetDetailInfoのエイリアスを作成（後方互換性のため）
+export type PetDetailInfo = ParsedPetInfo
 
 export interface ValidationResult {
   isValid: boolean
@@ -21,12 +24,12 @@ export class PetDataTransformer {
       name: petDetail.name,
       breed: petDetail.breed || undefined,
       age: petDetail.age || undefined,
-      gender: petDetail.gender || undefined,
+      gender: (petDetail.gender as 'male' | 'female' | 'unknown') || undefined,
       location: petDetail.location || undefined,
       prefecture: petDetail.prefecture || undefined,
       city: petDetail.city || undefined,
       description: petDetail.description || undefined,
-      personality: petDetail.personality ? petDetail.personality.join(', ') : undefined,
+      personality: petDetail.personality || undefined,
       imageUrl: petDetail.imageUrl || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
