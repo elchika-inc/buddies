@@ -1,11 +1,11 @@
 /**
  * Queueメッセージの処理を管理するハンドラー
- * KISS原則に基づき簡素化されたバージョン
+ * メッセージを受け取り、GitHub Actionsを起動
  */
 
 import type { MessageBatch, Message } from '@cloudflare/workers-types'
 import type { Env, DispatchMessage } from '../types'
-import { GitHubService, RateLimitError } from '../services/GithubService'
+import { GitHubService, RateLimitError } from '../services/GitHubService'
 import { QueueService } from '../services/QueueService'
 import { ErrorHandler, AppError } from '../../../shared/types/errors'
 import { getLogger } from '../utils/logger'
@@ -66,7 +66,7 @@ export class QueueHandler {
    * スクリーンショット処理
    */
   private async processScreenshot(message: DispatchMessage): Promise<void> {
-    const { pets, batchId } = message
+    const { pets, batchId, workflowFile = 'screenshot-capture.yml' } = message
 
     if (!pets?.length) {
       const logger = getLogger(this.env)
@@ -74,10 +74,10 @@ export class QueueHandler {
       return
     }
 
-    // GitHub Actionsを起動（petsは既にPetDispatchData型）
-    const result = await this.githubService.triggerWorkflow(pets, batchId)
+    // GitHub Actionsを直接起動
+    const result = await this.githubService.triggerScreenshotWorkflow(pets, batchId, workflowFile)
 
-    if (!result.success) {
+    if (!result.success && result.error) {
       throw result.error
     }
   }
@@ -94,13 +94,14 @@ export class QueueHandler {
       return
     }
 
+    // GitHub Actionsを直接起動
     const result = await this.githubService.triggerConversionWorkflow(
       conversionData,
       batchId,
       workflowFile
     )
 
-    if (!result.success) {
+    if (!result.success && result.error) {
       throw result.error
     }
   }

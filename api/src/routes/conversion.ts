@@ -9,6 +9,7 @@ import { z } from 'zod'
 import type { Env } from '../types'
 import { DispatcherServiceClient } from '../../../shared/services/dispatcher-client'
 import { Result } from '../../../shared/types/result'
+import { getDispatcherConfig } from '../config/dispatcher'
 
 const conversionRequestSchema = z.object({
   pets: z.array(
@@ -97,8 +98,16 @@ app.post('/screenshot', async (c: Context<{ Bindings: Env }>) => {
       )
     }
 
+    // Dispatcher設定を取得
+    const dispatcherConfig = getDispatcherConfig()
+
     const result = await dispatcherClient.dispatchConversion({
       pets,
+      limit: pets.length,
+      config: {
+        limits: dispatcherConfig.defaults,
+        queue: dispatcherConfig.queue,
+      },
     })
 
     if (Result.isErr(result)) {

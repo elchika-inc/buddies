@@ -3,35 +3,67 @@
  */
 
 import { z } from 'zod'
-import { BATCH_LIMITS } from '../constants'
 
 /**
  * ディスパッチリクエストのスキーマ
+ * APIからペットデータと設定が渡される
  */
 export const DispatchRequestSchema = z.object({
-  limit: z
-    .number()
-    .min(BATCH_LIMITS.MIN_ALLOWED, `Limit must be at least ${BATCH_LIMITS.MIN_ALLOWED}`)
-    .max(BATCH_LIMITS.MAX_ALLOWED, `Limit must not exceed ${BATCH_LIMITS.MAX_ALLOWED}`)
+  pets: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        type: z.enum(['dog', 'cat']),
+        sourceUrl: z.string(),
+      })
+    )
     .optional()
-    .default(BATCH_LIMITS.DEFAULT_DISPATCH),
-  petType: z.enum(['dog', 'cat']).optional(),
-  petIds: z.array(z.string()).optional(),
+    .default([]),
+  source: z.string().optional().default('api'),
+  config: z
+    .object({
+      limits: z
+        .object({
+          DEFAULT_DISPATCH: z.number(),
+          DEFAULT_SCHEDULED: z.number(),
+          DEFAULT_CONVERSION: z.number(),
+          MAX_ALLOWED: z.number(),
+          MIN_ALLOWED: z.number(),
+        })
+        .optional(),
+      queue: z
+        .object({
+          MAX_RETRIES: z.number(),
+          MAX_BATCH_SIZE: z.number(),
+          MAX_BATCH_TIMEOUT: z.number(),
+          RETRY_DELAY_SECONDS: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
 })
 
 export type DispatchRequest = z.infer<typeof DispatchRequestSchema>
 
 /**
  * クローラートリガーリクエストのスキーマ
+ * 注: Crawlerの設定はAPI側から渡される
  */
 export const CrawlerTriggerRequestSchema = z.object({
   type: z.enum(['dog', 'cat', 'both']).optional().default('both'),
-  limit: z
-    .number()
-    .min(BATCH_LIMITS.MIN_ALLOWED)
-    .max(BATCH_LIMITS.MAX_ALLOWED)
-    .optional()
-    .default(BATCH_LIMITS.DEFAULT_CRAWLER),
+  limit: z.number().optional(),
+  config: z
+    .object({
+      // Crawlerの動作設定（API側で決定済み）
+      petsPerPage: z.number().optional(),
+      maxPages: z.number().optional(),
+      maxBatchSize: z.number().optional(),
+      requestsPerSecond: z.number().optional(),
+      // sourceもconfigの一部として含める（API側で決定）
+      source: z.string().optional(),
+    })
+    .optional(),
 })
 
 export type CrawlerTriggerRequest = z.infer<typeof CrawlerTriggerRequestSchema>
@@ -51,12 +83,28 @@ export const ConversionRequestSchema = z.object({
     )
     .optional()
     .default([]),
-  limit: z
-    .number()
-    .min(BATCH_LIMITS.MIN_ALLOWED)
-    .max(BATCH_LIMITS.MAX_ALLOWED)
-    .optional()
-    .default(BATCH_LIMITS.DEFAULT_CONVERSION),
+  limit: z.number().optional(),
+  config: z
+    .object({
+      limits: z
+        .object({
+          DEFAULT_DISPATCH: z.number(),
+          DEFAULT_SCHEDULED: z.number(),
+          DEFAULT_CONVERSION: z.number(),
+          MAX_ALLOWED: z.number(),
+          MIN_ALLOWED: z.number(),
+        })
+        .optional(),
+      queue: z
+        .object({
+          MAX_RETRIES: z.number(),
+          MAX_BATCH_SIZE: z.number(),
+          MAX_BATCH_TIMEOUT: z.number(),
+          RETRY_DELAY_SECONDS: z.number(),
+        })
+        .optional(),
+    })
+    .optional(),
 })
 
 export type ConversionRequest = z.infer<typeof ConversionRequestSchema>

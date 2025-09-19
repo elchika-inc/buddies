@@ -13,6 +13,7 @@ export interface Env {
   // D1とR2は使用しない（APIのみ使用）
 
   // Responsibility-based Queues
+  PAWMATCH_CRAWLER_QUEUE: Queue // Crawler起動用
   PAWMATCH_SCREENSHOT_QUEUE: Queue<DispatchMessage>
   PAWMATCH_SCREENSHOT_DLQ: Queue<DispatchMessage>
   PAWMATCH_CONVERSION_QUEUE: Queue<DispatchMessage>

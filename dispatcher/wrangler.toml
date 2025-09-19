@@ -25,6 +25,11 @@ PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
 # Queue Configuration (Responsibility-based)
 # -----------------------------------------------------------------------------
 
+# Crawler Queue (API -> Crawler)
+[[queues.producers]]
+binding = "PAWMATCH_CRAWLER_QUEUE"
+queue = "pawmatch-crawler-queue"
+
 # Screenshot Queue
 [[queues.producers]]
 binding = "PAWMATCH_SCREENSHOT_QUEUE"

@@ -1,9 +1,9 @@
 /**
- * GitHub Actionsワークフローを制御するサービス
+ * GitHub Actionsワークフローを起動するサービス
+ * シンプルなワークフロー起動のみを担当
  */
 
 import type { Env, ConversionData, PetDispatchData } from '../types'
-import { Result, Ok, Err } from '../types/result'
 
 export class RateLimitError extends Error {
   constructor(public retryAfter: number) {
@@ -12,41 +12,45 @@ export class RateLimitError extends Error {
   }
 }
 
-export interface WorkflowInputs {
-  batchData: string
-  batchId: string
-  limit: string
-}
-
 export class GitHubService {
   private readonly githubToken: string
   private readonly githubOwner: string
   private readonly githubRepo: string
-  private readonly workflowFile: string
 
-  constructor(tokenOrEnv: string | Env) {
-    if (typeof tokenOrEnv === 'string') {
-      // トークンのみが渡された場合
-      this.githubToken = tokenOrEnv
-      this.githubOwner = 'elchika-inc'
-      this.githubRepo = 'pawmatch'
-      this.workflowFile = 'screenshot-capture.yml'
-    } else {
-      // Env全体が渡された場合
-      this.githubToken = tokenOrEnv.PAWMATCH_GITHUB_TOKEN || tokenOrEnv.GITHUB_TOKEN || ''
-      this.githubOwner = tokenOrEnv.PAWMATCH_GITHUB_OWNER || 'elchika-inc'
-      this.githubRepo = tokenOrEnv.PAWMATCH_GITHUB_REPO || 'pawmatch'
-      this.workflowFile = tokenOrEnv.PAWMATCH_GITHUB_WORKFLOW_FILE || 'screenshot-capture.yml'
-    }
+  constructor(env: Env) {
+    this.githubToken = env.PAWMATCH_GITHUB_TOKEN || env.GITHUB_TOKEN || ''
+    this.githubOwner = env.PAWMATCH_GITHUB_OWNER || 'elchika-inc'
+    this.githubRepo = env.PAWMATCH_GITHUB_REPO || 'pawmatch'
   }
 
   /**
-   * GitHub Actionsワークフローをトリガー
+   * スクリーンショットワークフローを起動
+   * APIから渡された設定をそのまま使用
    */
-  async triggerWorkflow(pets: PetDispatchData[], batchId: string): Promise<Result<void>> {
+  async triggerScreenshotWorkflow(
+    pets: PetDispatchData[],
+    batchId: string,
+    workflowFile: string = 'screenshot-capture.yml'
+  ): Promise<{ success: boolean; error?: Error }> {
     try {
-      const url = this.buildWorkflowUrl()
-      const payload = this.buildWorkflowPayload(pets, batchId)
+      const url = this.buildWorkflowUrl(workflowFile)
+
+      // ペットデータを変換
+      const petsData = pets.map((pet) => ({
+        id: pet.id,
+        name: pet.name,
+        sourceUrl: pet.sourceUrl || '',
+        type: pet.type,
+      }))
+
+      const payload = {
+        ref: 'main',
+        inputs: {
+          batch_data: JSON.stringify(petsData),
+          batch_id: batchId,
+          limit: String(pets.length),
+        },
+      }
 
       const response = await fetch(url, {
         method: 'POST',
@@ -59,129 +63,27 @@ export class GitHubService {
       }
 
       // eslint-disable-next-line no-console
-      console.log(`GitHub workflow triggered successfully for batch: ${batchId}`)
-      return Ok(undefined)
+      console.log(`Screenshot workflow triggered successfully for batch: ${batchId}`)
+      return { success: true }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return Err(new Error(`GitHub workflow trigger failed: ${errorMessage}`))
-    }
-  }
-
-  /**
-   * ワークフローAPIのURLを構築
-   */
-  private buildWorkflowUrl(): string {
-    return `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${this.workflowFile}/dispatches`
-  }
-
-  /**
-   * リクエストヘッダーを構築
-   */
-  private buildHeaders(): Record<string, string> {
-    return {
-      Accept: 'application/vnd.github.v3+json',
-      Authorization: `Bearer ${this.githubToken}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'pawmatch-dispatcher/1.0.0',
-    }
-  }
-
-  /**
-   * ワークフローペイロードを構築
-   */
-  private buildWorkflowPayload(pets: PetDispatchData[], batchId: string) {
-    // PetRecordをJSONファイル形式に変換
-    const petsData = pets.map((pet) => ({
-      id: pet.id,
-      name: pet.name,
-      sourceUrl: pet.sourceUrl || '',
-      type: pet.type,
-    }))
-
-    return {
-      ref: 'main',
-      inputs: {
-        batch_data: JSON.stringify(petsData),
-        batch_id: batchId,
-        limit: String(pets.length),
-        // trigger_conversion は削除 - Conversion Queueで制御
-      },
-    }
-  }
-
-  /**
-   * エラーレスポンスを処理
-   */
-  private async handleErrorResponse(response: Response): Promise<Result<void>> {
-    // エラーレスポンスのボディを取得してログに出力
-    let errorBody = ''
-    try {
-      errorBody = await response.text()
-      console.error('GitHub API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody,
-        rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
-        rateLimitReset: response.headers.get('x-ratelimit-reset'),
-      })
-    } catch {
-      console.error('Failed to read error response body')
-    }
-
-    // Rate Limitエラーの場合
-    if (response.status === 429) {
-      const retryAfter = this.extractRetryAfter(response)
-      return Err(new RateLimitError(retryAfter))
-    }
-
-    // 認証エラー
-    if (response.status === 401) {
-      return Err(new Error(`GitHub authentication failed. ${errorBody}`))
-    }
-
-    // 権限エラー
-    if (response.status === 403) {
-      return Err(new Error(`GitHub permission denied. ${errorBody}`))
-    }
-
-    // Not Found
-    if (response.status === 404) {
-      return Err(new Error(`GitHub workflow not found. ${errorBody}`))
-    }
-
-    // その他のエラー
-    return Err(
-      new Error(`GitHub API error: ${response.status} ${response.statusText}. ${errorBody}`)
-    )
-  }
-
-  /**
-   * Retry-Afterヘッダーから待機時間を抽出
-   */
-  private extractRetryAfter(response: Response): number {
-    const retryAfterHeader = response.headers.get('Retry-After')
-
-    if (retryAfterHeader) {
-      const seconds = parseInt(retryAfterHeader, 10)
-      if (!isNaN(seconds)) {
-        return seconds
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error('Unknown error'),
       }
     }
-
-    // デフォルトは60秒
-    return 60
   }
 
   /**
-   * 画像変換ワークフローをトリガー
+   * 画像変換ワークフローを起動
+   * APIから渡された設定をそのまま使用
    */
   async triggerConversionWorkflow(
     conversionData: ConversionData[],
     batchId: string,
-    workflowFile: string
-  ): Promise<Result<void>> {
+    workflowFile: string = 'image-conversion.yml'
+  ): Promise<{ success: boolean; error?: Error }> {
     try {
-      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${workflowFile}/dispatches`
+      const url = this.buildWorkflowUrl(workflowFile)
 
       const payload = {
         ref: 'main',
@@ -204,39 +106,63 @@ export class GitHubService {
       }
 
       // eslint-disable-next-line no-console
-      console.log(`Image conversion workflow triggered successfully for batch: ${batchId}`)
-      return Ok(undefined)
+      console.log(`Conversion workflow triggered successfully for batch: ${batchId}`)
+      return { success: true }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return Err(new Error(`Image conversion workflow trigger failed: ${errorMessage}`))
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      }
     }
   }
 
   /**
-   * ワークフローの実行状態を確認（将来の実装用）
+   * ワークフローAPIのURLを構築
    */
-  async checkWorkflowStatus(runId: string): Promise<Result<string>> {
+  private buildWorkflowUrl(workflowFile: string): string {
+    return `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/workflows/${workflowFile}/dispatches`
+  }
+
+  /**
+   * リクエストヘッダーを構築
+   */
+  private buildHeaders(): Record<string, string> {
+    return {
+      Accept: 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${this.githubToken}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'pawmatch-dispatcher/1.0.0',
+    }
+  }
+
+  /**
+   * エラーレスポンスを処理
+   */
+  private async handleErrorResponse(
+    response: Response
+  ): Promise<{ success: boolean; error: Error }> {
+    let errorBody = ''
     try {
-      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/runs/${runId}`
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/vnd.github.v3+json',
-          Authorization: `Bearer ${this.githubToken}`,
-          'User-Agent': 'pawmatch-dispatcher/1.0.0',
-        },
+      errorBody = await response.text()
+      console.error('GitHub API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody,
       })
+    } catch {
+      console.error('Failed to read error response body')
+    }
 
-      if (!response.ok) {
-        return Err(new Error(`Failed to check workflow status: ${response.status}`))
-      }
+    // Rate Limitエラーの場合
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10)
+      return { success: false, error: new RateLimitError(retryAfter) }
+    }
 
-      const data = (await response.json()) as unknown as { status?: string }
-      return Ok(data.status || 'unknown')
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      return Err(new Error(`Failed to check workflow status: ${errorMessage}`))
+    // その他のエラー
+    return {
+      success: false,
+      error: new Error(`GitHub API error: ${response.status} ${response.statusText}. ${errorBody}`),
     }
   }
 }

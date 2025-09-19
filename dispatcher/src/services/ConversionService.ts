@@ -3,12 +3,10 @@
  * JPEG画像をWebP形式に変換する処理を管理
  */
 
-import { ApiService } from './ApiService'
 import { QueueService } from './QueueService'
 import { Result } from '../types/result'
 import { getLogger } from '../utils/logger'
-import type { Env, Pet } from '../types'
-import { BATCH_LIMITS } from '../constants'
+import type { Env, PetDispatchData } from '../types'
 
 export interface ConversionResponse {
   success: boolean
@@ -20,20 +18,18 @@ export interface ConversionResponse {
 }
 
 export class ConversionService {
-  private apiService: ApiService
   private queueService: QueueService
   private env: Env
 
   constructor(env: Env) {
     this.env = env
-    this.apiService = new ApiService(env)
     this.queueService = new QueueService(env)
   }
 
   /**
    * 画像変換処理をディスパッチ
    * @param pets - 変換対象のペット配列
-   * @param limit - 処理するペットの最大数
+   * @param limit - 処理するペットの最大数（APIから指定）
    */
   async dispatchConversion(
     pets?: Array<{
@@ -42,70 +38,36 @@ export class ConversionService {
       screenshotKey?: string
       hasJpeg?: number
     }>,
-    limit: number = BATCH_LIMITS.DEFAULT_CONVERSION
+    limit?: number
   ): Promise<ConversionResponse> {
     try {
-      let targetPets: Pet[] = []
-
-      // ペットが指定されていない場合は、APIから取得
+      // API側から変換対象ペットが渡されることを想定
       if (!pets || pets.length === 0) {
-        const fetchResult = await this.apiService.fetchPetsForConversion(limit)
-
-        if (Result.isErr(fetchResult)) {
-          return this.createErrorResponse('Failed to fetch pets for conversion', fetchResult.error)
+        return {
+          success: true,
+          message: 'No pets provided for conversion',
+          count: 0,
+          batchId: '',
         }
+      }
 
-        targetPets = Result.isOk(fetchResult) ? fetchResult.data : []
-      } else {
-        // 指定されたペット情報から必要な形式に変換
-        // 新フォーマット（screenshotKey付き）と旧フォーマット（hasJpeg付き）の両方に対応
-        const filteredPets = pets.filter((p) => {
-          // screenshotKeyがある場合は変換対象
-          if (p.screenshotKey) return true
-          // hasJpegが1の場合も変換対象（後方互換性）
-          if (p.hasJpeg === 1) return true
-          return false
-        })
+      // 指定されたペット情報から必要な形式に変換
+      const filteredPets = pets.filter((p) => {
+        // screenshotKeyがある場合は変換対象
+        if (p.screenshotKey) return true
+        // hasJpegが1の場合も変換対象（後方互換性）
+        if (p.hasJpeg === 1) return true
+        return false
+      })
 
-        targetPets = filteredPets.slice(0, limit).map((p) => ({
+      const targetPets: PetDispatchData[] = filteredPets
+        .slice(0, limit || filteredPets.length)
+        .map((p) => ({
           id: p.id,
           name: `Pet ${p.id}`,
-          type: p.type || 'dog', // typeが指定されていればそれを使用
+          type: p.type || 'dog',
           sourceUrl: '',
-          screenshotKey: p.screenshotKey, // 新フォーマットのキーを保持
-          // 他の必須フィールドはデフォルト値で埋める
-          breed: null,
-          age: null,
-          gender: 'unknown' as const,
-          size: null,
-          weight: null,
-          color: null,
-          description: null,
-          location: null,
-          prefecture: null,
-          city: null,
-          medicalInfo: null,
-          vaccinationStatus: null,
-          isNeutered: 0,
-          personality: null,
-          goodWithKids: 0,
-          goodWithDogs: 0,
-          goodWithCats: 0,
-          adoptionFee: 0,
-          shelterName: null,
-          shelterContact: null,
-          sourceId: 'conversion',
-          careRequirements: null,
-          isVaccinated: 0,
-          isFivFelvTested: 0,
-          apartmentFriendly: 0,
-          needsYard: 0,
-          hasJpeg: 1,
-          hasWebp: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         }))
-      }
 
       if (targetPets.length === 0) {
         return {
@@ -119,8 +81,8 @@ export class ConversionService {
       // バッチIDを生成
       const batchId = QueueService.generateBatchId('conversion')
 
-      // ペットデータをキュー用形式に変換
-      const petDispatchData = targetPets.map(QueueService.convertPetToDispatchData)
+      // ペットデータはすでにDispatchData形式
+      const petDispatchData = targetPets
 
       // Conversion Queueにメッセージを送信
       const message = {
@@ -145,16 +107,7 @@ export class ConversionService {
         )
       }
 
-      // ペットのステータスを更新
-      const updateResult = await this.apiService.updateStatus(
-        targetPets.map((p) => p.id),
-        'conversion_dispatched'
-      )
-
-      if (Result.isErr(updateResult)) {
-        this.logWarning('Failed to update pet status for conversion', updateResult.error)
-        // ステータス更新の失敗は警告のみ（処理は継続）
-      }
+      // ステータス更新はAPI側で処理されるため、Dispatcherでは不要
 
       return {
         success: true,
@@ -183,13 +136,5 @@ export class ConversionService {
       success: false,
       error: `${message}: ${errorMessage}`,
     }
-  }
-
-  /**
-   * 警告ログ出力
-   */
-  private logWarning(message: string, error: Error): void {
-    const logger = getLogger(this.env)
-    logger.warn(message, { error: error.message })
   }
 }

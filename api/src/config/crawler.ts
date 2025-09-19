@@ -32,6 +32,8 @@ export const CRAWLER_CONFIG = {
   },
   /** デフォルト設定 */
   defaults: {
+    /** クローラーのデフォルト制限 */
+    DEFAULT_CRAWLER: 10,
     /** 最大バッチサイズ */
     maxBatchSize: 100,
     /** リクエストタイムアウト（ミリ秒） */

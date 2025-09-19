@@ -44,7 +44,7 @@ export class DispatchController {
 
   /**
    * ディスパッチエンドポイント
-   * 画像なしペットのバッチ処理を開始
+   * APIから送られたペットデータをキューにリレー
    */
   async handleDispatch(c: Context<{ Bindings: Env }>): Promise<Response> {
     try {
@@ -55,12 +55,10 @@ export class DispatchController {
         return handleValidationError(formatZodError(validationResult.error), c)
       }
 
-      const result = await this.dispatchService.createAndSendBatch(
-        validationResult.data.limit,
-        'dispatch',
-        'pet-home',
-        validationResult.data.petType,
-        validationResult.data.petIds
+      const result = await this.dispatchService.relayToQueue(
+        validationResult.data.pets || [],
+        validationResult.data.source || 'api',
+        validationResult.data.config
       )
 
       if (!result.success) {
@@ -76,13 +74,21 @@ export class DispatchController {
 
   /**
    * スケジュール実行エンドポイント
-   * Cron実行用のバッチ処理
+   * CronからAPIを経由して送られたペットデータをリレー
    */
   async handleScheduled(c: Context<{ Bindings: Env }>): Promise<Response> {
     try {
-      const result = await this.dispatchService.createAndSendBatch(
-        30, // DEFAULT_SCHEDULED
-        'cron'
+      const rawData = await c.req.json().catch(() => ({}))
+      const validationResult = DispatchRequestSchema.safeParse(rawData)
+
+      if (!validationResult.success) {
+        return handleValidationError(formatZodError(validationResult.error), c)
+      }
+
+      const result = await this.dispatchService.relayToQueue(
+        validationResult.data.pets || [],
+        validationResult.data.source || 'cron',
+        validationResult.data.config
       )
 
       if (!result.success) {
@@ -111,7 +117,8 @@ export class DispatchController {
 
       const result = await this.crawlerService.triggerCrawler(
         validationResult.data.type,
-        validationResult.data.limit
+        validationResult.data.limit,
+        validationResult.data.config // configのみ渡す（sourceはconfigに含まれる）
       )
 
       if (!result.success) {
@@ -140,7 +147,7 @@ export class DispatchController {
 
       const result = await this.conversionService.dispatchConversion(
         validationResult.data.pets,
-        validationResult.data.limit
+        validationResult.data.limit || validationResult.data.config?.limits?.DEFAULT_CONVERSION
       )
 
       if (!result.success) {

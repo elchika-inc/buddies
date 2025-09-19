@@ -4,6 +4,7 @@ import { adminAuth } from '../middleware/AdminAuth'
 import { AdminController } from '../controllers/admin/AdminController'
 import { ImageUploadController } from '../controllers/admin/ImageUploadController'
 import { CrawlerController } from '../controllers/admin/CrawlerController'
+import { DispatchController } from '../controllers/admin/DispatchController'
 import type { Env } from '../types'
 
 const admin = new Hono<{ Bindings: Env }>()
@@ -83,6 +84,26 @@ admin.get(
   withEnv(async (c) => {
     const crawlerController = new CrawlerController(c.env)
     return crawlerController.getCrawlerStatus(c)
+  })
+)
+
+// Dispatch制御エンドポイント（スクリーンショット処理）
+admin.post(
+  '/trigger-screenshot',
+  adminAuth,
+  withEnv(async (c) => {
+    const dispatchController = new DispatchController(c.env)
+    return dispatchController.triggerScreenshot(c)
+  })
+)
+
+// スケジュールディスパッチ用エンドポイント
+admin.post(
+  '/trigger-scheduled',
+  adminAuth,
+  withEnv(async (c) => {
+    const dispatchController = new DispatchController(c.env)
+    return dispatchController.triggerScheduled(c)
   })
 )
 

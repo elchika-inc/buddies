@@ -9,12 +9,12 @@ export class CrawlerController {
     try {
       const { type = 'dog', limit = 5, source = 'pet-home' } = await c.req.json().catch(() => ({}))
 
-      // Crawlerサービスを直接呼び出し
-      if (!this.env.CRAWLER_SERVICE) {
+      // Dispatcherサービスを経由してCrawlerを呼び出し
+      if (!this.env.DISPATCHER) {
         return c.json(
           {
             success: false,
-            error: 'Crawler service binding not configured',
+            error: 'Dispatcher service binding not configured',
           },
           500
         )
@@ -23,9 +23,9 @@ export class CrawlerController {
       // クローラー設定を取得
       const crawlerConfig = getCrawlerConfig(source as 'pet-home')
 
-      // Service Bindingを使用してCrawlerを起動
-      const crawlerResponse = await this.env.CRAWLER_SERVICE.fetch(
-        new Request('https://crawler.internal/trigger', {
+      // Service Bindingを使用してDispatcher経由でCrawlerを起動
+      const crawlerResponse = await this.env.DISPATCHER.fetch(
+        new Request('https://dispatcher.internal/trigger-crawler', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -33,13 +33,14 @@ export class CrawlerController {
           },
           body: JSON.stringify({
             type,
-            limit,
-            source: 'api-trigger',
+            limit: limit || 10,
             config: {
+              // Crawler設定を全て含める
               petsPerPage: crawlerConfig.petsPerPage,
               maxPages: crawlerConfig.maxPages,
               maxBatchSize: crawlerConfig.maxBatchSize,
               requestsPerSecond: crawlerConfig.requestsPerSecond,
+              source, // sourceもconfigの一部として渡す
             },
           }),
         })

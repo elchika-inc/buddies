@@ -30,6 +30,21 @@ export interface ConversionDispatchData {
     screenshotKey?: string
   }>
   limit?: number
+  config?: {
+    limits?: {
+      DEFAULT_DISPATCH: number
+      DEFAULT_SCHEDULED: number
+      DEFAULT_CONVERSION: number
+      MAX_ALLOWED: number
+      MIN_ALLOWED: number
+    }
+    queue?: {
+      MAX_RETRIES: number
+      MAX_BATCH_SIZE: number
+      MAX_BATCH_TIMEOUT: number
+      RETRY_DELAY_SECONDS: number
+    }
+  }
 }
 
 /**
