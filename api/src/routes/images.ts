@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cache } from 'hono/cache'
 import { withEnv } from '../middleware/EnvMiddleware'
-import { ImageController } from '../controllers'
+import { withImageController } from '../factories/ControllerFactory'
 import { ImageStatusController } from '../controllers/ImageStatusController'
 import { CONFIG } from '../utils'
 import type { Env } from '../types'
@@ -15,10 +15,7 @@ images.get(
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
-  withEnv(async (c) => {
-    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
-    return imageController.getImage(c)
-  })
+  withEnv(withImageController(async (controller, c) => controller.getImage(c)))
 )
 
 // 画像取得（タイプ指定）
@@ -28,40 +25,28 @@ images.get(
     cacheName: CONFIG.CACHE_NAME,
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
-  withEnv(async (c) => {
-    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
-    return imageController.getImageByType(c)
-  })
+  withEnv(withImageController(async (controller, c) => controller.getImageByType(c)))
 )
 
 // 画像アップロード（単一）
 images.post(
   '/upload/:petId',
   // apiAuth, // 一時的に認証を無効化
-  withEnv(async (c) => {
-    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
-    return imageController.uploadImage(c)
-  })
+  withEnv(withImageController(async (controller, c) => controller.uploadImage(c)))
 )
 
 // 画像一括アップロード
 images.post(
   '/upload/batch',
   // apiAuth, // 一時的に認証を無効化
-  withEnv(async (c) => {
-    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
-    return imageController.uploadBatch(c)
-  })
+  withEnv(withImageController(async (controller, c) => controller.uploadBatch(c)))
 )
 
 // 画像存在チェックとフラグ更新
 images.post(
   '/sync-flags',
   // apiAuth, // 一時的に認証を無効化
-  withEnv(async (c) => {
-    const imageController = new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
-    return imageController.syncImageFlags(c)
-  })
+  withEnv(withImageController(async (controller, c) => controller.syncImageFlags(c)))
 )
 
 // ステータス更新エンドポイント

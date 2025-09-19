@@ -5,7 +5,9 @@ import { NotFoundError, ServiceUnavailableError } from '../utils/ErrorHandler'
 import { successResponse, paginationMeta } from '../utils/ResponseFormatter'
 import { transformPetRecord, ApiPetRecord } from '../utils/DataTransformer'
 import { CONFIG } from '../utils/constants'
-import { isValidPetRecord, isCountResult, filterValidItems } from '@pawmatch/shared/types/guards'
+import { isValidPetRecord, filterValidItems } from '@pawmatch/shared/types/guards'
+import { PetRepository } from '../repositories/PetRepository'
+import type { Env } from '../types'
 
 // 型定義を追加
 interface PetsResponseByCategoryData {
@@ -27,7 +29,14 @@ type PetsResponseData = PetsResponseByCategoryData | PetsResponseByTypeData
  * @description ペット情報のCRUD操作を提供するコントローラー
  */
 export class PetController {
-  constructor(private db: D1Database) {}
+  private repository: PetRepository
+
+  constructor(
+    db: D1Database,
+    private env?: Env
+  ) {
+    this.repository = new PetRepository(db)
+  }
 
   /**
    * 全ペット一覧を取得
@@ -99,10 +108,7 @@ export class PetController {
     }
 
     // データベースから取得を試みる（画像があるペットのみ）
-    const pet = await this.db
-      .prepare('SELECT * FROM pets WHERE type = ? AND id = ? AND hasJpeg = 1')
-      .bind(petType, petId)
-      .first()
+    const pet = await this.repository.findById(petType, petId)
 
     if (!pet) {
       throw new NotFoundError(`Pet not found: ${petId}`)
@@ -113,7 +119,8 @@ export class PetController {
       throw new ServiceUnavailableError('Invalid pet data format')
     }
 
-    return c.json(successResponse(transformPetRecord(pet)))
+    const apiBaseUrl = this.env?.API_BASE_URL
+    return c.json(successResponse(transformPetRecord(pet, apiBaseUrl)))
   }
 
   /**
@@ -135,10 +142,7 @@ export class PetController {
     }
 
     // データベースから取得を試みる（画像があるペットのみ）
-    const dbPets = await this.db
-      .prepare('SELECT * FROM pets WHERE type = ? AND hasJpeg = 1 ORDER BY RANDOM() LIMIT ?')
-      .bind(petType, count)
-      .all()
+    const dbPets = await this.repository.findRandomPets(petType, count)
 
     if (!dbPets.results || dbPets.results.length === 0) {
       throw new ServiceUnavailableError('No pets available')
@@ -153,7 +157,7 @@ export class PetController {
 
     return c.json(
       successResponse({
-        pets: validPets.map((pet) => transformPetRecord(pet)),
+        pets: validPets.map((pet) => transformPetRecord(pet, this.env?.API_BASE_URL)),
         type: petType,
         count: validPets.length,
       })
@@ -187,14 +191,7 @@ export class PetController {
 
     const results = []
     for (const pet of pets) {
-      const updateResult = await Result.tryCatchAsync(async () =>
-        this.db
-          .prepare(
-            `UPDATE pets SET ${flagType} = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND type = ?`
-          )
-          .bind(pet.id, pet.type)
-          .run()
-      )
+      const updateResult = await this.repository.updateImageFlag(pet.id, pet.type, flagType)
 
       if (updateResult.success) {
         results.push({ id: pet.id, type: pet.type, success: true })
@@ -235,33 +232,17 @@ export class PetController {
       return c.json(successResponse({ pets: [] }))
     }
 
-    // IN句用のプレースホルダーを作成
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `
-      SELECT * FROM pets
-      WHERE id IN (${placeholders})
-      ORDER BY createdAt DESC
-    `
-
-    const result = await Result.tryCatchAsync(async () =>
-      this.db
-        .prepare(query)
-        .bind(...ids)
-        .all()
-    )
+    const result = await this.repository.findByIds(ids)
 
     if (!result.success) {
       console.error('複数ID取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
     }
 
-    if (!result.data.results) {
-      throw new ServiceUnavailableError('Database query failed')
-    }
-
     // 型ガードで有効なペットデータのみ取得
-    const validPets = filterValidItems(result.data.results, isValidPetRecord)
-    const pets = validPets.map((pet) => transformPetRecord(pet))
+    const validPets = filterValidItems(result.data, isValidPetRecord)
+    const apiBaseUrl = this.env?.API_BASE_URL
+    const pets = validPets.map((pet) => transformPetRecord(pet, apiBaseUrl))
 
     return c.json(
       successResponse({
@@ -282,71 +263,32 @@ export class PetController {
     offset: number,
     prefecture?: string
   ): Promise<Result<{ data: PetsResponseData; total: number }>> {
-    return Result.tryCatchAsync(async () => {
-      return this.fetchPetsSimple(type, limit, offset, prefecture)
-    })
-  }
+    const result = await this.repository.findByTypeWithPagination(type, limit, offset, prefecture)
 
-  private async fetchPetsSimple(
-    type: string | null,
-    limit: number,
-    offset: number,
-    prefecture?: string
-  ): Promise<{ data: PetsResponseData; total: number }> {
-    // WHERE条件を動的に構築（画像があるものを必須条件として追加）
-    const conditions: string[] = ['hasJpeg = 1']
-    const params: (string | number)[] = []
-
-    if (type) {
-      conditions.push('type = ?')
-      params.push(type)
+    if (!result.success) {
+      return result as Result<{ data: PetsResponseData; total: number }>
     }
-
-    if (prefecture) {
-      conditions.push('prefecture = ?')
-      params.push(prefecture)
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-
-    // ペットデータとカウントを同時取得
-    const [petsResult, countResult] = await Promise.all([
-      this.db
-        .prepare(`SELECT * FROM pets ${whereClause} ORDER BY createdAt DESC LIMIT ? OFFSET ?`)
-        .bind(...params, limit, offset)
-        .all(),
-
-      this.db
-        .prepare(`SELECT COUNT(*) as total FROM pets ${whereClause}`)
-        .bind(...params)
-        .first(),
-    ])
-
-    if (!petsResult.results) {
-      throw new Error('Database query failed')
-    }
-
-    const total = isCountResult(countResult) ? (countResult.total ?? countResult.count ?? 0) : 0
 
     // 型ガードで有効なペットデータのみ取得
-    const validPets = filterValidItems(petsResult.results, isValidPetRecord)
-    const pets = validPets.map((pet) => transformPetRecord(pet))
+    const validPets = filterValidItems(result.data.pets, isValidPetRecord)
+    const apiBaseUrl = this.env?.API_BASE_URL
+    const pets = validPets.map((pet) => transformPetRecord(pet, apiBaseUrl))
 
     // タイプが指定されていない場合は犬猫を分離して返す
     if (!type) {
       const dogs = pets.filter((p: ApiPetRecord) => p.type === 'dog')
       const cats = pets.filter((p: ApiPetRecord) => p.type === 'cat')
       const responseData: PetsResponseByCategoryData = { dogs, cats }
-      return {
+      return Result.ok({
         data: responseData,
-        total,
-      }
+        total: result.data.total,
+      })
     }
 
     const responseData: PetsResponseByTypeData = { pets, type }
-    return {
+    return Result.ok({
       data: responseData,
-      total,
-    }
+      total: result.data.total,
+    })
   }
 }

@@ -1,11 +1,12 @@
 import { Context } from 'hono'
-import { extractPetIdFromFilename } from '../utils/validation'
 import {
   handleError,
   ServiceUnavailableError,
   NotFoundError,
   ValidationError,
 } from '../utils/ErrorHandler'
+import { R2PathBuilder } from '../utils/UrlBuilder'
+import { isFile } from '../utils/TypeGuards'
 import type { Env } from '../types/env'
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 
@@ -52,12 +53,13 @@ export class ImageController {
         }
       }
 
-      const file = formData.get('image') as File
+      const fileValue = formData.get('image')
       const imageType = (formData.get('type') as string) || 'screenshot'
 
-      if (!file) {
-        return c.json({ success: false, error: 'No image provided' }, 400)
+      if (!isFile(fileValue)) {
+        return c.json({ success: false, error: 'No image provided or invalid file format' }, 400)
       }
+      const file = fileValue
 
       if (!this.bucket || !this.db) {
         throw new ServiceUnavailableError('Storage or database not available')
@@ -649,12 +651,11 @@ export class ImageController {
         throw new Error('Invalid pet type')
       }
 
-      const petId = extractPetIdFromFilename(filename)
+      // ファイル名から拡張子を除去してpetIdとして使用
+      // 例: pet-home_pethome_123456.jpg -> pet-home_pethome_123456
+      const petId = filename.replace(/\.(jpg|jpeg|png|webp)$/, '')
       const fileMatch = filename.match(/\.(jpg|jpeg|png|webp)$/)
       const requestedFormat = fileMatch ? fileMatch[1] : format
-
-      // 画像変換Workerへリクエストをプロキシ（将来の実装用）
-      // const imageWorkerUrl = `https://image-worker.internal/convert/pets/${petType}s/${petId}/${requestedFormat}`;
 
       // R2から画像を取得
       if (!this.bucket) {
@@ -663,13 +664,17 @@ export class ImageController {
 
       // ファイル拡張子によって適切なファイルを取得
       const isWebP = requestedFormat === 'webp'
-      let imageKey = `pets/${petType}s/${petId}/${isWebP ? 'optimized.webp' : 'original.jpg'}`
+      let imageKey = R2PathBuilder.petImagePath(
+        petType as 'dog' | 'cat',
+        petId,
+        isWebP ? 'optimized' : 'original'
+      )
 
       let object = await this.bucket.get(imageKey)
 
       // JPEGが見つからない場合、PNGスクリーンショットを試す
       if (!object && !isWebP) {
-        imageKey = `pets/${petType}s/${petId}/screenshot.png`
+        imageKey = R2PathBuilder.petImagePath(petType as 'dog' | 'cat', petId, 'screenshot')
         object = await this.bucket.get(imageKey)
       }
 

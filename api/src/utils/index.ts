@@ -37,7 +37,7 @@ export {
 } from './validation'
 
 // データ変換
-export { dbToApi, apiToDb, transformPetRecord, type ApiPetRecord } from './DataTransformer'
+export { transformPetRecord, type ApiPetRecord } from './DataTransformer'
 
 // 型ガード
 export {

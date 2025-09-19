@@ -264,3 +264,54 @@ export function isCoverageTrend(
     typeof trend['with_images'] === 'number'
   )
 }
+
+/**
+ * Fileオブジェクトの型ガード
+ */
+export function isFile(value: unknown): value is File {
+  return value instanceof File
+}
+
+/**
+ * boolean への安全な変換（0/1 も含む）
+ */
+export function toBoolean(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value
+  if (value === 1 || value === '1' || value === 'true') return true
+  if (value === 0 || value === '0' || value === 'false') return false
+  return undefined
+}
+
+/**
+ * JSON配列の安全なパース
+ */
+export function parseJsonArraySafely<T = string>(value: unknown, defaultValue: T[] = []): T[] {
+  if (Array.isArray(value)) return value
+
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : defaultValue
+    } catch {
+      console.warn('Failed to parse JSON array:', value)
+      return defaultValue
+    }
+  }
+
+  return defaultValue
+}
+
+/**
+ * URLの検証と正規化
+ */
+export function validateUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined
+
+  try {
+    const parsed = new URL(url)
+    return parsed.toString()
+  } catch {
+    console.warn('Invalid URL:', url)
+    return undefined
+  }
+}

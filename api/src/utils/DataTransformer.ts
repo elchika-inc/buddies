@@ -4,7 +4,8 @@
  * @description データベースとAPI間のデータ変換を提供（現在はキャメルケースのみ使用）
  */
 
-// isRecord は削除してもコンパイルエラーにならないはずだが、念のため残す
+import { UrlBuilder } from './UrlBuilder'
+import { isRawPetRecord, parseJsonArraySafely, toBoolean } from './TypeGuards'
 
 /**
  * ペットレコードの変換（DB → API）
@@ -62,59 +63,34 @@ export interface ApiPetRecord {
  * データベースのペットレコードをAPI用に変換
  * キャメルケースで統一されているため、最小限の変換のみ実施
  */
-export function transformPetRecord(dbRecord: unknown): ApiPetRecord {
-  const pet = dbRecord as ApiPetRecord
-
-  // JSON文字列フィールドのパース
-  if (pet.personalityTraits && typeof pet.personalityTraits === 'string') {
-    try {
-      pet.personalityTraits = JSON.parse(pet.personalityTraits)
-    } catch {
-      pet.personalityTraits = []
-    }
+export function transformPetRecord(dbRecord: unknown, apiBaseUrl?: string): ApiPetRecord {
+  // 型ガードで検証
+  if (!isRawPetRecord(dbRecord)) {
+    throw new Error('Invalid pet record format')
   }
 
-  if (pet.careRequirements && typeof pet.careRequirements === 'string') {
-    try {
-      pet.careRequirements = JSON.parse(pet.careRequirements)
-    } catch {
-      pet.careRequirements = []
-    }
-  }
+  const pet = dbRecord as unknown as ApiPetRecord
 
-  // boolean型の変換（DB: 0/1 → API: boolean）
-  if (typeof pet.spayedNeutered === 'number') {
-    pet.spayedNeutered = pet.spayedNeutered === 1
-  }
-  if (typeof pet.goodWithKids === 'number') {
-    pet.goodWithKids = pet.goodWithKids === 1
-  }
-  if (typeof pet.goodWithDogs === 'number') {
-    pet.goodWithDogs = pet.goodWithDogs === 1
-  }
-  if (typeof pet.goodWithCats === 'number') {
-    pet.goodWithCats = pet.goodWithCats === 1
-  }
-  if (typeof pet.isFivFelvTested === 'number') {
-    pet.isFivFelvTested = pet.isFivFelvTested === 1
-  }
-  if (typeof pet.needsYard === 'number') {
-    pet.needsYard = pet.needsYard === 1
-  }
-  if (typeof pet.apartmentFriendly === 'number') {
-    pet.apartmentFriendly = pet.apartmentFriendly === 1
-  }
-  if (typeof pet.hasJpeg === 'number') {
-    pet.hasJpeg = pet.hasJpeg === 1
-  }
-  if (typeof pet.hasWebp === 'number') {
-    pet.hasWebp = pet.hasWebp === 1
-  }
+  // JSON文字列フィールドの安全なパース
+  pet.personalityTraits = parseJsonArraySafely(pet.personalityTraits, [])
+  pet.careRequirements = parseJsonArraySafely(pet.careRequirements, [])
+
+  // boolean型の安全な変換（DB: 0/1 → API: boolean）
+  pet.spayedNeutered = toBoolean(pet.spayedNeutered)
+  pet.goodWithKids = toBoolean(pet.goodWithKids)
+  pet.goodWithDogs = toBoolean(pet.goodWithDogs)
+  pet.goodWithCats = toBoolean(pet.goodWithCats)
+  pet.isFivFelvTested = toBoolean(pet.isFivFelvTested)
+  pet.needsYard = toBoolean(pet.needsYard)
+  pet.apartmentFriendly = toBoolean(pet.apartmentFriendly)
+  pet.hasJpeg = toBoolean(pet.hasJpeg) ?? false
+  pet.hasWebp = toBoolean(pet.hasWebp) ?? false
 
   // R2の画像URLを設定（画像がある場合）
   if (pet.hasJpeg || pet.hasWebp) {
-    // R2の画像を配信するAPIエンドポイント（カスタムドメイン使用）
-    pet.imageUrl = `https://pawmatch-api.elchika.app/api/images/${pet.type}/${pet.id}.jpg`
+    // UrlBuilderを使用して統一的にURLを生成
+    const urlBuilder = new UrlBuilder(apiBaseUrl)
+    pet.imageUrl = urlBuilder.imageUrl(pet.type, pet.id, 'jpg')
   } else {
     // R2に画像がない場合は、フロントエンドでフォールバック画像を使用するためundefinedを返す
     pet.imageUrl = undefined
@@ -128,20 +104,4 @@ export function transformPetRecord(dbRecord: unknown): ApiPetRecord {
   }
 
   return pet
-}
-
-/**
- * データベースレコードからAPIレスポンスへの変換
- * @deprecated キャメルケース統一により不要
- */
-export function dbToApi<T = unknown>(record: unknown): T {
-  return record as T
-}
-
-/**
- * APIリクエストからデータベースレコードへの変換
- * @deprecated キャメルケース統一により不要
- */
-export function apiToDb<T = unknown>(data: unknown): T {
-  return data as T
 }
