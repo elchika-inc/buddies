@@ -20,6 +20,7 @@ export class RateLimitService {
         allowed: false,
         remaining: 0,
         resetIn: this.getResetTime(),
+        resetAt: Math.floor((Date.now() + this.getResetTime() * 1000) / 1000),
       }
     }
 
@@ -30,6 +31,7 @@ export class RateLimitService {
       allowed: true,
       remaining: limit - currentCount - 1,
       resetIn: this.getResetTime(),
+      resetAt: Math.floor((Date.now() + this.getResetTime() * 1000) / 1000),
     }
   }
 

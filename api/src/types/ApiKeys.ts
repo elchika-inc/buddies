@@ -8,6 +8,7 @@ export interface RateLimitResult {
   allowed: boolean
   remaining: number
   resetIn?: number
+  resetAt: number // Unix timestamp in seconds
 }
 
 // APIレスポンスの型定義

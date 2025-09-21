@@ -64,7 +64,6 @@ export interface CloudflareEnv {
   PUBLIC_API_KEY?: string
   API_BASE_URL?: string
   USE_LOCAL_IMAGES?: string
-  DISABLE_AUTH?: string  // 認証無効化フラグ（開発・デバッグ用）
 
   // Crawler specific
   API_URL?: string
@@ -106,5 +105,6 @@ export interface HonoEnv {
   Variables: {
     userId?: string
     requestId?: string
+    apiKey?: any // APIキー情報を保存
   }
 }

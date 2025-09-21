@@ -1,17 +1,13 @@
 import { Context, Next } from 'hono'
-import type { Env } from '../types'
+import type { HonoEnv } from '../types'
+import { ApiKeyService } from '../services/ApiKeyService'
+import { RateLimitService } from '../services/RateLimitService'
 
 /**
  * API全体の認証ミドルウェア
- * すべてのAPIエンドポイントでシークレットキー認証を必須にする
+ * データベース内のAPIキーによる認証を行う
  */
-export async function apiAuth(c: Context<{ Bindings: Env }>, next: Next) {
-  // 環境変数で認証を無効化できる（開発・デバッグ用）
-  if (c.env.DISABLE_AUTH === 'true') {
-    console.warn('[ApiAuth] Authentication is disabled via DISABLE_AUTH environment variable')
-    return next()
-  }
-
+export async function apiAuth(c: Context<HonoEnv>, next: Next) {
   // ヘルスチェックエンドポイントは認証不要
   const publicPaths = ['/', '/health', '/health/ready']
 
@@ -26,40 +22,56 @@ export async function apiAuth(c: Context<{ Bindings: Env }>, next: Next) {
 
   try {
     // 認証情報を取得
-    const apiKey = c.req.header('X-API-Key')
+    const apiKeyHeader = c.req.header('X-API-Key')
     const authHeader = c.req.header('Authorization')
-    const expectedKey = c.env.API_SECRET_KEY || c.env.API_ADMIN_SECRET || c.env.API_ADMIN_KEY
 
-    // 環境変数チェック
-    if (!expectedKey) {
-      console.error('[ApiAuth] No API secret configured')
-      return c.json(
-        {
-          success: false,
-          error: 'Service not configured',
-          message: 'API authentication is not properly configured',
-        },
-        503
-      )
+    // APIキーの抽出
+    let apiKeyValue: string | undefined
+
+    if (apiKeyHeader) {
+      apiKeyValue = apiKeyHeader
+    } else if (authHeader?.startsWith('Bearer ')) {
+      apiKeyValue = authHeader.substring(7)
     }
 
-    // 認証チェック
-    const isValidApiKey = apiKey === expectedKey
-    const isValidBearer = authHeader === `Bearer ${expectedKey}`
-
-    if (!isValidApiKey && !isValidBearer) {
-      // 認証失敗をログに記録（詳細は記録するが、レスポンスには含めない）
+    // APIキーが提供されていない場合
+    if (!apiKeyValue) {
       const clientIP =
         c.req.header('CF-Connecting-IP') ||
         c.req.header('X-Forwarded-For')?.split(',')[0] ||
         'unknown'
 
-      console.warn('[ApiAuth] Authentication failed', {
+      console.warn('[ApiAuth] No API key provided', {
         path: c.req.path,
         method: c.req.method,
         clientIP,
-        hasApiKey: !!apiKey,
-        hasBearer: !!authHeader,
+        timestamp: new Date().toISOString(),
+      })
+
+      return c.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+          message: 'API key is required',
+        },
+        401
+      )
+    }
+
+    // ApiKeyServiceを使用してキーを検証
+    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any)
+    const apiKey = await apiKeyService.findValidKey(apiKeyValue)
+
+    if (!apiKey) {
+      const clientIP =
+        c.req.header('CF-Connecting-IP') ||
+        c.req.header('X-Forwarded-For')?.split(',')[0] ||
+        'unknown'
+
+      console.warn('[ApiAuth] Invalid API key', {
+        path: c.req.path,
+        method: c.req.method,
+        clientIP,
         userAgent: c.req.header('User-Agent')?.substring(0, 50),
         timestamp: new Date().toISOString(),
       })
@@ -68,11 +80,117 @@ export async function apiAuth(c: Context<{ Bindings: Env }>, next: Next) {
         {
           success: false,
           error: 'Unauthorized',
-          message: 'Invalid API credentials',
+          message: 'Invalid API key',
         },
         401
       )
     }
+
+    // 有効期限のチェック
+    const expirationResult = apiKeyService.validateExpiration(apiKey)
+    if (!expirationResult.isValid) {
+      console.warn('[ApiAuth] Expired API key', {
+        apiKeyId: apiKey.id,
+        path: c.req.path,
+        method: c.req.method,
+        timestamp: new Date().toISOString(),
+      })
+
+      return c.json(
+        {
+          success: false,
+          error: 'Unauthorized',
+          message: expirationResult.error || 'API key expired',
+        },
+        401
+      )
+    }
+
+    // リクエストパスから権限チェック用のリソースとアクションを抽出
+    const pathParts = c.req.path.split('/')
+    let resource: string | undefined
+    let action: string | undefined
+
+    // 例: /api/pets -> resource: pets, action: read/write/delete based on method
+    if (pathParts[1] === 'api' && pathParts[2]) {
+      resource = pathParts[2]
+      action =
+        c.req.method === 'GET'
+          ? 'read'
+          : c.req.method === 'POST'
+            ? 'write'
+            : c.req.method === 'PUT'
+              ? 'write'
+              : c.req.method === 'DELETE'
+                ? 'delete'
+                : 'read'
+    }
+
+    // 権限チェック
+    const permissionResult = apiKeyService.validatePermissions(apiKey, resource, action)
+    if (!permissionResult.isValid) {
+      console.warn('[ApiAuth] Insufficient permissions', {
+        apiKeyId: apiKey.id,
+        path: c.req.path,
+        method: c.req.method,
+        requiredPermission: permissionResult.requiredPermission,
+        timestamp: new Date().toISOString(),
+      })
+
+      return c.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: permissionResult.error || 'Insufficient permissions',
+          requiredPermission: permissionResult.requiredPermission,
+        },
+        403
+      )
+    }
+
+    // レートリミットチェック（RATE_LIMIT_KVが設定されている場合のみ）
+    if (c.env.RATE_LIMIT_KV) {
+      const rateLimitService = new RateLimitService(c.env.RATE_LIMIT_KV as any)
+      const rateLimitResult = await rateLimitService.checkLimit(apiKey.id, apiKey.rateLimit)
+
+      if (!rateLimitResult.allowed) {
+        console.warn('[ApiAuth] Rate limit exceeded', {
+          apiKeyId: apiKey.id,
+          path: c.req.path,
+          method: c.req.method,
+          limit: apiKey.rateLimit,
+          timestamp: new Date().toISOString(),
+        })
+
+        // レートリミット情報をヘッダーに追加
+        c.header('X-RateLimit-Limit', apiKey.rateLimit.toString())
+        c.header('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
+        c.header('X-RateLimit-Reset', rateLimitResult.resetAt.toString())
+
+        return c.json(
+          {
+            success: false,
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded',
+            retryAfter: Math.ceil(rateLimitResult.resetAt - Date.now() / 1000),
+          },
+          429
+        )
+      }
+
+      // レートリミット情報をヘッダーに追加（成功時）
+      c.header('X-RateLimit-Limit', apiKey.rateLimit.toString())
+      c.header('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
+      c.header('X-RateLimit-Reset', rateLimitResult.resetAt.toString())
+    }
+
+    // APIキー情報をコンテキストに保存（後続のミドルウェアやハンドラで使用可能）
+    c.set('apiKey', apiKey)
+
+    // 最終使用時刻を更新（非同期で実行）
+    apiKeyService.updateLastUsed(apiKey.id).catch((error) => {
+      console.error('[ApiAuth] Failed to update last used:', error)
+    })
 
     // 認証成功
     await next()
@@ -83,50 +201,6 @@ export async function apiAuth(c: Context<{ Bindings: Env }>, next: Next) {
         success: false,
         error: 'Internal server error',
         message: 'Authentication service error',
-      },
-      500
-    )
-  }
-}
-
-/**
- * 公開APIエンドポイント用の緩い認証
- * オプションでAPIキーを要求（設定されている場合のみ）
- */
-export async function optionalApiAuth(c: Context<{ Bindings: Env }>, next: Next) {
-  try {
-    const expectedKey = c.env.API_SECRET_KEY || c.env.API_ADMIN_SECRET
-
-    // APIキーが設定されていない場合は認証をスキップ
-    if (!expectedKey) {
-      return next()
-    }
-
-    // APIキーが設定されている場合は認証を実行
-    const apiKey = c.req.header('X-API-Key')
-    const authHeader = c.req.header('Authorization')
-
-    const isValidApiKey = apiKey === expectedKey
-    const isValidBearer = authHeader === `Bearer ${expectedKey}`
-
-    if (!isValidApiKey && !isValidBearer) {
-      return c.json(
-        {
-          success: false,
-          error: 'Unauthorized',
-          message: 'API key is required for this endpoint',
-        },
-        401
-      )
-    }
-
-    await next()
-  } catch (error) {
-    console.error('[OptionalApiAuth] Middleware error:', error)
-    return c.json(
-      {
-        success: false,
-        error: 'Internal server error',
       },
       500
     )

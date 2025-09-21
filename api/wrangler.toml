@@ -45,6 +45,12 @@ binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
 preview_id = "ec30a1e116fb42c081ad0b7f07d413da"
 
+# KV Namespace (Rate Limiting)
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "rate-limit-kv-id"
+preview_id = "rate-limit-kv-preview-id"
+
 # R2 Bucket (Image Storage)
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
@@ -87,8 +93,6 @@ ALLOWED_ORIGINS = "https://pawmatch-dogs.elchika.app,https://pawmatch-cats.elchi
 API_BASE_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
-# 認証の無効化（一時的な設定 - 本番環境では必ずfalseまたは削除すること）
-DISABLE_AUTH = "true"
 
 [[env.production.services]]
 binding = "DISPATCHER"
@@ -106,6 +110,10 @@ service = "pawmatch-crawler"
 [[env.production.kv_namespaces]]
 binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "rate-limit-kv-id"
 
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
@@ -129,8 +137,6 @@ ALLOWED_ORIGIN = "http://localhost:3004"
 ALLOWED_ORIGINS = "http://localhost:3004,http://localhost:3000"
 API_BASE_URL = "http://localhost:9789"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
-# 開発環境では認証を無効化
-DISABLE_AUTH = "true"
 
 # -----------------------------------------------------------------------------
 # Local Development Server
