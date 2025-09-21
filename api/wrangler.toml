@@ -88,7 +88,7 @@ API_BASE_URL = "https://pawmatch-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
 # 認証の無効化（一時的な設定 - 本番環境では必ずfalseまたは削除すること）
-DISABLE_AUTH = "false"
+DISABLE_AUTH = "true"
 
 [[env.production.services]]
 binding = "DISPATCHER"
