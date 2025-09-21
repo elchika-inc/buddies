@@ -104,9 +104,9 @@ app.post('/api/crawler', async (c) => {
 
     return c.json({
       success: true,
-      message: result.data.message || 'Crawler triggered successfully via Dispatcher',
-      batchId: result.data.batchId,
-      count: result.data.count,
+      message: result.data?.message || 'Crawler triggered successfully via Dispatcher',
+      batchId: result.data?.batchId,
+      count: result.data?.count || 0,
     })
   } catch (error) {
     console.error('Error triggering crawler:', error)

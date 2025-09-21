@@ -64,6 +64,7 @@ export interface CloudflareEnv {
   PUBLIC_API_KEY?: string
   API_BASE_URL?: string
   USE_LOCAL_IMAGES?: string
+  DISABLE_AUTH?: string  // 認証無効化フラグ（開発・デバッグ用）
 
   // Crawler specific
   API_URL?: string

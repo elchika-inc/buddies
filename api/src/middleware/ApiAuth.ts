@@ -6,6 +6,12 @@ import type { Env } from '../types'
  * すべてのAPIエンドポイントでシークレットキー認証を必須にする
  */
 export async function apiAuth(c: Context<{ Bindings: Env }>, next: Next) {
+  // 環境変数で認証を無効化できる（開発・デバッグ用）
+  if (c.env.DISABLE_AUTH === 'true') {
+    console.warn('[ApiAuth] Authentication is disabled via DISABLE_AUTH environment variable')
+    return next()
+  }
+
   // ヘルスチェックエンドポイントは認証不要
   const publicPaths = ['/', '/health', '/health/ready']
 
