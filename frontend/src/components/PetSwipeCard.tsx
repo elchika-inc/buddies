@@ -10,6 +10,7 @@ type PetSwipeCardProps = {
   isTopCard?: boolean
   buttonSwipeDirection?: SwipeDirection | null
   onTap?: () => void
+  cardIndex?: number // カードのインデックス（プリロード判定用）
 }
 
 export function PetSwipeCard({
@@ -18,6 +19,7 @@ export function PetSwipeCard({
   isTopCard = true,
   buttonSwipeDirection,
   onTap,
+  cardIndex = 0,
 }: PetSwipeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -187,7 +189,12 @@ export function PetSwipeCard({
       onTouchEnd={handleTouchEnd}
       className="select-none touch-none w-[90vw] max-w-sm sm:max-w-md md:max-w-lg h-full"
     >
-      <PetCard pet={pet} onTap={onTap} />
+      <PetCard
+        pet={pet}
+        onTap={onTap}
+        priority={cardIndex === 0} // 最初のカードは優先読み込み
+        preload={cardIndex > 0 && cardIndex <= 3} // 次の3枚をプリロード
+      />
 
       {showIndicator && (
         <SwipeIndicator

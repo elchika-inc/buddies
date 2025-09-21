@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { FrontendPet, isDog, isCat } from '@/types/pet'
+import { useState, useEffect } from 'react'
 // import { getPetType } from '@/config/petConfig'
 
 interface PetDetailModalProps {
@@ -9,10 +10,44 @@ interface PetDetailModalProps {
 }
 
 export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
+  const [supportsWebP, setSupportsWebP] = useState(false)
+
+  // WebPサポートをチェック
+  useEffect(() => {
+    const checkWebPSupport = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
+      setSupportsWebP(result)
+    }
+    checkWebPSupport()
+  }, [])
+
   if (!isOpen) return null
 
   // const petType = getPetType()
   // const petEmoji = petType === 'dog' ? '🐶' : '🐱'
+
+  // WebP対応の画像URLを生成
+  const getOptimizedImageUrl = (url: string | null | undefined) => {
+    if (!url) {
+      return pet.type === 'dog'
+        ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
+        : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
+    }
+
+    if (url.includes('unsplash.com')) return url
+
+    // pet.hasWebpが1でWebP対応ブラウザの場合、WebP形式のURLを生成
+    if (pet.hasWebp === 1 && supportsWebP && url.includes('/api/images/')) {
+      return url.replace(/\.(jpg|jpeg|png)($|\?)/, '.webp$2')
+    }
+
+    return url
+  }
+
+  const imageUrl = getOptimizedImageUrl(pet.imageUrl)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-[60] flex items-center justify-center sm:p-4">
@@ -21,17 +56,13 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
         <div className="relative flex-1 overflow-y-auto pb-20 sm:pb-0">
           <div className="relative h-80 sm:h-96">
             <Image
-              src={
-                pet.imageUrl ||
-                (pet.type === 'dog'
-                  ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
-                  : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop')
-              }
+              src={imageUrl}
               alt={pet.name}
               fill
               className="object-cover sm:rounded-t-2xl"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 672px"
+              loading="lazy"
+              quality={85}
             />
             <button
               onClick={onClose}

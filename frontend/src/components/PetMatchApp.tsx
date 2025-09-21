@@ -23,7 +23,7 @@ export function PetMatchApp() {
     openLocationModal,
     closeLocationModal,
     openPetDetailModal,
-    closePetDetailModal
+    closePetDetailModal,
   } = useModals()
 
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
@@ -31,15 +31,25 @@ export function PetMatchApp() {
     'like' | 'pass' | 'superLike' | null
   >(null)
 
-  const { currentPet, hasMorePets, likes, superLikes, handleSwipe, reset: resetSwipe } = usePetSwipe(
-    pets,
-    petType
-  )
+  const {
+    currentPet,
+    hasMorePets,
+    likes,
+    superLikes,
+    handleSwipe,
+    reset: resetSwipe,
+  } = usePetSwipe(pets, petType)
+
+  // 現在のペットのインデックスを取得
+  const currentIndex = currentPet ? pets.indexOf(currentPet) : -1
 
   // 次のペット（現在のペットの次）
-  const nextPet = pets.find(
-    (_, index) => pets.indexOf(currentPet!) !== -1 && index === pets.indexOf(currentPet!) + 1
-  )
+  const nextPet =
+    currentIndex >= 0 && currentIndex < pets.length - 1 ? pets[currentIndex + 1] : null
+
+  // プリロード用のペット（次の2-4枚）
+  const preloadPets =
+    currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 5).filter(Boolean) : []
 
   // ボタンスワイプのトリガー
   const triggerButtonSwipe = (direction: 'like' | 'pass' | 'superLike') => {
@@ -92,6 +102,18 @@ export function PetMatchApp() {
             maxHeight: '70vh',
           }}
         >
+          {/* プリロード用の非表示カード（画像を事前読み込み） */}
+          {preloadPets.map((pet, index) => (
+            <div key={`preload-${pet.id}`} className="hidden">
+              <PetSwipeCard
+                pet={pet}
+                onSwipe={() => {}}
+                isTopCard={false}
+                cardIndex={currentIndex + index + 2}
+              />
+            </div>
+          ))}
+
           {/* 次のカード（背面） */}
           {nextPet && (
             <PetSwipeCard
@@ -100,6 +122,7 @@ export function PetMatchApp() {
               onSwipe={() => {}}
               isTopCard={false}
               onTap={() => openPetDetailModal(nextPet)}
+              cardIndex={1}
             />
           )}
 
@@ -112,6 +135,7 @@ export function PetMatchApp() {
               isTopCard={true}
               buttonSwipeDirection={buttonSwipeDirection}
               onTap={() => currentPet && openPetDetailModal(currentPet)}
+              cardIndex={0}
             />
           )}
 
@@ -149,11 +173,7 @@ export function PetMatchApp() {
       />
 
       {selectedPet && (
-        <PetDetailModal
-          pet={selectedPet}
-          isOpen={detailModalOpen}
-          onClose={closePetDetailModal}
-        />
+        <PetDetailModal pet={selectedPet} isOpen={detailModalOpen} onClose={closePetDetailModal} />
       )}
     </div>
   )
