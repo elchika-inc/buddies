@@ -111,6 +111,23 @@ export class DispatcherServiceClient extends ServiceClient {
   }
 
   /**
+   * クローラーをトリガー
+   */
+  async triggerCrawler(
+    petType: 'dog' | 'cat' | 'both',
+    limit?: number,
+    source?: string
+  ): Promise<Result<DispatchResult, Error>> {
+    return this.post<DispatchResult>('/trigger-crawler', {
+      type: petType,
+      limit: limit || 10,
+      config: {
+        source: source || 'api',
+      },
+    })
+  }
+
+  /**
    * ヘルスチェック
    */
   async health(): Promise<

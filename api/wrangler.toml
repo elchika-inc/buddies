@@ -34,10 +34,10 @@ service = "pawmatch-dispatcher"
 binding = "CRAWLER_SERVICE"
 service = "pawmatch-crawler"
 
-# Queue Producer (Crawler Queue)
-[[queues.producers]]
-binding = "CRAWLER_QUEUE"
-queue = "pawmatch-crawler-queue"
+# Queue Producer removed - Crawler is now triggered via Dispatcher
+# [[queues.producers]]
+# binding = "CRAWLER_QUEUE"
+# queue = "pawmatch-crawler-queue"
 
 # KV Namespace (API Key Cache)
 [[kv_namespaces]]
@@ -96,9 +96,10 @@ service = "pawmatch-dispatcher"
 binding = "CRAWLER_SERVICE"
 service = "pawmatch-crawler"
 
-[[env.production.queues.producers]]
-binding = "CRAWLER_QUEUE"
-queue = "pawmatch-crawler-queue"
+# Queue Producer removed - Crawler is now triggered via Dispatcher
+# [[env.production.queues.producers]]
+# binding = "CRAWLER_QUEUE"
+# queue = "pawmatch-crawler-queue"
 
 [[env.production.kv_namespaces]]
 binding = "API_KEYS_CACHE"

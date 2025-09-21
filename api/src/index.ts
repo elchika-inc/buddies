@@ -9,6 +9,8 @@ import statsRoutes from './routes/stats'
 import crawlerRoutes from './routes/crawler'
 import apiKeysRoutes from './routes/apiKeys'
 import conversionRoutes from './routes/conversion'
+import { DispatcherServiceClient } from '../../shared/services/dispatcher-client'
+import { Result } from '../../shared/types/result'
 import type { Env } from './types'
 import type { ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
 import type { ApiErrorResponse } from './types/responses'
@@ -74,56 +76,38 @@ app.post('/api/crawler', async (c) => {
       )
     }
 
-    // Queue経由でCrawlerを起動
-    if (c.env.CRAWLER_QUEUE) {
-      const messages = []
+    // Dispatcher経由でCrawlerを起動
+    const dispatcherClient = new DispatcherServiceClient(c.env.DISPATCHER)
 
-      if (petType === 'dog' || petType === 'both') {
-        messages.push({
-          type: 'crawl' as const,
-          petType: 'dog' as const,
-          limit,
-          timestamp: new Date().toISOString(),
-          source: 'api' as const,
-        })
-      }
-
-      if (petType === 'cat' || petType === 'both') {
-        messages.push({
-          type: 'crawl' as const,
-          petType: 'cat' as const,
-          limit,
-          timestamp: new Date().toISOString(),
-          source: 'api' as const,
-        })
-      }
-
-      // Queueにメッセージを送信
-      const results = []
-      for (const message of messages) {
-        await c.env.CRAWLER_QUEUE.send(message)
-        results.push({
-          petType: message.petType,
-          queued: true,
-        })
-        console.warn(`Crawler queue message sent for ${message.petType} via API`)
-      }
-
-      return c.json({
-        success: true,
-        message: 'Crawler triggered successfully via Queue',
-        results,
-        totalQueued: results.length,
-      })
-    } else {
+    if (!dispatcherClient.isAvailable()) {
       return c.json(
         {
           success: false,
-          error: 'CRAWLER_QUEUE not configured',
+          error: 'Dispatcher service not configured',
         },
         503
       )
     }
+
+    const result = await dispatcherClient.triggerCrawler(petType, limit, 'api')
+
+    if (Result.isErr(result)) {
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to trigger crawler via dispatcher',
+          details: result.error.message,
+        },
+        500
+      )
+    }
+
+    return c.json({
+      success: true,
+      message: result.data.message || 'Crawler triggered successfully via Dispatcher',
+      batchId: result.data.batchId,
+      count: result.data.count,
+    })
   } catch (error) {
     console.error('Error triggering crawler:', error)
     return c.json(
@@ -181,35 +165,21 @@ export default {
     console.warn('API Cron triggered at', new Date().toISOString())
 
     try {
-      // Crawlerを直接Queueで起動（Service Binding経由）
-      if (env.CRAWLER_QUEUE) {
-        // 犬と猫を別々のメッセージとして送信
-        const messages = [
-          {
-            type: 'crawl' as const,
-            petType: 'dog' as const,
-            limit: 10,
-            timestamp: new Date().toISOString(),
-            source: 'cron',
-          },
-          {
-            type: 'crawl' as const,
-            petType: 'cat' as const,
-            limit: 10,
-            timestamp: new Date().toISOString(),
-            source: 'cron',
-          },
-        ]
+      // Dispatcher経由でCrawlerを起動
+      const dispatcherClient = new DispatcherServiceClient(env.DISPATCHER)
 
-        // Queueにメッセージを送信
-        for (const message of messages) {
-          await env.CRAWLER_QUEUE.send(message)
-          console.warn(`Crawler queue message sent for ${message.petType}`)
-        }
+      if (!dispatcherClient.isAvailable()) {
+        console.error('Dispatcher service not configured')
+        return
+      }
 
-        console.warn('Crawler triggered successfully via Queue')
+      // both（犬と猫）を一度にトリガー
+      const result = await dispatcherClient.triggerCrawler('both', 10, 'cron')
+
+      if (Result.isErr(result)) {
+        console.error('Failed to trigger crawler via dispatcher:', result.error.message)
       } else {
-        console.error('CRAWLER_QUEUE not configured')
+        console.warn('Crawler triggered successfully via Dispatcher:', result.data.message)
       }
     } catch (error) {
       console.error('Error triggering crawler from cron:', error)

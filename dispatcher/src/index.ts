@@ -78,17 +78,12 @@ export default {
   },
 
   /**
-   * Cronハンドラ
-   * 定期的な画像処理バッチを実行
+   * Cronハンドラ（削除済み）
+   * DispatcherはAPI経由でのみ起動されます
    */
-  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
-    // Cronベースのスケジューリングは現在無効化
-    // 必要に応じて /scheduled エンドポイント経由で手動実行
-    const { getLogger } = await import('./utils/logger')
-    const logger = getLogger(env)
-    logger.warn('Dispatcher scheduled handler called but should be disabled', {
-      cron: event.cron,
-      timestamp: new Date().toISOString(),
-    })
+  async scheduled(_event: ScheduledEvent, _env: Env): Promise<void> {
+    // Cronトリガーは削除されました
+    // この関数は呼ばれることはありません
+    console.warn('Unexpected: Dispatcher scheduled handler called but Cron is removed')
   },
 }

@@ -121,6 +121,17 @@ app.post('/screenshot', async (c: Context<{ Bindings: Env }>) => {
       )
     }
 
+    // result.dataがundefinedの場合のチェックを追加
+    if (!result.data) {
+      return c.json(
+        {
+          success: false,
+          error: 'No response data from dispatcher service',
+        },
+        500
+      )
+    }
+
     return c.json({
       success: result.data.success,
       batchId: result.data.batchId,
