@@ -75,7 +75,7 @@ jobs:
 
     strategy:
       matrix:
-        workspace: [frontend, api, crawler, dispatcher]
+        workspace: [frontend, api, crawler, dispatcher, admin]
 
     steps:
       - name: Checkout repository
