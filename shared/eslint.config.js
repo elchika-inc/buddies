@@ -7,7 +7,7 @@ export default [
   ...typescript.configs.recommended,
   prettier,
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['types/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -18,7 +18,7 @@ export default [
     },
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

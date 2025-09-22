@@ -105,6 +105,6 @@ export interface HonoEnv {
   Variables: {
     userId?: string
     requestId?: string
-    apiKey?: any // APIキー情報を保存
+    apiKey?: unknown // APIキー情報を保存
   }
 }
