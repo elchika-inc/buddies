@@ -31,11 +31,14 @@ export function PetCard({ pet, onTap, priority = false, preload = false }: PetCa
 
   // WebPサポートをチェック
   useEffect(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 1
-    canvas.height = 1
-    const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
-    setSupportsWebP(result)
+    // SSR環境ではdocumentが存在しないためチェック
+    if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
+      setSupportsWebP(result)
+    }
   }, [])
 
   // フォールバック画像URL（ペットタイプ別）
