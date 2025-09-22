@@ -11,7 +11,6 @@ import conversionRoutes from './routes/conversion'
 import { DispatcherServiceClient } from '../../shared/services/dispatcher-client'
 import { Result } from '../../shared/types/result'
 import type { Env } from './types'
-import type { ScheduledController, ExecutionContext } from '@cloudflare/workers-types'
 import type { ApiErrorResponse } from './types/responses'
 
 const app = new Hono<{ Bindings: Env }>()
@@ -152,14 +151,8 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  // Cron trigger handler (無効化)
-  // 定期実行は削除 - API経由での手動実行のみ
-  /*
-  async scheduled(
-    _controller: ScheduledController,
-    env: Env,
-    _ctx: ExecutionContext
-  ): Promise<void> {
+  // Cron trigger handler
+  async scheduled(_controller: any, env: Env, _ctx: any): Promise<void> {
     console.warn('API Cron triggered at', new Date().toISOString())
 
     try {
@@ -183,5 +176,4 @@ export default {
       console.error('Error triggering crawler from cron:', error)
     }
   },
-  */
 }

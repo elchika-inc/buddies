@@ -32,9 +32,9 @@ on:
           - missing-webp
           - missing-jpeg
 
-  # 定期実行（毎日午前3時）
-  schedule:
-    - cron: '0 3 * * *'
+  # 定期実行は削除 - Dispatcher経由でのみ実行
+  # schedule:
+  #   - cron: '0 3 * * *'
 
 jobs:
   convert-images:
