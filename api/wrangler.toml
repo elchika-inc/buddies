@@ -45,11 +45,11 @@ binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
 preview_id = "ec30a1e116fb42c081ad0b7f07d413da"
 
-# KV Namespace (Rate Limiting)
-[[kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "rate-limit-kv-id"
-preview_id = "rate-limit-kv-preview-id"
+# KV Namespace (Rate Limiting) - Disabled until properly configured
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "rate-limit-kv-id"
+# preview_id = "rate-limit-kv-preview-id"
 
 # R2 Bucket (Image Storage)
 [[r2_buckets]]
@@ -111,9 +111,9 @@ service = "pawmatch-crawler"
 binding = "API_KEYS_CACHE"
 id = "ec30a1e116fb42c081ad0b7f07d413da"
 
-[[env.production.kv_namespaces]]
-binding = "RATE_LIMIT_KV"
-id = "rate-limit-kv-id"
+# [[env.production.kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "rate-limit-kv-id"
 
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
