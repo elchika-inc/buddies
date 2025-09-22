@@ -148,9 +148,9 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
       )
     }
 
-    // レートリミットチェック（RATE_LIMIT_KVが設定されている場合のみ）
-    if (c.env.RATE_LIMIT_KV) {
-      const rateLimitService = new RateLimitService(c.env.RATE_LIMIT_KV as any)
+    // レートリミットチェック（API_KEYS_CACHEが設定されている場合のみ）
+    if (c.env.API_KEYS_CACHE) {
+      const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE as any)
       const rateLimitResult = await rateLimitService.checkLimit(apiKey.id, apiKey.rateLimit)
 
       if (!rateLimitResult.allowed) {
@@ -166,13 +166,14 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
         c.header('X-RateLimit-Limit', apiKey.rateLimit.toString())
         c.header('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
         c.header('X-RateLimit-Reset', rateLimitResult.resetAt.toString())
+        c.header('Retry-After', (rateLimitResult.resetIn || 60).toString())
 
         return c.json(
           {
             success: false,
             error: 'Too Many Requests',
             message: 'Rate limit exceeded',
-            retryAfter: Math.ceil(rateLimitResult.resetAt - Date.now() / 1000),
+            retryAfter: rateLimitResult.resetIn || 60,
           },
           429
         )

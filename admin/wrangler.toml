@@ -1,0 +1,58 @@
+name = "pawmatch-admin"
+main = "src/index.ts"
+compatibility_date = "2024-09-17"
+compatibility_flags = ["nodejs_compat"]
+
+# IP制限設定
+[vars]
+# カンマ区切りで許可するIPアドレスを指定
+# 空文字列の場合はすべてのIPを許可
+ALLOWED_IPS = ""
+# 管理者認証用シークレット
+ADMIN_SECRET = "development-secret-key-change-in-production"
+
+# D1データベースバインディング（開発環境でも必要）
+[[d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "c56f8f0d-ec5f-4fac-aa91-8b2c7bb9bfaa"
+migrations_dir = "../database/migrations"
+
+# KVバインディング
+[[kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "ec30a1e116fb42c081ad0b7f07d413da"
+
+# 開発環境
+[env.development]
+
+[[env.development.kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "local-api-keys-cache"
+
+# 本番環境
+[env.production]
+[env.production.vars]
+NODE_ENV = "production"
+# Cloudflare Accessで制限するため、IP制限は無効化
+ALLOWED_IPS = ""
+# 本番環境では必ず強力なシークレットに変更すること
+ADMIN_SECRET = "production-secret-key-please-change"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pawmatch-db"
+database_id = "c56f8f0d-ec5f-4fac-aa91-8b2c7bb9bfaa"
+
+[[env.production.kv_namespaces]]
+binding = "API_KEYS_CACHE"
+id = "ec30a1e116fb42c081ad0b7f07d413da"
+
+# R2バケット（画像用）
+[[env.production.r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "pawmatch-images"
+
+# サイト設定（静的ファイル配信用）
+[site]
+bucket = "./public"

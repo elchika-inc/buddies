@@ -20,7 +20,10 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,json}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "drizzle-kit:push": "drizzle-kit push --force",
+    "drizzle-kit:studio": "drizzle-kit studio",
+    "drizzle-kit:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.4",

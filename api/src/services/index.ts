@@ -18,7 +18,7 @@ export { HealthCheckService } from './HealthCheckService'
 // 共通サービス
 export { MetadataService } from './MetadataService'
 
-// APIキー管理サービス
+// APIキー管理サービス（読み取り専用）
 export { ApiKeyService } from './ApiKeyService'
 export { RateLimitService } from './RateLimitService'
 

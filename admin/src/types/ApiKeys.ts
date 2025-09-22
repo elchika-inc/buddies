@@ -29,23 +29,6 @@ export interface ErrorResponse {
 
 export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse
 
-// 検証レスポンスの型
-export interface ValidationResponse {
-  success: boolean
-  valid: boolean
-  key_info?: {
-    name: string
-    type: string
-    permissions: string[]
-    rate_limit: number
-    rate_limit_remaining: number
-    expires_at?: string | null
-  }
-  error?: string
-  details?: string
-  retry_after?: number
-}
-
 // APIキー作成レスポンスの型
 export interface CreateKeyResponse {
   success: boolean
@@ -63,18 +46,13 @@ export interface CreateKeyResponse {
 }
 
 // リクエストの検証スキーマ
-export const validateKeySchema = z.object({
-  key: z.string().min(32).describe('APIキー（最低32文字）'),
-  resource: z.string().optional().describe('アクセスするリソース名'),
-  action: z.string().optional().describe('実行するアクション'),
-})
-
 export const createKeySchema = z.object({
   name: z.string().describe('APIキーの識別名'),
   type: z.enum(['public', 'internal', 'admin']).describe('APIキーのタイプ'),
   permissions: z.array(z.string()).describe('権限のリスト（resource:action形式）'),
   rate_limit: z.number().default(100).describe('1分あたりのリクエスト上限'),
   expires_in_days: z.number().optional().describe('有効期限（日数）'),
+  expiresAt: z.string().optional().describe('有効期限のISO 8601形式'),
   metadata: z
     .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
     .optional()

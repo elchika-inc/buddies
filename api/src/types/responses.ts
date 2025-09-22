@@ -111,22 +111,16 @@ export interface ImageUploadResponse {
 }
 
 // APIキー関連レスポンス
-export interface ApiKeyResponse {
-  id: string
-  name: string
-  prefix: string
-  createdAt: string
-  lastUsedAt?: string
-  expiresAt?: string
-  isActive: boolean
+// 共通型を使用
+import type { ApiKey } from '@pawmatch/shared/types'
+
+export interface ApiKeyResponse
+  extends Omit<ApiKey, 'key' | 'permissions' | 'rateLimit' | 'metadata'> {
+  prefix: string // キーのプレフィックスのみ表示
 }
 
-export interface ApiKeyCreateResponse {
-  id: string
-  key: string // 作成時のみ返される完全なキー
-  name: string
-  createdAt: string
-}
+// 作成レスポンスは共通型を再エクスポート
+export type { CreateApiKeyResponse as ApiKeyCreateResponse } from '@pawmatch/shared/types'
 
 // Type guard functions
 export function isApiErrorResponse(response: ApiResponse): response is ApiErrorResponse {

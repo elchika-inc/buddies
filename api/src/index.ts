@@ -7,7 +7,6 @@ import imageRoutes from './routes/images'
 import adminRoutes from './routes/admin'
 import statsRoutes from './routes/stats'
 import crawlerRoutes from './routes/crawler'
-import apiKeysRoutes from './routes/apiKeys'
 import conversionRoutes from './routes/conversion'
 import { DispatcherServiceClient } from '../../shared/services/dispatcher-client'
 import { Result } from '../../shared/types/result'
@@ -39,9 +38,6 @@ app.route('/api/pets', petRoutes)
 app.route('/api/images', imageRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/conversion', conversionRoutes)
-
-// APIキー管理ルート
-app.route('/api/keys', apiKeysRoutes)
 
 // 内部APIルート
 app.route('/crawler', crawlerRoutes)

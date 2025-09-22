@@ -16,7 +16,8 @@
     "api",
     "crawler",
     "dispatcher",
-    "shared"
+    "shared",
+    "admin"
   ],
   "scripts": {
     "// Core": "=== 基本コマンド ===",
@@ -33,6 +34,7 @@
     "dev:api": "npm run -w @pawmatch/api dev",
     "dev:crawler": "npm run -w @pawmatch/crawler dev",
     "dev:dispatcher": "npm run -w @pawmatch/dispatcher dev",
+    "dev:admin": "npm run -w @pawmatch/admin dev",
     "lint:app": "npm run -w @pawmatch/frontend lint",
     "lint:api": "npm run -w @pawmatch/api lint",
     "lint:crawler": "npm run -w @pawmatch/crawler lint",
@@ -55,14 +57,16 @@
     "deploy:api": "npm run -w @pawmatch/api deploy",
     "deploy:crawler": "npm run -w @pawmatch/crawler deploy",
     "deploy:dispatcher": "npm run -w @pawmatch/dispatcher deploy",
+    "deploy:admin": "npm run -w @pawmatch/admin deploy",
     "deploy:workers": "concurrently 'npm:deploy:api' 'npm:deploy:crawler' 'npm:deploy:dispatcher'",
     "deploy:all": "npm run deploy:workers && npm run deploy:dog && npm run deploy:cat",
 
     "// Database": "=== データベース ===",
-    "db:push": "npm run -w @pawmatch/api run drizzle-kit push",
-    "db:studio": "npm run -w @pawmatch/api run drizzle-kit studio",
-    "db:generate": "npm run -w @pawmatch/api run drizzle-kit generate",
+    "db:push": "npm run -w @pawmatch/api drizzle-kit:push",
+    "db:studio": "npm run -w @pawmatch/api drizzle-kit:studio",
+    "db:generate": "npm run -w @pawmatch/api drizzle-kit:generate",
     "db:reset": "rm -f api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite && npm run db:push",
+    "db:seed": "tsx database/seed.ts",
 
     "// Monitoring": "=== モニタリング ===",
     "tail": "npm run -w @pawmatch/api tail",
