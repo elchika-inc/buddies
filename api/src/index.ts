@@ -152,7 +152,9 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  // Cron trigger handler
+  // Cron trigger handler (無効化)
+  // 定期実行は削除 - API経由での手動実行のみ
+  /*
   async scheduled(
     _controller: ScheduledController,
     env: Env,
@@ -181,4 +183,5 @@ export default {
       console.error('Error triggering crawler from cron:', error)
     }
   },
+  */
 }
