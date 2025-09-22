@@ -41,13 +41,6 @@ jobs:
     strategy:
       matrix:
         pet-type: [dog, cat]
-        include:
-          - pet-type: dog
-            app-name: DogMatch
-            app-url: https://dogmatch.elchika.app
-          - pet-type: cat
-            app-name: CatMatch
-            app-url: https://catmatch.elchika.app
 
     steps:
       - name: Checkout repository
@@ -64,21 +57,14 @@ jobs:
 
       - name: Build frontend for ${{ matrix.pet-type }}
         env:
-          NEXT_PUBLIC_PET_TYPE: ${{ matrix.pet-type }}
-          NEXT_PUBLIC_API_URL: https://pawmatch-api.elchika.app
-          NEXT_PUBLIC_API_KEY: b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
-          NEXT_PUBLIC_USE_API: true
-          NEXT_PUBLIC_APP_NAME: ${{ matrix.app-name }}
-          NEXT_PUBLIC_APP_URL: ${{ matrix.app-url }}
-          NEXT_TELEMETRY_DISABLED: 1
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run build -w @pawmatch/frontend
+        run: npm run build:${{ matrix.pet-type }}:ci -w @pawmatch/frontend
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: frontend-${{ matrix.pet-type }}-build
-          path: frontend/.next
+          path: frontend/dist
           retention-days: 1
 
   build-workers:
@@ -99,14 +85,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build API
+      - name: Build API Worker
         run: npm run build -w @pawmatch/api
         continue-on-error: true
 
-      - name: Build Crawler
+      - name: Build Crawler Worker
         run: npm run build -w @pawmatch/crawler
         continue-on-error: true
 
-      - name: Build Dispatcher
+      - name: Build Dispatcher Worker
         run: npm run build -w @pawmatch/dispatcher
+        continue-on-error: true
+
+      - name: Build Admin Worker
+        run: npm run build -w @pawmatch/admin
         continue-on-error: true

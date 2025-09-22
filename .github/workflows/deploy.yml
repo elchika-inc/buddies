@@ -37,8 +37,26 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy Workers
-        run: npm run deploy:workers
+      - name: Deploy API Worker
+        run: npm run deploy:prod -w @pawmatch/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy Crawler Worker
+        run: npm run deploy -w @pawmatch/crawler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy Dispatcher Worker
+        run: npm run deploy -w @pawmatch/dispatcher
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy Admin Worker
+        run: npm run deploy -w @pawmatch/admin
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -50,13 +68,6 @@ jobs:
     strategy:
       matrix:
         pet-type: [dog, cat]
-        include:
-          - pet-type: dog
-            app-name: DogMatch
-            app-url: https://dogmatch.elchika.app
-          - pet-type: cat
-            app-name: CatMatch
-            app-url: https://catmatch.elchika.app
 
     steps:
       - name: Checkout code
@@ -76,27 +87,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-${{ matrix.pet-type }}-build
-          path: frontend/.next
+          path: frontend/dist
         continue-on-error: true
 
       - name: Build if artifacts not available
         env:
-          NEXT_PUBLIC_PET_TYPE: ${{ matrix.pet-type }}
-          NEXT_PUBLIC_API_URL: https://pawmatch-api.elchika.app
-          NEXT_PUBLIC_API_KEY: b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
-          NEXT_PUBLIC_USE_API: true
-          NEXT_PUBLIC_APP_NAME: ${{ matrix.app-name }}
-          NEXT_PUBLIC_APP_URL: ${{ matrix.app-url }}
-          NEXT_TELEMETRY_DISABLED: 1
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
-          if [ ! -d "frontend/.next" ]; then
+          if [ ! -d "frontend/dist" ]; then
             echo "Build artifacts not found, building frontend for ${{ matrix.pet-type }}..."
-            npm run build -w @pawmatch/frontend
+            npm run build:${{ matrix.pet-type }}:ci -w @pawmatch/frontend
           fi
 
       - name: Deploy to Cloudflare Pages
-        run: npm run deploy:${{ matrix.pet-type }}
+        run: npm run deploy:${{ matrix.pet-type }} -w @pawmatch/frontend
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
