@@ -7,7 +7,7 @@ interface FieldConfig {
 }
 
 interface TableData {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface TableDetailProps {
@@ -23,7 +23,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentEditId, setCurrentEditId] = useState<string | null>(null)
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   // APIリクエスト共通処理
@@ -45,7 +45,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
     }
 
     const response = await fetch(url, mergedOptions)
-    const responseData = await response.json() as any
+    const responseData = await response.json() as { error?: string; data?: unknown }
 
     if (!response.ok) {
       throw new Error(responseData.error || 'リクエストエラー')
@@ -59,7 +59,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
     setLoading(true)
     setError(null)
     try {
-      const result = await apiRequest(`/api/records/${tableName}`) as any
+      const result = await apiRequest(`/api/records/${tableName}`) as { data: { records: TableData[] } }
       setData(result.data.records || [])
     } catch (err) {
       setError('データの取得に失敗しました')
@@ -72,7 +72,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
   // スキーマ取得
   const fetchSchema = useCallback(async () => {
     try {
-      const result = await apiRequest(`/api/records/${tableName}/schema`) as any
+      const result = await apiRequest(`/api/records/${tableName}/schema`) as { data: { fields: Record<string, FieldConfig> } }
       setFieldRequirements(result.data.fields || {})
     } catch (err) {
       console.error('スキーマ取得エラー:', err)

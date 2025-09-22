@@ -4,9 +4,9 @@ import { renderToString } from 'react-dom/server'
 /**
  * ReactコンポーネントをHTMLにレンダリング
  */
-export function renderReactComponent(
-  Component: React.FC<any>,
-  props: any,
+export function renderReactComponent<T extends Record<string, unknown>>(
+  Component: React.FC<T>,
+  props: T,
   title: string = 'PawMatch Admin'
 ): string {
   const componentHTML = renderToString(<Component {...props} />)

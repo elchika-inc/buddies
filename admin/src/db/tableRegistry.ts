@@ -1,56 +1,47 @@
 import { z } from 'zod'
-import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 import { pets, apiKeys } from './schema/tables'
 import { petSchema, apiKeySchema } from './schema/validation'
 
 /**
- * テーブル設定の型定義
+ * シンプルなテーブル設定
  */
-export interface TableConfig<T extends SQLiteTable = SQLiteTable> {
-  table: T
-  schema: z.ZodSchema
-  idColumn: keyof T
-  displayName: string
-}
-
-/**
- * テーブルレジストリ
- * 全てのテーブル設定を一元管理
- */
-export const TABLE_REGISTRY = {
+export const TABLES = {
   pets: {
     table: pets,
     schema: petSchema,
-    idColumn: 'id' as keyof typeof pets,
-    displayName: 'ペット'
+    displayName: 'ペット',
   },
   api_keys: {
     table: apiKeys,
     schema: apiKeySchema,
-    idColumn: 'id' as keyof typeof apiKeys,
-    displayName: 'APIキー'
+    displayName: 'APIキー',
   }
 } as const
 
-export type TableName = keyof typeof TABLE_REGISTRY
+export type TableName = keyof typeof TABLES
 
 /**
- * テーブル設定を取得する型安全な関数
+ * テーブル設定を取得（シンプル版）
  */
-export function getTableConfig(tableName: string): TableConfig<any> | null {
-  if (tableName in TABLE_REGISTRY) {
-    return TABLE_REGISTRY[tableName as TableName] as TableConfig<any>
+export function getTable(tableName: string) {
+  if (tableName in TABLES) {
+    return TABLES[tableName as TableName]
   }
   return null
 }
 
 /**
- * IDカラムを型安全に取得する関数
+ * テーブル名からスキーマを取得
  */
-export function getIdColumn(tableName: string) {
-  const config = getTableConfig(tableName)
-  if (!config) return null
+export function getTableSchema(tableName: string): z.ZodSchema | null {
+  const config = getTable(tableName)
+  return config ? config.schema : null
+}
 
-  // テーブルのIDカラムを返す
-  return (config.table as any)[config.idColumn]
+/**
+ * テーブル表示名を取得
+ */
+export function getTableDisplayName(tableName: string): string {
+  const config = getTable(tableName)
+  return config ? config.displayName : tableName
 }

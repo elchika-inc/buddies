@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, count } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Env } from '../types/env'
-import { getTableConfig, getIdColumn } from '../db/tableRegistry'
+import { getTable, getTableSchema } from '../db/tableRegistry'
 import { getFieldRequirements } from '../db/schema/validation'
 
 export const recordsRoute = new Hono<{ Bindings: Env }>()

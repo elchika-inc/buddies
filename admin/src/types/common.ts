@@ -7,7 +7,8 @@ export type { ApiKey, ApiKeyType, Permission } from '@pawmatch/shared/types'
 
 export interface SuccessResponse {
   success: true
-  [key: string]: any
+  data?: unknown
+  message?: string
 }
 
 // JSON型定義
@@ -22,5 +23,6 @@ export interface ErrorResponse {
   error: string
   details?: string
   documentation_url?: string
-  [key: string]: any
+  code?: string
+  timestamp?: string
 }

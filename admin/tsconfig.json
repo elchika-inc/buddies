@@ -2,9 +2,8 @@
   "extends": "../tsconfig.workers.json",
   "compilerOptions": {
     "types": ["@cloudflare/workers-types"],
-    "jsx": "react",
-    "jsxFactory": "React.createElement",
-    "jsxFragmentFactory": "React.Fragment",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "lib": ["ESNext", "WebWorker", "DOM"],
     "paths": {
       "@/*": ["./src/*"],

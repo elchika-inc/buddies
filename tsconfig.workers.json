@@ -5,7 +5,6 @@
     "lib": ["ES2021", "WebWorker"],
     "types": ["@cloudflare/workers-types"],
     "moduleResolution": "node",
-    "noEmit": true,
-    "exactOptionalPropertyTypes": false
+    "noEmit": true
   }
 }

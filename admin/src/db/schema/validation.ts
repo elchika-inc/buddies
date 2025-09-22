@@ -71,12 +71,12 @@ export const apiKeySchema = z.object({
 })
 
 // フィールドごとの必須・オプション情報を取得する関数
-export function getFieldRequirements(schema: z.ZodSchema<any>) {
-  const shape = (schema as any)._def.shape()
+export function getFieldRequirements(schema: z.ZodSchema<unknown>) {
+  const shape = (schema as z.ZodObject<z.ZodRawShape>)._def.shape()
   const requirements: Record<string, { required: boolean; label: string }> = {}
 
   for (const [key, value] of Object.entries(shape)) {
-    const zodType = value as z.ZodType<any>
+    const zodType = value as z.ZodType<unknown>
     const isOptional = zodType.isOptional()
 
     // フィールド名を日本語ラベルに変換

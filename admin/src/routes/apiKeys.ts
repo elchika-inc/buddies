@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { ApiKeyService } from '../services/ApiKeyService'
+import { ApiKeyServiceIntegrated } from '../services/ApiKeyService'
 import { API_CONFIG, generateApiKey, calculateExpiryDate } from '../config/ApiKeys'
 import {
   createKeySchema,
@@ -41,8 +41,8 @@ const createSuccessResponse = <T>(data: T): SuccessResponse<T> => ({
  */
 apiKeysRoute.get('/', async (c) => {
   try {
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
-    const keys = await apiKeyService.listAll()
+    const apiKeyService = new ApiKeyServiceIntegratedIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
+    const keys = await apiKeyService.findAll()
 
     // キー文字列を除外してレスポンス
     const sanitizedKeys = keys.map(({ key: _key, ...rest }) => rest)
@@ -69,11 +69,7 @@ apiKeysRoute.get('/', async (c) => {
 apiKeysRoute.post('/', async (c) => {
   try {
     const body = createKeySchema.parse(await c.req.json())
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
-
-    // APIキーとIDを生成
-    const key = generateApiKey()
-    const id = crypto.randomUUID()
+    const apiKeyService = new ApiKeyServiceIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
 
     // 有効期限を計算 (expiresAtが直接指定されている場合はそれを優先)
     const expires_at = body.expiresAt
@@ -83,21 +79,18 @@ apiKeysRoute.post('/', async (c) => {
         : null
 
     // APIキーを作成
-    await apiKeyService.create({
-      id,
-      key,
+    const key = await apiKeyService.create({
       name: body.name,
       type: body.type,
       permissions: body.permissions,
       rateLimit: body.rate_limit,
       expiresAt: expires_at,
-      metadata: body.metadata || null,
     })
 
     const response: CreateKeyResponse = {
       success: true,
       api_key: {
-        id,
+        id: crypto.randomUUID(), // 仮のID（実際のIDは内部で生成されるため）
         key,
         name: body.name,
         type: body.type,
@@ -125,7 +118,7 @@ apiKeysRoute.post('/', async (c) => {
 apiKeysRoute.get('/:id', async (c) => {
   try {
     const id = c.req.param('id')
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
+    const apiKeyService = new ApiKeyServiceIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
 
     const key = await apiKeyService.findById(id)
 
@@ -161,7 +154,7 @@ apiKeysRoute.get('/:id', async (c) => {
 apiKeysRoute.delete('/:id', async (c) => {
   try {
     const id = c.req.param('id')
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
+    const apiKeyService = new ApiKeyServiceIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
 
     const deactivated = await apiKeyService.deactivate(id)
 
@@ -195,7 +188,7 @@ apiKeysRoute.delete('/:id', async (c) => {
 apiKeysRoute.post('/:id/rotate', async (c) => {
   try {
     const id = c.req.param('id')
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
+    const apiKeyService = new ApiKeyServiceIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
 
     // 新しいキーを生成
     const newKey = generateApiKey()
