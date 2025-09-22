@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { FrontendPet, isDog, isCat } from '@/types/pet'
-import { useState, useEffect } from 'react'
 // import { getPetType } from '@/config/petConfig'
 
 interface PetDetailModalProps {
@@ -10,19 +9,8 @@ interface PetDetailModalProps {
 }
 
 export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
-  const [supportsWebP, setSupportsWebP] = useState(false)
-
-  // WebPサポートをチェック
-  useEffect(() => {
-    const checkWebPSupport = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 1
-      canvas.height = 1
-      const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
-      setSupportsWebP(result)
-    }
-    checkWebPSupport()
-  }, [])
+  // モダンブラウザはほぼすべてWebP対応なので、デフォルトでtrueに設定
+  const supportsWebP = true
 
   if (!isOpen) return null
 

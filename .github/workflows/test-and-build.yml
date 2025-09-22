@@ -18,6 +18,11 @@ jobs:
           clean: true
           fetch-depth: 0
 
+      - name: Clean working directory
+        run: |
+          git clean -fdx
+          git reset --hard HEAD
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,6 +48,11 @@ jobs:
           clean: true
           fetch-depth: 0
 
+      - name: Clean working directory
+        run: |
+          git clean -fdx
+          git reset --hard HEAD
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -67,6 +77,11 @@ jobs:
         with:
           clean: true
           fetch-depth: 0
+
+      - name: Clean working directory
+        run: |
+          git clean -fdx
+          git reset --hard HEAD
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -99,6 +114,11 @@ jobs:
           clean: true
           fetch-depth: 0
 
+      - name: Clean working directory
+        run: |
+          git clean -fdx
+          git reset --hard HEAD
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -111,10 +131,12 @@ jobs:
         run: npm ci
 
       - name: Clean workspace before build
-        if: matrix.workspace == 'frontend'
         run: |
           rm -rf frontend/.next frontend/out frontend/node_modules/.cache
           rm -rf node_modules/.cache
+          rm -rf */dist */build */.next
+          find . -name "*.tsbuildinfo" -delete
+          find . -name ".swc" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Build ${{ matrix.workspace }}
         env:
@@ -122,6 +144,8 @@ jobs:
           NEXT_PUBLIC_PAWMATCH_API_KEY: b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
           NEXT_TELEMETRY_DISABLED: 1
           CI: true
+          NEXT_NO_CACHE: true
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           npm run build -w @pawmatch/${{ matrix.workspace }}
         continue-on-error: ${{ matrix.workspace != 'frontend' }} # frontendのみ必須
