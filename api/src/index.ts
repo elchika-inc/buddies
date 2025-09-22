@@ -151,7 +151,9 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
 
-  // Cron trigger handler
+  // Cron trigger handler (無効化 - 手動実行のみ)
+  // scheduled関数は定義しておくが、wrangler.tomlでCronトリガーが無効化されているため実行されない
+  /*
   async scheduled(_controller: any, env: Env, _ctx: any): Promise<void> {
     console.warn('API Cron triggered at', new Date().toISOString())
 
@@ -176,4 +178,5 @@ export default {
       console.error('Error triggering crawler from cron:', error)
     }
   },
+  */
 }
