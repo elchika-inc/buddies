@@ -22,8 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -49,8 +47,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -76,8 +72,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -109,8 +103,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -121,12 +113,15 @@ jobs:
       - name: Clean workspace before build
         if: matrix.workspace == 'frontend'
         run: |
-          rm -rf frontend/.next frontend/out
+          rm -rf frontend/.next frontend/out frontend/node_modules/.cache
+          rm -rf node_modules/.cache
 
       - name: Build ${{ matrix.workspace }}
         env:
           NEXT_PUBLIC_PAWMATCH_API_URL: https://pawmatch-api.elchika.app
           NEXT_PUBLIC_PAWMATCH_API_KEY: b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
+          NEXT_TELEMETRY_DISABLED: 1
+          CI: true
         run: |
           npm run build -w @pawmatch/${{ matrix.workspace }}
         continue-on-error: ${{ matrix.workspace != 'frontend' }} # frontendのみ必須
