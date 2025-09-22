@@ -1,11 +1,11 @@
 name: Weekly Fix Image-DB Sync
 
 on:
-  schedule:
-    # 毎週日曜日 午前2時 (JST) = 土曜日 17:00 UTC
-    - cron: '0 17 * * 6'
-  
-  # 手動実行も可能
+  # schedule:
+  #   # 毎週日曜日 午前2時 (JST) = 土曜日 17:00 UTC
+  #   - cron: '0 17 * * 6'
+
+  # 手動実行のみ
   workflow_dispatch:
     inputs:
       dry_run:
@@ -35,16 +35,16 @@ jobs:
   fix-image-db-sync:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -54,12 +54,12 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      
+
       - name: Install dependencies
         run: |
           npm install
           npm install @aws-sdk/client-s3
-      
+
       - name: Fix Image-DB Sync
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -75,7 +75,7 @@ jobs:
           echo "Limit: ${{ github.event.inputs.limit || '500' }}"
           echo "Pet Type: ${{ github.event.inputs.pet_type || 'all' }}"
           echo "========================"
-          
+
           # オプションを構築
           OPTIONS=""
           if [ "${{ github.event.inputs.dry_run || 'true' }}" = "true" ]; then
@@ -83,10 +83,10 @@ jobs:
           fi
           OPTIONS="$OPTIONS --limit=${{ github.event.inputs.limit || '500' }}"
           OPTIONS="$OPTIONS --type=${{ github.event.inputs.pet_type || 'all' }}"
-          
+
           # スクリプト実行
           node scripts/patch/fix-image-db-sync.js $OPTIONS
-      
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
@@ -96,7 +96,7 @@ jobs:
             scripts/sync-report-*.json
             scripts/patch/sync-report-*.json
           retention-days: 30
-      
+
       - name: Summary
         if: always()
         run: |
@@ -107,7 +107,7 @@ jobs:
           echo "- **Limit**: ${{ github.event.inputs.limit || '500' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Pet Type**: ${{ github.event.inputs.pet_type || 'all' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          
+
           # レポートファイルが存在する場合、サマリーを表示
           if ls scripts/patch/sync-report-*.json 1> /dev/null 2>&1; then
             echo "" >> $GITHUB_STEP_SUMMARY
