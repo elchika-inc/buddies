@@ -37,7 +37,7 @@ jobs:
       - name: Build all workspaces
         env:
           NEXT_PUBLIC_PAWMATCH_API_URL: https://pawmatch-api.elchika.app
-          NEXT_PUBLIC_PAWMATCH_API_KEY: ${{ secrets.PAWMATCH_API_KEY || 'b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb' }}
+          NEXT_PUBLIC_PAWMATCH_API_KEY: b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
           NEXT_TELEMETRY_DISABLED: 1
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
