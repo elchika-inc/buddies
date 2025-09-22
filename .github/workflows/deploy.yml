@@ -1,21 +1,15 @@
 name: Deploy to Cloudflare
 
 on:
-  workflow_run:
-    workflows: ['Test and Build']
-    types:
-      - completed
+  workflow_dispatch:
+  push:
     branches:
       - main
 
 jobs:
   deploy:
-    # Test and Buildワークフローが成功した場合のみ実行
-    # pushイベントまたはPRマージ（push）の場合のみデプロイ
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,23 +17,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Apply database migrations
-        run: |
-          cd api
-          npx wrangler d1 migrations apply pawmatch-db --remote || echo "Migrations may have already been applied"
+      - name: Run tests and build
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEXT_PUBLIC_PAWMATCH_API_URL: https://pawmatch-api.elchika.app
+          NEXT_PUBLIC_PAWMATCH_API_KEY: ${{ secrets.PAWMATCH_API_KEY || 'b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb' }}
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          npm run lint
+          npm run type-check
+          npm run build
 
-      - name: Create Cloudflare Queues
+      - name: Setup Cloudflare resources
         run: |
           cd api
-          npx wrangler queues create pawmatch-crawler-queue || echo "Queue may already exist"
+          npx wrangler d1 migrations apply pawmatch-db --remote || true
+          npx wrangler queues create pawmatch-crawler-queue || true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
