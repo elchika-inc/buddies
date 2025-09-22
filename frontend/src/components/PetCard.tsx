@@ -27,17 +27,23 @@ export function PetCard({ pet, onTap, priority = false, preload = false }: PetCa
   /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
   /** WebP対応チェック */
-  const [supportsWebP, setSupportsWebP] = useState(false)
+  const [supportsWebP, setSupportsWebP] = useState(true) // デフォルトはtrueにして、古いブラウザのみfalseに
 
   // WebPサポートをチェック
   useEffect(() => {
-    // SSR環境ではdocumentが存在しないためチェック
-    if (typeof document !== 'undefined') {
-      const canvas = document.createElement('canvas')
-      canvas.width = 1
-      canvas.height = 1
-      const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
-      setSupportsWebP(result)
+    // クライアントサイドでのみ実行
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = 1
+        canvas.height = 1
+        const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
+        setSupportsWebP(result)
+      } catch (e) {
+        // エラーが発生した場合はWebP非対応とする
+        console.warn('WebP support check failed:', e)
+        setSupportsWebP(false)
+      }
     }
   }, [])
 
