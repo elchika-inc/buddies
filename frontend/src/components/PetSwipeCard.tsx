@@ -193,7 +193,6 @@ export function PetSwipeCard({
         pet={pet}
         onTap={onTap}
         priority={cardIndex === 0} // 最初のカードは優先読み込み
-        preload={cardIndex > 0 && cardIndex <= 3} // 次の3枚をプリロード
       />
 
       {showIndicator && (

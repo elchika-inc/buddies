@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { FrontendPet } from '@/types/pet'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { getPetType } from '@/config/petConfig'
 
 /**
@@ -13,39 +13,19 @@ type PetCardProps = {
   onTap?: (() => void) | undefined
   /** 優先的に読み込むかどうか */
   priority?: boolean
-  /** プリロード対象かどうか */
-  preload?: boolean
 }
 
 /**
  * ペット情報を表示するカードコンポーネント
  * Tinder風のUIでペット情報を魅力的に表示
  */
-export function PetCard({ pet, onTap, priority = false, preload = false }: PetCardProps) {
+export function PetCard({ pet, onTap, priority = false }: PetCardProps) {
   /** 画像読み込みエラー状態を管理 */
   const [imageError, setImageError] = useState(false)
   /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
-  /** WebP対応チェック */
-  const [supportsWebP, setSupportsWebP] = useState(true) // デフォルトはtrueにして、古いブラウザのみfalseに
-
-  // WebPサポートをチェック
-  useEffect(() => {
-    // クライアントサイドでのみ実行
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = 1
-        canvas.height = 1
-        const result = canvas.toDataURL('image/webp').indexOf('image/webp') === 5
-        setSupportsWebP(result)
-      } catch (e) {
-        // エラーが発生した場合はWebP非対応とする
-        console.warn('WebP support check failed:', e)
-        setSupportsWebP(false)
-      }
-    }
-  }, [])
+  /** WebP対応チェック - モダンブラウザはほぼ全てWebP対応なのでtrueをデフォルトに */
+  const supportsWebP = true
 
   // フォールバック画像URL（ペットタイプ別）
   const fallbackImage =
@@ -83,24 +63,7 @@ export function PetCard({ pet, onTap, priority = false, preload = false }: PetCa
     }
   }
 
-  // プリロード処理
-  useEffect(() => {
-    if (preload && imageUrl && typeof window !== 'undefined') {
-      const link = document.createElement('link')
-      link.rel = 'prefetch'
-      link.href = imageUrl
-      link.as = 'image'
-      document.head.appendChild(link)
-
-      return () => {
-        if (document.head.contains(link)) {
-          document.head.removeChild(link)
-        }
-      }
-    }
-    // cleanupが不要な場合は何も返さない
-    return undefined
-  }, [preload, imageUrl])
+  // プリロード処理は削除（Next.js Imageコンポーネントが自動的に処理）
 
   return (
     <div
