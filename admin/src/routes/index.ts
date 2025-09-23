@@ -33,7 +33,15 @@ export function registerRoutes(app: Hono<{ Bindings: Env }>): void {
   app.route('/api/records', recordsRoute)
   app.route('/api/keys', apiKeysRoute)
 
-  // UI ルート（セッション認証）
-  app.use('/', sessionAuth)
+  // UI ルート（セッション認証 - ただし/loginと/authは除外）
+  app.use('*', async (c, next) => {
+    const path = c.req.path
+    // /login, /auth/*, /healthは認証不要
+    if (path === '/login' || path.startsWith('/auth/') || path === '/health') {
+      return next()
+    }
+    // それ以外はセッション認証が必要
+    return sessionAuth(c, next)
+  })
   app.route('/', uiRoute)
 }
