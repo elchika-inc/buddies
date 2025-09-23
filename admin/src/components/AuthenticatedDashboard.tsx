@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useApiRequest } from '../hooks/useApiRequest'
 import { useErrorHandler } from '../hooks/useErrorHandler'
 import { useToast } from '../hooks/useToast'
 
@@ -10,9 +9,9 @@ interface TableInfo {
 }
 
 /**
- * 管理ダッシュボード
+ * 認証済み管理ダッシュボード
  */
-export const Dashboard: React.FC = () => {
+export const AuthenticatedDashboard: React.FC = () => {
   const [tables, setTables] = useState<TableInfo[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -69,17 +68,13 @@ export const Dashboard: React.FC = () => {
    * テーブル詳細へ移動
    */
   const navigateToTable = useCallback((tableName: string) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = `/table/${tableName}`
-    }
+    window.location.href = `/table/${tableName}`
   }, [])
 
   // 初回データロード
   useEffect(() => {
     fetchTables()
   }, [fetchTables])
-
-  // セッション認証されていればダッシュボードが表示される
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-6">
