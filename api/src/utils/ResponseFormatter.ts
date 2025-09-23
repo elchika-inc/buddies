@@ -103,7 +103,7 @@ export function errorResponse(
     error: {
       message,
       code: code || 'UNKNOWN_ERROR',
-      details: details || undefined,
+      details: details !== undefined ? details : undefined,
     },
     timestamp: new Date().toISOString(),
   }

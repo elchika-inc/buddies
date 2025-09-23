@@ -72,7 +72,7 @@ export class ImageUploadService {
         httpMetadata: {
           contentType: UPLOAD_CONFIG.CONTENT_TYPES.JPEG,
         },
-        customMetadata: this.buildCustomMetadata(petId, petType, { batchId }),
+        customMetadata: this.buildCustomMetadata(petId, petType, { batchId: batchId || undefined }),
       })
 
       return Result.ok({
@@ -101,7 +101,7 @@ export class ImageUploadService {
         httpMetadata: {
           contentType: UPLOAD_CONFIG.CONTENT_TYPES.WEBP,
         },
-        customMetadata: this.buildCustomMetadata(petId, petType, { batchId }),
+        customMetadata: this.buildCustomMetadata(petId, petType, { batchId: batchId || undefined }),
       })
 
       return Result.ok({

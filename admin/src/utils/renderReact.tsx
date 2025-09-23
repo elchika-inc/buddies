@@ -25,7 +25,7 @@ export function renderReactComponent<T extends Record<string, unknown>>(
   <div id="root">${componentHTML}</div>
   <script>
     // Hydrate React component on client side
-    const tableName = '${props.tableName || ''}';
+    const tableName = '${props['tableName'] || ''}';
     const adminSecret = localStorage.getItem('adminSecret') || '';
 
     if (!adminSecret && window.location.pathname !== '/') {

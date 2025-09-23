@@ -58,7 +58,7 @@ export class DispatchController {
       const result = await this.dispatchService.relayToQueue(
         validationResult.data.pets || [],
         validationResult.data.source || 'api',
-        validationResult.data.config
+        validationResult.data.config || undefined
       )
 
       if (!result.success) {
@@ -88,7 +88,7 @@ export class DispatchController {
       const result = await this.dispatchService.relayToQueue(
         validationResult.data.pets || [],
         validationResult.data.source || 'cron',
-        validationResult.data.config
+        validationResult.data.config || undefined
       )
 
       if (!result.success) {
@@ -118,7 +118,7 @@ export class DispatchController {
       const result = await this.crawlerService.triggerCrawler(
         validationResult.data.type,
         validationResult.data.limit,
-        validationResult.data.config // configのみ渡す（sourceはconfigに含まれる）
+        validationResult.data.config || undefined // configのみ渡す（sourceはconfigに含まれる）
       )
 
       if (!result.success) {
@@ -146,7 +146,12 @@ export class DispatchController {
       }
 
       const result = await this.conversionService.dispatchConversion(
-        validationResult.data.pets,
+        validationResult.data.pets as Array<{
+          id: string
+          type?: 'dog' | 'cat'
+          screenshotKey?: string
+          hasJpeg?: number
+        }>,
         validationResult.data.limit || validationResult.data.config?.limits?.DEFAULT_CONVERSION
       )
 

@@ -3,19 +3,19 @@ import { drizzle } from 'drizzle-orm/d1'
 import { eq, count } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Env } from '../types/env'
-import { getTable, getTableSchema } from '../db/tableRegistry'
+import { getTable } from '../db/tableRegistry'
 import { getFieldRequirements } from '../db/schema/validation'
 
 export const recordsRoute = new Hono<{ Bindings: Env }>()
 
 // テーブル設定の取得ヘルパー
 function getTableAndSchema(tableName: string) {
-  const config = getTableConfig(tableName)
+  const config = getTable(tableName)
   if (!config) return null
   return {
     table: config.table,
     schema: config.schema,
-    idColumn: getIdColumn(tableName)
+    idColumn: 'id' // デフォルトでidを使用
   }
 }
 
@@ -23,7 +23,7 @@ function getTableAndSchema(tableName: string) {
 recordsRoute.get('/:tableName/schema', async (c) => {
   try {
     const { tableName } = c.req.param()
-    const config = getTableConfig(tableName)
+    const config = getTable(tableName)
 
     if (!config) {
       return c.json({
@@ -127,7 +127,7 @@ recordsRoute.get('/:tableName/:id', async (c) => {
       }, 500)
     }
 
-    const [record] = await db.select().from(table).where(eq(idColumn, id))
+    const [record] = await db.select().from(table).where(eq((table as any).id, id))
 
     if (!record) {
       return c.json({
@@ -242,7 +242,7 @@ recordsRoute.put('/:tableName/:id', async (c) => {
 
     const updateResult = await db.update(table)
       .set(body)
-      .where(eq(idColumn, id))
+      .where(eq((table as any).id, id))
       .returning()
 
     const [result] = Array.isArray(updateResult) ? updateResult : [updateResult]
@@ -284,7 +284,7 @@ recordsRoute.delete('/:tableName/:id', async (c) => {
       }, 500)
     }
 
-    await db.delete(table).where(eq(idColumn, id))
+    await db.delete(table).where(eq((table as any).id, id))
 
     return c.json({
       success: true,

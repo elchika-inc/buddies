@@ -301,7 +301,7 @@ export class ApiKeyServiceIntegrated {
       active: 0,
       inactive: 0,
       expired: 0,
-      byType: { public: 0, internal: 0, admin: 0 },
+      byType: { public: 0, internal: 0, admin: 0, service: 0 },
       recentlyCreated: 0,
       expiringThisMonth: 0
     }

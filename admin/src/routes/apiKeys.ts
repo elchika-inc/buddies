@@ -22,7 +22,7 @@ const createErrorResponse = (
 ): ErrorResponse => ({
   success: false,
   error,
-  details,
+  details: details || undefined,
   documentation_url: API_CONFIG.DOCUMENTATION_URL,
   ...extra,
 })
@@ -41,11 +41,11 @@ const createSuccessResponse = <T>(data: T): SuccessResponse<T> => ({
  */
 apiKeysRoute.get('/', async (c) => {
   try {
-    const apiKeyService = new ApiKeyServiceIntegratedIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
+    const apiKeyService = new ApiKeyServiceIntegrated(c.env.DB, c.env.API_KEYS_CACHE as KVNamespace)
     const keys = await apiKeyService.findAll()
 
     // キー文字列を除外してレスポンス
-    const sanitizedKeys = keys.map(({ key: _key, ...rest }) => rest)
+    const sanitizedKeys = keys.map(({ key: _key, ...rest }: any) => rest)
 
     const response = createSuccessResponse({
       keys: sanitizedKeys,
@@ -84,7 +84,7 @@ apiKeysRoute.post('/', async (c) => {
       type: body.type,
       permissions: body.permissions,
       rateLimit: body.rate_limit,
-      expiresAt: expires_at,
+      expiresAt: expires_at || undefined,
     })
 
     const response: CreateKeyResponse = {
@@ -194,7 +194,7 @@ apiKeysRoute.post('/:id/rotate', async (c) => {
     const newKey = generateApiKey()
 
     // キーをローテーション
-    const rotated = await apiKeyService.rotate(id, newKey)
+    const rotated = await apiKeyService.rotate(id)
 
     if (!rotated) {
       const response = createErrorResponse(

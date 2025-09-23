@@ -38,7 +38,7 @@ export class SyncService {
     const jobId = `sync_${Date.now()}`
     const job: SyncJob = {
       id: jobId,
-      petType,
+      petType: petType || undefined,
       status: 'running',
       progress: 0,
       total: 0,
@@ -206,7 +206,7 @@ export class SyncService {
 
     return {
       totalSynced: stats?.synced || 0,
-      lastSyncTime: stats?.lastSync,
+      lastSyncTime: stats?.lastSync || undefined,
       pendingSync: stats?.pending || 0,
     }
   }

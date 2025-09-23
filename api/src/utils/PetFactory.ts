@@ -154,5 +154,5 @@ export function createDefaultPet(overrides?: Partial<Pet>): Pet {
     type: 'dog',
     name: 'デフォルト名',
     ...overrides,
-  })
+  } as Partial<DBPetRecord>)
 }

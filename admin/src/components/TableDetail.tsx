@@ -94,7 +94,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
   // モーダルを開く
   const openModal = (record?: TableData) => {
     if (record) {
-      setCurrentEditId(record['id'])
+      setCurrentEditId(record['id'] as string)
       setFormData(record)
     } else {
       setCurrentEditId(null)
@@ -225,7 +225,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredData.map((row) => (
-                  <tr key={row['id']} className="hover:bg-gray-50">
+                  <tr key={row['id'] as string} className="hover:bg-gray-50">
                     {Object.entries(row).map(([key, value]) => (
                       <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {typeof value === 'object' ? JSON.stringify(value) : String(value)}
@@ -239,7 +239,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
                         編集
                       </button>
                       <button
-                        onClick={() => handleDelete(row['id'])}
+                        onClick={() => handleDelete(row['id'] as string)}
                         className="text-red-600 hover:text-red-900"
                       >
                         削除
@@ -273,7 +273,7 @@ export const TableDetail: React.FC<TableDetailProps> = ({ tableName, adminSecret
                         </label>
                         <input
                           type="text"
-                          value={formData[key] || ''}
+                          value={(formData[key] || '') as string}
                           onChange={(e) => setFormData({ ...formData, [key]: e.currentTarget.value })}
                           required={config.required}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

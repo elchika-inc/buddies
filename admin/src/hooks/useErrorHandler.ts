@@ -17,7 +17,7 @@ export function useErrorHandler() {
     const adminError: AdminError = {
       type,
       message: error instanceof Error ? error.message : '不明なエラーが発生しました',
-      details: error instanceof Error ? error.stack : String(error),
+      details: error instanceof Error ? error.stack || undefined : String(error),
       timestamp: new Date()
     }
 

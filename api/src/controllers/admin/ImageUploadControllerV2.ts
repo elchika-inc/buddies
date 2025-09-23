@@ -75,8 +75,8 @@ export class ImageUploadControllerV2 {
         request.petType,
         request.imageData,
         {
-          captureMethod: request.captureMethod,
-          sourceUrl: request.sourceUrl,
+          captureMethod: request.captureMethod || undefined,
+          sourceUrl: request.sourceUrl || undefined,
         }
       )
 
@@ -230,7 +230,7 @@ export class ImageUploadControllerV2 {
           if (pet.screenshot) {
             uploadPromises.push(
               this.uploadService.uploadScreenshot(pet.petId, pet.petType, pet.screenshot.data, {
-                captureMethod: pet.screenshot.captureMethod,
+                captureMethod: pet.screenshot.captureMethod || undefined,
                 batchId: request.batchId,
               })
             )

@@ -96,7 +96,7 @@ export class CrawlerService {
           success: true,
           message: `Crawler triggered for ${type} with ${messages.length} message(s)`,
           type,
-          limit,
+          limit: limit || undefined,
           batchId,
           crawledCount: messages.length,
         }

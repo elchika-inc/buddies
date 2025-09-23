@@ -50,8 +50,8 @@ export class UnifiedImageService {
       petId,
       hasJpeg: !!jpegInfo,
       hasWebp: !!webpInfo,
-      jpegUrl: jpegInfo ? `/api/images/${petId}.jpg` : undefined,
-      webpUrl: webpInfo ? `/api/images/${petId}.webp` : undefined,
+      jpegUrl: jpegInfo ? `/api/images/${petId}.jpg` : (undefined as string | undefined),
+      webpUrl: webpInfo ? `/api/images/${petId}.webp` : (undefined as string | undefined),
       lastChecked: new Date().toISOString(),
     }
   }

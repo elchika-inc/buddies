@@ -50,7 +50,7 @@ app.post('/screenshot', async (c: Context<{ Bindings: Env }>) => {
         .map((r) => ({
           id: r.pet_id,
           type: r.pet_type,
-          screenshotKey: r.screenshotKey,
+          screenshotKey: r.screenshotKey || undefined,
         }))
     } else if ('pets' in body) {
       // 手動実行

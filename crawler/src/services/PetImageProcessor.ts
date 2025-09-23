@@ -181,7 +181,7 @@ export class PetImageProcessor {
 
       const imageBuffer = await sourceObject.arrayBuffer()
       await this.r2Bucket.put(targetKey, imageBuffer, {
-        httpMetadata: sourceObject.httpMetadata,
+        httpMetadata: sourceObject.httpMetadata || undefined,
         customMetadata: {
           ...sourceObject.customMetadata,
           petId: targetPetId,

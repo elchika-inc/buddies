@@ -88,7 +88,7 @@ export abstract class ServiceClient {
   protected async post<T>(path: string, body?: unknown): Promise<Result<T, Error>> {
     return this.request<T>(path, {
       method: 'POST',
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : null,
     })
   }
 
@@ -98,7 +98,7 @@ export abstract class ServiceClient {
   protected async put<T>(path: string, body?: unknown): Promise<Result<T, Error>> {
     return this.request<T>(path, {
       method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body) : null,
     })
   }
 

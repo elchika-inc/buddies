@@ -76,13 +76,13 @@ export function transformPetRecord(dbRecord: unknown, apiBaseUrl?: string): ApiP
   pet.careRequirements = parseJsonArraySafely(pet.careRequirements, [])
 
   // boolean型の安全な変換（DB: 0/1 → API: boolean）
-  pet.spayedNeutered = toBoolean(pet.spayedNeutered)
-  pet.goodWithKids = toBoolean(pet.goodWithKids)
-  pet.goodWithDogs = toBoolean(pet.goodWithDogs)
-  pet.goodWithCats = toBoolean(pet.goodWithCats)
-  pet.isFivFelvTested = toBoolean(pet.isFivFelvTested)
-  pet.needsYard = toBoolean(pet.needsYard)
-  pet.apartmentFriendly = toBoolean(pet.apartmentFriendly)
+  pet.spayedNeutered = toBoolean(pet.spayedNeutered) ?? false
+  pet.goodWithKids = toBoolean(pet.goodWithKids) ?? false
+  pet.goodWithDogs = toBoolean(pet.goodWithDogs) ?? false
+  pet.goodWithCats = toBoolean(pet.goodWithCats) ?? false
+  pet.isFivFelvTested = toBoolean(pet.isFivFelvTested) ?? false
+  pet.needsYard = toBoolean(pet.needsYard) ?? false
+  pet.apartmentFriendly = toBoolean(pet.apartmentFriendly) ?? false
   pet.hasJpeg = toBoolean(pet.hasJpeg) ?? false
   pet.hasWebp = toBoolean(pet.hasWebp) ?? false
 
@@ -92,8 +92,8 @@ export function transformPetRecord(dbRecord: unknown, apiBaseUrl?: string): ApiP
     const urlBuilder = new UrlBuilder(apiBaseUrl)
     pet.imageUrl = urlBuilder.imageUrl(pet.type, pet.id, 'jpg')
   } else {
-    // R2に画像がない場合は、フロントエンドでフォールバック画像を使用するためundefinedを返す
-    pet.imageUrl = undefined
+    // R2に画像がない場合は、フロントエンドでフォールバック画像を使用するためundefinedを設定
+    delete pet.imageUrl
   }
 
   // locationフィールドの設定

@@ -42,7 +42,7 @@ export class ImageProcessingService {
       format = 'png'
     }
 
-    return { size, format }
+    return { size, format: format || undefined }
   }
 
   /**
