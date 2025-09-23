@@ -23,7 +23,7 @@ export const Login: React.FC = () => {
         // ログイン成功 - セッションが設定されているのでリロード
         window.location.href = '/'
       } else {
-        const data = await response.json()
+        const data = await response.json() as { message?: string }
         setError(data.message || '認証に失敗しました')
       }
     } catch (err) {

@@ -31,7 +31,7 @@ export const AuthenticatedDashboard: React.FC = () => {
       if (!response.ok) {
         throw new Error('データの取得に失敗しました')
       }
-      const result = await response.json()
+      const result = await response.json() as { tables: TableInfo[] }
       setTables(result.tables || [])
     } catch (err) {
       handleError(err, 'api')

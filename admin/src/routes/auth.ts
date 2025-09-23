@@ -93,9 +93,9 @@ authRoute.get('/verify', async (c) => {
   }
 
   try {
-    const payload = await verify(token, getJWTSecret(c.env.ADMIN_SECRET))
+    const payload = await verify(token, getJWTSecret(c.env.ADMIN_SECRET)) as { authenticated?: boolean }
 
-    if (!payload.authenticated) {
+    if (!payload['authenticated']) {
       return c.json(
         {
           authenticated: false,
@@ -140,9 +140,9 @@ export async function sessionAuth(c: any, next: any) {
   }
 
   try {
-    const payload = await verify(token, getJWTSecret(c.env.ADMIN_SECRET))
+    const payload = await verify(token, getJWTSecret(c.env.ADMIN_SECRET)) as { authenticated?: boolean }
 
-    if (!payload.authenticated) {
+    if (!payload['authenticated']) {
       if (c.req.header('Accept')?.includes('text/html')) {
         return c.redirect('/login')
       }

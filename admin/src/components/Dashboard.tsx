@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useApiRequest } from '../hooks/useApiRequest'
 import { useErrorHandler } from '../hooks/useErrorHandler'
 import { useToast } from '../hooks/useToast'
 
@@ -32,7 +31,7 @@ export const Dashboard: React.FC = () => {
       if (!response.ok) {
         throw new Error('データの取得に失敗しました')
       }
-      const result = await response.json()
+      const result = await response.json() as { tables: TableInfo[] }
       setTables(result.tables || [])
     } catch (err) {
       handleError(err, 'api')
