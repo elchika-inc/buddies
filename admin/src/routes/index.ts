@@ -14,6 +14,11 @@ export function registerRoutes(app: Hono<{ Bindings: Env }>): void {
     return c.json({ status: 'ok', timestamp: new Date().toISOString() })
   })
 
+  // 古いログインURLからルートへリダイレクト
+  app.get('/login', (c) => {
+    return c.redirect('/')
+  })
+
   // API ルート（Basic認証で保護されている）
   app.route('/api/tables', tablesRoute)
   app.route('/api/records', recordsRoute)
