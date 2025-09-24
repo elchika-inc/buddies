@@ -1,7 +1,6 @@
 import type { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { ipRestriction } from '../ipRestriction'
-import { auth } from '../auth'
 import type { Env } from '../../types/env'
 
 /**
@@ -18,6 +17,6 @@ export function setupMiddleware(app: Hono<{ Bindings: Env }>): void {
   // IP制限ミドルウェア
   app.use('*', ipRestriction)
 
-  // 認証ミドルウェア (API routes only)
-  app.use('/api/*', auth)
+  // 注意: 認証ミドルウェアはroutes/index.tsで個別に設定されています
+  // セッション認証が/api/*に適用されます
 }
