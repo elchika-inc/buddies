@@ -92,6 +92,11 @@ PAWMATCH_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
 PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
 
 # Production Queue Configuration (Responsibility-based)
+# Crawler Queue (API -> Crawler)
+[[env.production.queues.producers]]
+binding = "PAWMATCH_CRAWLER_QUEUE"
+queue = "pawmatch-crawler-queue"
+
 # Screenshot Queue
 [[env.production.queues.producers]]
 binding = "PAWMATCH_SCREENSHOT_QUEUE"
