@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { renderReactComponent } from '../utils/renderReact'
-import { AuthenticatedDashboard } from '../components/AuthenticatedDashboard'
+import { Dashboard } from '../components/Dashboard'
 import { TableDetail } from '../components/TableDetail'
 import type { Env } from '../types/env'
 
@@ -9,9 +9,9 @@ import type { Env } from '../types/env'
  */
 export const uiRoute = new Hono<{ Bindings: Env }>()
 
-// ダッシュボード (React版) - セッション認証済み
+// ダッシュボード (React版) - Basic認証で保護されている
 uiRoute.get('/', (c) => {
-  const html = renderReactComponent(AuthenticatedDashboard, {}, 'PawMatch Admin Dashboard')
+  const html = renderReactComponent(Dashboard, {}, 'PawMatch Admin Dashboard')
   return c.html(html)
 })
 
