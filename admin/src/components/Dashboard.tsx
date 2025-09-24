@@ -25,9 +25,7 @@ export const Dashboard: React.FC = () => {
   const fetchTables = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/tables', {
-        credentials: 'include',
-      })
+      const response = await fetch('/api/tables')
       if (!response.ok) {
         throw new Error('データの取得に失敗しました')
       }
@@ -50,19 +48,13 @@ export const Dashboard: React.FC = () => {
   }, [fetchTables, showToast])
 
   /**
-   * ログアウト処理
+   * ログアウト処理（Basic認証の場合はブラウザを閉じる必要がある）
    */
-  const handleLogout = useCallback(async () => {
-    try {
-      await fetch('/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
-      window.location.href = '/login'
-    } catch (err) {
-      showToast('ログアウトに失敗しました', 'error')
-    }
-  }, [showToast])
+  const handleLogout = useCallback(() => {
+    // Basic認証ではブラウザキャッシュをクリアできないため、
+    // ユーザーにブラウザを閉じるよう案内
+    alert('ログアウトするにはブラウザを閉じてください')
+  }, [])
 
   /**
    * テーブル詳細へ移動

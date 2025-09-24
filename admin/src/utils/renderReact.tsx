@@ -23,21 +23,6 @@ export function renderReactComponent<T extends Record<string, unknown>>(
 </head>
 <body>
   <div id="root">${componentHTML}</div>
-  <script>
-    // Hydrate React component on client side
-    const tableName = '${props['tableName'] || ''}';
-    const adminSecret = localStorage.getItem('adminSecret') || '';
-
-    if (!adminSecret && window.location.pathname !== '/') {
-      const input = prompt('管理者パスワードを入力してください:');
-      if (input) {
-        localStorage.setItem('adminSecret', input);
-        location.reload();
-      } else {
-        window.location.href = '/';
-      }
-    }
-  </script>
 </body>
 </html>`
 }
