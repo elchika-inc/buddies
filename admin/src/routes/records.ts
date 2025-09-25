@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { eq, count } from 'drizzle-orm'
+import { eq, count, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Env } from '../types/env'
 import { getTable } from '../db/tableRegistry'
@@ -59,6 +59,8 @@ recordsRoute.get('/:tableName', async (c) => {
     const page = parseInt(c.req.query('page') || '1')
     const limit = parseInt(c.req.query('limit') || '50')
     const offset = (page - 1) * limit
+    const sortBy = c.req.query('sortBy') || ''
+    const sortOrder = c.req.query('sortOrder') || 'asc'
 
     const db = drizzle(c.env.DB)
     const config = getTableAndSchema(tableName)
@@ -72,8 +74,24 @@ recordsRoute.get('/:tableName', async (c) => {
 
     const { table } = config
 
+    // ソートのためのSQL文字列を構築
+    let query = db.select().from(table)
+
+    if (sortBy && sortBy !== '') {
+      // SQLインジェクション対策: カラム名のバリデーション
+      const firstRecord = await db.select().from(table).limit(1).all()
+      if (firstRecord.length > 0) {
+        const validColumns = Object.keys(firstRecord[0])
+        if (validColumns.includes(sortBy)) {
+          // ORDER BY句を動的に追加
+          const orderDirection = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC'
+          query = query.orderBy(sql`${sql.identifier(sortBy)} ${sql.raw(orderDirection)}`)
+        }
+      }
+    }
+
     // レコードを取得
-    const recordsResult = await db.select().from(table).limit(limit).offset(offset).all()
+    const recordsResult = await query.limit(limit).offset(offset).all()
 
     // 総レコード数を取得
     const [countResult] = await db.select({ count: count() }).from(table)

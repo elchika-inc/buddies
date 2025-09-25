@@ -263,6 +263,8 @@ uiRoute.get('/table/:tableName', (c) => {
     let currentPage = 1;
     let currentRecord = null;
     let tableSchema = null;
+    let currentSort = { column: null, direction: 'asc' };
+    let allRecords = [];
 
     // DOM要素
     const loadingDiv = document.getElementById('loadingDiv');
@@ -272,15 +274,25 @@ uiRoute.get('/table/:tableName', (c) => {
     const recordForm = document.getElementById('recordForm');
 
     // データ取得
-    async function fetchRecords(page = 1) {
+    async function fetchRecords(page = 1, resetSort = false) {
       showLoading();
       try {
-        const response = await fetch(\`/api/records/\${tableName}?page=\${page}&limit=50\`);
+        if (resetSort) {
+          currentSort = { column: null, direction: 'asc' };
+        }
+
+        let url = \`/api/records/\${tableName}?page=\${page}&limit=50\`;
+        if (currentSort.column) {
+          url += \`&sortBy=\${currentSort.column}&sortOrder=\${currentSort.direction}\`;
+        }
+
+        const response = await fetch(url);
         if (!response.ok) throw new Error('データの取得に失敗しました');
 
         const data = await response.json();
         if (!data.success) throw new Error(data.error || 'データの取得に失敗しました');
 
+        allRecords = data.data.records;
         renderTable(data.data);
         currentPage = page;
       } catch (error) {
@@ -319,8 +331,18 @@ uiRoute.get('/table/:tableName', (c) => {
       const tableHead = document.getElementById('tableHead');
       tableHead.innerHTML = \`
         <tr>
-          \${columns.map(col => \`<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">\${col}</th>\`).join('')}
           <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+          \${columns.map(col => \`
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onclick="sortByColumn('\${col}')">
+              <div class="flex items-center">
+                \${col}
+                \${currentSort.column === col ? (currentSort.direction === 'asc' ?
+                  '<svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>' :
+                  '<svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"/></svg>'
+                ) : '<svg class="ml-1 w-4 h-4 opacity-50" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>'}
+              </div>
+            </th>
+          \`).join('')}
         </tr>
       \`;
 
@@ -328,6 +350,10 @@ uiRoute.get('/table/:tableName', (c) => {
       const tableBody = document.getElementById('tableBody');
       tableBody.innerHTML = records.map(record => \`
         <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+            <button onclick="editRecord(\${record.id})" class="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">編集</button>
+            <button onclick="deleteRecord(\${record.id})" class="bg-red-500 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">削除</button>
+          </td>
           \${columns.map(col => {
             const value = record[col];
             const displayValue = value === null ? '<span class="text-gray-400">NULL</span>' :
@@ -337,10 +363,6 @@ uiRoute.get('/table/:tableName', (c) => {
                                   escapeHtml(String(value));
             return \`<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">\${displayValue}</td>\`;
           }).join('')}
-          <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-            <button onclick="editRecord(\${record.id})" class="text-blue-600 hover:text-blue-900">編集</button>
-            <button onclick="deleteRecord(\${record.id})" class="text-red-600 hover:text-red-900">削除</button>
-          </td>
         </tr>
       \`).join('');
 
@@ -500,7 +522,7 @@ uiRoute.get('/table/:tableName', (c) => {
 
     // イベントリスナー
     document.getElementById('addRecordBtn').onclick = () => showModal('新規作成');
-    document.getElementById('refreshBtn').onclick = () => fetchRecords(currentPage);
+    document.getElementById('refreshBtn').onclick = () => fetchRecords(currentPage, true); // ソートをリセットして更新
     document.getElementById('closeModalBtn').onclick = closeModal;
     document.getElementById('cancelBtn').onclick = closeModal;
     document.getElementById('prevPageBtn').onclick = () => fetchRecords(currentPage - 1);
@@ -511,6 +533,26 @@ uiRoute.get('/table/:tableName', (c) => {
     modal.onclick = (e) => {
       if (e.target === modal) closeModal();
     };
+
+    // ソート機能（サーバーサイドソート）
+    function sortByColumn(column) {
+      if (currentSort.column === column) {
+        // 同じカラムをクリックした場合は方向を反転
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        // 新しいカラムの場合は昇順から開始
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+      }
+
+      // 1ページ目に戻ってサーバーからソート済みデータを取得
+      fetchRecords(1);
+    }
+
+    // グローバルスコープに関数を登録
+    window.sortByColumn = sortByColumn;
+    window.editRecord = editRecord;
+    window.deleteRecord = deleteRecord;
 
     // 初期化
     Promise.all([fetchSchema(), fetchRecords()]);
