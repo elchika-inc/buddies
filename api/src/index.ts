@@ -168,9 +168,14 @@ export default {
       const result = await dispatcherClient.triggerCrawler('both', 10, 'cron')
 
       if (Result.isErr(result)) {
-        console.error('Failed to trigger crawler via dispatcher:', result.error.message)
+        const errorMessage =
+          result.error instanceof Error ? result.error.message : String(result.error)
+        console.error('Failed to trigger crawler via dispatcher:', errorMessage)
       } else {
-        console.warn('Crawler triggered successfully via Dispatcher:', result.data.message)
+        console.warn(
+          'Crawler triggered successfully via Dispatcher:',
+          result.data?.message || 'Success'
+        )
       }
     } catch (error) {
       console.error('Error triggering crawler from cron:', error)
