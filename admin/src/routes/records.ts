@@ -74,24 +74,32 @@ recordsRoute.get('/:tableName', async (c) => {
 
     const { table } = config
 
-    // ソートのためのSQL文字列を構築
-    let query = db.select().from(table)
+    // レコードを取得（ソート付き）
+    let recordsResult: any[]
 
     if (sortBy && sortBy !== '') {
       // SQLインジェクション対策: カラム名のバリデーション
       const firstRecord = await db.select().from(table).limit(1).all()
-      if (firstRecord.length > 0) {
+      if (firstRecord.length > 0 && firstRecord[0]) {
         const validColumns = Object.keys(firstRecord[0])
         if (validColumns.includes(sortBy)) {
-          // ORDER BY句を動的に追加
+          // 安全なカラム名を使ってソート付きクエリを実行
           const orderDirection = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC'
-          query = query.orderBy(sql`${sql.identifier(sortBy)} ${sql.raw(orderDirection)}`)
+          recordsResult = await db.select().from(table)
+            .orderBy(sql.raw(`${sortBy} ${orderDirection}`))
+            .limit(limit)
+            .offset(offset)
+            .all()
+        } else {
+          // 無効なカラム名の場合はソートなしで取得
+          recordsResult = await db.select().from(table).limit(limit).offset(offset).all()
         }
+      } else {
+        recordsResult = await db.select().from(table).limit(limit).offset(offset).all()
       }
+    } else {
+      recordsResult = await db.select().from(table).limit(limit).offset(offset).all()
     }
-
-    // レコードを取得
-    const recordsResult = await query.limit(limit).offset(offset).all()
 
     // 総レコード数を取得
     const [countResult] = await db.select({ count: count() }).from(table)
