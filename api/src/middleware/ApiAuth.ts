@@ -9,7 +9,16 @@ import { RateLimitService } from '../services/RateLimitService'
  */
 export async function apiAuth(c: Context<HonoEnv>, next: Next) {
   // ヘルスチェックエンドポイントと内部APIは認証不要
-  const publicPaths = ['/', '/health', '/health/ready', '/crawler', '/api/stats']
+  const publicPaths = [
+    '/',
+    '/health',
+    '/health/ready',
+    '/crawler',
+    '/api/stats',
+    '/api/images/status/update',
+    '/api/pets/update-image-flags',
+    '/api/images/sync-flags',
+  ]
 
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/crawler/')) {
     return next()
