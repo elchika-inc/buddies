@@ -28,7 +28,8 @@ export const BATCH_CONFIG = {
  */
 export const HTTP_CONFIG = {
   /** ユーザーエージェント */
-  USER_AGENT: 'Mozilla/5.0 (compatible; PawMatch-Bot/1.0)',
+  USER_AGENT:
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
   /** デフォルトヘッダー */
   DEFAULT_HEADERS: {
     Accept: 'application/json',
