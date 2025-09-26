@@ -62,6 +62,16 @@ crawler.post('/submit', async (c) => {
     // 新規ペットがある場合、Dispatcher経由でスクリーンショット処理をトリガー
     if (newPetIds.length > 0 && c.env.DISPATCHER) {
       try {
+        // Dispatcherが期待する形式でペットデータを準備
+        const petsForDispatcher = crawledPets
+          .filter((pet) => newPetIds.includes(pet.id))
+          .map((pet) => ({
+            id: pet.id,
+            name: pet.name,
+            type: pet.type as 'dog' | 'cat',
+            sourceUrl: pet.sourceUrl || '',
+          }))
+
         const dispatcherResponse = await c.env.DISPATCHER.fetch(
           new Request('https://dispatcher.internal/dispatch', {
             method: 'POST',
@@ -69,9 +79,8 @@ crawler.post('/submit', async (c) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              limit: newPetIds.length,
-              petIds: newPetIds,
-              petType,
+              pets: petsForDispatcher,
+              source: 'crawler',
             }),
           })
         )
