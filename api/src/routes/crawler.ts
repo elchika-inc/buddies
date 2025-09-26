@@ -16,7 +16,7 @@ crawler.post('/submit', async (c) => {
     //   return c.json({ error: 'Unauthorized' }, 401)
     // }
 
-    const { petType, pets: crawledPets } = (await c.req.json()) as {
+    const { petType: _petType, pets: crawledPets } = (await c.req.json()) as {
       source: string
       petType: 'dog' | 'cat'
       pets: Pet[]
