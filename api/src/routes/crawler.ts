@@ -63,7 +63,7 @@ crawler.post('/submit', async (c) => {
     if (newPetIds.length > 0 && c.env.DISPATCHER) {
       try {
         const dispatcherResponse = await c.env.DISPATCHER.fetch(
-          new Request('http://internal/dispatch', {
+          new Request('https://dispatcher.internal/dispatch', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

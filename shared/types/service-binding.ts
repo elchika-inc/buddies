@@ -47,7 +47,7 @@ export abstract class ServiceClient {
     }
 
     try {
-      const url = `http://internal${path}`
+      const url = `https://api.internal${path}`
       const request = new Request(url, {
         ...options,
         headers: {

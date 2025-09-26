@@ -74,7 +74,7 @@ export class ApiServiceClient extends ServiceClient {
     }
 
     try {
-      const url = `http://internal/crawler/submit`
+      const url = `https://api.internal/crawler/submit`
       const request = new Request(url, {
         method: 'POST',
         headers: {
