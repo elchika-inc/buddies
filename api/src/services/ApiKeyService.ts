@@ -31,10 +31,10 @@ export class ApiKeyService {
     // DBから取得
     const result = await this.db
       .prepare(
-        `SELECT id, key, name, type, permissions, rate_limit as rateLimit,
-       expires_at as expiresAt, last_used as lastUsedAt, created_at as createdAt,
-       updated_at as updatedAt, is_active as isActive, metadata
-       FROM api_keys WHERE key = ? AND is_active = 1`
+        `SELECT id, key, name, type, permissions, rateLimit,
+       expiresAt, lastUsedAt, createdAt,
+       updatedAt, isActive, metadata
+       FROM api_keys WHERE key = ? AND isActive = 1`
       )
       .bind(key)
       .first<any>()
