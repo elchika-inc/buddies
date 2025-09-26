@@ -8,10 +8,10 @@ import { RateLimitService } from '../services/RateLimitService'
  * データベース内のAPIキーによる認証を行う
  */
 export async function apiAuth(c: Context<HonoEnv>, next: Next) {
-  // ヘルスチェックエンドポイントは認証不要
-  const publicPaths = ['/', '/health', '/health/ready']
+  // ヘルスチェックエンドポイントと内部APIは認証不要
+  const publicPaths = ['/', '/health', '/health/ready', '/crawler']
 
-  if (publicPaths.includes(c.req.path)) {
+  if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/crawler/')) {
     return next()
   }
 
