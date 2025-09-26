@@ -23,26 +23,77 @@ export class HtmlParser {
   private static readonly BASE_URL = 'https://www.pet-home.jp'
 
   /**
-   * ペットリストをパース
+   * ペットリストをパース（堅牢な複数セレクター対応）
    */
   static parsePetList(html: string): PetListItem[] {
     const $ = cheerio.load(html)
     const pets: PetListItem[] = []
 
-    $('.contribute_result').each((_, element) => {
-      const $link = $(element).find('h3.title a')
-      const href = $link.attr('href')
+    // 複数のCSSセレクターパターンを試行
+    const selectors = [
+      // 元のセレクター
+      { container: '.contribute_result', link: 'h3.title a' },
+      // 新しいセレクター候補
+      { container: '.pet-card', link: 'a' },
+      { container: '.pet-item', link: 'a' },
+      { container: '.animal-card', link: 'a' },
+      { container: '.search-result-item', link: 'a' },
+      // より一般的なセレクター
+      { container: 'article', link: 'a[href*="pn"]' },
+      { container: 'div[class*="result"]', link: 'a[href*="pn"]' },
+      { container: 'div[class*="card"]', link: 'a[href*="pn"]' },
+    ]
 
-      if (href) {
-        const idMatch = href.match(/pn(\d+)/)
-        if (idMatch) {
-          pets.push({
-            id: `pn${idMatch[1]}`,
-            detailUrl: href.startsWith('http') ? href : `${this.BASE_URL}${href}`,
-          })
+    for (const { container, link } of selectors) {
+      console.log(`Trying selector: ${container} ${link}`)
+
+      $(container).each((_, element) => {
+        const $link = $(element).find(link)
+        const href = $link.attr('href')
+
+        if (href && href.includes('pn')) {
+          const idMatch = href.match(/pn(\d+)/)
+          if (idMatch) {
+            const petId = `pn${idMatch[1]}`
+
+            // 重複チェック
+            if (!pets.some((p) => p.id === petId)) {
+              pets.push({
+                id: petId,
+                detailUrl: href.startsWith('http') ? href : `${this.BASE_URL}${href}`,
+              })
+            }
+          }
         }
+      })
+
+      // いずれかのセレクターで結果が得られたら終了
+      if (pets.length > 0) {
+        console.log(`Found ${pets.length} pets with selector: ${container} ${link}`)
+        break
       }
-    })
+    }
+
+    // 最後の手段: ページ内のすべてのペットリンクを探索
+    if (pets.length === 0) {
+      console.log('Fallback: Searching all pet links')
+      $('a[href*="pn"]').each((_, element) => {
+        const href = $(element).attr('href')
+        if (href) {
+          const idMatch = href.match(/pn(\d+)/)
+          if (idMatch) {
+            const petId = `pn${idMatch[1]}`
+            if (!pets.some((p) => p.id === petId)) {
+              pets.push({
+                id: petId,
+                detailUrl: href.startsWith('http') ? href : `${this.BASE_URL}${href}`,
+              })
+            }
+          }
+        }
+      })
+      console.log(`Fallback found ${pets.length} pets`)
+    }
 
     return pets
   }

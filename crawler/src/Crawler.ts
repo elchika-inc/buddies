@@ -8,6 +8,7 @@
 import type { Pet, CrawlResult } from '../../shared/types/index'
 import { ApiServiceClient } from '../../shared/services/api-client'
 import { Result } from '../../shared/types/result'
+import { HTTP_CONFIG, FETCH_CONFIG } from './config/constants'
 
 /**
  * Cloudflare Workers環境変数の型定義
@@ -43,7 +44,6 @@ import * as cheerio from 'cheerio'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { pets } from '../../database/schema/schema'
-import { HTTP_CONFIG } from './config/constants'
 
 /**
  * ペットホームクローラークラス
@@ -254,26 +254,37 @@ export class PetHomeCrawler {
    * @description 指定されたURLからHTMLを取得。タイムアウトとUser-Agentを設定
    */
   private async fetchPage(url: string): Promise<string> {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': PetHomeCrawler.USER_AGENT },
-      signal: AbortSignal.timeout(15000),
-    })
+    try {
+      console.log(`Fetching: ${url}`)
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': HTTP_CONFIG.USER_AGENT,
+          ...HTTP_CONFIG.DEFAULT_HEADERS,
+        },
+        signal: AbortSignal.timeout(FETCH_CONFIG.REQUEST_TIMEOUT),
+      })
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      console.log(`Response status: ${response.status} for ${url}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText} for ${url}`)
+      }
+
+      return response.text()
+    } catch (error) {
+      console.error(`fetchPage error for ${url}:`, error)
+      throw error
     }
-
-    return response.text()
   }
 
   /**
-   * ペットリストをパース
+   * ペットリストをパース（堅牢な複数セレクター対応）
    *
    * @param html - 一覧ページのHTML
    * @param _petType - ペットタイプ（現在未使用）
    * @returns ペットIDと詳細URLの配列
    * @description 一覧ページからペットの基本情報を抽出。
-   * CSSセレクタで.contribute_resultを操作
+   * 複数のCSSセレクターパターンを試行して堅牢性を向上
    */
   private parsePetList(
     html: string,
@@ -282,20 +293,71 @@ export class PetHomeCrawler {
     const $ = cheerio.load(html)
     const pets: Array<{ id: string; detailUrl: string }> = []
 
-    $('.contribute_result').each((_, element) => {
-      const $link = $(element).find('h3.title a')
-      const href = $link.attr('href')
+    // 複数のCSSセレクターパターンを試行
+    const selectors = [
+      // 元のセレクター
+      { container: '.contribute_result', link: 'h3.title a' },
+      // 新しいセレクター候補
+      { container: '.pet-card', link: 'a' },
+      { container: '.pet-item', link: 'a' },
+      { container: '.animal-card', link: 'a' },
+      { container: '.search-result-item', link: 'a' },
+      // より一般的なセレクター
+      { container: 'article', link: 'a[href*="pn"]' },
+      { container: 'div[class*="result"]', link: 'a[href*="pn"]' },
+      { container: 'div[class*="card"]', link: 'a[href*="pn"]' },
+    ]
 
-      if (href) {
-        const idMatch = href.match(/pn(\d+)/)
-        if (idMatch) {
-          pets.push({
-            id: `pn${idMatch[1]}`,
-            detailUrl: href.startsWith('http') ? href : `${PetHomeCrawler.BASE_URL}${href}`,
-          })
+    for (const { container, link } of selectors) {
+      console.log(`Trying selector: ${container} ${link}`)
+
+      $(container).each((_, element) => {
+        const $link = $(element).find(link)
+        const href = $link.attr('href')
+
+        if (href && href.includes('pn')) {
+          const idMatch = href.match(/pn(\d+)/)
+          if (idMatch) {
+            const petId = `pn${idMatch[1]}`
+
+            // 重複チェック
+            if (!pets.some((p) => p.id === petId)) {
+              pets.push({
+                id: petId,
+                detailUrl: href.startsWith('http') ? href : `${PetHomeCrawler.BASE_URL}${href}`,
+              })
+            }
+          }
         }
+      })
+
+      // いずれかのセレクターで結果が得られたら終了
+      if (pets.length > 0) {
+        console.log(`Found ${pets.length} pets with selector: ${container} ${link}`)
+        break
       }
-    })
+    }
+
+    // 最後の手段: ページ内のすべてのペットリンクを探索
+    if (pets.length === 0) {
+      console.log('Fallback: Searching all pet links')
+      $('a[href*="pn"]').each((_, element) => {
+        const href = $(element).attr('href')
+        if (href) {
+          const idMatch = href.match(/pn(\d+)/)
+          if (idMatch) {
+            const petId = `pn${idMatch[1]}`
+            if (!pets.some((p) => p.id === petId)) {
+              pets.push({
+                id: petId,
+                detailUrl: href.startsWith('http') ? href : `${PetHomeCrawler.BASE_URL}${href}`,
+              })
+            }
+          }
+        }
+      })
+      console.log(`Fallback found ${pets.length} pets`)
+    }
 
     return pets
   }

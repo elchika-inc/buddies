@@ -280,7 +280,8 @@ export default {
           })
           message.ack()
         } else {
-          console.error(`Failed to crawl ${petType}:`, result.errors)
+          const errorDetails = result.errors ? result.errors.join(' | ') : 'Unknown error'
+          console.error(`Failed to crawl ${petType}: ${errorDetails}`)
 
           // リトライ回数をチェック
           const retryCount = message.body.retryCount || 0
