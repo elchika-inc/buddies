@@ -18,6 +18,7 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
     '/api/images/status/update',
     '/api/pets/update-image-flags',
     '/api/images/sync-flags',
+    '/api/conversion/screenshot',
   ]
 
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/crawler/')) {
