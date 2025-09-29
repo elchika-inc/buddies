@@ -159,7 +159,7 @@ export class DispatchController {
         return c.json(result, HTTP_STATUS.INTERNAL_SERVER_ERROR)
       }
 
-      return c.json(result, HTTP_STATUS.OK)
+      return c.json(createSuccessResponse(result, result.message), HTTP_STATUS.OK)
     } catch (error) {
       // エラーはレスポンスヘルパーで処理
       return c.json(createErrorResponse(error as Error), HTTP_STATUS.INTERNAL_SERVER_ERROR)
