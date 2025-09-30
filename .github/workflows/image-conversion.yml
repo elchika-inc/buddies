@@ -110,8 +110,8 @@ jobs:
           if [ -f "$RESULTS_FILE" ]; then
             echo "=== Updating hasWebp flags in database ==="
 
-            # 成功した変換のペット情報を抽出
-            SUCCESSFUL_PETS=$(cat "$RESULTS_FILE" | jq '[.results[] | select(.webpSuccess) | {
+            # 成功した変換のペット情報を抽出（WebP変換が成功したもの）
+            SUCCESSFUL_PETS=$(cat "$RESULTS_FILE" | jq '[.results[] | select(.success == true and .webpSize > 0) | {
               id: .pet_id,
               type: .pet_type
             }]')

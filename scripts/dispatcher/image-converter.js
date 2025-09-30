@@ -168,14 +168,16 @@ async function convertImage(pet) {
     results.sourceKey = screenshotKey
     results.duration = Date.now() - startTime
 
-    // 結果にURLを追加
+    // 結果にURLとサイズを追加し、変換成功フラグも設定
     conversions.forEach((conv) => {
       if (conv.format === 'jpeg') {
         results.jpegUrl = conv.url
         results.jpegSize = conv.size
+        results.jpegSuccess = true
       } else if (conv.format === 'webp') {
         results.webpUrl = conv.url
         results.webpSize = conv.size
+        results.webpSuccess = true
       }
     })
   } catch (error) {
