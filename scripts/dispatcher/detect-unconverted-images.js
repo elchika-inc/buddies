@@ -104,8 +104,8 @@ async function detectUnconvertedImages(params) {
         if (!pet) continue
 
         // 変換済みファイルの存在確認
-        const jpegKey = `${pet.type}s/originals/${pet.id}.jpg`
-        const webpKey = `${pet.type}s/optimized/${pet.id}.webp`
+        const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`
+        const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`
 
         let needsConversion = false
         let conversionInfo = {
