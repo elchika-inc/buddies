@@ -2,8 +2,9 @@
  * ペットデータ変換専門クラス
  */
 
-import { Pet, createDefaultPet } from '../../../shared/types/unified'
-import { ParsedPetInfo } from './PetHomeParser'
+import type { Pet } from '../../../shared/types/unified'
+import { createDefaultPet } from '../../../shared/types/unified'
+import type { ParsedPetInfo } from './PetHomeParser'
 
 // PetDetailInfoのエイリアスを作成（後方互換性のため）
 export type PetDetailInfo = ParsedPetInfo

@@ -1,6 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
-import { ImageStorageService } from './ImageStorageService'
-import { ImageProcessingService } from './ImageProcessingService'
+import type { ImageStorageService } from './ImageStorageService'
+import type { ImageProcessingService } from './ImageProcessingService'
 
 interface ImageStatusDetail {
   id: string

@@ -83,9 +83,9 @@ export class PetHomeParser {
   /**
    * ペットリストの個別アイテムをパース
    */
-  private parsePetListItem($: cheerio.CheerioAPI, element: any): ParsedPetInfo | null {
+  private parsePetListItem($: cheerio.CheerioAPI, element: unknown): ParsedPetInfo | null {
     try {
-      const $item = $(element)
+      const $item = $(element as Parameters<typeof $>[0])
 
       return {
         id: ($item.data('pet-id') as string) || '',

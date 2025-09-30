@@ -1,4 +1,4 @@
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import { DataService, UnifiedImageService } from '../services'
 import { successResponse, errorResponse } from '../utils'
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'

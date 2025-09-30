@@ -1,4 +1,4 @@
-import { Context, Next } from 'hono'
+import type { Context, Next } from 'hono'
 import type { HonoEnv } from '../types'
 import { ApiKeyService } from '../services/ApiKeyService'
 import { RateLimitService } from '../services/RateLimitService'
@@ -69,7 +69,10 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
     }
 
     // ApiKeyServiceを使用してキーを検証
-    const apiKeyService = new ApiKeyService(c.env.DB, c.env.API_KEYS_CACHE as any)
+    const apiKeyService = new ApiKeyService(
+      c.env.DB,
+      c.env.API_KEYS_CACHE as KVNamespace | undefined
+    )
     const apiKey = await apiKeyService.findValidKey(apiKeyValue)
 
     if (!apiKey) {
@@ -160,7 +163,7 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
 
     // レートリミットチェック（API_KEYS_CACHEが設定されている場合のみ）
     if (c.env.API_KEYS_CACHE) {
-      const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE as any)
+      const rateLimitService = new RateLimitService(c.env.API_KEYS_CACHE as KVNamespace)
       const rateLimitResult = await rateLimitService.checkLimit(apiKey.id, apiKey.rateLimit)
 
       if (!rateLimitResult.allowed) {

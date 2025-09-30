@@ -1,6 +1,6 @@
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import type { Env } from '../../types'
-import { AuthStrategy } from './AuthStrategy'
+import type { AuthStrategy } from './AuthStrategy'
 
 /**
  * 環境変数ベースの認証ストラテジー

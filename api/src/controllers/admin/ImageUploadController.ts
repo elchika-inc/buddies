@@ -1,4 +1,4 @@
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import type { Env } from '../../types'
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 import { UPLOAD_CONFIG, IMAGE_PATHS, HTTP_STATUS } from '../../config/constants'

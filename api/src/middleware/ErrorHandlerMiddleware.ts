@@ -4,7 +4,7 @@
  * @description 全てのエラーを統一的に処理し、一貫したエラーレスポンスを返す
  */
 
-import { Context, Next } from 'hono'
+import type { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { Result } from '@pawmatch/shared/types/result'
 import { PawMatchError } from '../utils/ErrorHandler'

@@ -2,7 +2,7 @@
  * APIキー検証ミドルウェア（型安全版）
  * any型を排除し、Result型パターンを活用
  */
-import { Context, Next } from 'hono'
+import type { Context, Next } from 'hono'
 import type { Env } from '../types'
 
 // 型定義

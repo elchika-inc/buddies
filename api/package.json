@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "PawMatch API - Cloudflare Workers API server with Hono and Drizzle ORM",
+  "author": "elchika-inc",
+  "license": "ISC",
   "scripts": {
     "dev": "wrangler dev --local",
     "build": "wrangler build --env production",
-    "deploy": "wrangler deploy",
-    "deploy:prod": "wrangler deploy --env production",
+    "deploy": "wrangler deploy --env production",
     "tail": "wrangler tail",
     "tail:prod": "wrangler tail --env production",
     "check": "./scripts/check-api.sh production",
@@ -20,38 +22,28 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,json}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,json}'",
     "test": "vitest run",
-    "prepare": "husky",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "drizzle-kit:push": "drizzle-kit push --force",
     "drizzle-kit:studio": "drizzle-kit studio",
-    "drizzle-kit:generate": "drizzle-kit generate"
+    "drizzle-kit:generate": "drizzle-kit generate",
+    "clean": "rm -rf .wrangler dist"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.4",
-    "hono": "^4.9.4",
-    "zod": "^4.1.5"
+    "@pawmatch/shared": "*",
+    "drizzle-orm": "^0.44.5",
+    "hono": "^4.9.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240117.0",
-    "@eslint/js": "^9.35.0",
+    "@cloudflare/workers-types": "^4.20250906.0",
     "@hono/node-server": "^1.0.0",
     "@types/node": "^20.16.0",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.31.4",
-    "eslint": "^9.35.0",
-    "eslint-config-prettier": "^10.1.8",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
-    "prettier": "^3.6.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typescript": "^5.6.0",
-    "typescript-eslint": "^8.44.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.33.0"
-  },
-  "description": "PawMatchアプリケーション用のAPIサーバー。Cloudflare Workers上で動作します。",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }

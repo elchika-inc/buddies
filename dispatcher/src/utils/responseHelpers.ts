@@ -2,7 +2,7 @@
  * 共通レスポンスヘルパー関数
  */
 
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import { Result } from '../types/result'
 import { HTTP_STATUS } from '../constants'
 

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import type { z } from 'zod'
 import { PetSchema, DogSchema, CatSchema } from './unified'
 import type { Pet, Dog, Cat } from './unified'
 

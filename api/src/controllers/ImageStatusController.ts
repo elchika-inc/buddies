@@ -1,4 +1,4 @@
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import { z } from 'zod'
 import { ImageDatabaseService } from '../services/image/ImageDatabaseService'
 import { ValidationError } from '../utils/ErrorHandler'

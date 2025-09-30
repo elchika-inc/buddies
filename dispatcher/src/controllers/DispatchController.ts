@@ -3,7 +3,7 @@
  * HTTPリクエストの処理とレスポンス生成を担当
  */
 
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import { DispatchService } from '../services/DispatchService'
 import { CrawlerService } from '../services/CrawlerService'
 import { ConversionService } from '../services/ConversionService'

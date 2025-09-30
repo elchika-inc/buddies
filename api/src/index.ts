@@ -152,7 +152,11 @@ export default {
   fetch: app.fetch,
 
   // Cron trigger handler
-  async scheduled(_controller: any, env: Env, _ctx: any): Promise<void> {
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    _ctx: ExecutionContext
+  ): Promise<void> {
     console.warn('API Cron triggered at', new Date().toISOString())
 
     try {

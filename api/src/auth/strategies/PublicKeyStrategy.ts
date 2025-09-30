@@ -1,5 +1,5 @@
-import { AuthStrategy } from './AuthStrategy'
-import { Context } from 'hono'
+import type { AuthStrategy } from './AuthStrategy'
+import type { Context } from 'hono'
 import type { Env } from '../../types'
 
 /**

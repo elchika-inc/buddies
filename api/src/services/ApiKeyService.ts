@@ -5,12 +5,12 @@
  * APIキーのCRUD操作はadminワークスペースで行います。
  */
 
-import type { ApiKey } from '@pawmatch/shared/types'
+import type { ApiKey, ApiKeyRecord } from '@pawmatch/shared/types'
 
 export class ApiKeyService {
   constructor(
     private db: D1Database,
-    private cache?: KVNamespace<string>
+    private cache?: KVNamespace
   ) {}
 
   /**
@@ -37,14 +37,23 @@ export class ApiKeyService {
        FROM api_keys WHERE key = ? AND isActive = 1`
       )
       .bind(key)
-      .first<any>()
+      .first<ApiKeyRecord>()
 
     if (result) {
       // JSONフィールドをパース
       const apiKey: ApiKey = {
-        ...result,
-        permissions: JSON.parse(result.permissions || '[]'),
-        metadata: result.metadata ? JSON.parse(result.metadata) : null,
+        id: result.id,
+        key: result.key,
+        name: result.name,
+        type: result.type as ApiKey['type'],
+        permissions: JSON.parse(result.permissions || '[]') as string[],
+        rateLimit: result.rateLimit,
+        expiresAt: result.expiresAt,
+        createdAt: result.createdAt || new Date().toISOString(),
+        updatedAt: result.updatedAt || new Date().toISOString(),
+        lastUsedAt: result.lastUsedAt,
+        isActive: result.isActive === 1,
+        metadata: result.metadata ? (JSON.parse(result.metadata) as Record<string, unknown>) : null,
       }
       // キャッシュに保存（1時間）
       if (this.cache) {

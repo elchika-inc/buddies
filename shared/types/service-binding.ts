@@ -5,7 +5,8 @@
  * 抽象化レイヤーを提供します。
  */
 
-import { Result, Ok, Err } from './result'
+import type { Result} from './result';
+import { Ok, Err } from './result'
 
 /**
  * Service Bindingのベースインターフェース

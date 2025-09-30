@@ -9,7 +9,7 @@ import type { RateLimitResult } from '@pawmatch/shared/types'
 export class RateLimitService {
   private readonly WINDOW_SECONDS = 60 // 1分間のウィンドウ
 
-  constructor(private kv: KVNamespace<string>) {}
+  constructor(private kv: KVNamespace) {}
 
   /**
    * レート制限をチェック

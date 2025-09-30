@@ -226,7 +226,8 @@ export class ErrorHandler {
     // Cloudflare Workersではconsole.errorは使用しない
     // 代わりに構造化ログを出力
     if (typeof globalThis !== 'undefined' && 'log' in globalThis) {
-      ;(globalThis as any).log('error', errorInfo)
+      const globalWithLog = globalThis as typeof globalThis & { log: (level: string, info: unknown) => void }
+      globalWithLog.log('error', errorInfo)
     }
   }
 

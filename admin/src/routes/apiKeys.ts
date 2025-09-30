@@ -45,7 +45,7 @@ apiKeysRoute.get('/', async (c) => {
     const keys = await apiKeyService.findAll()
 
     // キー文字列を除外してレスポンス
-    const sanitizedKeys = keys.map(({ key: _key, ...rest }: any) => rest)
+    const sanitizedKeys = keys.map(({ key: _key, ...rest }) => rest)
 
     const response = createSuccessResponse({
       keys: sanitizedKeys,

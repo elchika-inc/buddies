@@ -3,7 +3,7 @@
  * 責任分離版：コントローラーは調整役のみ担当
  */
 
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import type { Env } from '../../types'
 import { ImageValidationService } from '../../services/image/ImageValidationService'
 import { ImageUploadService } from '../../services/image/ImageUploadService'

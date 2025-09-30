@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import type { Hono } from 'hono'
 import type { Env } from '../../types'
 import { setupCors } from './cors'
 import { errorHandlerMiddleware } from '../ErrorHandlerMiddleware'

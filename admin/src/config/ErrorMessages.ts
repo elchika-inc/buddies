@@ -194,13 +194,13 @@ export class ErrorFormatter {
   static format(
     message: string,
     code: ErrorCode = ErrorCode.UNKNOWN_ERROR,
-    details?: any
+    details?: unknown
   ): {
     error: {
       message: string
       code: string
       timestamp: string
-      details?: any
+      details?: unknown
     }
   } {
     return {
@@ -208,7 +208,7 @@ export class ErrorFormatter {
         message,
         code,
         timestamp: new Date().toISOString(),
-        ...(details && { details }),
+        ...(details && typeof details === 'object' ? { details } : {}),
       },
     }
   }

@@ -42,6 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Next.js PWA (next-pwa自動生成ファイル)
+frontend/public/sw*.js
+frontend/public/workbox-*.js
+frontend/public/fallback-*.js
+
 # Cloudflare
 .wrangler/
 .mf/

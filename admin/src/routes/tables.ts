@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../types/env'
+import type { TableInfo } from '@pawmatch/shared/types'
 
 export const tablesRoute = new Hono<{ Bindings: Env }>()
 
@@ -20,15 +21,16 @@ tablesRoute.get('/', async (c) => {
 
     // 各テーブルのレコード数を取得
     const tables = await Promise.all(
-      tablesResult.results.map(async (table: any) => {
+      (tablesResult.results as Array<{ name: string }>).map(async (tableResult) => {
         const countResult = await db.prepare(
-          `SELECT COUNT(*) as count FROM ${table.name}`
-        ).first()
+          `SELECT COUNT(*) as count FROM ${tableResult.name}`
+        ).first() as { count: number } | null
 
-        return {
-          name: table.name,
-          count: Number(countResult?.['count'] || 0)
+        const table: TableInfo = {
+          name: tableResult.name,
+          count: Number(countResult?.count || 0)
         }
+        return table
       })
     )
 

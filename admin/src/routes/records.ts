@@ -5,6 +5,8 @@ import { z } from 'zod'
 import type { Env } from '../types/env'
 import { getTable } from '../db/tableRegistry'
 import { getFieldRequirements } from '../db/schema/validation'
+import type { DbRecord } from '@pawmatch/shared/types'
+import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 export const recordsRoute = new Hono<{ Bindings: Env }>()
 
@@ -75,7 +77,7 @@ recordsRoute.get('/:tableName', async (c) => {
     const { table } = config
 
     // レコードを取得（ソート付き）
-    let recordsResult: any[]
+    let recordsResult: DbRecord[]
 
     if (sortBy && sortBy !== '') {
       // SQLインジェクション対策: カラム名のバリデーション
@@ -153,7 +155,9 @@ recordsRoute.get('/:tableName/:id', async (c) => {
       }, 500)
     }
 
-    const [record] = await db.select().from(table).where(eq((table as any).id, id))
+    // SQLiteTableの型からidカラムを安全に取得
+    const tableWithId = table as SQLiteTable & { id: typeof table['_']['columns']['id'] }
+    const [record] = await db.select().from(table).where(eq(tableWithId.id, id))
 
     if (!record) {
       return c.json({
@@ -246,7 +250,7 @@ recordsRoute.put('/:tableName/:id', async (c) => {
 
     // バリデーション (部分更新なのでpartialを使用)
     try {
-      const partialSchema = (schema as any).partial?.() || schema
+      const partialSchema = schema instanceof z.ZodObject ? schema.partial() : schema
       partialSchema.parse(body)
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -266,9 +270,10 @@ recordsRoute.put('/:tableName/:id', async (c) => {
       }, 500)
     }
 
+    const tableWithId = table as SQLiteTable & { id: typeof table['_']['columns']['id'] }
     const updateResult = await db.update(table)
       .set(body)
-      .where(eq((table as any).id, id))
+      .where(eq(tableWithId.id, id))
       .returning()
 
     const [result] = Array.isArray(updateResult) ? updateResult : [updateResult]
@@ -310,7 +315,8 @@ recordsRoute.delete('/:tableName/:id', async (c) => {
       }, 500)
     }
 
-    await db.delete(table).where(eq((table as any).id, id))
+    const tableWithId = table as SQLiteTable & { id: typeof table['_']['columns']['id'] }
+    await db.delete(table).where(eq(tableWithId.id, id))
 
     return c.json({
       success: true,

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { pets } from '../../../database/schema/schema'
-import { Env } from '../types'
+import type { Env } from '../types'
 import type { Pet } from '../../../shared/types'
 
 const crawler = new Hono<{ Bindings: Env }>()

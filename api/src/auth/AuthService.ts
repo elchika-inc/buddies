@@ -1,6 +1,6 @@
-import { Context } from 'hono'
+import type { Context } from 'hono'
 import type { Env } from '../types'
-import { AuthStrategy } from './strategies/AuthStrategy'
+import type { AuthStrategy } from './strategies/AuthStrategy'
 import { EnvironmentKeyStrategy } from './strategies/EnvironmentKeyStrategy'
 import { PublicKeyStrategy } from './strategies/PublicKeyStrategy'
 

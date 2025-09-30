@@ -7,7 +7,8 @@ import type { MessageBatch, Message } from '@cloudflare/workers-types'
 import type { Env, DispatchMessage } from '../types'
 import { GitHubService, RateLimitError } from '../services/GithubService'
 import { QueueService } from '../services/QueueService'
-import { ErrorHandler, AppError } from '../../../shared/types/errors'
+import type { AppError } from '../../../shared/types/errors'
+import { ErrorHandler } from '../../../shared/types/errors'
 import { getLogger } from '../utils/logger'
 
 export class QueueHandler {

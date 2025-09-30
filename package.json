@@ -1,120 +1,132 @@
 {
   "name": "pawmatch",
-  "private": true,
   "version": "1.0.1",
+  "private": true,
   "type": "module",
   "description": "保護犬・保護猫とユーザーをマッチングするWebアプリケーション",
   "keywords": [
-    "react",
-    "typescript",
     "pet-adoption",
     "cloudflare-workers",
-    "next.js"
+    "nextjs",
+    "typescript",
+    "monorepo"
   ],
+  "author": "elchika-inc",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elchika-inc/pawmatch.git"
+  },
   "workspaces": [
     "frontend",
     "api",
     "crawler",
     "dispatcher",
-    "shared",
-    "admin"
+    "admin",
+    "shared"
   ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.8.2",
   "scripts": {
-    "// Core": "=== 基本コマンド ===",
-    "dev": "concurrently --names 'APP,API' --prefix-colors 'cyan,yellow' 'npm run dev:app' 'npm run dev:api'",
-    "dev:all": "concurrently --names 'APP,API,CRAWLER,DISPATCH' --prefix-colors 'cyan,yellow,green,magenta' 'npm run dev --workspaces'",
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "lint:fix": "npm run lint:fix --workspaces --if-present",
-    "type-check": "npm run type-check --workspaces --if-present",
-
-    "// Workspace": "=== ワークスペース別 ===",
+    "// ========================================": "開発環境",
+    "dev": "concurrently --names 'APP,API' --prefix-colors 'cyan,yellow' 'npm:dev:app' 'npm:dev:api'",
+    "dev:all": "concurrently --names 'APP,API,CRAWLER,DISPATCH,ADMIN' --prefix-colors 'cyan,yellow,green,magenta,blue' 'npm:dev:*'",
     "dev:app": "npm run -w @pawmatch/frontend dev",
     "dev:api": "npm run -w @pawmatch/api dev",
     "dev:crawler": "npm run -w @pawmatch/crawler dev",
     "dev:dispatcher": "npm run -w @pawmatch/dispatcher dev",
     "dev:admin": "npm run -w @pawmatch/admin dev",
-    "lint:app": "npm run -w @pawmatch/frontend lint",
-    "lint:api": "npm run -w @pawmatch/api lint",
-    "lint:crawler": "npm run -w @pawmatch/crawler lint",
-    "lint:dispatcher": "npm run -w @pawmatch/dispatcher lint",
-    "lint:shared": "npm run -w @pawmatch/shared lint",
+    "// ========================================": "ビルド",
+    "build": "npm run build --workspaces --if-present",
+    "build:app": "npm run -w @pawmatch/frontend build",
+    "build:api": "npm run -w @pawmatch/api build",
+    "build:crawler": "npm run -w @pawmatch/crawler build",
+    "build:dispatcher": "npm run -w @pawmatch/dispatcher build",
+    "build:admin": "npm run -w @pawmatch/admin build",
+    "// ========================================": "品質チェック",
+    "test": "npm run test --workspaces --if-present",
+    "test:app": "npm run -w @pawmatch/frontend test",
+    "test:api": "npm run -w @pawmatch/api test",
+    "type-check": "npm run type-check --workspaces --if-present",
     "type-check:app": "npm run -w @pawmatch/frontend type-check",
     "type-check:api": "npm run -w @pawmatch/api type-check",
     "type-check:crawler": "npm run -w @pawmatch/crawler type-check",
     "type-check:dispatcher": "npm run -w @pawmatch/dispatcher type-check",
     "type-check:shared": "npm run -w @pawmatch/shared type-check",
-
-    "// Clean": "=== クリーンアップ ===",
-    "clean:wrangler": "rm -rf api/.wrangler/tmp/* crawler/.wrangler/tmp/* dispatcher/.wrangler/tmp/* 2>/dev/null || true && echo 'Wrangler一時ファイルを削除しました'",
-    "clean:dist": "rm -rf */dist/* && echo 'ビルド成果物を削除しました'",
-    "clean:all": "npm run clean:wrangler && npm run clean:dist && echo '全クリーンアップ完了'",
-
-    "// Deploy": "=== デプロイ ===",
+    "type-check:admin": "npm run -w @pawmatch/admin type-check",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "lint:app": "npm run -w @pawmatch/frontend lint",
+    "lint:api": "npm run -w @pawmatch/api lint",
+    "lint:crawler": "npm run -w @pawmatch/crawler lint",
+    "lint:dispatcher": "npm run -w @pawmatch/dispatcher lint",
+    "lint:shared": "npm run -w @pawmatch/shared lint",
+    "lint:admin": "npm run -w @pawmatch/admin lint",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md,yml,yaml}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,md,yml,yaml}\" --ignore-path .prettierignore",
+    "// ========================================": "デプロイ",
     "deploy:dog": "npm run -w @pawmatch/frontend deploy:dog",
     "deploy:cat": "npm run -w @pawmatch/frontend deploy:cat",
     "deploy:api": "npm run -w @pawmatch/api deploy",
     "deploy:crawler": "npm run -w @pawmatch/crawler deploy",
     "deploy:dispatcher": "npm run -w @pawmatch/dispatcher deploy",
     "deploy:admin": "npm run -w @pawmatch/admin deploy",
-    "deploy:workers": "concurrently 'npm:deploy:api' 'npm:deploy:crawler' 'npm:deploy:dispatcher'",
-    "deploy:all": "npm run deploy:workers && npm run deploy:dog && npm run deploy:cat",
-
-    "// Database": "=== データベース ===",
+    "deploy:frontend": "concurrently 'npm:deploy:dog' 'npm:deploy:cat'",
+    "deploy:workers": "concurrently 'npm:deploy:api' 'npm:deploy:crawler' 'npm:deploy:dispatcher' 'npm:deploy:admin'",
+    "deploy:all": "npm run deploy:workers && npm run deploy:frontend",
+    "// ========================================": "データベース",
     "db:push": "npm run -w @pawmatch/api drizzle-kit:push",
     "db:studio": "npm run -w @pawmatch/api drizzle-kit:studio",
     "db:generate": "npm run -w @pawmatch/api drizzle-kit:generate",
     "db:reset": "rm -f api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite && npm run db:push",
     "db:seed": "tsx database/seed.ts",
-
-    "// Monitoring": "=== モニタリング ===",
-    "tail": "npm run -w @pawmatch/api tail",
+    "// ========================================": "モニタリング",
+    "tail:api": "npm run -w @pawmatch/api tail",
     "tail:crawler": "npm run -w @pawmatch/crawler tail",
     "tail:dispatcher": "npm run -w @pawmatch/dispatcher tail",
-
-    "// Maintenance": "=== メンテナンス ===",
-    "clean": "rm -rf node_modules **/node_modules **/dist **/.next **/.wrangler",
-    "clean:cache": "rm -rf **/.next/cache **/.wrangler/tmp",
-    "reinstall": "npm run clean && npm install",
-    "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
-    "postinstall": "echo 'All dependencies installed successfully!'",
-    "prepare": "husky"
+    "tail:admin": "npm run -w @pawmatch/admin tail",
+    "// ========================================": "クリーンアップ",
+    "clean": "npm run clean:all",
+    "clean:all": "npm run clean:wrangler && npm run clean:dist && npm run clean:cache",
+    "clean:wrangler": "find . -type d -name '.wrangler' -not -path './node_modules/*' -exec rm -rf {} + 2>/dev/null || true",
+    "clean:dist": "find . -type d -name 'dist' -not -path './node_modules/*' -exec rm -rf {} + 2>/dev/null || true",
+    "clean:cache": "find . -type d \\( -name '.next' -o -name 'coverage' \\) -not -path './node_modules/*' -exec rm -rf {} + 2>/dev/null || true",
+    "clean:deps": "rm -rf node_modules **/node_modules",
+    "// ========================================": "メンテナンス",
+    "reinstall": "npm run clean:deps && npm install",
+    "postinstall": "echo '✅ すべての依存関係がインストールされました'",
+    "prepare": "husky",
+    "// ========================================": "開発ツール",
+    "check:deps": "npm outdated || true",
+    "check:security": "npm audit --audit-level=moderate"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250906.0",
+    "@eslint/js": "^9.35.0",
     "@types/node": "^20.16.0",
     "concurrently": "^8.2.2",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "prettier": "^3.6.2",
+    "tsx": "^4.19.2",
     "type-coverage": "^2.29.7",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.44.0"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+  "dependencies": {
+    "zod": "^4.1.5"
   },
-  "packageManager": "npm@10.8.2",
   "lint-staged": {
-    "dispatcher/src/**/*.{ts,tsx}": [
-      "npm run lint:dispatcher",
+    "*.{ts,tsx}": [
+      "eslint --fix",
       "prettier --write"
     ],
-    "dispatcher/**/*.json": [
-      "prettier --write"
-    ],
-    "frontend/src/**/*.{ts,tsx}": [
-      "prettier --write"
-    ],
-    "api/src/**/*.ts": [
-      "prettier --write"
-    ],
-    "crawler/src/**/*.ts": [
-      "prettier --write"
-    ],
-    "shared/**/*.ts": [
-      "prettier --write"
-    ],
-    "*.{md,yml,yaml,json}": [
+    "*.{js,json,md,yml,yaml}": [
       "prettier --write"
     ]
   }

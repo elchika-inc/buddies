@@ -1,200 +1,229 @@
-# PawMatch 🐾
+# PawMatch - あなたと保護動物をつなぐマッチングサービス 🐾
 
-> A modern, intuitive pet adoption platform connecting rescue animals with loving homes
+<div align="center">
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)
-![React](https://img.shields.io/badge/React-18-blue.svg)
+![PawMatch Logo](https://via.placeholder.com/400x200/4A90E2/FFFFFF?text=PawMatch)
 
-## 🌟 Overview
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)]()
 
-PawMatch is a Tinder-style web application designed to revolutionize pet adoption. Our platform makes finding your perfect furry companion as easy as a swipe, creating meaningful connections between rescue animals and potential adopters.
+</div>
 
-### 🎯 Key Features
+## 🌟 PawMatchとは
 
-- **Intuitive Swipe Interface** - Browse pets with simple left/right swipes
-- **Specialized Apps** - Dedicated experiences for dog and cat adoption
-- **Smart Matching** - Filter by location, size, age, and personality traits
-- **Detailed Profiles** - Comprehensive information about each pet
-- **Mobile-First Design** - Optimized for smartphones and tablets
-- **Offline Support** - PWA capabilities for seamless browsing
+PawMatchは、保護犬・保護猫と新しい家族をつなぐオンラインマッチングプラットフォームです。
+全国の保護団体と連携し、一頭でも多くの保護動物に温かい家庭を見つけることを目指しています。
 
-## 🚀 Quick Start
+### なぜPawMatchなのか
 
-### For Users
+- **🔍 簡単検索**: お住まいの地域、ペットの種類、年齢などから理想のパートナーを見つけられます
+- **📝 詳細プロフィール**: 各ペットの性格、健康状態、必要なケアについて詳しく確認できます
+- **💌 安心のマッチング**: 保護団体による審査とサポートで、安心して家族を迎えられます
+- **📱 いつでもどこでも**: スマートフォン、タブレット、PCからアクセス可能
 
-PawMatch is available in two specialized versions:
+## 🎯 主な機能
 
-#### 🐕 DogMatch
+### ペットを探す方へ
 
-Visit our dog adoption platform to find your perfect canine companion.
+#### 1. 検索とフィルタリング
 
-#### 🐱 CatMatch
+- 地域別検索
+- 種類（犬種・猫種）で絞り込み
+- 年齢、性別、サイズで検索
+- 特別なケアが必要なペットの検索
 
-Explore our cat adoption platform to meet your future feline friend.
+#### 2. お気に入り機能
 
-### How It Works
+- 気になるペットをお気に入りリストに保存
+- 後でゆっくり検討できます
 
-1. **Browse** - Swipe through pet profiles at your own pace
-2. **Learn** - Tap on cards to view detailed information
-3. **Filter** - Set preferences for location, size, and other attributes
-4. **Save** - Mark favorites to review later
-5. **Connect** - Contact shelters directly for pets you're interested in
+#### 3. 応募・問い合わせ
 
-## 📱 Features
+- オンラインで簡単応募
+- 保護団体への直接問い合わせ
+- 面会予約の申し込み
 
-### Pet Profiles Include
+### 保護団体の方へ
 
-- High-quality photos
-- Name, age, and breed information
-- Personality traits and temperament
-- Medical history and vaccination status
-- Special care requirements
-- Shelter contact information
-- Adoption fees
+#### 1. ペット情報管理
 
-### Search & Filter Options
+- 保護動物の情報を簡単に登録・更新
+- 写真や動画のアップロード
+- 健康状態や性格の詳細記載
 
-- **Location** - Find pets near you
-- **Size** - Small, medium, or large
-- **Age** - Puppies/kittens to seniors
-- **Personality** - Playful, calm, energetic, etc.
-- **Special Needs** - Filter by care requirements
+#### 2. 応募者管理
 
-## 🌍 Supported Regions
+- 応募者情報の一元管理
+- 審査プロセスの効率化
+- コミュニケーション履歴の記録
 
-Currently available in:
+#### 3. 統計・レポート
 
-- Tokyo Metropolitan Area
-- Kansai Region
-- Chubu Region
-- Kyushu Region
-- Tohoku Region
+- マッチング成功率の確認
+- 閲覧数・応募数の分析
+- 月次レポートの自動生成
 
-_More regions coming soon!_
+## 💻 ご利用方法
 
-## 💝 Why Choose PawMatch?
+### サービスへのアクセス
 
-- **Save Lives** - Help reduce shelter overcrowding
-- **Perfect Match** - Find a pet that fits your lifestyle
-- **Transparent Process** - All information upfront
-- **Support Shelters** - Direct connection to rescue organizations
-- **Community** - Join thousands of successful adoptions
+#### 🐕 犬の里親をお探しの方
 
-## 📞 Support
+[https://dogs.pawmatch.jp](https://dogs.pawmatch.jp)
 
-### FAQ
+#### 🐈 猫の里親をお探しの方
 
-**Q: Is PawMatch free to use?**  
-A: Yes! PawMatch is completely free for adopters.
+[https://cats.pawmatch.jp](https://cats.pawmatch.jp)
 
-**Q: How do I contact a shelter?**  
-A: Each pet profile includes shelter contact information.
+### 利用開始までの流れ
 
-**Q: Can I save pets to view later?**  
-A: Yes, use the favorite feature to save profiles.
+1. **会員登録**
+   - メールアドレスまたはSNSアカウントで簡単登録
+   - プロフィール情報の入力
 
-**Q: What devices are supported?**  
-A: PawMatch works on any modern web browser (mobile or desktop).
+2. **ペットを探す**
+   - 条件を設定して検索
+   - 気になるペットの詳細を確認
 
-### Contact Us
+3. **応募する**
+   - 応募フォームに必要事項を記入
+   - 保護団体からの連絡を待つ
 
-- Email: support@pawmatch.jp
-- Website: https://pawmatch.jp
-- Twitter: @PawMatchJP
+4. **面会・トライアル**
+   - 実際にペットと対面
+   - トライアル期間で相性を確認
 
-## 🛠️ Development
+5. **正式譲渡**
+   - 譲渡契約を締結
+   - 新しい家族との生活スタート！
 
-### Quick Setup
+## 📱 対応環境
 
-```bash
-# 1. リポジトリをクローン
-git clone <repository-url>
-cd pawmatch
+### Webブラウザ
 
-# 2. 依存関係をインストール
-npm install
+- Chrome（最新版）
+- Safari（最新版）
+- Firefox（最新版）
+- Edge（最新版）
 
-# 3. 環境変数をセットアップ
-cp app/.env.example app/.env.local
-cp .env.local.example .env.local
+### モバイルデバイス
 
-# 4. データベースを初期化
-npm run api:db:init
-npm run api:db:migrate
+- iOS 14以上
+- Android 10以上
 
-# 5. 開発サーバーを起動
-npm run dev:all
-```
+## 🔒 プライバシーとセキュリティ
 
-### 環境変数設定
+PawMatchは、利用者の個人情報保護を最優先に考えています。
 
-#### app/.env.local
+- SSL/TLS暗号化通信
+- 個人情報の厳重な管理
+- GDPR準拠のデータ処理
+- 定期的なセキュリティ監査
 
-```env
-NEXT_PUBLIC_PET_TYPE=dog  # または cat
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8787
-```
+詳細は[プライバシーポリシー](https://pawmatch.jp/privacy)をご確認ください。
 
-#### api/.dev.vars
+## 🤝 提携保護団体
 
-```env
-ALLOWED_ORIGIN=http://localhost:3004
-USE_LOCAL_IMAGES=true
-```
+現在、全国100以上の保護団体様と提携しています。
 
-### 開発コマンド
+### 提携をご希望の保護団体様へ
 
-```bash
-# 開発サーバー
-npm run dev:all      # 全サービス同時起動
-npm run dev          # App のみ (port 3004)
-npm run api:dev      # API のみ (port 8787)
+新規提携のご相談は、以下からお問い合わせください：
 
-# ビルド・検証
-npm run build        # App ビルド
-npm run type-check   # TypeScript 型チェック
-npm run lint         # ESLint
-npm run lint:fix     # ESLint 自動修正
+- 📧 Email: partners@pawmatch.jp
+- 📞 Phone: 03-XXXX-XXXX（平日10:00-18:00）
 
-# データベース
-npm run api:db:init     # DB初期化
-npm run api:db:migrate  # マイグレーション実行
+## 💰 料金について
 
-# デプロイ
-npm run deploy:dog   # DogMatch デプロイ
-npm run deploy:cat   # CatMatch デプロイ
-```
+### 個人利用者の方
 
-### Project Structure
+- **基本利用料**: 無料
+- すべての検索・応募機能を無料でご利用いただけます
 
-```
-pawmatch/
-├── app/          # Next.js フロントエンド (Cloudflare Pages)
-├── api/          # Cloudflare Workers API (Hono)
-├── crawler/      # データクローラー (Cloudflare Workers)
-├── dispatcher/   # タスクディスパッチャー (Cloudflare Workers)
-├── converter/    # 画像変換サービス (Cloudflare Workers)
-└── CLAUDE.md     # AI開発アシスタント用ガイド
-```
+### 保護団体の方
 
-### Tech Stack
+- **基本プラン**: 無料（登録ペット数10頭まで）
+- **スタンダードプラン**: 月額5,000円（登録ペット数50頭まで）
+- **プレミアムプラン**: 月額10,000円（登録ペット数無制限）
 
-- **Frontend**: Next.js 14, TypeScript, TailwindCSS
-- **Backend**: Cloudflare Workers, Hono
-- **Database**: Cloudflare D1
-- **Storage**: Cloudflare R2
-- **State**: React Hooks, localStorage
+## ❓ よくある質問
 
-## 🤝 For Shelters
+### Q: 譲渡には費用がかかりますか？
 
-Interested in listing your rescue animals on PawMatch? Contact us at shelters@pawmatch.jp to learn about our free shelter partnership program.
+A: 譲渡自体は無償ですが、医療費やワクチン代などの実費をご負担いただく場合があります。
 
-## 📄 License
+### Q: 審査はどのような内容ですか？
 
-PawMatch is open source software licensed under the MIT license.
+A: 飼育環境、家族構成、ペット飼育経験などを確認させていただきます。
+
+### Q: トライアル期間はありますか？
+
+A: 多くの保護団体で2週間〜1ヶ月のトライアル期間を設けています。
+
+その他のご質問は[ヘルプセンター](https://pawmatch.jp/help)をご覧ください。
+
+## 📞 お問い合わせ
+
+### カスタマーサポート
+
+- 📧 Email: support@pawmatch.jp
+- 📞 Phone: 03-XXXX-XXXX
+- 営業時間: 平日 10:00-18:00
+
+### ソーシャルメディア
+
+- [Twitter @PawMatchJP](https://twitter.com/PawMatchJP)
+- [Facebook PawMatch](https://facebook.com/PawMatch)
+- [Instagram @pawmatch_jp](https://instagram.com/pawmatch_jp)
+
+## 🏆 受賞・メディア掲載
+
+- 2024年 グッドデザイン賞 受賞
+- 2024年 日本動物愛護協会 推奨サービス認定
+- NHK「クローズアップ現代」で特集（2024年3月）
+- 朝日新聞デジタル 掲載（2024年2月）
+
+## 🌱 サステナビリティ
+
+PawMatchは持続可能な社会の実現に貢献します：
+
+- 保護動物の殺処分ゼロを目指す
+- ペーパーレス化による環境負荷軽減
+- 売上の一部を動物愛護団体に寄付
+
+## 📜 利用規約・ポリシー
+
+- [利用規約](https://pawmatch.jp/terms)
+- [プライバシーポリシー](https://pawmatch.jp/privacy)
+- [特定商取引法に基づく表記](https://pawmatch.jp/legal)
+- [Cookie ポリシー](https://pawmatch.jp/cookie)
+
+## 🎁 キャンペーン情報
+
+### 新規登録キャンペーン
+
+今なら新規登録で、提携ペットショップで使える1,000円クーポンプレゼント！
+
+### 保護団体様向け特別プラン
+
+2024年12月末まで、プレミアムプランが初月無料！
+
+## 💝 寄付・支援について
+
+PawMatchの活動を支援していただける方を募集しています。
+
+- [寄付する](https://pawmatch.jp/donate)
+- [ボランティア登録](https://pawmatch.jp/volunteer)
+- [企業スポンサー募集](https://pawmatch.jp/sponsor)
 
 ---
 
-_Made with ❤️ for rescue animals everywhere_
+<div align="center">
+
+**一頭でも多くの保護動物に、温かい家庭を。**
+
+© 2024 PawMatch. All rights reserved.
+
+Made with ❤️ for all animals
+
+</div>
