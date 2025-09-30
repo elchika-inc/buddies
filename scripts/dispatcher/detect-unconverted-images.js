@@ -2,7 +2,16 @@ import { S3Client, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/clie
 import { promises as fs } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { R2_PATHS } from '@pawmatch/shared/r2-paths'
+
+// R2パスの定義（TypeScriptファイルから手動でコピー）
+const R2_PATHS = {
+  pets: {
+    screenshot: (type, id) => `pets/${type}s/${id}/screenshot.png`,
+    thumbnail: (type, id) => `pets/${type}s/${id}/thumbnail.webp`,
+    medium: (type, id) => `pets/${type}s/${id}/medium.webp`,
+    large: (type, id) => `pets/${type}s/${id}/large.webp`,
+  },
+}
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
