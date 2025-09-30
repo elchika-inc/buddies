@@ -5,6 +5,9 @@ import type { Env } from '../types'
 
 const pets = new Hono<{ Bindings: Env }>()
 
+// 全ペット一覧取得（タイプ指定なし）
+pets.get('/', withEnv(withPetController(async (controller, c) => controller.getAllPets(c))))
+
 // タイプ別ペット一覧取得
 pets.get(
   '/type/:type',

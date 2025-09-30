@@ -2,6 +2,7 @@ import { S3Client, ListObjectsV2Command, HeadObjectCommand } from '@aws-sdk/clie
 import { promises as fs } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { R2_PATHS } from '@pawmatch/shared/r2-paths'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -104,8 +105,8 @@ async function detectUnconvertedImages(params) {
         if (!pet) continue
 
         // 変換済みファイルの存在確認
-        const jpegKey = `pets/${pet.type}s/${pet.id}/original.jpg`
-        const webpKey = `pets/${pet.type}s/${pet.id}/optimized.webp`
+        const jpegKey = R2_PATHS.pets.original(pet.type, pet.id)
+        const webpKey = R2_PATHS.pets.optimized(pet.type, pet.id)
 
         let needsConversion = false
         let conversionInfo = {

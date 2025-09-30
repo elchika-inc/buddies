@@ -21,7 +21,17 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
     '/api/conversion/screenshot',
   ]
 
+  // GETリクエストの公開パス（読み取り専用）
+  const publicGetPaths = [
+    '/api/pets', // フロントエンドからのペット情報取得
+  ]
+
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/crawler/')) {
+    return next()
+  }
+
+  // GETメソッドかつ公開パスの場合は認証不要
+  if (c.req.method === 'GET' && publicGetPaths.some((path) => c.req.path.startsWith(path))) {
     return next()
   }
 

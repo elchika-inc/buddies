@@ -4,7 +4,7 @@
   "compilerOptions": {
     "lib": ["ES2021", "WebWorker"],
     "types": ["@cloudflare/workers-types"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true
   }
 }

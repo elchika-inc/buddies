@@ -8,6 +8,7 @@
 import type { Pet, CrawlResult } from '../../shared/types/index'
 import { ApiServiceClient } from '../../shared/services/api-client'
 import { Result } from '../../shared/types/result'
+import { R2_PATHS } from '@pawmatch/shared/r2-paths'
 import { HTTP_CONFIG, FETCH_CONFIG } from './config/constants'
 
 /**
@@ -658,7 +659,7 @@ export class PetHomeCrawler {
       if (!response.ok) return
 
       const imageBuffer = await response.arrayBuffer()
-      const key = `pets/${pet.type}s/${pet.id}/original.jpg`
+      const key = R2_PATHS.pets.original(pet.type, pet.id)
 
       await this.env.IMAGES_BUCKET.put(key, imageBuffer, {
         httpMetadata: {

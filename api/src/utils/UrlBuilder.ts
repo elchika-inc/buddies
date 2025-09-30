@@ -60,32 +60,5 @@ export function getUrlBuilder(baseUrl?: string): UrlBuilder {
   return urlBuilderInstance
 }
 
-/**
- * R2ストレージのパスを生成
- */
-export class R2PathBuilder {
-  /**
-   * ペット画像のR2パスを生成
-   */
-  static petImagePath(
-    petType: 'dog' | 'cat',
-    petId: string,
-    format: 'original' | 'optimized' | 'screenshot'
-  ): string {
-    const filename =
-      format === 'original'
-        ? 'original.jpg'
-        : format === 'optimized'
-          ? 'optimized.webp'
-          : 'screenshot.png'
-
-    return `pets/${petType}s/${petId}/${filename}`
-  }
-
-  /**
-   * ペット画像のディレクトリパスを生成
-   */
-  static petImageDirectory(petType: 'dog' | 'cat', petId: string): string {
-    return `pets/${petType}s/${petId}/`
-  }
-}
+// R2PathBuilderはsharedパッケージから再エクスポート
+export { R2PathBuilder } from '@pawmatch/shared/r2-paths'

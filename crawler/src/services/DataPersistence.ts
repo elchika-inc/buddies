@@ -8,6 +8,7 @@
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { pets } from '../../../database/schema/schema'
+import { R2_PATHS } from '@pawmatch/shared/r2-paths'
 import { Result, Ok, Err } from '../../../shared/types/result'
 import type { Pet } from '../../../shared/types'
 import type { Env } from '../types'
@@ -263,6 +264,6 @@ export class DataPersistence {
    * 画像キーを生成（内部メソッド）
    */
   private generateImageKey(pet: Pet): string {
-    return `pets/${pet.type}s/${pet.id}/original.jpg`
+    return R2_PATHS.pets.original(pet.type, pet.id)
   }
 }

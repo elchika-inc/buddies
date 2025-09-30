@@ -3,6 +3,7 @@
  */
 
 import type { R2Bucket } from '@cloudflare/workers-types'
+import { R2_PATHS } from '@pawmatch/shared/r2-paths'
 
 export interface ImageMetadata {
   petId: string
@@ -132,7 +133,7 @@ export class PetImageProcessor {
    */
   async imageExists(petId: string, petType: 'dog' | 'cat'): Promise<boolean> {
     try {
-      const key = `pets/${petType}s/${petId}/main.jpg`
+      const key = R2_PATHS.pets.original(petType, petId)
       const object = await this.r2Bucket.head(key)
       return object !== null
     } catch {
@@ -145,7 +146,7 @@ export class PetImageProcessor {
    */
   async deleteImages(petId: string, petType: 'dog' | 'cat'): Promise<boolean> {
     try {
-      const prefix = `pets/${petType}s/${petId}/`
+      const prefix = R2_PATHS.pets.directory(petType, petId)
       const objects = await this.r2Bucket.list({ prefix })
 
       if (objects.objects.length === 0) {
@@ -171,8 +172,8 @@ export class PetImageProcessor {
     petType: 'dog' | 'cat'
   ): Promise<boolean> {
     try {
-      const sourceKey = `pets/${petType}s/${sourcePetId}/main.jpg`
-      const targetKey = `pets/${petType}s/${targetPetId}/main.jpg`
+      const sourceKey = R2_PATHS.pets.original(petType, sourcePetId)
+      const targetKey = R2_PATHS.pets.original(petType, targetPetId)
 
       const sourceObject = await this.r2Bucket.get(sourceKey)
       if (!sourceObject) {

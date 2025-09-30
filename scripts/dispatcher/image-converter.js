@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { R2_PATHS } from '@pawmatch/shared/r2-paths'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -71,7 +72,7 @@ async function convertImage(pet) {
     console.log(`🔄 Converting images for ${pet.id}`)
 
     // スクリーンショットのキー（PNGファイル）
-    const screenshotKey = pet.screenshotKey || `pets/${pet.type}s/${pet.id}/screenshot.png`
+    const screenshotKey = pet.screenshotKey || R2_PATHS.pets.screenshot(pet.type, pet.id)
 
     // R2からPNG画像をダウンロード
     console.log(`  📥 Downloading from R2: ${screenshotKey}`)
@@ -98,7 +99,7 @@ async function convertImage(pet) {
         .jpeg({ quality: 85, progressive: true })
         .toBuffer()
 
-      const jpegKey = `${pet.type}s/originals/${pet.id}.jpg`
+      const jpegKey = R2_PATHS.pets.original(pet.type, pet.id)
 
       await r2Client.send(
         new PutObjectCommand({
@@ -129,7 +130,7 @@ async function convertImage(pet) {
     if (pet.mode === 'all' || pet.mode === 'missing-webp') {
       const webpBuffer = await sharpInstance.clone().webp({ quality: 80 }).toBuffer()
 
-      const webpKey = `${pet.type}s/optimized/${pet.id}.webp`
+      const webpKey = R2_PATHS.pets.optimized(pet.type, pet.id)
 
       await r2Client.send(
         new PutObjectCommand({
