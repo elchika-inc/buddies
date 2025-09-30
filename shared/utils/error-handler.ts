@@ -5,8 +5,9 @@
  * ログ記録、エラー変換、リトライポリシーを統合
  */
 
-import { Result, Ok, Err } from '../types/result'
-import { AppError, ErrorCategory, ErrorBuilder } from '../types/error'
+import type { Result } from '../types/result'
+import { Ok, Err } from '../types/result'
+import { AppError, ErrorBuilder } from '../types/error'
 
 /**
  * エラーハンドリングオプション

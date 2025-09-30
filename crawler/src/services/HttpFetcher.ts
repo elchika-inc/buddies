@@ -71,7 +71,6 @@ export class HttpFetcher {
       }
 
       lastError = result.error
-      console.log('フェッチ失敗:', lastError.message)
     }
 
     return Result.err(lastError || new Error('フェッチに失敗しました'))

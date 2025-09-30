@@ -255,7 +255,6 @@ export class PetHomeCrawler {
    */
   private async fetchPage(url: string): Promise<string> {
     try {
-      console.log(`Fetching: ${url}`)
       const response = await fetch(url, {
         headers: {
           'User-Agent': HTTP_CONFIG.USER_AGENT,
@@ -263,8 +262,6 @@ export class PetHomeCrawler {
         },
         signal: AbortSignal.timeout(FETCH_CONFIG.REQUEST_TIMEOUT),
       })
-
-      console.log(`Response status: ${response.status} for ${url}`)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText} for ${url}`)
@@ -309,8 +306,6 @@ export class PetHomeCrawler {
     ]
 
     for (const { container, link } of selectors) {
-      console.log(`Trying selector: ${container} ${link}`)
-
       $(container).each((_, element) => {
         const $link = $(element).find(link)
         const href = $link.attr('href')
@@ -333,14 +328,12 @@ export class PetHomeCrawler {
 
       // いずれかのセレクターで結果が得られたら終了
       if (pets.length > 0) {
-        console.log(`Found ${pets.length} pets with selector: ${container} ${link}`)
         break
       }
     }
 
     // 最後の手段: ページ内のすべてのペットリンクを探索
     if (pets.length === 0) {
-      console.log('Fallback: Searching all pet links')
       $('a[href*="pn"]').each((_, element) => {
         const href = $(element).attr('href')
         if (href) {
@@ -356,7 +349,6 @@ export class PetHomeCrawler {
           }
         }
       })
-      console.log(`Fallback found ${pets.length} pets`)
     }
 
     return pets

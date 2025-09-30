@@ -45,8 +45,6 @@ export class HtmlParser {
     ]
 
     for (const { container, link } of selectors) {
-      console.log(`Trying selector: ${container} ${link}`)
-
       $(container).each((_, element) => {
         const $link = $(element).find(link)
         const href = $link.attr('href')
@@ -69,14 +67,12 @@ export class HtmlParser {
 
       // いずれかのセレクターで結果が得られたら終了
       if (pets.length > 0) {
-        console.log(`Found ${pets.length} pets with selector: ${container} ${link}`)
         break
       }
     }
 
     // 最後の手段: ページ内のすべてのペットリンクを探索
     if (pets.length === 0) {
-      console.log('Fallback: Searching all pet links')
       $('a[href*="pn"]').each((_, element) => {
         const href = $(element).attr('href')
         if (href) {
@@ -92,7 +88,6 @@ export class HtmlParser {
           }
         }
       })
-      console.log(`Fallback found ${pets.length} pets`)
     }
 
     return pets
