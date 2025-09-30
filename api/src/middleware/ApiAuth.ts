@@ -24,6 +24,7 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
   // GETリクエストの公開パス（読み取り専用）
   const publicGetPaths = [
     '/api/pets', // フロントエンドからのペット情報取得
+    '/api/images', // フロントエンドからの画像取得
   ]
 
   if (publicPaths.includes(c.req.path) || c.req.path.startsWith('/crawler/')) {
