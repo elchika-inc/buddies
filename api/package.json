@@ -10,6 +10,7 @@
     "dev": "wrangler dev --local",
     "build": "wrangler build --env production",
     "deploy": "wrangler deploy --env production",
+    "deploy:prod": "wrangler deploy --env production",
     "tail": "wrangler tail",
     "tail:prod": "wrangler tail --env production",
     "check": "./scripts/check-api.sh production",
