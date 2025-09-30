@@ -8,7 +8,8 @@ import { PetDetailModal } from './PetDetailModal'
 import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { usePetData } from '@/hooks/usePetData'
 import { useModals } from '@/hooks/useModals'
-import { useState } from 'react'
+import { useFavorites } from '@/hooks/useFavorites'
+import { useState, useCallback } from 'react'
 import { getPetType } from '@/config/petConfig'
 
 export function PetMatchApp() {
@@ -25,6 +26,7 @@ export function PetMatchApp() {
     openPetDetailModal,
     closePetDetailModal,
   } = useModals()
+  const { favorites, removeFavorite, addFavorite } = useFavorites(petType)
 
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
@@ -34,11 +36,20 @@ export function PetMatchApp() {
   const {
     currentPet,
     hasMorePets,
-    likes,
-    superLikes,
-    handleSwipe,
+    handleSwipe: originalHandleSwipe,
     reset: resetSwipe,
   } = usePetSwipe(pets, petType)
+
+  // スワイプ時にお気に入りに自動追加
+  const handleSwipe = useCallback(
+    (direction: 'like' | 'pass' | 'superLike') => {
+      if (currentPet && (direction === 'like' || direction === 'superLike')) {
+        addFavorite(currentPet.id)
+      }
+      originalHandleSwipe(direction)
+    },
+    [currentPet, addFavorite, originalHandleSwipe]
+  )
 
   // 現在のペットのインデックスを取得
   const currentIndex = currentPet ? pets.indexOf(currentPet) : -1
@@ -80,14 +91,8 @@ export function PetMatchApp() {
       }`}
     >
       <MatchHeader
-        likedPets={pets.filter((pet) => likes.includes(pet.id))}
-        superLikedPets={pets.filter((pet) => superLikes.includes(pet.id))}
-        onRemoveLike={() => {
-          // TODO: Implement remove like functionality
-        }}
-        onRemoveSuperLike={() => {
-          // TODO: Implement remove super like functionality
-        }}
+        favoritePets={pets.filter((pet) => favorites.includes(pet.id))}
+        onRemoveFavorite={removeFavorite}
         onLocationClick={openLocationModal}
         // selectedLocations={selectedLocations}
         petType={petType}

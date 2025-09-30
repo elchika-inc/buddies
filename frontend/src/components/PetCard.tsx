@@ -10,7 +10,7 @@ type PetCardProps = {
   /** 表示するペット情報 */
   pet: FrontendPet
   /** カードタップ時のコールバック関数 */
-  onTap?: (() => void) | undefined
+  onTap?: () => void
   /** 優先的に読み込むかどうか */
   priority?: boolean
 }
@@ -24,32 +24,14 @@ export function PetCard({ pet, onTap, priority = false }: PetCardProps) {
   const [imageError, setImageError] = useState(false)
   /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
-  /** WebP対応チェック - モダンブラウザはほぼ全てWebP対応なのでtrueをデフォルトに */
-  const supportsWebP = true
-
   // フォールバック画像URL（ペットタイプ別）
   const fallbackImage =
     petType === 'dog'
       ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
       : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
 
-  /**
-   * WebP対応の画像URLを生成
-   * APIがWebP画像を提供している場合はそれを優先的に使用
-   */
-  const getOptimizedImageUrl = (url: string | null | undefined) => {
-    if (!url || url.includes('unsplash.com')) return url || fallbackImage
-
-    // pet.hasWebpが1でWebP対応ブラウザの場合、WebP形式のURLを生成
-    if (pet.hasWebp === 1 && supportsWebP && url.includes('/api/images/')) {
-      return url.replace(/\.(jpg|jpeg|png)($|\?)/, '.webp$2')
-    }
-
-    return url
-  }
-
-  // 最終的な画像URL（エラー時はフォールバック画像を使用）
-  const imageUrl = imageError ? fallbackImage : getOptimizedImageUrl(pet.imageUrl)
+  // 画像URL（エラー時はフォールバック画像を使用）
+  const imageUrl = imageError ? fallbackImage : pet.imageUrl || fallbackImage
 
   /** 画像読み込みエラー時の処理 */
   const handleImageError = () => {
@@ -62,8 +44,6 @@ export function PetCard({ pet, onTap, priority = false }: PetCardProps) {
       onTap()
     }
   }
-
-  // プリロード処理は削除（Next.js Imageコンポーネントが自動的に処理）
 
   return (
     <div

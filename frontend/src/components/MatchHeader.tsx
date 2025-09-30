@@ -7,51 +7,29 @@ import { PetDetailModal } from './PetDetailModal'
 // import { Location } from './LocationModal'
 
 interface MatchHeaderProps {
-  likedPets: FrontendPet[]
-  superLikedPets: FrontendPet[]
-  onRemoveLike: (petId: string) => void
-  onRemoveSuperLike: (petId: string) => void
+  favoritePets?: FrontendPet[]
+  onRemoveFavorite?: (petId: string) => void
   onLocationClick: () => void
   // selectedLocations: Location[]
   petType: 'dog' | 'cat'
 }
 
 export function MatchHeader({
-  likedPets = [],
-  superLikedPets = [],
-  onRemoveLike,
-  onRemoveSuperLike,
+  favoritePets = [],
+  onRemoveFavorite,
   onLocationClick,
   // selectedLocations = [],
   petType,
 }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'all' | 'like' | 'super_like'>('all')
   const [selectedPet, setSelectedPet] = useState<FrontendPet | null>(null)
 
-  const safeLikedPets = Array.isArray(likedPets) ? likedPets : []
-  const safeSuperLikedPets = Array.isArray(superLikedPets) ? superLikedPets : []
+  const safeFavoritePets = Array.isArray(favoritePets) ? favoritePets : []
 
   // 重複を排除
-  const uniqueLikedPets = safeLikedPets.filter(
+  const uniqueFavoritePets = safeFavoritePets.filter(
     (pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index
   )
-  const uniqueSuperLikedPets = safeSuperLikedPets.filter(
-    (pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index
-  )
-
-  // すべてのお気に入りを合わせたリスト（重複排除）
-  const allFavorites = [...uniqueLikedPets, ...uniqueSuperLikedPets]
-    .filter((pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index)
-    .sort((a, b) => b.name.localeCompare(a.name)) // 名前でソート
-
-  const currentList =
-    activeTab === 'all'
-      ? allFavorites
-      : activeTab === 'like'
-        ? uniqueLikedPets
-        : uniqueSuperLikedPets
-  const currentRemoveFunction = activeTab === 'like' ? onRemoveLike : onRemoveSuperLike
   const petEmoji = petType === 'dog' ? '🐶' : '🐱'
   const title = petType === 'dog' ? 'DogMatch' : 'CatMatch'
 
@@ -92,55 +70,19 @@ export function MatchHeader({
                   ✕
                 </button>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === 'all'
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  すべて
-                </button>
-                <button
-                  onClick={() => setActiveTab('like')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === 'like'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  いいね
-                </button>
-                <button
-                  onClick={() => setActiveTab('super_like')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === 'super_like'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  めっちゃいいね
-                </button>
-              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
-              {!currentList || currentList.length === 0 ? (
+              {!uniqueFavoritePets || uniqueFavoritePets.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  {activeTab === 'all'
-                    ? `お気に入りした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`
-                    : activeTab === 'like'
-                      ? `いいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`
-                      : `めっちゃいいねした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`}
+                  {`お気に入りした${petType === 'dog' ? 'ワンちゃん' : 'ネコちゃん'}はまだいません`}
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {Array.isArray(currentList) &&
-                    currentList.map((pet, index) => (
+                  {Array.isArray(uniqueFavoritePets) &&
+                    uniqueFavoritePets.map((pet, index) => (
                       <div
-                        key={`${activeTab}-${pet.id}-${index}`}
+                        key={`favorite-${pet.id}-${index}`}
                         className="border border-gray-200 rounded-lg p-4 flex gap-4"
                       >
                         <div className="relative w-20 h-20 rounded-lg overflow-hidden">
@@ -170,16 +112,8 @@ export function MatchHeader({
                         </div>
                         <button
                           onClick={() => {
-                            if (activeTab === 'all') {
-                              // すべてタブの場合、どちらのリストに含まれているかを判定
-                              if (uniqueLikedPets.some((p) => p.id === pet.id)) {
-                                onRemoveLike(pet.id)
-                              }
-                              if (uniqueSuperLikedPets.some((p) => p.id === pet.id)) {
-                                onRemoveSuperLike(pet.id)
-                              }
-                            } else {
-                              currentRemoveFunction(pet.id)
+                            if (onRemoveFavorite) {
+                              onRemoveFavorite(pet.id)
                             }
                           }}
                           className="text-red-500 hover:text-red-700 px-2"
