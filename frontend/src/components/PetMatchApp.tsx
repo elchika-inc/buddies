@@ -26,7 +26,8 @@ export function PetMatchApp() {
     openPetDetailModal,
     closePetDetailModal,
   } = useModals()
-  const { favorites, removeFavorite, addFavorite } = useFavorites(petType)
+  const { favorites, removeFavorite, updateFavoriteRating, getFavoriteRating } =
+    useFavorites(petType)
 
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
@@ -40,15 +41,24 @@ export function PetMatchApp() {
     reset: resetSwipe,
   } = usePetSwipe(pets, petType)
 
-  // スワイプ時にお気に入りに自動追加
+  // 現在のペットの評価レベルを取得
+  const currentPetRating = currentPet ? getFavoriteRating(currentPet.id) : null
+
+  // スワイプ時の処理（評価の更新/削除）
   const handleSwipe = useCallback(
     (direction: 'like' | 'pass' | 'superLike') => {
-      if (currentPet && (direction === 'like' || direction === 'superLike')) {
-        addFavorite(currentPet.id)
+      if (currentPet) {
+        if (direction === 'like' || direction === 'superLike') {
+          // 評価を追加/更新
+          updateFavoriteRating(currentPet.id, direction)
+        } else if (direction === 'pass' && currentPetRating) {
+          // お気に入り済みをパスしたら削除
+          removeFavorite(currentPet.id)
+        }
       }
       originalHandleSwipe(direction)
     },
-    [currentPet, addFavorite, originalHandleSwipe]
+    [currentPet, currentPetRating, updateFavoriteRating, removeFavorite, originalHandleSwipe]
   )
 
   // 現在のペットのインデックスを取得
@@ -128,6 +138,7 @@ export function PetMatchApp() {
               isTopCard={false}
               onTap={() => openPetDetailModal(nextPet)}
               cardIndex={1}
+              favoriteRating={getFavoriteRating(nextPet.id)}
             />
           )}
 
@@ -141,6 +152,7 @@ export function PetMatchApp() {
               buttonSwipeDirection={buttonSwipeDirection}
               onTap={() => currentPet && openPetDetailModal(currentPet)}
               cardIndex={0}
+              favoriteRating={currentPetRating}
             />
           )}
 

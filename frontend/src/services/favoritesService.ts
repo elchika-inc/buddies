@@ -1,11 +1,23 @@
 import { z } from 'zod'
-import type { PetType } from '@/types/favorites'
+import type { PetType, FavoriteItem, FavoriteRating } from '@/types/favorites'
+
+/**
+ * お気に入りアイテムのZodスキーマ定義
+ */
+const favoriteItemSchema = z.object({
+  id: z.string(),
+  rating: z.enum(['like', 'superLike']),
+  timestamp: z.number().optional(),
+})
 
 /**
  * お気に入りリストのZodスキーマ定義
- * データ検証ロジックをサービス層で集約
+ * 旧形式（string[]）と新形式（FavoriteItem[]）の両方に対応
  */
-const favoritesSchema = z.array(z.string())
+const favoritesSchema = z.union([
+  z.array(z.string()), // 旧形式
+  z.array(favoriteItemSchema), // 新形式
+])
 
 /**
  * お気に入り管理サービスクラス
@@ -25,17 +37,65 @@ export class FavoritesService {
   }
 
   /**
-   * お気に入りリストのバリデーション
-   * @param data 検証対象データ
-   * @returns 検証済みのお気に入りリスト、失敗時は空配列
+   * データの移行（旧形式→新形式）
+   * @param data 移行対象のデータ
+   * @returns 新形式のお気に入りリスト
    */
-  static validateFavorites(data: unknown): string[] {
+  static migrateFavorites(data: unknown): FavoriteItem[] {
     try {
-      return favoritesSchema.parse(data)
+      const parsed = favoritesSchema.parse(data)
+
+      // 文字列配列（旧形式）の場合は移行
+      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
+        return (parsed as string[]).map((id) => ({
+          id,
+          rating: 'like' as const,
+          timestamp: Date.now(),
+        }))
+      }
+
+      // すでに新形式の場合はそのまま返す
+      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+        return parsed as FavoriteItem[]
+      }
+
+      return []
     } catch (error) {
-      console.warn('Invalid favorites data structure:', error)
+      console.warn('Failed to migrate favorites data:', error)
       return []
     }
+  }
+
+  /**
+   * お気に入りリストのバリデーション
+   * @param data 検証対象データ
+   * @returns 検証済みのお気に入りリスト
+   */
+  static validateFavorites(data: unknown): FavoriteItem[] {
+    return this.migrateFavorites(data)
+  }
+
+  /**
+   * 評価を追加または更新
+   * @param favorites 現在のお気に入りリスト
+   * @param petId ペットID
+   * @param rating 評価レベル
+   * @returns 更新されたお気に入りリスト
+   */
+  static upsertFavorite(
+    favorites: FavoriteItem[],
+    petId: string,
+    rating: FavoriteRating
+  ): FavoriteItem[] {
+    const existing = favorites.find((f) => f.id === petId)
+
+    if (existing) {
+      // 既存の評価を更新
+      return favorites.map((f) => (f.id === petId ? { ...f, rating, timestamp: Date.now() } : f))
+    }
+
+    // 新規追加
+    return [...favorites, { id: petId, rating, timestamp: Date.now() }]
   }
 
   /**
@@ -44,12 +104,8 @@ export class FavoritesService {
    * @param petId 追加するペットID
    * @returns 更新されたお気に入りリスト
    */
-  static addToFavorites(favorites: string[], petId: string): string[] {
-    // 既に存在する場合は変更なし
-    if (favorites.includes(petId)) {
-      return favorites
-    }
-    return [...favorites, petId]
+  static addToFavorites(favorites: FavoriteItem[], petId: string): FavoriteItem[] {
+    return this.upsertFavorite(favorites, petId, 'like')
   }
 
   /**
@@ -58,8 +114,8 @@ export class FavoritesService {
    * @param petId 削除するペットID
    * @returns 更新されたお気に入りリスト
    */
-  static removeFromFavorites(favorites: string[], petId: string): string[] {
-    return favorites.filter((id) => id !== petId)
+  static removeFromFavorites(favorites: FavoriteItem[], petId: string): FavoriteItem[] {
+    return favorites.filter((f) => f.id !== petId)
   }
 
   /**
@@ -68,8 +124,8 @@ export class FavoritesService {
    * @param petId 切り替えるペットID
    * @returns 更新されたお気に入りリスト
    */
-  static toggleFavorite(favorites: string[], petId: string): string[] {
-    if (favorites.includes(petId)) {
+  static toggleFavorite(favorites: FavoriteItem[], petId: string): FavoriteItem[] {
+    if (this.isFavorite(favorites, petId)) {
       return this.removeFromFavorites(favorites, petId)
     }
     return this.addToFavorites(favorites, petId)
@@ -81,16 +137,45 @@ export class FavoritesService {
    * @param petId チェックするペットID
    * @returns お気に入りに含まれているか
    */
-  static isFavorite(favorites: string[], petId: string): boolean {
-    return favorites.includes(petId)
+  static isFavorite(favorites: FavoriteItem[], petId: string): boolean {
+    return favorites.some((f) => f.id === petId)
+  }
+
+  /**
+   * 特定のペットの評価レベルを取得
+   * @param favorites お気に入りリスト
+   * @param petId ペットID
+   * @returns 評価レベル、存在しない場合はnull
+   */
+  static getRating(favorites: FavoriteItem[], petId: string): FavoriteRating | null {
+    const item = favorites.find((f) => f.id === petId)
+    return item?.rating || null
   }
 
   /**
    * お気に入りリストの重複を除去
    * @param favorites お気に入りリスト
-   * @returns 重複を除去したリスト
+   * @returns 重複を除去したリスト（最新のタイムスタンプを保持）
    */
-  static removeDuplicates(favorites: string[]): string[] {
-    return Array.from(new Set(favorites))
+  static removeDuplicates(favorites: FavoriteItem[]): FavoriteItem[] {
+    const uniqueMap = new Map<string, FavoriteItem>()
+
+    favorites.forEach((item) => {
+      const existing = uniqueMap.get(item.id)
+      if (!existing || (item.timestamp || 0) > (existing.timestamp || 0)) {
+        uniqueMap.set(item.id, item)
+      }
+    })
+
+    return Array.from(uniqueMap.values())
+  }
+
+  /**
+   * IDリストのみを取得（後方互換性のため）
+   * @param favorites お気に入りリスト
+   * @returns ペットIDのリスト
+   */
+  static getIdList(favorites: FavoriteItem[]): string[] {
+    return favorites.map((f) => f.id)
   }
 }

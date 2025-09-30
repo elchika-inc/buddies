@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 import { FavoritesService } from '@/services/favoritesService'
-import type { PetType, UseFavoritesReturn } from '@/types/favorites'
+import type { PetType, UseFavoritesReturn, FavoriteItem, FavoriteRating } from '@/types/favorites'
 
 /**
  * お気に入り（ブックマーク）管理用のカスタムフック
@@ -11,15 +11,21 @@ export function useFavorites(petType: PetType): UseFavoritesReturn {
   const storageKey = FavoritesService.getStorageKey(petType)
 
   // useLocalStorageフックを使用して統一的なエラーハンドリングを実現
-  const [rawFavorites, setRawFavorites, error] = useLocalStorage<string[]>(storageKey, [])
+  // FavoriteItem[]として型指定（新形式）
+  const [rawFavorites, setRawFavorites, error] = useLocalStorage<FavoriteItem[]>(storageKey, [])
 
-  // サービスクラスでバリデーション処理
-  const favorites = useMemo(() => {
+  // サービスクラスでバリデーション処理（旧形式からの移行も含む）
+  const favoriteItems = useMemo(() => {
     return FavoritesService.validateFavorites(rawFavorites)
   }, [rawFavorites])
 
+  // 後方互換性のためIDリストも提供
+  const favorites = useMemo(() => {
+    return FavoritesService.getIdList(favoriteItems)
+  }, [favoriteItems])
+
   /**
-   * お気に入りに追加
+   * お気に入りに追加（デフォルトは「いいね」）
    */
   const addFavorite = useCallback(
     (petId: string) => {
@@ -53,9 +59,29 @@ export function useFavorites(petType: PetType): UseFavoritesReturn {
    */
   const isFavorite = useCallback(
     (petId: string) => {
-      return FavoritesService.isFavorite(favorites, petId)
+      return FavoritesService.isFavorite(favoriteItems, petId)
     },
-    [favorites]
+    [favoriteItems]
+  )
+
+  /**
+   * 評価レベルを更新/追加
+   */
+  const updateFavoriteRating = useCallback(
+    (petId: string, rating: FavoriteRating) => {
+      setRawFavorites((prev) => FavoritesService.upsertFavorite(prev, petId, rating))
+    },
+    [setRawFavorites]
+  )
+
+  /**
+   * 特定のペットの評価レベルを取得
+   */
+  const getFavoriteRating = useCallback(
+    (petId: string): FavoriteRating | null => {
+      return FavoritesService.getRating(favoriteItems, petId)
+    },
+    [favoriteItems]
   )
 
   /**
@@ -66,12 +92,15 @@ export function useFavorites(petType: PetType): UseFavoritesReturn {
   }, [setRawFavorites])
 
   return {
-    favorites,
+    favorites, // 後方互換性のためIDリストを提供
+    favoriteItems, // 新形式の完全なデータ
     addFavorite,
     removeFavorite,
     toggleFavorite,
     isFavorite,
+    updateFavoriteRating,
+    getFavoriteRating,
     clearFavorites,
-    error, // エラー情報も返す
+    error,
   }
 }

@@ -3,6 +3,7 @@ import { PetCard } from './PetCard'
 import { SwipeIndicator } from './SwipeIndicator'
 import { FrontendPet } from '@/types/pet'
 import { SwipeDirection, useSwipeGesture } from '@/hooks/usePetSwipe'
+import type { FavoriteRating } from '@/types/favorites'
 
 type PetSwipeCardProps = {
   pet: FrontendPet
@@ -11,6 +12,7 @@ type PetSwipeCardProps = {
   buttonSwipeDirection?: SwipeDirection | null
   onTap?: () => void
   cardIndex?: number // カードのインデックス（プリロード判定用）
+  favoriteRating?: FavoriteRating | null // お気に入りの評価レベル
 }
 
 export function PetSwipeCard({
@@ -20,6 +22,7 @@ export function PetSwipeCard({
   buttonSwipeDirection,
   onTap,
   cardIndex = 0,
+  favoriteRating,
 }: PetSwipeCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -193,6 +196,7 @@ export function PetSwipeCard({
         pet={pet}
         onTap={onTap}
         priority={cardIndex === 0} // 最初のカードは優先読み込み
+        favoriteRating={favoriteRating} // 評価レベルを渡す
       />
 
       {showIndicator && (
