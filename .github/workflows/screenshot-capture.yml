@@ -60,11 +60,28 @@ jobs:
             echo 'Processing data from Dispatcher...'
             echo '${{ github.event.inputs.batch_data }}' > pets_to_process.json
             PET_COUNT=$(echo '${{ github.event.inputs.batch_data }}' | jq 'length')
+
+            # バッチIDから期待値を取得
+            if [ -n "${{ github.event.inputs.batch_id }}" ]; then
+              echo "Fetching expected count from crawler state..."
+              CRAWLER_STATE=$(curl -s "${API_URL}/api/crawler/get-state/${{ github.event.inputs.batch_id }}" \
+                -H "X-API-Key: ${API_KEY}")
+
+              if echo "$CRAWLER_STATE" | jq -e '.checkpoint' > /dev/null; then
+                EXPECTED_COUNT=$(echo "$CRAWLER_STATE" | jq -r '.checkpoint.totalFetched')
+                echo "Expected count from crawler: ${EXPECTED_COUNT}"
+                echo "expected_count=${EXPECTED_COUNT}" >> $GITHUB_OUTPUT
+
+                if [ "$PET_COUNT" != "$EXPECTED_COUNT" ]; then
+                  echo "⚠️ WARNING: Count mismatch! Expected: ${EXPECTED_COUNT}, Actual: ${PET_COUNT}"
+                fi
+              fi
+            fi
           else
             # 手動実行（APIから取得）
             echo 'Fetching data from API...'
             PETS_JSON=$(curl -s "${API_URL}/api/stats" | \
-              jq '[.data.missingImages[0:${{ github.event.inputs.limit || 10 }}] | 
+              jq '[.data.missingImages[0:${{ github.event.inputs.limit || 10 }}] |
                   .[] | {id: .id, name: .name, sourceUrl: .sourceUrl, type: .type}]')
             echo "$PETS_JSON" > pets_to_process.json
             PET_COUNT=$(echo "$PETS_JSON" | jq 'length')
@@ -79,8 +96,8 @@ jobs:
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
-          PUBLIC_API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          PUBLIC_API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -88,10 +105,12 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          # スクリーンショット取得を実行
+          # スクリーンショット取得を実行（リトライ付き）
+          BATCH_ID="${{ github.event.inputs.batch_id || format('capture-{0}', github.run_id) }}"
           node scripts/dispatcher/screenshot-capture.js \
             --batch-file="pets_to_process.json" \
-            --batch-id="${{ github.event.inputs.batch_id || format('capture-{0}', github.run_id) }}"
+            --batch-id="${BATCH_ID}" \
+            --max-retries=3
 
           # 成功したスクリーンショットのペットIDを保存
           if [ -f "scripts/logs/capture-results.json" ]; then
@@ -101,12 +120,89 @@ jobs:
             echo "screenshot_success_count=0" >> $GITHUB_OUTPUT
           fi
 
+      - name: Capture additional screenshots if capacity available
+        id: capture-additional
+        if: steps.prepare-pets.outputs.pet_count > 0
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          PUBLIC_API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          # 処理済み数とlimitを比較
+          PROCESSED_COUNT=${{ steps.prepare-pets.outputs.pet_count }}
+          LIMIT=${{ github.event.inputs.limit || 10 }}
+          REMAINING=$((LIMIT - PROCESSED_COUNT))
+
+          if [ $REMAINING -gt 0 ]; then
+            echo "📊 Capacity available: $REMAINING slots"
+
+            # 失敗したペットIDを抽出（スキップリスト作成）
+            SKIP_IDS="[]"
+            if [ -f "scripts/logs/capture-results.json" ]; then
+              SKIP_IDS=$(jq '[.results[] | select(.success == false) | .pet_id]' scripts/logs/capture-results.json)
+            fi
+
+            # APIから追加ペットを取得（犬と猫を均等に）
+            DOGS_LIMIT=$((REMAINING / 2))
+            CATS_LIMIT=$((REMAINING - DOGS_LIMIT))
+
+            # 犬の追加取得
+            if [ $DOGS_LIMIT -gt 0 ]; then
+              curl -s "${API_URL}/api/stats/dogs/missing-screenshots?limit=${DOGS_LIMIT}" \
+                -H "X-API-Key: ${API_KEY}" | jq '.data.pets // []' > additional_dogs.json
+            else
+              echo "[]" > additional_dogs.json
+            fi
+
+            # 猫の追加取得
+            if [ $CATS_LIMIT -gt 0 ]; then
+              curl -s "${API_URL}/api/stats/cats/missing-screenshots?limit=${CATS_LIMIT}" \
+                -H "X-API-Key: ${API_KEY}" | jq '.data.pets // []' > additional_cats.json
+            else
+              echo "[]" > additional_cats.json
+            fi
+
+            # 追加ペットリストを作成（失敗したペットを除外）
+            jq -s --argjson skip "$SKIP_IDS" \
+              '(.[0] + .[1]) | map(select(.id as $id | $skip | index($id) | not))' \
+              additional_dogs.json additional_cats.json > additional_pets.json
+
+            ADDITIONAL_COUNT=$(jq 'length' additional_pets.json)
+
+            if [ $ADDITIONAL_COUNT -gt 0 ]; then
+              echo "📸 Processing $ADDITIONAL_COUNT additional pets..."
+
+              # 追加ペットを処理（同じくリトライ付き）
+              BATCH_ID="${{ github.event.inputs.batch_id || format('capture-{0}', github.run_id) }}"
+              node scripts/dispatcher/screenshot-capture.js \
+                --batch-file="additional_pets.json" \
+                --batch-id="${BATCH_ID}-additional" \
+                --max-retries=3 \
+                --append-results=true
+
+              # 更新された成功数を保存
+              if [ -f "scripts/logs/capture-results.json" ]; then
+                TOTAL_SUCCESS=$(cat scripts/logs/capture-results.json | jq '[.results[] | select(.success)] | length')
+                echo "total_success_count=${TOTAL_SUCCESS}" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "ℹ️ No additional pets available for processing"
+            fi
+          else
+            echo "✅ Batch limit reached, no additional processing needed"
+          fi
+
       - name: Update hasJpeg flags in database
         if: steps.capture-screenshots.outputs.screenshot_success_count > 0
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
         run: |
           # 成功したスクリーンショットのペット情報を抽出
           SUCCESSFUL_PETS=$(cat scripts/logs/capture-results.json | jq '[.results[] | select(.success) | {
@@ -154,7 +250,7 @@ jobs:
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
         run: |
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
@@ -196,8 +292,76 @@ jobs:
             echo "ℹ️ No successful screenshots to convert"
           fi
 
+      - name: Update crawler state
+        if: steps.prepare-pets.outputs.pet_count > 0 && github.event.inputs.batch_id
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+        run: |
+          # 成功したペットIDを収集
+          if [ -f "scripts/logs/capture-results.json" ]; then
+            SUCCESS_IDS=$(cat scripts/logs/capture-results.json | \
+              jq -c '[.results[] | select(.success) | .pet_id]')
+            SUCCESS_COUNT=$(echo "$SUCCESS_IDS" | jq 'length')
+
+            echo "📤 Updating crawler state for batch ${{ github.event.inputs.batch_id }}"
+
+            # crawler_statesを更新
+            UPDATE_RESPONSE=$(curl -s -X POST "${API_URL}/api/crawler/update-state" \
+              -H "Content-Type: application/json" \
+              -H "X-API-Key: ${API_KEY}" \
+              -d "{
+                \"batchId\": \"${{ github.event.inputs.batch_id }}\",
+                \"stage\": \"screenshot\",
+                \"successCount\": ${SUCCESS_COUNT},
+                \"successIds\": ${SUCCESS_IDS}
+              }")
+
+            if echo "$UPDATE_RESPONSE" | jq -e '.success' > /dev/null; then
+              echo "✅ Successfully updated crawler state"
+            else
+              echo "⚠️ Failed to update crawler state"
+              echo "$UPDATE_RESPONSE"
+            fi
+          fi
+
       - name: Summary
         if: steps.prepare-pets.outputs.pet_count > 0
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
         run: |
-          echo "✅ Screenshot capture completed for ${{ steps.prepare-pets.outputs.pet_count }} pets"
+          # 最終結果を読み込み
+          if [ -f "scripts/logs/capture-results.json" ]; then
+            TOTAL_PROCESSED=$(jq '.totalProcessed' scripts/logs/capture-results.json)
+            TOTAL_SUCCESS=$(jq '.successful' scripts/logs/capture-results.json)
+            TOTAL_FAILED=$(jq '.failed' scripts/logs/capture-results.json)
+
+            echo "✅ Screenshot capture completed"
+            echo "📊 Total processed: ${TOTAL_PROCESSED}"
+            echo "  ✅ Successful: ${TOTAL_SUCCESS}"
+            echo "  ❌ Failed: ${TOTAL_FAILED}"
+
+            # リトライ統計
+            RETRIED_COUNT=$(jq '[.results[] | select(.success and .attempts > 1)] | length' scripts/logs/capture-results.json)
+            if [ $RETRIED_COUNT -gt 0 ]; then
+              echo "  🔄 Succeeded with retries: ${RETRIED_COUNT}"
+            fi
+
+            # 追加処理の統計
+            if [ -n "${{ steps.capture-additional.outputs.total_success_count }}" ]; then
+              INITIAL_COUNT=${{ steps.prepare-pets.outputs.pet_count }}
+              ADDITIONAL_COUNT=$((TOTAL_PROCESSED - INITIAL_COUNT))
+              if [ $ADDITIONAL_COUNT -gt 0 ]; then
+                echo "  📈 Additional pets processed: ${ADDITIONAL_COUNT}"
+              fi
+            fi
+          else
+            echo "✅ Screenshot capture completed for ${{ steps.prepare-pets.outputs.pet_count }} pets"
+          fi
+
+          if [ -n "${{ steps.prepare-pets.outputs.expected_count }}" ]; then
+            echo "📊 Expected from crawler: ${{ steps.prepare-pets.outputs.expected_count }}"
+          fi
           echo "📤 Conversion request sent to Dispatcher Queue"
