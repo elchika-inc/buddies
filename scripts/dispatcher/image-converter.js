@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url'
 const R2_PATHS = {
   pets: {
     screenshot: (type, id) => `pets/${type}s/${id}/screenshot.png`,
+    original: (type, id) => `pets/${type}s/${id}/original.jpg`,
+    optimized: (type, id) => `pets/${type}s/${id}/optimized.webp`,
     thumbnail: (type, id) => `pets/${type}s/${id}/thumbnail.webp`,
     medium: (type, id) => `pets/${type}s/${id}/medium.webp`,
     large: (type, id) => `pets/${type}s/${id}/large.webp`,
