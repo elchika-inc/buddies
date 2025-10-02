@@ -78,20 +78,15 @@ class PetApi {
     params.append('page', page.toString())
     params.append('limit', limit.toString())
 
-    // 地域フィルターをパラメータに追加
+    // 地域フィルター（都道府県のみ）をパラメータに追加
     if (locations && locations.length > 0) {
       const prefectures = new Set<string>()
-      const cities = new Set<string>()
 
       locations.forEach((loc) => {
         prefectures.add(loc.prefecture)
-        if (loc.city) {
-          cities.add(loc.city)
-        }
       })
 
       prefectures.forEach((pref) => params.append('prefecture[]', pref))
-      cities.forEach((city) => params.append('city[]', city))
     }
 
     const url = `${this.baseUrl}/api/pets/type/${petType}?${params.toString()}`

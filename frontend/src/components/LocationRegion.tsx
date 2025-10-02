@@ -52,56 +52,21 @@ export function LocationRegion({
       {isExpanded && (
         <div className="pl-4">
           {prefectures.map((prefecture) => {
+            // 市区町村データは残すが表示しない
             const cities = locations[prefecture as keyof typeof locations]
             if (!cities) return null
 
             return (
               <div key={prefecture} className="border-b">
-                <div className="flex items-center px-3 py-2 hover:bg-gray-50 transition-colors">
+                <label className="flex items-center px-3 py-2 hover:bg-gray-50 transition-colors cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={isPrefectureAllSelected(prefecture)}
-                    onChange={() => onTogglePrefectureAll(prefecture)}
+                    checked={isLocationSelected({ prefecture, city: '' })}
+                    onChange={() => onToggleLocation({ prefecture, city: '' })}
                     className="mr-3"
                   />
-                  <button
-                    onClick={() => onTogglePrefecture(prefecture)}
-                    className="flex-1 flex items-center justify-between"
-                  >
-                    <span className="font-medium">{prefecture}</span>
-                    <span className="text-gray-500">
-                      {expandedPrefectures.includes(prefecture) ? '▼' : '▶'}
-                    </span>
-                  </button>
-                </div>
-
-                {expandedPrefectures.includes(prefecture) && (
-                  <div className="pl-12">
-                    <label className="flex items-center px-3 py-1 hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isLocationSelected({ prefecture, city: 'すべて' })}
-                        onChange={() => onToggleLocation({ prefecture, city: 'すべて' })}
-                        className="mr-3"
-                      />
-                      <span>すべて</span>
-                    </label>
-                    {cities.map((city) => (
-                      <label
-                        key={city}
-                        className="flex items-center px-3 py-1 hover:bg-gray-50 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isLocationSelected({ prefecture, city })}
-                          onChange={() => onToggleLocation({ prefecture, city })}
-                          className="mr-3"
-                        />
-                        <span>{city}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                  <span className="font-medium">{prefecture}</span>
+                </label>
               </div>
             )
           })}
