@@ -20,10 +20,60 @@ function parseArgs() {
       params.batchFile = arg.split('=')[1]
     } else if (arg.startsWith('--batch-id=')) {
       params.batchId = arg.split('=')[1]
+    } else if (arg.startsWith('--max-retries=')) {
+      params.maxRetries = parseInt(arg.split('=')[1])
+    } else if (arg.startsWith('--append-results=')) {
+      params.appendResults = arg.split('=')[1] === 'true'
     }
   }
 
   return params
+}
+
+// リトライ付きスクリーンショット処理
+async function processWithRetry(page, pet, maxRetries = 1) {
+  let lastError = null
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Processing ${pet.id} - ${pet.name} (attempt ${attempt}/${maxRetries})`)
+
+      const result = await captureScreenshot(page, pet)
+
+      if (result.success) {
+        console.log(`  ✅ Success on attempt ${attempt}`)
+        return { ...result, attempts: attempt }
+      }
+
+      lastError = result.error
+
+      // 最終試行でなければ待機
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000 // 2秒、4秒と増やす
+        console.log(`  ⏳ Waiting ${waitTime}ms before retry...`)
+        await page.waitForTimeout(waitTime)
+      }
+    } catch (error) {
+      lastError = error.message
+      console.error(`  ❌ Attempt ${attempt} failed:`, error.message)
+
+      // 最終試行でなければ待機
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000
+        await page.waitForTimeout(waitTime)
+      }
+    }
+  }
+
+  // 全試行失敗
+  console.error(`  ❌ All ${maxRetries} attempts failed for ${pet.id}`)
+  return {
+    pet_id: pet.id,
+    pet_type: pet.type,
+    success: false,
+    error: lastError,
+    attempts: maxRetries
+  }
 }
 
 // スクリーンショット取得
@@ -191,6 +241,8 @@ async function main() {
   }
 
   const batchId = args.batchId || `capture-${Date.now()}`
+  const maxRetries = args.maxRetries || 3
+  const appendResults = args.appendResults || false
 
   // ペットデータを読み込み
   const petsData = await fs.readFile(args.batchFile, 'utf-8')
@@ -198,11 +250,26 @@ async function main() {
 
   console.log(`🚀 Screenshot Capture Pipeline`)
   console.log(`📋 Batch ID: ${batchId}`)
+  console.log(`🔄 Max retries: ${maxRetries}`)
   console.log(`📸 Capturing screenshots for ${pets.length} pets\n`)
 
   // ログディレクトリを作成
   const logDir = path.join(__dirname, '../logs')
   await fs.mkdir(logDir, { recursive: true })
+
+  // 既存の結果を読み込み（appendResultsがtrueの場合）
+  let existingResults = []
+  const resultsPath = path.join(logDir, 'capture-results.json')
+  if (appendResults) {
+    try {
+      const existingData = await fs.readFile(resultsPath, 'utf-8')
+      const existingJson = JSON.parse(existingData)
+      existingResults = existingJson.results || []
+      console.log(`📂 Appending to existing results (${existingResults.length} existing)\n`)
+    } catch (err) {
+      console.log(`📝 Starting fresh results file\n`)
+    }
+  }
 
   // ブラウザを起動
   const browser = await chromium.launch({
@@ -218,9 +285,9 @@ async function main() {
   const page = await context.newPage()
   const results = []
 
-  // 各ペットのスクリーンショットを取得
+  // 各ペットのスクリーンショットを取得（リトライ付き）
   for (const pet of pets) {
-    const result = await captureScreenshot(page, pet)
+    const result = await processWithRetry(page, pet, maxRetries)
     results.push(result)
 
     // レート制限対策
@@ -231,35 +298,46 @@ async function main() {
 
   await browser.close()
 
+  // 全結果を結合（appendResultsがtrueの場合）
+  const allResults = appendResults ? [...existingResults, ...results] : results
+
   // 結果サマリー
-  const successful = results.filter((r) => r.success).length
-  const failed = results.filter((r) => !r.success).length
+  const successful = allResults.filter((r) => r.success).length
+  const failed = allResults.filter((r) => !r.success).length
 
   console.log('\n📊 Capture Summary:')
-  console.log(`  ✅ Successful: ${successful}/${pets.length}`)
-  console.log(`  ❌ Failed: ${failed}/${pets.length}`)
+  console.log(`  ✅ Successful: ${successful}/${allResults.length}`)
+  console.log(`  ❌ Failed: ${failed}/${allResults.length}`)
 
   if (successful > 0) {
-    const totalSize = results.filter((r) => r.success).reduce((sum, r) => sum + r.screenshotSize, 0)
+    const successfulResults = allResults.filter((r) => r.success)
+    const totalSize = successfulResults.reduce((sum, r) => sum + r.screenshotSize, 0)
 
     console.log(`  📦 Total PNG size: ${(totalSize / 1024 / 1024).toFixed(2)}MB`)
     console.log(
-      `  ⏱️ Average capture time: ${(results.filter((r) => r.success).reduce((sum, r) => sum + r.duration, 0) / successful / 1000).toFixed(1)}s`
+      `  ⏱️ Average capture time: ${(successfulResults.reduce((sum, r) => sum + r.duration, 0) / successful / 1000).toFixed(1)}s`
     )
+
+    // リトライ統計
+    const retriedResults = successfulResults.filter(r => r.attempts > 1)
+    if (retriedResults.length > 0) {
+      console.log(`  🔄 Succeeded with retries: ${retriedResults.length} pets`)
+      const avgRetries = retriedResults.reduce((sum, r) => sum + r.attempts, 0) / retriedResults.length
+      console.log(`  📈 Average attempts for retry cases: ${avgRetries.toFixed(1)}`)
+    }
   }
 
   // 結果をJSONファイルに保存
-  const resultsPath = path.join(logDir, 'capture-results.json')
   await fs.writeFile(
     resultsPath,
     JSON.stringify(
       {
         batchId,
         timestamp: new Date().toISOString(),
-        totalProcessed: pets.length,
+        totalProcessed: allResults.length,
         successful,
         failed,
-        results,
+        results: allResults,
       },
       null,
       2

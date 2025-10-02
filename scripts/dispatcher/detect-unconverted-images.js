@@ -35,6 +35,7 @@ function parseArgs() {
     mode: 'all',
     limit: 50,
     output: 'conversion_list.json',
+    skipIds: [],
   }
 
   for (const arg of args) {
@@ -44,6 +45,8 @@ function parseArgs() {
       params.limit = parseInt(arg.split('=')[1])
     } else if (arg.startsWith('--output=')) {
       params.output = arg.split('=')[1]
+    } else if (arg.startsWith('--skip-ids=')) {
+      params.skipIds = arg.split('=')[1].split(',').filter(id => id)
     }
   }
 
@@ -230,29 +233,120 @@ async function fetchFromAPI(limit) {
   return []
 }
 
+// APIから追加の未変換ペットを取得
+async function fetchAdditionalFromAPI(limit, skipIds = [], mode = 'all') {
+  const apiUrl = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+  const apiKey = process.env.API_KEY || process.env.ACTIONS_API_KEY
+
+  try {
+    // 犬と猫を均等に取得
+    const dogsLimit = Math.floor(limit / 2)
+    const catsLimit = Math.ceil(limit / 2)
+
+    // 適切なエンドポイントを選択
+    let dogEndpoint, catEndpoint
+    if (mode === 'missing-jpeg' || mode === 'all') {
+      dogEndpoint = `${apiUrl}/api/stats/dogs/missing-conversions?limit=${dogsLimit * 2}` // 余分に取得してスキップ分を考慮
+      catEndpoint = `${apiUrl}/api/stats/cats/missing-conversions?limit=${catsLimit * 2}`
+    } else {
+      // missing-webpの場合もmissing-conversionsを使用（hasWebp=0のものが返される）
+      dogEndpoint = `${apiUrl}/api/stats/dogs/missing-conversions?limit=${dogsLimit * 2}`
+      catEndpoint = `${apiUrl}/api/stats/cats/missing-conversions?limit=${catsLimit * 2}`
+    }
+
+    const headers = apiKey ? { 'X-API-Key': apiKey } : {}
+
+    const [dogsResponse, catsResponse] = await Promise.all([
+      fetch(dogEndpoint, { headers }),
+      fetch(catEndpoint, { headers })
+    ])
+
+    const dogsData = await dogsResponse.json()
+    const catsData = await catsResponse.json()
+
+    // ペットデータを抽出（スキップリストを除外）
+    const dogs = (dogsData.data?.pets || [])
+      .filter(pet => !skipIds.includes(pet.id))
+      .slice(0, dogsLimit)
+      .map(pet => ({
+        id: pet.id,
+        type: 'dog',
+        name: pet.name,
+        screenshotKey: pet.screenshotKey || R2_PATHS.pets.screenshot('dog', pet.id)
+      }))
+
+    const cats = (catsData.data?.pets || [])
+      .filter(pet => !skipIds.includes(pet.id))
+      .slice(0, catsLimit)
+      .map(pet => ({
+        id: pet.id,
+        type: 'cat',
+        name: pet.name,
+        screenshotKey: pet.screenshotKey || R2_PATHS.pets.screenshot('cat', pet.id)
+      }))
+
+    const allPets = [...dogs, ...cats]
+
+    if (allPets.length > 0) {
+      console.log(`\n📥 Fetched ${allPets.length} additional pets from API`)
+      console.log(`  🐕 Dogs: ${dogs.length}`)
+      console.log(`  🐱 Cats: ${cats.length}`)
+      if (skipIds.length > 0) {
+        console.log(`  ⏭️ Skipped ${skipIds.length} failed pets`)
+      }
+    }
+
+    return allPets
+  } catch (error) {
+    console.error('Failed to fetch additional pets from API:', error)
+    return []
+  }
+}
+
 // メイン処理
 async function main() {
   const params = parseArgs()
 
   try {
     // R2から未変換画像を検出
-    const unconvertedImages = await detectUnconvertedImages(params)
+    let unconvertedImages = await detectUnconvertedImages(params)
+
+    // スキップリストからIDを除外
+    if (params.skipIds.length > 0) {
+      const beforeCount = unconvertedImages.length
+      unconvertedImages = unconvertedImages.filter(pet => !params.skipIds.includes(pet.id))
+      const skippedCount = beforeCount - unconvertedImages.length
+      if (skippedCount > 0) {
+        console.log(`\n⏭️ Skipped ${skippedCount} pets from skip list`)
+      }
+    }
+
+    // R2スキャンで十分な結果が得られなかった場合、APIから補完
+    if (unconvertedImages.length < params.limit) {
+      const remaining = params.limit - unconvertedImages.length
+      console.log(`\n📥 Need ${remaining} more pets to reach limit...`)
+
+      // APIから追加の未変換ペットを取得
+      const additional = await fetchAdditionalFromAPI(remaining, params.skipIds, params.mode)
+
+      if (additional.length > 0) {
+        console.log(`  Adding ${additional.length} pets from API`)
+        unconvertedImages = unconvertedImages.concat(additional)
+      }
+    }
 
     if (unconvertedImages.length > 0) {
-      // R2内に存在するスクリーンショットの変換リストを保存
+      // 変換リストを保存
       await fs.writeFile(params.output, JSON.stringify(unconvertedImages, null, 2))
       console.log(`\n✅ Results saved to: ${params.output}`)
+      console.log(`📋 Total pets to process: ${unconvertedImages.length}`)
     } else {
-      // R2に未変換画像がない場合
-      console.log('\n⚠️ No unconverted images found in R2')
-      console.log('ℹ️  This is normal if all screenshots have been converted.')
-      console.log('ℹ️  To capture new screenshots, use the Screenshot Capture workflow instead.')
+      // 未変換画像がない場合
+      console.log('\n⚠️ No unconverted images found')
+      console.log('ℹ️  All available images may have been converted.')
 
       // 空の配列を出力（エラーではない）
       await fs.writeFile(params.output, JSON.stringify([], null, 2))
-
-      // 注意: APIからのフォールバックは削除
-      // 理由: スクリーンショットが存在しないペットを変換しようとするとエラーになるため
     }
   } catch (error) {
     console.error('❌ Error:', error)
@@ -261,6 +355,9 @@ async function main() {
     process.exit(1)
   }
 }
+
+// エクスポート（他のスクリプトから使用できるように）
+export { fetchAdditionalFromAPI }
 
 // エラーハンドリング
 main().catch((error) => {

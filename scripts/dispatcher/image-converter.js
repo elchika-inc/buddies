@@ -41,6 +41,10 @@ function parseArgs() {
       params.batchId = arg.split('=')[1]
     } else if (arg.startsWith('--mode=')) {
       params.mode = arg.split('=')[1] // all, missing-webp, missing-jpeg
+    } else if (arg.startsWith('--max-retries=')) {
+      params.maxRetries = parseInt(arg.split('=')[1])
+    } else if (arg.startsWith('--append-results=')) {
+      params.appendResults = arg.split('=')[1] === 'true'
     }
   }
 
@@ -67,6 +71,52 @@ async function downloadFromR2(key) {
       return null
     }
     throw error
+  }
+}
+
+// リトライ付き画像変換処理
+async function processWithRetry(pet, maxRetries = 1) {
+  let lastError = null
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Processing ${pet.id} (attempt ${attempt}/${maxRetries})`)
+
+      const result = await convertImage(pet)
+
+      if (result.success) {
+        console.log(`  ✅ Success on attempt ${attempt}`)
+        return { ...result, attempts: attempt }
+      }
+
+      lastError = result.error
+
+      // 最終試行でなければ待機
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000 // 2秒、4秒と増やす
+        console.log(`  ⏳ Waiting ${waitTime}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
+    } catch (error) {
+      lastError = error.message
+      console.error(`  ❌ Attempt ${attempt} failed:`, error.message)
+
+      // 最終試行でなければ待機
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
+    }
+  }
+
+  // 全試行失敗
+  console.error(`  ❌ All ${maxRetries} attempts failed for ${pet.id}`)
+  return {
+    pet_id: pet.id,
+    pet_type: pet.type,
+    success: false,
+    error: lastError,
+    attempts: maxRetries
   }
 }
 
@@ -211,6 +261,8 @@ async function main() {
 
   const batchId = args.batchId || `convert-${Date.now()}`
   const mode = args.mode || 'all'
+  const maxRetries = args.maxRetries || 3
+  const appendResults = args.appendResults || false
 
   // 変換対象のペットデータを読み込み
   const inputData = await fs.readFile(args.inputFile, 'utf-8')
@@ -222,19 +274,34 @@ async function main() {
   console.log(`🚀 Image Conversion Pipeline`)
   console.log(`📋 Batch ID: ${batchId}`)
   console.log(`🔄 Mode: ${mode}`)
+  console.log(`🔄 Max retries: ${maxRetries}`)
   console.log(`📦 Converting images for ${pets.length} pets\n`)
 
   // ログディレクトリを作成
   const logDir = path.join(__dirname, '../logs')
   await fs.mkdir(logDir, { recursive: true })
 
+  // 既存の結果を読み込み（appendResultsがtrueの場合）
+  let existingResults = []
+  const resultsPath = path.join(logDir, 'conversion-results.json')
+  if (appendResults) {
+    try {
+      const existingData = await fs.readFile(resultsPath, 'utf-8')
+      const existingJson = JSON.parse(existingData)
+      existingResults = existingJson.results || []
+      console.log(`📂 Appending to existing results (${existingResults.length} existing)\n`)
+    } catch (err) {
+      console.log(`📝 Starting fresh results file\n`)
+    }
+  }
+
   const results = []
 
-  // バッチ処理（並列実行）
+  // バッチ処理（並列実行、リトライ付き）
   const BATCH_SIZE = 5 // 同時に処理する数
   for (let i = 0; i < petsWithMode.length; i += BATCH_SIZE) {
     const batch = petsWithMode.slice(i, i + BATCH_SIZE)
-    const batchResults = await Promise.all(batch.map((pet) => convertImage(pet)))
+    const batchResults = await Promise.all(batch.map((pet) => processWithRetry(pet, maxRetries)))
     results.push(...batchResults)
 
     console.log(
@@ -242,24 +309,35 @@ async function main() {
     )
   }
 
+  // 全結果を結合（appendResultsがtrueの場合）
+  const allResults = appendResults ? [...existingResults, ...results] : results
+
   // 結果サマリー
-  const successful = results.filter((r) => r.success).length
-  const failed = results.filter((r) => !r.success).length
+  const successful = allResults.filter((r) => r.success).length
+  const failed = allResults.filter((r) => !r.success).length
 
   console.log('\n📊 Conversion Summary:')
-  console.log(`  ✅ Successful: ${successful}/${pets.length}`)
-  console.log(`  ❌ Failed: ${failed}/${pets.length}`)
+  console.log(`  ✅ Successful: ${successful}/${allResults.length}`)
+  console.log(`  ❌ Failed: ${failed}/${allResults.length}`)
 
   if (successful > 0) {
-    const totalConversions = results
-      .filter((r) => r.success)
+    const successfulResults = allResults.filter((r) => r.success)
+    const totalConversions = successfulResults
       .reduce((sum, r) => sum + (r.conversions ? r.conversions.length : 0), 0)
 
     console.log(`  📦 Total conversions: ${totalConversions}`)
 
+    // リトライ統計
+    const retriedResults = successfulResults.filter(r => r.attempts > 1)
+    if (retriedResults.length > 0) {
+      console.log(`  🔄 Succeeded with retries: ${retriedResults.length} pets`)
+      const avgRetries = retriedResults.reduce((sum, r) => sum + r.attempts, 0) / retriedResults.length
+      console.log(`  📈 Average attempts for retry cases: ${avgRetries.toFixed(1)}`)
+    }
+
     // JPEG/WebPのサイズ統計
-    const jpegResults = results.filter((r) => r.jpegSize)
-    const webpResults = results.filter((r) => r.webpSize)
+    const jpegResults = successfulResults.filter((r) => r.jpegSize)
+    const webpResults = successfulResults.filter((r) => r.webpSize)
 
     if (jpegResults.length > 0) {
       const totalJpegSize = jpegResults.reduce((sum, r) => sum + r.jpegSize, 0)
@@ -281,7 +359,6 @@ async function main() {
   }
 
   // 結果をJSONファイルに保存
-  const resultsPath = path.join(logDir, 'conversion-results.json')
   await fs.writeFile(
     resultsPath,
     JSON.stringify(
@@ -289,10 +366,10 @@ async function main() {
         batchId,
         timestamp: new Date().toISOString(),
         mode,
-        totalProcessed: pets.length,
+        totalProcessed: allResults.length,
         successful,
         failed,
-        results,
+        results: allResults,
       },
       null,
       2
