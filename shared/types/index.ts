@@ -174,6 +174,43 @@ export interface CrawlCheckpoint {
   [key: string]: string | number | undefined
 }
 
+/**
+ * 拡張クローラーチェックポイント
+ *
+ * @interface CrawlerCheckpoint
+ * @description ワークフロー間での件数管理とペットID追跡のための詳細情報
+ */
+export interface CrawlerCheckpoint {
+  /** バッチ処理ID */
+  batchId: string
+  /** 取得した総数 */
+  totalFetched: number
+  /** 新規ペット数 */
+  newPets: number
+  /** 更新ペット数 */
+  updatedPets: number
+  /** 処理済みペットID一覧 */
+  processedPetIds: string[]
+  /** Screenshot Queue管理 */
+  screenshotQueue: {
+    /** 送信済み数 */
+    sent: number
+    /** 送信待ちペットID */
+    pending: string[]
+  }
+  /** Conversion Queue管理 */
+  conversionQueue: {
+    /** 送信済み数 */
+    sent: number
+    /** 送信待ちペットID */
+    pending: string[]
+  }
+  /** 最後の処理時刻 */
+  lastProcessedAt: string
+  /** エラー情報 */
+  errors: string[]
+}
+
 // ============== 型ガード ==============
 // 統一型定義（unified.ts）の型ガードを使用してください
 export { isPet } from './unified'

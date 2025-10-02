@@ -5,7 +5,7 @@
  * 単一サイト対応のため、不要な抽象化を除去し、高速で信頼性の高い処理を実現
  * @site https://www.pet-home.jp
  */
-import type { Pet, CrawlResult } from '../../shared/types/index'
+import type { Pet, CrawlResult, CrawlerCheckpoint } from '../../shared/types/index'
 import { ApiServiceClient } from '../../shared/services/api-client'
 import { Result } from '../../shared/types/result'
 import { R2_PATHS } from '@pawmatch/shared/r2-paths'
@@ -101,6 +101,9 @@ export class PetHomeCrawler {
       errors: [],
     }
 
+    const batchId = `batch-${Date.now()}-${petType}`
+    const processedPetIds: string[] = []
+
     try {
       const pets = await this.fetchPets(petType, limit)
       result.totalPets = pets.length
@@ -112,6 +115,9 @@ export class PetHomeCrawler {
         result.updatedPets = apiResult.updatedPets
         result.success = apiResult.success
         result.errors = apiResult.errors
+
+        // 処理済みペットIDを収集
+        pets.forEach((pet) => processedPetIds.push(pet.id))
       } else {
         // 従来のローカルDB保存処理
         for (const pet of pets) {
@@ -127,6 +133,7 @@ export class PetHomeCrawler {
             }
 
             await this.saveImageToR2(pet)
+            processedPetIds.push(pet.id)
           } catch (error) {
             result.errors.push(`Failed to process pet ${pet.id}: ${error}`)
           }
@@ -134,6 +141,12 @@ export class PetHomeCrawler {
 
         result.success = result.errors.length === 0
       }
+
+      // crawler_statesテーブルを更新
+      await this.updateCrawlerState(petType, result, processedPetIds, batchId)
+
+      // Screenshot Queueへ送信（画像がないペットのみ）
+      await this.sendToScreenshotQueue(petType, batchId)
 
       return result
     } catch (error) {
@@ -674,6 +687,165 @@ export class PetHomeCrawler {
       })
     } catch (error) {
       console.error(`Failed to save image for pet ${pet.id}:`, error)
+    }
+  }
+
+  /**
+   * crawler_statesテーブルを更新
+   *
+   * @param petType - ペットタイプ
+   * @param result - クロール結果
+   * @param processedPetIds - 処理済みペットID一覧
+   * @param batchId - バッチID
+   */
+  private async updateCrawlerState(
+    petType: 'dog' | 'cat',
+    result: CrawlResult,
+    processedPetIds: string[],
+    batchId: string
+  ): Promise<void> {
+    try {
+      // 画像がないペットを特定
+      const pendingScreenshotPets: string[] = []
+      for (const petId of processedPetIds) {
+        const petRecord = await this.db.select().from(pets).where(eq(pets.id, petId)).get()
+
+        if (petRecord && !petRecord.hasJpeg) {
+          pendingScreenshotPets.push(petId)
+        }
+      }
+
+      const checkpoint: CrawlerCheckpoint = {
+        batchId,
+        totalFetched: result.totalPets,
+        newPets: result.newPets,
+        updatedPets: result.updatedPets,
+        processedPetIds,
+        screenshotQueue: {
+          sent: 0,
+          pending: pendingScreenshotPets,
+        },
+        conversionQueue: {
+          sent: 0,
+          pending: [],
+        },
+        lastProcessedAt: new Date().toISOString(),
+        errors: result.errors,
+      }
+
+      // 既存レコードを確認
+      const existing = await this.env.DB.prepare(
+        'SELECT id FROM crawler_states WHERE sourceId = ? AND petType = ?'
+      )
+        .bind('pet-home', petType)
+        .first()
+
+      if (existing) {
+        // 既存レコードを更新
+        await this.env.DB.prepare(
+          `
+            UPDATE crawler_states
+            SET checkpoint = ?, totalProcessed = ?, lastCrawlAt = ?, updatedAt = ?
+            WHERE sourceId = ? AND petType = ?
+          `
+        )
+          .bind(
+            JSON.stringify(checkpoint),
+            result.totalPets,
+            new Date().toISOString(),
+            new Date().toISOString(),
+            'pet-home',
+            petType
+          )
+          .run()
+      } else {
+        // 新規レコード挿入
+        await this.env.DB.prepare(
+          `
+            INSERT INTO crawler_states (sourceId, petType, checkpoint, totalProcessed, lastCrawlAt, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `
+        )
+          .bind(
+            'pet-home',
+            petType,
+            JSON.stringify(checkpoint),
+            result.totalPets,
+            new Date().toISOString(),
+            new Date().toISOString(),
+            new Date().toISOString()
+          )
+          .run()
+      }
+
+      console.log(
+        `Updated crawler_states for ${petType}: batch=${batchId}, total=${result.totalPets}`
+      )
+    } catch (error) {
+      console.error('Failed to update crawler_states:', error)
+    }
+  }
+
+  /**
+   * Screenshot Queueへペット情報を送信
+   *
+   * @param petType - ペットタイプ
+   * @param batchId - バッチID
+   */
+  private async sendToScreenshotQueue(petType: 'dog' | 'cat', batchId: string): Promise<void> {
+    try {
+      // crawler_statesから最新の状態を取得
+      const stateResult = await this.env.DB.prepare(
+        'SELECT checkpoint FROM crawler_states WHERE sourceId = ? AND petType = ?'
+      )
+        .bind('pet-home', petType)
+        .first<{ checkpoint: string }>()
+
+      if (!stateResult) {
+        console.warn('No crawler state found for screenshot queue')
+        return
+      }
+
+      const checkpoint = JSON.parse(stateResult.checkpoint) as CrawlerCheckpoint
+
+      // pendingのペットをScreenshot Queueへ送信
+      const pendingPets = checkpoint.screenshotQueue.pending
+      if (pendingPets.length === 0) {
+        console.log('No pets pending for screenshot')
+        return
+      }
+
+      // バッチメッセージを作成
+      const messages = pendingPets.map((petId) => ({
+        body: {
+          batchId,
+          petId,
+          petType,
+          expectedTotal: checkpoint.totalFetched,
+          source: 'crawler',
+          timestamp: new Date().toISOString(),
+        },
+      }))
+
+      // Queueへバッチ送信
+      await this.env.PAWMATCH_SCREENSHOT_QUEUE.sendBatch(messages)
+      console.log(`Sent ${pendingPets.length} pets to screenshot queue`)
+
+      // checkpointを更新（sent数を増やし、pendingをクリア）
+      checkpoint.screenshotQueue.sent = pendingPets.length
+      checkpoint.screenshotQueue.pending = []
+
+      await this.env.DB.prepare(
+        `
+          UPDATE crawler_states
+          SET checkpoint = ?, updatedAt = ?
+          WHERE sourceId = ? AND petType = ?
+        `
+      )
+        .bind(JSON.stringify(checkpoint), new Date().toISOString(), 'pet-home', petType)
+        .run()
+    } catch (error) {
+      console.error('Failed to send to screenshot queue:', error)
     }
   }
 }
