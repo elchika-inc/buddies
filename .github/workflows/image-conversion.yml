@@ -59,6 +59,7 @@ jobs:
         id: prepare-list
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -69,15 +70,33 @@ jobs:
             echo 'Using provided pets data...'
             echo '${{ github.event.inputs.pets_data }}' > conversion_list.json
             PET_COUNT=$(echo '${{ github.event.inputs.pets_data }}' | jq 'length')
+
+            # バッチIDから検証（Screenshot->Conversionの連携時）
+            if [ -n "${{ github.event.inputs.batch_id }}" ]; then
+              echo "Verifying screenshot completion for batch..."
+              STATE=$(curl -s "${API_URL}/api/crawler/get-state/${{ github.event.inputs.batch_id }}" \
+                -H "X-API-Key: ${API_KEY}")
+
+              if echo "$STATE" | jq -e '.checkpoint' > /dev/null; then
+                SCREENSHOT_COUNT=$(echo "$STATE" | jq -r '.checkpoint.screenshotQueue.sent')
+                CONVERSION_PENDING=$(echo "$STATE" | jq -r '.checkpoint.conversionQueue.pending | length')
+
+                echo "📊 Screenshot completed: ${SCREENSHOT_COUNT}, Pending conversion: ${CONVERSION_PENDING}"
+
+                if [ "$SCREENSHOT_COUNT" != "$CONVERSION_PENDING" ]; then
+                  echo "⚠️ Warning: Count mismatch between screenshots and pending conversions"
+                fi
+              fi
+            fi
           else
             echo 'Fetching unconverted images from R2/API...'
-            
+
             # R2から未変換画像を検出するスクリプトを実行
             node scripts/dispatcher/detect-unconverted-images.js \
               --mode="${{ github.event.inputs.conversion_mode || 'all' }}" \
               --limit="${{ github.event.inputs.limit || 50 }}" \
               --output="conversion_list.json"
-            
+
             PET_COUNT=$(jq 'length' conversion_list.json)
           fi
 
@@ -85,6 +104,7 @@ jobs:
           echo "Found ${PET_COUNT} images to convert"
 
       - name: Convert images
+        id: convert-images
         if: steps.prepare-list.outputs.pet_count > 0
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -92,18 +112,93 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         run: |
-          # 画像変換を実行
+          # 画像変換を実行（リトライ付き）
+          BATCH_ID="${{ github.event.inputs.batch_id || format('convert-{0}', github.run_id) }}"
+          MODE="${{ github.event.inputs.conversion_mode || 'all' }}"
+
           node scripts/dispatcher/image-converter.js \
             --input-file="conversion_list.json" \
-            --batch-id="${{ github.event.inputs.batch_id || format('convert-{0}', github.run_id) }}" \
-            --mode="${{ github.event.inputs.conversion_mode || 'all' }}"
+            --batch-id="${BATCH_ID}" \
+            --mode="${MODE}" \
+            --max-retries=3
+
+          # 成功した変換数を保存
+          if [ -f "scripts/logs/conversion-results.json" ]; then
+            SUCCESS_COUNT=$(cat scripts/logs/conversion-results.json | jq '.successful')
+            echo "conversion_success_count=${SUCCESS_COUNT}" >> $GITHUB_OUTPUT
+          else
+            echo "conversion_success_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Convert additional images if capacity available
+        id: convert-additional
+        if: steps.prepare-list.outputs.pet_count > 0
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          # 処理済み数とlimitを比較
+          PROCESSED_COUNT=${{ steps.prepare-list.outputs.pet_count }}
+          LIMIT=${{ github.event.inputs.limit || 50 }}
+          REMAINING=$((LIMIT - PROCESSED_COUNT))
+          MODE="${{ github.event.inputs.conversion_mode || 'all' }}"
+
+          if [ $REMAINING -gt 0 ]; then
+            echo "📊 Capacity available: $REMAINING slots"
+
+            # 失敗したペットIDを抽出（スキップリスト作成）
+            SKIP_IDS=""
+            if [ -f "scripts/logs/conversion-results.json" ]; then
+              # 失敗したペットIDをカンマ区切りで取得
+              SKIP_IDS=$(jq -r '[.results[] | select(.success == false) | .pet_id] | join(",")' scripts/logs/conversion-results.json)
+            fi
+
+            echo "📥 Fetching additional pets for conversion..."
+
+            # detect-unconverted-images.jsで追加ペットを検出
+            node scripts/dispatcher/detect-unconverted-images.js \
+              --mode="${MODE}" \
+              --limit="${REMAINING}" \
+              --output="additional_conversion_list.json" \
+              --skip-ids="${SKIP_IDS}"
+
+            ADDITIONAL_COUNT=$(jq 'length' additional_conversion_list.json)
+
+            if [ $ADDITIONAL_COUNT -gt 0 ]; then
+              echo "📸 Processing $ADDITIONAL_COUNT additional images..."
+
+              # 追加ペットを処理（同じくリトライ付き）
+              BATCH_ID="${{ github.event.inputs.batch_id || format('convert-{0}', github.run_id) }}"
+              node scripts/dispatcher/image-converter.js \
+                --input-file="additional_conversion_list.json" \
+                --batch-id="${BATCH_ID}-additional" \
+                --mode="${MODE}" \
+                --max-retries=3 \
+                --append-results=true
+
+              # 更新された成功数を保存
+              if [ -f "scripts/logs/conversion-results.json" ]; then
+                TOTAL_SUCCESS=$(cat scripts/logs/conversion-results.json | jq '.successful')
+                echo "total_success_count=${TOTAL_SUCCESS}" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "ℹ️ No additional images available for conversion"
+            fi
+          else
+            echo "✅ Batch limit reached, no additional processing needed"
+          fi
 
       - name: Update hasWebp flags in database
         if: steps.prepare-list.outputs.pet_count > 0
         continue-on-error: true
         env:
           API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.ACTIONS_API_KEY || secrets.API_KEY_INTERNAL }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
         run: |
           RESULTS_FILE="scripts/logs/conversion-results.json"
 
@@ -154,10 +249,105 @@ jobs:
             conversion_list.json
           retention-days: 7
 
+      - name: Update crawler state for conversion
+        if: steps.prepare-list.outputs.pet_count > 0 && github.event.inputs.batch_id
+        continue-on-error: true
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+        run: |
+          RESULTS_FILE="scripts/logs/conversion-results.json"
+
+          if [ -f "$RESULTS_FILE" ]; then
+            # 成功した変換のペットIDを収集
+            SUCCESS_IDS=$(cat "$RESULTS_FILE" | \
+              jq -c '[.results[] | select(.success == true and .webpSize > 0) | .pet_id]')
+            SUCCESS_COUNT=$(echo "$SUCCESS_IDS" | jq 'length')
+
+            echo "📤 Updating crawler state for conversion stage"
+
+            # crawler_statesを更新
+            UPDATE_RESPONSE=$(curl -s -X POST "${API_URL}/api/crawler/update-state" \
+              -H "Content-Type: application/json" \
+              -H "X-API-Key: ${API_KEY}" \
+              -d "{
+                \"batchId\": \"${{ github.event.inputs.batch_id }}\",
+                \"stage\": \"conversion\",
+                \"successCount\": ${SUCCESS_COUNT},
+                \"successIds\": ${SUCCESS_IDS}
+              }")
+
+            if echo "$UPDATE_RESPONSE" | jq -e '.success' > /dev/null; then
+              echo "✅ Successfully updated crawler state for conversion"
+            else
+              echo "⚠️ Failed to update crawler state"
+              echo "$UPDATE_RESPONSE"
+            fi
+          fi
+
       - name: Summary
         if: steps.prepare-list.outputs.pet_count > 0
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
         run: |
-          echo "✅ Image conversion completed"
-          echo "📊 Processed ${{ steps.prepare-list.outputs.pet_count }} images"
+          # 最終結果を読み込み
+          if [ -f "scripts/logs/conversion-results.json" ]; then
+            TOTAL_PROCESSED=$(jq '.totalProcessed' scripts/logs/conversion-results.json)
+            TOTAL_SUCCESS=$(jq '.successful' scripts/logs/conversion-results.json)
+            TOTAL_FAILED=$(jq '.failed' scripts/logs/conversion-results.json)
+
+            echo "✅ Image conversion completed"
+            echo "📊 Total processed: ${TOTAL_PROCESSED}"
+            echo "  ✅ Successful: ${TOTAL_SUCCESS}"
+            echo "  ❌ Failed: ${TOTAL_FAILED}"
+
+            # リトライ統計
+            RETRIED_COUNT=$(jq '[.results[] | select(.success and .attempts > 1)] | length' scripts/logs/conversion-results.json 2>/dev/null || echo "0")
+            if [ "$RETRIED_COUNT" -gt 0 ]; then
+              echo "  🔄 Succeeded with retries: ${RETRIED_COUNT}"
+            fi
+
+            # 追加処理の統計
+            if [ -n "${{ steps.convert-additional.outputs.total_success_count }}" ]; then
+              INITIAL_COUNT=${{ steps.prepare-list.outputs.pet_count }}
+              ADDITIONAL_COUNT=$((TOTAL_PROCESSED - INITIAL_COUNT))
+              if [ $ADDITIONAL_COUNT -gt 0 ]; then
+                echo "  📈 Additional images processed: ${ADDITIONAL_COUNT}"
+              fi
+            fi
+
+            # サイズ統計
+            TOTAL_WEBP_SIZE=$(jq '[.results[] | select(.webpSize) | .webpSize] | add' scripts/logs/conversion-results.json)
+            TOTAL_JPEG_SIZE=$(jq '[.results[] | select(.jpegSize) | .jpegSize] | add' scripts/logs/conversion-results.json)
+
+            if [ "$TOTAL_WEBP_SIZE" != "null" ] && [ "$TOTAL_JPEG_SIZE" != "null" ]; then
+              WEBP_MB=$(echo "scale=2; $TOTAL_WEBP_SIZE / 1048576" | bc)
+              JPEG_MB=$(echo "scale=2; $TOTAL_JPEG_SIZE / 1048576" | bc)
+              SAVINGS=$(echo "scale=1; 100 - ($TOTAL_WEBP_SIZE * 100 / $TOTAL_JPEG_SIZE)" | bc)
+              echo "  📦 Total JPEG: ${JPEG_MB}MB → WebP: ${WEBP_MB}MB (${SAVINGS}% savings)"
+            fi
+          else
+            echo "✅ Image conversion completed"
+            echo "📊 Processed ${{ steps.prepare-list.outputs.pet_count }} images"
+          fi
+
           echo "🔄 Mode: ${{ github.event.inputs.conversion_mode || 'all' }}"
           echo "📝 Source: ${{ github.event.inputs.source || 'manual/scheduled' }}"
+
+          # バッチIDがある場合は全体の進捗サマリーを取得
+          if [ -n "${{ github.event.inputs.batch_id }}" ]; then
+            echo ""
+            echo "📈 Fetching overall progress..."
+            SUMMARY=$(curl -s "${API_URL}/api/crawler/summary/${{ github.event.inputs.batch_id }}" \
+              -H "X-API-Key: ${API_KEY}")
+
+            if echo "$SUMMARY" | jq -e '.stages' > /dev/null; then
+              echo "Overall Progress:"
+              echo "$SUMMARY" | jq -r '
+                "  - Crawled: \(.stages.crawler.total) pets",
+                "  - Screenshots: \(.stages.screenshot.completed)/\(.stages.screenshot.expected) (\(.stages.screenshot.rate))",
+                "  - Conversions: \(.stages.conversion.completed)/\(.stages.conversion.expected) (\(.stages.conversion.rate))"
+              '
+            fi
+          fi

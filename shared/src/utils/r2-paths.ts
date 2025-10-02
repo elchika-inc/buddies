@@ -7,7 +7,7 @@
 export type PetType = 'dog' | 'cat'
 
 // 画像フォーマットの定義
-export type ImageFormat = 'screenshot' | 'original' | 'optimized'
+export type ImageFormat = 'screenshot' | 'original' | 'optimized' | 'thumbnail' | 'medium' | 'large'
 
 /**
  * R2パス定義オブジェクト
@@ -40,6 +40,27 @@ export const R2_PATHS = {
       `pets/${type}s/${id}/optimized.webp`,
 
     /**
+     * サムネイル画像（WebP）のパス
+     * @example pets/dogs/12345/thumbnail.webp
+     */
+    thumbnail: (type: PetType, id: string): string =>
+      `pets/${type}s/${id}/thumbnail.webp`,
+
+    /**
+     * 中サイズ画像（WebP）のパス
+     * @example pets/dogs/12345/medium.webp
+     */
+    medium: (type: PetType, id: string): string =>
+      `pets/${type}s/${id}/medium.webp`,
+
+    /**
+     * 大サイズ画像（WebP）のパス
+     * @example pets/dogs/12345/large.webp
+     */
+    large: (type: PetType, id: string): string =>
+      `pets/${type}s/${id}/large.webp`,
+
+    /**
      * ペット画像の汎用パス生成
      */
     image: (type: PetType, id: string, format: ImageFormat): string => {
@@ -47,6 +68,9 @@ export const R2_PATHS = {
         screenshot: 'screenshot.png',
         original: 'original.jpg',
         optimized: 'optimized.webp',
+        thumbnail: 'thumbnail.webp',
+        medium: 'medium.webp',
+        large: 'large.webp',
       }
       return `pets/${type}s/${id}/${formatMap[format]}`
     },
