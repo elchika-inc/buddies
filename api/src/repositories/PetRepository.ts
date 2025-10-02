@@ -49,7 +49,8 @@ export class PetRepository {
     type: string | null,
     limit: number,
     offset: number,
-    prefecture?: string
+    prefectures?: string[],
+    cities?: string[]
   ): Promise<Result<{ pets: unknown[]; total: number }>> {
     const conditions: string[] = ['hasJpeg = 1']
     const params: (string | number)[] = []
@@ -59,9 +60,18 @@ export class PetRepository {
       params.push(type)
     }
 
-    if (prefecture) {
-      conditions.push('prefecture = ?')
-      params.push(prefecture)
+    // 複数の都道府県でフィルタリング
+    if (prefectures && prefectures.length > 0) {
+      const placeholders = prefectures.map(() => '?').join(',')
+      conditions.push(`prefecture IN (${placeholders})`)
+      params.push(...prefectures)
+    }
+
+    // 複数の市区町村でフィルタリング
+    if (cities && cities.length > 0) {
+      const placeholders = cities.map(() => '?').join(',')
+      conditions.push(`city IN (${placeholders})`)
+      params.push(...cities)
     }
 
     const whereClause = `WHERE ${conditions.join(' AND ')}`

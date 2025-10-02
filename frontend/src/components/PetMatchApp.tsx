@@ -15,8 +15,10 @@ import { getPetType } from '@/config/petConfig'
 export function PetMatchApp() {
   const petType = getPetType()
 
-  // カスタムフックで状態管理を分離
-  const { pets, isLoading, reset: resetPets } = usePetData()
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
+
+  // カスタムフックで状態管理を分離（地域フィルタを渡す）
+  const { pets, isLoading, reset: resetPets } = usePetData(selectedLocations)
   const {
     locationModalOpen,
     detailModalOpen,
@@ -28,8 +30,6 @@ export function PetMatchApp() {
   } = useModals()
   const { favorites, removeFavorite, updateFavoriteRating, getFavoriteRating } =
     useFavorites(petType)
-
-  const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
     'like' | 'pass' | 'superLike' | null
   >(null)
@@ -104,7 +104,7 @@ export function PetMatchApp() {
         favoritePets={pets.filter((pet) => favorites.includes(pet.id))}
         onRemoveFavorite={removeFavorite}
         onLocationClick={openLocationModal}
-        // selectedLocations={selectedLocations}
+        selectedLocations={selectedLocations}
         petType={petType}
       />
 

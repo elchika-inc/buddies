@@ -52,9 +52,12 @@ export class PetController {
       CONFIG.LIMITS.MAX_PETS_PER_REQUEST
     )
     const offset = (page - 1) * limit
-    const prefecture = c.req.query('prefecture')
 
-    const result = await this.fetchPetsSimpleWithResult(null, limit, offset, prefecture)
+    // 複数の地域パラメータを受け取る
+    const prefectures = c.req.queries('prefecture[]')
+    const cities = c.req.queries('city[]')
+
+    const result = await this.fetchPetsSimpleWithResult(null, limit, offset, prefectures, cities)
     if (!result.success) {
       console.error('全ペット取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
@@ -81,9 +84,12 @@ export class PetController {
       CONFIG.LIMITS.MAX_PETS_PER_REQUEST
     )
     const offset = (page - 1) * limit
-    const prefecture = c.req.query('prefecture')
 
-    const result = await this.fetchPetsSimpleWithResult(petType, limit, offset, prefecture)
+    // 複数の地域パラメータを受け取る
+    const prefectures = c.req.queries('prefecture[]')
+    const cities = c.req.queries('city[]')
+
+    const result = await this.fetchPetsSimpleWithResult(petType, limit, offset, prefectures, cities)
     if (!result.success) {
       console.error('タイプ別ペット取得エラー:', result.error)
       throw new ServiceUnavailableError('ペット情報の取得中にエラーが発生しました')
@@ -262,9 +268,16 @@ export class PetController {
     type: string | null,
     limit: number,
     offset: number,
-    prefecture?: string
+    prefectures?: string[],
+    cities?: string[]
   ): Promise<Result<{ data: PetsResponseData; total: number }>> {
-    const result = await this.repository.findByTypeWithPagination(type, limit, offset, prefecture)
+    const result = await this.repository.findByTypeWithPagination(
+      type,
+      limit,
+      offset,
+      prefectures,
+      cities
+    )
 
     if (!result.success) {
       return result as Result<{ data: PetsResponseData; total: number }>

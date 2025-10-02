@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { FrontendPet } from '@/types/pet'
 import { petApi } from '@/services/api'
+import { Location } from '@/components/LocationModal'
 
 /**
  * ペットデータの取得と管理を行うカスタムフック
  * PetMatchAppから分離して単一責任原則を実現
  */
-export function usePetData() {
+export function usePetData(selectedLocations?: Location[]) {
   const [pets, setPets] = useState<FrontendPet[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -16,27 +17,30 @@ export function usePetData() {
   /**
    * ペットデータを取得
    */
-  const fetchPets = useCallback(async (pageNum: number = 0, limit: number = 20) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const response = await petApi.fetchPets(pageNum, limit)
+  const fetchPets = useCallback(
+    async (pageNum: number = 0, limit: number = 20) => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const response = await petApi.fetchPets(pageNum, limit, selectedLocations)
 
-      if (pageNum === 0) {
-        setPets(response.pets)
-      } else {
-        setPets((prev) => [...prev, ...response.pets])
+        if (pageNum === 0) {
+          setPets(response.pets)
+        } else {
+          setPets((prev) => [...prev, ...response.pets])
+        }
+
+        setHasMore(response.pets.length === limit)
+        setPage(pageNum)
+      } catch (err) {
+        console.error('ペットデータの取得に失敗しました:', err)
+        setError(err instanceof Error ? err : new Error('データ取得エラー'))
+      } finally {
+        setIsLoading(false)
       }
-
-      setHasMore(response.pets.length === limit)
-      setPage(pageNum)
-    } catch (err) {
-      console.error('ペットデータの取得に失敗しました:', err)
-      setError(err instanceof Error ? err : new Error('データ取得エラー'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+    },
+    [selectedLocations]
+  )
 
   /**
    * 次のページを読み込む
@@ -65,10 +69,14 @@ export function usePetData() {
   }, [])
 
   /**
-   * 初回マウント時にデータを取得
+   * 初回マウント時と地域選択変更時にデータを取得
    */
   useEffect(() => {
-    fetchPets()
+    // 地域選択が変更されたら最初から取得
+    setPets([])
+    setPage(0)
+    setHasMore(true)
+    fetchPets(0)
   }, [fetchPets])
 
   return {

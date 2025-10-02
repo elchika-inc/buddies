@@ -6,6 +6,7 @@
 import { FrontendPet } from '../types/pet'
 import type { Pet as SharedPet } from '../../../shared/types'
 import { getPetType } from '../config/petConfig'
+import { Location } from '../components/LocationModal'
 
 /** APIのベースURL（環境変数から取得、デフォルトは本番環境） */
 const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || 'https://pawmatch-api.elchika.app'
@@ -59,14 +60,41 @@ class PetApi {
    * ペット一覧を取得（ページネーション対応）
    * @param offset 開始位置
    * @param limit 取得件数
+   * @param locations 地域フィルター
    * @returns ペット一覧レスポンス
    */
-  async fetchPets(offset: number = 0, limit: number = 10): Promise<FrontendPetsResponse> {
+  async fetchPets(
+    offset: number = 0,
+    limit: number = 10,
+    locations?: Location[]
+  ): Promise<FrontendPetsResponse> {
     // ペットタイプ（犬/猫）を取得
     const petType = getPetType()
     // offsetからpageを計算（1ベースのページ番号）
     const page = Math.floor(offset / limit) + 1
-    const url = `${this.baseUrl}/api/pets/type/${petType}?page=${page}&limit=${limit}`
+
+    // URLパラメータを構築
+    const params = new URLSearchParams()
+    params.append('page', page.toString())
+    params.append('limit', limit.toString())
+
+    // 地域フィルターをパラメータに追加
+    if (locations && locations.length > 0) {
+      const prefectures = new Set<string>()
+      const cities = new Set<string>()
+
+      locations.forEach((loc) => {
+        prefectures.add(loc.prefecture)
+        if (loc.city) {
+          cities.add(loc.city)
+        }
+      })
+
+      prefectures.forEach((pref) => params.append('prefecture[]', pref))
+      cities.forEach((city) => params.append('city[]', city))
+    }
+
+    const url = `${this.baseUrl}/api/pets/type/${petType}?${params.toString()}`
 
     try {
       // APIリクエスト（APIキー認証付き）
@@ -104,9 +132,10 @@ class PetApi {
 
   /**
    * 全ペット情報を取得（ページング自動処理）
+   * @param locations 地域フィルター
    * @returns 全ペットの配列
    */
-  async fetchAllPets(): Promise<FrontendPet[]> {
+  async fetchAllPets(locations?: Location[]): Promise<FrontendPet[]> {
     const allPets: FrontendPet[] = []
     const limit = 100 // 1回あたりの取得件数
     let offset = 0
@@ -114,7 +143,7 @@ class PetApi {
 
     // ページング処理：全件取得するまでループ
     while (hasMore) {
-      const response = await this.fetchPets(offset, limit)
+      const response = await this.fetchPets(offset, limit, locations)
       allPets.push(...response.pets)
 
       // 取得件数がlimitと同じならまだデータがある可能性

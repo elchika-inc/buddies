@@ -4,13 +4,13 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { FrontendPet } from '@/types/pet'
 import { PetDetailModal } from './PetDetailModal'
-// import { Location } from './LocationModal'
+import { Location } from './LocationModal'
 
 interface MatchHeaderProps {
   favoritePets?: FrontendPet[]
   onRemoveFavorite?: (petId: string) => void
   onLocationClick: () => void
-  // selectedLocations: Location[]
+  selectedLocations: Location[]
   petType: 'dog' | 'cat'
 }
 
@@ -18,7 +18,7 @@ export function MatchHeader({
   favoritePets = [],
   onRemoveFavorite,
   onLocationClick,
-  // selectedLocations = [],
+  selectedLocations = [],
   petType,
 }: MatchHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -46,6 +46,11 @@ export function MatchHeader({
               className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-200 transition-colors flex items-center gap-2"
             >
               <span>地域</span>
+              {selectedLocations.length > 0 && (
+                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                  {selectedLocations.length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setIsOpen(true)}
