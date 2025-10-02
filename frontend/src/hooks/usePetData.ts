@@ -13,12 +13,14 @@ export function usePetData(selectedLocations?: Location[]) {
   const [error, setError] = useState<Error | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
+  // 読み込み済みのペットID一覧をセッションストレージに保存するためのキー
+  const [sessionKey] = useState(() => `pet-browsing-session-${Date.now()}`)
 
   /**
    * ペットデータを取得
    */
   const fetchPets = useCallback(
-    async (pageNum: number = 0, limit: number = 20) => {
+    async (pageNum: number = 0, limit: number = 50) => {
       try {
         setIsLoading(true)
         setError(null)

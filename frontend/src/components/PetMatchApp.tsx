@@ -39,6 +39,7 @@ export function PetMatchApp() {
     hasMorePets,
     handleSwipe: originalHandleSwipe,
     reset: resetSwipe,
+    currentIndex,
   } = usePetSwipe(pets, petType)
 
   // 現在のペットの評価レベルを取得
@@ -79,7 +80,7 @@ export function PetMatchApp() {
     handleSwipe(direction)
   }
 
-  // リセット処理
+  // リセット処理（全データ閲覧完了時のみ呼ばれる）
   const handleReset = () => {
     resetSwipe()
     resetPets()

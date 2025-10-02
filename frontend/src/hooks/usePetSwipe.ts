@@ -16,22 +16,81 @@ interface SwipeState {
   superLikes: string[]
 }
 
+/** 閲覧状態の型定義（軽量版） */
+interface BrowsingState {
+  /** 最後に閲覧したペットのID */
+  lastViewedPetId: string | null
+  /** 最後に閲覧したインデックス */
+  lastViewedIndex: number
+  /** 最終閲覧日時 */
+  lastViewedAt: string
+  /** 全データ閲覧完了フラグ */
+  hasCompletedAll: boolean
+}
+
 /**
  * 統合されたペットスワイプHook
  * シンプルな状態管理とスワイプロジックを提供
  */
-export function usePetSwipe(pets: FrontendPet[], _petType: 'dog' | 'cat') {
-  const [state, setState] = useState<SwipeState>({
-    currentIndex: 0,
-    likes: [],
-    passes: [],
-    superLikes: [],
+export function usePetSwipe(pets: FrontendPet[], petType: 'dog' | 'cat') {
+  // ローカルストレージのキーを生成（ペットタイプごとに別管理）
+  const browsingKey = `pet-browsing-state-${petType}`
+
+  // 初期状態をローカルストレージから復元（軽量版）
+  const [state, setState] = useState<SwipeState>(() => {
+    try {
+      const saved = localStorage.getItem(browsingKey)
+      if (saved) {
+        const browsingState = JSON.parse(saved) as BrowsingState
+        // 全データ閲覧完了していない場合のみ復元
+        if (
+          !browsingState.hasCompletedAll &&
+          browsingState.lastViewedIndex >= 0 &&
+          browsingState.lastViewedIndex <= pets.length
+        ) {
+          return {
+            currentIndex: browsingState.lastViewedIndex,
+            likes: [],
+            passes: [],
+            superLikes: [],
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load saved state:', error)
+    }
+    return {
+      currentIndex: 0,
+      likes: [],
+      passes: [],
+      superLikes: [],
+    }
   })
 
   /** 現在表示中のペット */
   const currentPet = pets[state.currentIndex] || null
   /** 次のペットが存在するかどうか */
   const hasMorePets = state.currentIndex < pets.length - 1
+
+  /**
+   * 閲覧状態を保存（軽量版）
+   */
+  const saveBrowsingState = useCallback(
+    (index: number, petId: string | null, completed: boolean = false) => {
+      try {
+        const browsingState: BrowsingState = {
+          lastViewedPetId: petId,
+          lastViewedIndex: index,
+          lastViewedAt: new Date().toISOString(),
+          hasCompletedAll: completed,
+        }
+        localStorage.setItem(browsingKey, JSON.stringify(browsingState))
+      } catch (error) {
+        console.error('Failed to save browsing state:', error)
+      }
+    },
+    [browsingKey]
+  )
 
   /**
    * スワイプ処理を実行
@@ -59,21 +118,36 @@ export function usePetSwipe(pets: FrontendPet[], _petType: 'dog' | 'cat') {
 
         // 次のペットへ進む
         newState.currentIndex = prev.currentIndex + 1
+
+        // 次のペットのIDを取得
+        const nextPet = pets[newState.currentIndex]
+        const isCompleted = newState.currentIndex >= pets.length
+
+        // 閲覧状態を保存（軽量版）
+        saveBrowsingState(newState.currentIndex, nextPet ? nextPet.id : currentPet.id, isCompleted)
+
         return newState
       })
     },
-    [currentPet]
+    [currentPet, pets, saveBrowsingState]
   )
 
   /** スワイプ状態を初期化 */
   const reset = useCallback(() => {
-    setState({
+    const newState = {
       currentIndex: 0,
       likes: [],
       passes: [],
       superLikes: [],
-    })
-  }, [])
+    }
+    setState(newState)
+    // リセット時は閲覧状態もクリア
+    try {
+      localStorage.removeItem(browsingKey)
+    } catch (error) {
+      console.error('Failed to clear saved state:', error)
+    }
+  }, [browsingKey])
 
   /** 直前のスワイプ操作を取り消し */
   const undo = useCallback(() => {
