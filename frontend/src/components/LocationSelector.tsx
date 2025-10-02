@@ -13,15 +13,11 @@ interface LocationSelectorProps {
 export function LocationSelector({ selectedLocations, onLocationsChange }: LocationSelectorProps) {
   const {
     expandedRegions,
-    expandedPrefectures,
     toggleRegion,
-    togglePrefecture,
     toggleRegionAll,
-    togglePrefectureAll,
     toggleLocation,
     isLocationSelected,
     isRegionAllSelected,
-    isPrefectureAllSelected,
   } = useLocationSelection(selectedLocations, onLocationsChange)
 
   return (
@@ -33,14 +29,10 @@ export function LocationSelector({ selectedLocations, onLocationsChange }: Locat
           prefectures={prefectures}
           isExpanded={expandedRegions.includes(region)}
           isAllSelected={isRegionAllSelected(region)}
-          expandedPrefectures={expandedPrefectures}
           onToggleRegion={() => toggleRegion(region)}
           onToggleRegionAll={() => toggleRegionAll(region)}
-          onTogglePrefecture={togglePrefecture}
-          onTogglePrefectureAll={togglePrefectureAll}
           onToggleLocation={toggleLocation}
           isLocationSelected={isLocationSelected}
-          isPrefectureAllSelected={isPrefectureAllSelected}
         />
       ))}
     </div>

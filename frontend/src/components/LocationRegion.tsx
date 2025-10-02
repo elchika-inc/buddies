@@ -8,14 +8,10 @@ interface LocationRegionProps {
   prefectures: readonly string[]
   isExpanded: boolean
   isAllSelected: boolean
-  expandedPrefectures: string[]
   onToggleRegion: () => void
   onToggleRegionAll: () => void
-  onTogglePrefecture: (prefecture: string) => void
-  onTogglePrefectureAll: (prefecture: string) => void
   onToggleLocation: (location: Location) => void
   isLocationSelected: (location: Location) => boolean
-  isPrefectureAllSelected: (prefecture: string) => boolean
 }
 
 export function LocationRegion({
@@ -23,14 +19,10 @@ export function LocationRegion({
   prefectures,
   isExpanded,
   isAllSelected,
-  expandedPrefectures,
   onToggleRegion,
   onToggleRegionAll,
-  onTogglePrefecture,
-  onTogglePrefectureAll,
   onToggleLocation,
   isLocationSelected,
-  isPrefectureAllSelected,
 }: LocationRegionProps) {
   return (
     <div className="border-b">
