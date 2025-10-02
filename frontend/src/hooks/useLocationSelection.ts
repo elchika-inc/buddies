@@ -26,13 +26,9 @@ export function useLocationSelection(
     const prefecturesInRegion = regions[region as keyof typeof regions]
     const allLocations: Location[] = []
 
+    // 都道府県のみを追加（市区町村は含めない）
     prefecturesInRegion.forEach((prefecture) => {
-      if (locations[prefecture as keyof typeof locations]) {
-        allLocations.push({ prefecture, city: 'すべて' })
-        locations[prefecture as keyof typeof locations].forEach((city) => {
-          allLocations.push({ prefecture, city })
-        })
-      }
+      allLocations.push({ prefecture, city: '' })
     })
 
     return allLocations
@@ -44,9 +40,8 @@ export function useLocationSelection(
   }
 
   const isLocationSelected = (location: Location): boolean => {
-    return selectedLocations.some(
-      (l) => l.prefecture === location.prefecture && l.city === location.city
-    )
+    // 都道府県レベルでの選択状態をチェック（cityは無視）
+    return selectedLocations.some((l) => l.prefecture === location.prefecture)
   }
 
   const isRegionAllSelected = (region: string): boolean => {
@@ -54,9 +49,7 @@ export function useLocationSelection(
     return (
       allLocationsInRegion.length > 0 &&
       allLocationsInRegion.every((location) =>
-        selectedLocations.some(
-          (l) => l.prefecture === location.prefecture && l.city === location.city
-        )
+        selectedLocations.some((l) => l.prefecture === location.prefecture)
       )
     )
   }
@@ -107,31 +100,15 @@ export function useLocationSelection(
   const toggleLocation = (location: Location) => {
     const isSelected = isLocationSelected(location)
 
-    if (location.city === 'すべて') {
-      const allCitiesInPrefecture = getAllLocationsInPrefecture(location.prefecture)
-
-      if (isSelected) {
-        onLocationsChange(selectedLocations.filter((l) => l.prefecture !== location.prefecture))
-      } else {
-        const otherPrefectureLocations = selectedLocations.filter(
-          (l) => l.prefecture !== location.prefecture
-        )
-        onLocationsChange([...otherPrefectureLocations, ...allCitiesInPrefecture])
-      }
+    // 都道府県レベルの選択のみをサポート
+    if (isSelected) {
+      onLocationsChange(selectedLocations.filter((l) => l.prefecture !== location.prefecture))
     } else {
-      if (isSelected) {
-        onLocationsChange(
-          selectedLocations.filter(
-            (l) =>
-              !(
-                (l.prefecture === location.prefecture && l.city === location.city) ||
-                (l.prefecture === location.prefecture && l.city === 'すべて')
-              )
-          )
-        )
-      } else {
-        onLocationsChange([...selectedLocations, location])
-      }
+      // 他の都道府県の選択を保持しつつ、新しい都道府県を追加
+      const otherPrefectureLocations = selectedLocations.filter(
+        (l) => l.prefecture !== location.prefecture
+      )
+      onLocationsChange([...otherPrefectureLocations, location])
     }
   }
 
