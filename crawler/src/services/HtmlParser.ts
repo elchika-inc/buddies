@@ -227,7 +227,7 @@ export class HtmlParser {
    */
   private static parseLocationText(locationText: string): [string, string] {
     const parts = locationText.split(/\s+/)
-    let prefecture = '東京都'
+    let prefecture = ''
     let city = ''
 
     for (const part of parts) {

@@ -5,6 +5,7 @@ import { AdminController } from '../controllers/admin/AdminController'
 import { ImageUploadController } from '../controllers/admin/ImageUploadController'
 import { CrawlerController } from '../controllers/admin/CrawlerController'
 import { DispatchController } from '../controllers/admin/DispatchController'
+import prefectureComplement from './admin/prefectureComplement'
 import type { Env } from '../types'
 
 const admin = new Hono<{ Bindings: Env }>()
@@ -106,5 +107,8 @@ admin.post(
     return dispatchController.triggerScheduled(c)
   })
 )
+
+// 都道府県補完エンドポイント
+admin.route('/prefecture-complement', prefectureComplement)
 
 export default admin

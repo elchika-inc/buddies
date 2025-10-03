@@ -2,6 +2,7 @@ import { Dog } from '@/types/dog'
 import { Cat } from '@/types/cat'
 import { parseLocation, normalizeGender } from './locationParser'
 import { DEFAULT_PET_HOME_URLS, UNKNOWN_VALUES, GROUPING_KEYS } from '@/constants/migration'
+import { inferPrefectureFromCity } from '@/data/cityPrefectureMapping'
 
 /**
  * 犬データの移行処理
@@ -52,7 +53,7 @@ export function migrateAllCatData(cats: Cat[]): Cat[] {
 }
 
 /**
- * 地域フィルター機能
+ * 地域フィルター機能（都道府県補完機能付き）
  */
 export function filterPetsByLocation<
   T extends { prefecture?: string | null | undefined; city?: string | null | undefined },
@@ -64,12 +65,30 @@ export function filterPetsByLocation<
   }
 ): T[] {
   return pets.filter((pet) => {
-    if (filters.prefecture && pet.prefecture !== filters.prefecture) {
-      return false
-    }
+    // 市町村フィルタ
     if (filters.city && pet.city !== filters.city) {
       return false
     }
+
+    // 都道府県フィルタ（市町村からの推測を含む）
+    if (filters.prefecture) {
+      // ペットに都道府県情報がある場合は通常のマッチング
+      if (pet.prefecture) {
+        if (pet.prefecture !== filters.prefecture) {
+          return false
+        }
+      } else if (pet.city) {
+        // 都道府県情報がなく市町村情報がある場合は、市町村から都道府県を推測してマッチング
+        const inferredPrefecture = inferPrefectureFromCity(pet.city)
+        if (inferredPrefecture !== filters.prefecture) {
+          return false
+        }
+      } else {
+        // 都道府県も市町村もない場合は除外
+        return false
+      }
+    }
+
     return true
   })
 }
