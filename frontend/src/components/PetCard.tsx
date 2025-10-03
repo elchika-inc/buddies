@@ -33,7 +33,7 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
       ? 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?w=600&h=600&fit=crop'
       : 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=600&fit=crop'
 
-  // 画像URL（エラー時はフォールバック画像を使用）
+  // 画像URL（APIからWebP優先で返される）
   const imageUrl = imageError ? fallbackImage : pet.imageUrl || fallbackImage
 
   /** 画像読み込みエラー時の処理 */
@@ -65,8 +65,7 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
             onError={handleImageError}
-            quality={20} // 背景画像はさらに低品質で読み込み高速化
-            unoptimized={!priority} // 非優先画像は最適化をスキップして高速化
+            quality={15} // 背景画像は低品質で読み込み高速化（WebPなので軽量）
           />
         )}
       </div>

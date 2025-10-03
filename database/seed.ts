@@ -88,6 +88,8 @@ async function seed() {
         adoptionFee: 30000,
         status: 'available',
         imageUrl: 'https://placedog.net/400/400?id=1',
+        hasJpeg: 1,
+        hasWebp: 1, // WebP画像対応フラグ
         additionalImages: JSON.stringify([
           'https://placedog.net/400/400?id=2',
           'https://placedog.net/400/400?id=3'
@@ -134,6 +136,8 @@ async function seed() {
         adoptionFee: 35000,
         status: 'available',
         imageUrl: 'https://placedog.net/400/400?id=4',
+        hasJpeg: 1,
+        hasWebp: 1, // WebP画像対応フラグ
         additionalImages: JSON.stringify([
           'https://placedog.net/400/400?id=5'
         ]),
@@ -180,6 +184,8 @@ async function seed() {
         adoptionFee: 25000,
         status: 'available',
         imageUrl: 'https://placekitten.com/400/400?image=1',
+        hasJpeg: 1,
+        hasWebp: 1, // WebP画像対応フラグ
         additionalImages: JSON.stringify([
           'https://placekitten.com/400/400?image=2',
           'https://placekitten.com/400/400?image=3'
@@ -226,6 +232,8 @@ async function seed() {
         adoptionFee: 20000,
         status: 'available',
         imageUrl: 'https://placekitten.com/400/400?image=4',
+        hasJpeg: 1,
+        hasWebp: 1, // WebP画像対応フラグ
         additionalImages: JSON.stringify([
           'https://placekitten.com/400/400?image=5'
         ]),

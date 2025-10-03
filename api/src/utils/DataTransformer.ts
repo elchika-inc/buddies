@@ -90,7 +90,16 @@ export function transformPetRecord(dbRecord: unknown, apiBaseUrl?: string): ApiP
   if (pet.hasJpeg || pet.hasWebp) {
     // UrlBuilderを使用して統一的にURLを生成
     const urlBuilder = new UrlBuilder(apiBaseUrl)
-    pet.imageUrl = urlBuilder.imageUrl(pet.type, pet.id, 'jpg')
+
+    // WebPを優先的に使用
+    if (pet.hasWebp) {
+      pet.imageUrl = urlBuilder.imageUrl(pet.type, pet.id, 'webp')
+    } else if (pet.hasJpeg) {
+      // WebPがない場合のみJPGを使用
+      pet.imageUrl = urlBuilder.imageUrl(pet.type, pet.id, 'jpg')
+    }
+
+    // hasWebpフラグはそのまま残す（フロントエンドでの判定に使用）
   } else {
     // R2に画像がない場合は、フロントエンドでフォールバック画像を使用するためundefinedを設定
     delete pet.imageUrl
