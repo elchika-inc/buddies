@@ -77,11 +77,7 @@ export function PetDetailModal({ pet, isOpen, onClose }: PetDetailModalProps) {
                 </div>
                 <div className="font-semibold text-gray-800 text-xs sm:text-base">性別</div>
                 <div className="text-gray-600 text-xs sm:text-base">
-                  {pet.gender === 'male'
-                    ? '男の子'
-                    : pet.gender === 'female'
-                      ? '女の子'
-                      : pet.gender || '不明'}
+                  {pet.gender === 'male' ? '男の子' : pet.gender === 'female' ? '女の子' : '???'}
                 </div>
               </div>
               <div className="text-center p-2 sm:p-4 bg-yellow-50 rounded-lg">

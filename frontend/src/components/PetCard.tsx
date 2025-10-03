@@ -120,7 +120,9 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
       <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
         <h3 className="text-2xl font-bold mb-2">{pet.name}</h3>
         <p className="text-lg opacity-90">
-          {pet.age}歳 • {pet.gender} • {pet.location}
+          {pet.age}歳 •{' '}
+          {pet.gender === 'male' ? '男の子' : pet.gender === 'female' ? '女の子' : '???'} •{' '}
+          {pet.location}
         </p>
       </div>
     </div>

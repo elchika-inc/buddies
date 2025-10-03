@@ -110,7 +110,12 @@ export function MatchHeader({
                         >
                           <h3 className="font-bold text-lg text-gray-800">{pet.name}</h3>
                           <p className="text-gray-600">
-                            {pet.breed} • {pet.age}歳 • {pet.gender}
+                            {pet.breed} • {pet.age}歳 •{' '}
+                            {pet.gender === 'male'
+                              ? '男の子'
+                              : pet.gender === 'female'
+                                ? '女の子'
+                                : '???'}
                           </p>
                           <p className="text-gray-500 text-sm mt-1">{pet.location}</p>
                           <p className="text-blue-500 text-xs mt-1">クリックで詳細を見る</p>
