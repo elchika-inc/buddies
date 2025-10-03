@@ -65,7 +65,8 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
             onError={handleImageError}
-            quality={30} // 背景画像は低品質で十分
+            quality={20} // 背景画像はさらに低品質で読み込み高速化
+            unoptimized={!priority} // 非優先画像は最適化をスキップして高速化
           />
         )}
       </div>
@@ -78,11 +79,13 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             alt={pet.name}
             fill
             className="object-contain"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 60vw, 500px"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
             onError={handleImageError}
-            quality={85}
+            quality={priority ? 90 : 75} // 優先画像は高品質、プリロード画像は中品質
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=" // プレースホルダー用のぼかし画像
           />
         )}
       </div>

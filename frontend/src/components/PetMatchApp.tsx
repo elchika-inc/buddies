@@ -39,7 +39,6 @@ export function PetMatchApp() {
     hasMorePets,
     handleSwipe: originalHandleSwipe,
     reset: resetSwipe,
-    currentIndex,
   } = usePetSwipe(pets, petType)
 
   // 現在のペットの評価レベルを取得
@@ -69,9 +68,9 @@ export function PetMatchApp() {
   const nextPet =
     currentIndex >= 0 && currentIndex < pets.length - 1 ? pets[currentIndex + 1] : null
 
-  // プリロード用のペット（次の2-4枚）
+  // プリロード用のペット（次の2-7枚、計6枚）
   const preloadPets =
-    currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 5).filter(Boolean) : []
+    currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 8).filter(Boolean) : []
 
   // ボタンスワイプのトリガー
   const triggerButtonSwipe = (direction: 'like' | 'pass' | 'superLike') => {
@@ -120,12 +119,12 @@ export function PetMatchApp() {
         >
           {/* プリロード用の非表示カード（画像を事前読み込み） */}
           {preloadPets.map((pet, index) => (
-            <div key={`preload-${pet.id}`} className="hidden">
+            <div key={`preload-${pet.id}`} className="hidden" aria-hidden="true">
               <PetSwipeCard
                 pet={pet}
                 onSwipe={() => {}}
                 isTopCard={false}
-                cardIndex={currentIndex + index + 2}
+                cardIndex={index + 2} // 順番に応じた優先度設定
               />
             </div>
           ))}

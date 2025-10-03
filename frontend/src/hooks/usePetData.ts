@@ -13,8 +13,6 @@ export function usePetData(selectedLocations?: Location[]) {
   const [error, setError] = useState<Error | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
-  // 読み込み済みのペットID一覧をセッションストレージに保存するためのキー
-  const [sessionKey] = useState(() => `pet-browsing-session-${Date.now()}`)
 
   /**
    * ペットデータを取得
