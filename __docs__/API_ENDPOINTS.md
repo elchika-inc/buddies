@@ -1,9 +1,9 @@
-# PawMatch API エンドポイント仕様書
+# Buddies API エンドポイント仕様書
 
 ## 基本情報
 
 - **ベースURL**:
-  - 本番環境: `https://pawmatch-api.elchika.app`
+  - 本番環境: `https://buddies-api.elchika.app`
   - 開発環境: `http://localhost:9789`
 - **認証**: APIキー認証（有効化済み）
 - **レスポンス形式**: JSON

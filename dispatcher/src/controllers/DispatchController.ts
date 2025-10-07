@@ -39,7 +39,7 @@ export class DispatchController {
    * ヘルスチェックエンドポイント
    */
   async healthCheck(c: Context): Promise<Response> {
-    return c.json(createSuccessResponse({ status: 'healthy' }, 'PawMatch Dispatcher is running'))
+    return c.json(createSuccessResponse({ status: 'healthy' }, 'Buddies Dispatcher is running'))
   }
 
   /**

@@ -1,11 +1,11 @@
 # =============================================================================
-# PawMatch Crawler Service Configuration
+# Buddies Crawler Service Configuration
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Base Configuration
 # -----------------------------------------------------------------------------
-name = "pawmatch-crawler"
+name = "buddies-crawler"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -15,9 +15,9 @@ compatibility_flags = ["nodejs_compat"]
 # -----------------------------------------------------------------------------
 [vars]
 NODE_ENV = "production"
-ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
+ALLOWED_ORIGIN = "https://buddies-api.elchika.app"
 PET_HOME_BASE_URL = "https://www.pet-home.jp"
-API_URL = "https://pawmatch-api.elchika.app"
+API_URL = "https://buddies-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
 
@@ -28,18 +28,18 @@ CRAWLER_API_KEY = "crawler-secret-key-2024"
 # Service Bindings for internal communication
 [[services]]
 binding = "API_SERVICE"
-service = "pawmatch-api"
+service = "buddies-api"
 
 # R2 Bucket (Image Storage)
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
-bucket_name = "pawmatch-images"
+bucket_name = "buddies-images"
 
 # D1 Database (Shared with API)
 [[d1_databases]]
 binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+database_name = "buddies-db"
+database_id = "1908aab6-5ff7-4aa3-9bd1-372f01544b7f"
 migrations_dir = "../database/migrations"
 
 # -----------------------------------------------------------------------------
@@ -48,27 +48,27 @@ migrations_dir = "../database/migrations"
 
 # Main Crawler Queue (APIから起動)
 [[queues.consumers]]
-queue = "pawmatch-crawler-queue"
+queue = "buddies-crawler-queue"
 max_batch_size = 5
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-crawler-dlq"
+dead_letter_queue = "buddies-crawler-dlq"
 max_concurrency = 2
 
 # Crawler Queue Producer (for DLQ)
 [[queues.producers]]
-binding = "PAWMATCH_CRAWLER_DLQ"
-queue = "pawmatch-crawler-dlq"
+binding = "BUDDIES_CRAWLER_DLQ"
+queue = "buddies-crawler-dlq"
 
 # Screenshot Queue (Crawlerが処理済みデータを送信)
 [[queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_QUEUE"
-queue = "pawmatch-screenshot-queue"
+binding = "BUDDIES_SCREENSHOT_QUEUE"
+queue = "buddies-screenshot-queue"
 
 # Screenshot DLQ
 [[queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_DLQ"
-queue = "pawmatch-screenshot-dlq"
+binding = "BUDDIES_SCREENSHOT_DLQ"
+queue = "buddies-screenshot-dlq"
 
 # -----------------------------------------------------------------------------
 # Triggers
@@ -89,62 +89,62 @@ enabled = true
 # Production Environment
 # -----------------------------------------------------------------------------
 [env.production]
-name = "pawmatch-crawler"
+name = "buddies-crawler"
 
 [env.production.vars]
 GITHUB_ACTIONS = "true"
 NODE_ENV = "production"
-ALLOWED_ORIGIN = "https://pawmatch-api.elchika.app"
+ALLOWED_ORIGIN = "https://buddies-api.elchika.app"
 PET_HOME_BASE_URL = "https://www.pet-home.jp"
-API_URL = "https://pawmatch-api.elchika.app"
+API_URL = "https://buddies-api.elchika.app"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
 
 # Production Resource Bindings
 [[env.production.services]]
 binding = "API_SERVICE"
-service = "pawmatch-api"
+service = "buddies-api"
 
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
-bucket_name = "pawmatch-images"
+bucket_name = "buddies-images"
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+database_name = "buddies-db"
+database_id = "1908aab6-5ff7-4aa3-9bd1-372f01544b7f"
 migrations_dir = "../database/migrations"
 
 # Production Queue Configuration (Responsibility-based)
 # Main Crawler Queue (APIから起動)
 [[env.production.queues.consumers]]
-queue = "pawmatch-crawler-queue"
+queue = "buddies-crawler-queue"
 max_batch_size = 5
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-crawler-dlq"
+dead_letter_queue = "buddies-crawler-dlq"
 max_concurrency = 2
 
 # Crawler Queue Producer (for DLQ)
 [[env.production.queues.producers]]
-binding = "PAWMATCH_CRAWLER_DLQ"
-queue = "pawmatch-crawler-dlq"
+binding = "BUDDIES_CRAWLER_DLQ"
+queue = "buddies-crawler-dlq"
 
 # Screenshot Queue (Crawlerが処理済みデータを送信)
 [[env.production.queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_QUEUE"
-queue = "pawmatch-screenshot-queue"
+binding = "BUDDIES_SCREENSHOT_QUEUE"
+queue = "buddies-screenshot-queue"
 
 # Screenshot DLQ
 [[env.production.queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_DLQ"
-queue = "pawmatch-screenshot-dlq"
+binding = "BUDDIES_SCREENSHOT_DLQ"
+queue = "buddies-screenshot-dlq"
 
 # -----------------------------------------------------------------------------
 # Development Environment
 # -----------------------------------------------------------------------------
 [env.development]
-name = "pawmatch-crawler-dev"
+name = "buddies-crawler-dev"
 
 [env.development.vars]
 NODE_ENV = "development"

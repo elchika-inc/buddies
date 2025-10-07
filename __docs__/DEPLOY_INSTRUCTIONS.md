@@ -65,13 +65,13 @@ bun run deploy:all
 `deploy:all` は以下の順序でデプロイを実行します：
 
 1. **Workers のデプロイ** (並列実行)
-   - pawmatch-api
-   - pawmatch-crawler
-   - pawmatch-dispatcher
+   - buddies-api
+   - buddies-crawler
+   - buddies-dispatcher
 
 2. **Apps のデプロイ** (順次実行)
-   - pawmatch-dogs (DogMatch)
-   - pawmatch-cats (CatMatch)
+   - buddies-dogs (DogMatch)
+   - buddies-cats (CatMatch)
 
 ## トラブルシューティング
 

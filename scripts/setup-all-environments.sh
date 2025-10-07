@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🔐 PawMatch Environment Setup"
+echo "🔐 Buddies Environment Setup"
 echo "============================="
 echo ""
 
@@ -31,7 +31,7 @@ check_current_setup() {
   
   # GitHub Secrets (手動確認が必要)
   echo -e "${YELLOW}GitHub Secrets:${NC}"
-  echo "  Please check manually at: https://github.com/[your-org]/pawmatch/settings/secrets/actions"
+  echo "  Please check manually at: https://github.com/[your-org]/buddies/settings/secrets/actions"
   echo ""
   
   # Cloudflare Workers
@@ -106,12 +106,12 @@ setup_github_actions() {
   echo "----------------------"
   echo ""
   echo "Add these secrets to your GitHub repository:"
-  echo "https://github.com/[your-org]/pawmatch/settings/secrets/actions"
+  echo "https://github.com/[your-org]/buddies/settings/secrets/actions"
   echo ""
   echo -e "${YELLOW}Required Secrets:${NC}"
   echo "  API_SECRET_KEY=$API_SECRET_KEY"
   echo "  API_ADMIN_SECRET=$API_ADMIN_SECRET"
-  echo "  API_URL=https://pawmatch-api.elchika.app"
+  echo "  API_URL=https://buddies-api.elchika.app"
   echo ""
   echo -e "${YELLOW}Existing R2 Secrets (keep as is):${NC}"
   echo "  R2_ACCOUNT_ID"
@@ -152,13 +152,13 @@ setup_cloudflare_pages() {
   echo "Add these environment variables to Cloudflare Pages:"
   echo "Dashboard > Pages > [Your Project] > Settings > Environment variables"
   echo ""
-  echo -e "${YELLOW}For pawmatch-dogs:${NC}"
-  echo "  NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app"
+  echo -e "${YELLOW}For buddies-dogs:${NC}"
+  echo "  NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app"
   echo "  NEXT_PUBLIC_API_KEY=$API_SECRET_KEY"
   echo "  NEXT_PUBLIC_PET_TYPE=dog"
   echo ""
-  echo -e "${YELLOW}For pawmatch-cats:${NC}"
-  echo "  NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app"
+  echo -e "${YELLOW}For buddies-cats:${NC}"
+  echo "  NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app"
   echo "  NEXT_PUBLIC_API_KEY=$API_SECRET_KEY"
   echo "  NEXT_PUBLIC_PET_TYPE=cat"
   echo ""

@@ -89,8 +89,8 @@ export class CrawlerService {
       }
 
       // Queueに送信
-      if (this.env.PAWMATCH_CRAWLER_QUEUE && messages.length > 0) {
-        await this.env.PAWMATCH_CRAWLER_QUEUE.sendBatch(messages)
+      if (this.env.BUDDIES_CRAWLER_QUEUE && messages.length > 0) {
+        await this.env.BUDDIES_CRAWLER_QUEUE.sendBatch(messages)
 
         return {
           success: true,
@@ -104,7 +104,7 @@ export class CrawlerService {
 
       return this.createErrorResponse(
         'Crawler Queue not configured',
-        new Error('PAWMATCH_CRAWLER_QUEUE is not available')
+        new Error('BUDDIES_CRAWLER_QUEUE is not available')
       )
     } catch (error) {
       return this.createErrorResponse('Crawler trigger error', error as Error)

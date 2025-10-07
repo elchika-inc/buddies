@@ -1,13 +1,13 @@
 # =============================================================================
-# PawMatch Frontend - Cloudflare Pages Configuration
+# Buddies Frontend - Cloudflare Pages Configuration
 # =============================================================================
 # This file provides minimal configuration for Cloudflare Pages deployment.
 # Dog/Cat applications are deployed as separate projects using --project-name flag:
-#   - npm run deploy:dog → deploys to pawmatch-dogs project
-#   - npm run deploy:cat → deploys to pawmatch-cats project
+#   - npm run deploy:dog → deploys to buddies-dogs project
+#   - npm run deploy:cat → deploys to buddies-cats project
 # =============================================================================
 
-name = "pawmatch"
+name = "buddies"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 

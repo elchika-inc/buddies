@@ -58,7 +58,7 @@ jobs:
       - name: Build frontend for ${{ matrix.pet-type }}
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run build:${{ matrix.pet-type }}:ci -w @pawmatch/frontend
+        run: npm run build:${{ matrix.pet-type }}:ci -w @buddies/frontend
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -86,17 +86,17 @@ jobs:
         run: npm ci
 
       - name: Build API Worker
-        run: npm run build -w @pawmatch/api
+        run: npm run build -w @buddies/api
         continue-on-error: true
 
       - name: Build Crawler Worker
-        run: npm run build -w @pawmatch/crawler
+        run: npm run build -w @buddies/crawler
         continue-on-error: true
 
       - name: Build Dispatcher Worker
-        run: npm run build -w @pawmatch/dispatcher
+        run: npm run build -w @buddies/dispatcher
         continue-on-error: true
 
       - name: Build Admin Worker
-        run: npm run build -w @pawmatch/admin
+        run: npm run build -w @buddies/admin
         continue-on-error: true

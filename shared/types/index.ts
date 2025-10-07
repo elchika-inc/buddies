@@ -1,7 +1,7 @@
 /**
- * PawMatch 共通型定義
+ * Buddies 共通型定義
  *
- * @description PawMatchアプリケーション全体で使用する共通の型定義
+ * @description Buddiesアプリケーション全体で使用する共通の型定義
  * api/database/schema/schema.tsのDrizzle ORMスキーマから派生した型
  * @file shared/types/index.ts
  */

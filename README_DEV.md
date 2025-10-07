@@ -1,10 +1,10 @@
-# PawMatch 🐕🐈
+# Buddies 🐕🐈
 
 保護犬・保護猫とユーザーをマッチングするWebアプリケーション
 
 ## 概要
 
-PawMatchは、保護動物と新しい家族をつなぐプラットフォームです。Cloudflare Workers、Next.js、TypeScriptで構築されたマイクロサービスアーキテクチャを採用し、高いパフォーマンスとスケーラビリティを実現しています。
+Buddiesは、保護動物と新しい家族をつなぐプラットフォームです。Cloudflare Workers、Next.js、TypeScriptで構築されたマイクロサービスアーキテクチャを採用し、高いパフォーマンスとスケーラビリティを実現しています。
 
 ## 特徴
 
@@ -26,7 +26,7 @@ PawMatchは、保護動物と新しい家族をつなぐプラットフォーム
 ## プロジェクト構成
 
 ```
-pawmatch/
+buddies/
 ├── frontend/          # Next.js フロントエンド (犬用・猫用)
 ├── api/              # REST API (Cloudflare Workers)
 ├── crawler/          # ペット情報収集クローラー
@@ -48,8 +48,8 @@ pawmatch/
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/[your-org]/pawmatch.git
-cd pawmatch
+git clone https://github.com/[your-org]/buddies.git
+cd buddies
 ```
 
 ### 2. 依存関係のインストール
@@ -76,7 +76,7 @@ NEXT_PUBLIC_PET_TYPE=dog  # or cat
 
 ```bash
 # D1データベースの作成
-wrangler d1 create pawmatch-db
+wrangler d1 create buddies-db
 
 # スキーマのプッシュ
 npm run db:push

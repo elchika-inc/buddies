@@ -1,9 +1,9 @@
 {
-  "name": "@pawmatch/dispatcher",
+  "name": "@buddies/dispatcher",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Task dispatcher service for PawMatch",
+  "description": "Task dispatcher service for Buddies",
   "scripts": {
     "dev": "wrangler dev --local",
     "build": "wrangler build --env production",

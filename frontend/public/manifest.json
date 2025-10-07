@@ -1,6 +1,6 @@
 {
-  "name": "PawMatch - 保護犬・保護猫マッチング",
-  "short_name": "PawMatch",
+  "name": "Buddies - 保護犬・保護猫マッチング",
+  "short_name": "Buddies",
   "description": "保護犬・保護猫と里親をつなぐマッチングアプリ。スワイプで簡単に理想のペットを見つけられます。",
   "start_url": "/",
   "scope": "/",

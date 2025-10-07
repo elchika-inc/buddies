@@ -1,5 +1,5 @@
 /**
- * PawMatch Dispatcher - Cloudflare Workers Entry Point
+ * Buddies Dispatcher - Cloudflare Workers Entry Point
  *
  * このモジュールは、画像処理が必要なペットを検出し、
  * GitHub Actionsワークフローをトリガーして画像変換を実行します。

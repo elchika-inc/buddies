@@ -1,9 +1,9 @@
 {
-  "name": "@pawmatch/shared",
+  "name": "@buddies/shared",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "PawMatch Shared - Shared types, utilities and schemas",
+  "description": "Buddies Shared - Shared types, utilities and schemas",
   "author": "elchika-inc",
   "license": "ISC",
   "main": "./types/index.ts",

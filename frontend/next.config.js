@@ -16,7 +16,7 @@ const withPWA = require('next-pwa')({
   // Workboxオプション
   buildExcludes: [/.*\.map$/, /.*\.LICENSE\.txt$/],
   // キャッシュを使用しない
-  cacheId: 'pawmatch-minimal',
+  cacheId: 'buddies-minimal',
   cleanupOutdatedCaches: true,
 })
 

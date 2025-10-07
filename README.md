@@ -1,20 +1,20 @@
-# PawMatch - あなたと保護動物をつなぐマッチングサービス 🐾
+# Buddies - あなたと保護動物をつなぐマッチングサービス 🐾
 
 <div align="center">
 
-![PawMatch Logo](https://via.placeholder.com/400x200/4A90E2/FFFFFF?text=PawMatch)
+![Buddies Logo](https://via.placeholder.com/400x200/4A90E2/FFFFFF?text=Buddies)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)]()
 
 </div>
 
-## 🌟 PawMatchとは
+## 🌟 Buddiesとは
 
-PawMatchは、保護犬・保護猫と新しい家族をつなぐオンラインマッチングプラットフォームです。
+Buddiesは、保護犬・保護猫と新しい家族をつなぐオンラインマッチングプラットフォームです。
 全国の保護団体と連携し、一頭でも多くの保護動物に温かい家庭を見つけることを目指しています。
 
-### なぜPawMatchなのか
+### なぜBuddiesなのか
 
 - **🔍 簡単検索**: お住まいの地域、ペットの種類、年齢などから理想のパートナーを見つけられます
 - **📝 詳細プロフィール**: 各ペットの性格、健康状態、必要なケアについて詳しく確認できます
@@ -69,11 +69,11 @@ PawMatchは、保護犬・保護猫と新しい家族をつなぐオンライン
 
 #### 🐕 犬の里親をお探しの方
 
-[https://dogs.pawmatch.jp](https://dogs.pawmatch.jp)
+[https://dogs.buddies.jp](https://dogs.buddies.jp)
 
 #### 🐈 猫の里親をお探しの方
 
-[https://cats.pawmatch.jp](https://cats.pawmatch.jp)
+[https://cats.buddies.jp](https://cats.buddies.jp)
 
 ### 利用開始までの流れ
 
@@ -113,14 +113,14 @@ PawMatchは、保護犬・保護猫と新しい家族をつなぐオンライン
 
 ## 🔒 プライバシーとセキュリティ
 
-PawMatchは、利用者の個人情報保護を最優先に考えています。
+Buddiesは、利用者の個人情報保護を最優先に考えています。
 
 - SSL/TLS暗号化通信
 - 個人情報の厳重な管理
 - GDPR準拠のデータ処理
 - 定期的なセキュリティ監査
 
-詳細は[プライバシーポリシー](https://pawmatch.jp/privacy)をご確認ください。
+詳細は[プライバシーポリシー](https://buddies.jp/privacy)をご確認ください。
 
 ## 🤝 提携保護団体
 
@@ -130,7 +130,7 @@ PawMatchは、利用者の個人情報保護を最優先に考えています。
 
 新規提携のご相談は、以下からお問い合わせください：
 
-- 📧 Email: partners@pawmatch.jp
+- 📧 Email: partners@buddies.jp
 - 📞 Phone: 03-XXXX-XXXX（平日10:00-18:00）
 
 ## 💰 料金について
@@ -160,21 +160,21 @@ A: 飼育環境、家族構成、ペット飼育経験などを確認させて�
 
 A: 多くの保護団体で2週間〜1ヶ月のトライアル期間を設けています。
 
-その他のご質問は[ヘルプセンター](https://pawmatch.jp/help)をご覧ください。
+その他のご質問は[ヘルプセンター](https://buddies.jp/help)をご覧ください。
 
 ## 📞 お問い合わせ
 
 ### カスタマーサポート
 
-- 📧 Email: support@pawmatch.jp
+- 📧 Email: support@buddies.jp
 - 📞 Phone: 03-XXXX-XXXX
 - 営業時間: 平日 10:00-18:00
 
 ### ソーシャルメディア
 
-- [Twitter @PawMatchJP](https://twitter.com/PawMatchJP)
-- [Facebook PawMatch](https://facebook.com/PawMatch)
-- [Instagram @pawmatch_jp](https://instagram.com/pawmatch_jp)
+- [Twitter @BuddiesJP](https://twitter.com/BuddiesJP)
+- [Facebook Buddies](https://facebook.com/Buddies)
+- [Instagram @buddies_jp](https://instagram.com/buddies_jp)
 
 ## 🏆 受賞・メディア掲載
 
@@ -185,7 +185,7 @@ A: 多くの保護団体で2週間〜1ヶ月のトライアル期間を設けて
 
 ## 🌱 サステナビリティ
 
-PawMatchは持続可能な社会の実現に貢献します：
+Buddiesは持続可能な社会の実現に貢献します：
 
 - 保護動物の殺処分ゼロを目指す
 - ペーパーレス化による環境負荷軽減
@@ -193,10 +193,10 @@ PawMatchは持続可能な社会の実現に貢献します：
 
 ## 📜 利用規約・ポリシー
 
-- [利用規約](https://pawmatch.jp/terms)
-- [プライバシーポリシー](https://pawmatch.jp/privacy)
-- [特定商取引法に基づく表記](https://pawmatch.jp/legal)
-- [Cookie ポリシー](https://pawmatch.jp/cookie)
+- [利用規約](https://buddies.jp/terms)
+- [プライバシーポリシー](https://buddies.jp/privacy)
+- [特定商取引法に基づく表記](https://buddies.jp/legal)
+- [Cookie ポリシー](https://buddies.jp/cookie)
 
 ## 🎁 キャンペーン情報
 
@@ -210,11 +210,11 @@ PawMatchは持続可能な社会の実現に貢献します：
 
 ## 💝 寄付・支援について
 
-PawMatchの活動を支援していただける方を募集しています。
+Buddiesの活動を支援していただける方を募集しています。
 
-- [寄付する](https://pawmatch.jp/donate)
-- [ボランティア登録](https://pawmatch.jp/volunteer)
-- [企業スポンサー募集](https://pawmatch.jp/sponsor)
+- [寄付する](https://buddies.jp/donate)
+- [ボランティア登録](https://buddies.jp/volunteer)
+- [企業スポンサー募集](https://buddies.jp/sponsor)
 
 ---
 
@@ -222,7 +222,7 @@ PawMatchの活動を支援していただける方を募集しています。
 
 **一頭でも多くの保護動物に、温かい家庭を。**
 
-© 2024 PawMatch. All rights reserved.
+© 2024 Buddies. All rights reserved.
 
 Made with ❤️ for all animals
 

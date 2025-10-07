@@ -6,13 +6,13 @@ import InstallPWA from '@/components/InstallPWA'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PawMatch',
+  title: 'Buddies',
   description: '保護犬・保護猫の里親マッチングアプリ',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'PawMatch',
+    title: 'Buddies',
   },
 }
 

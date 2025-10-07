@@ -13,20 +13,20 @@ export interface Env {
   // D1とR2は使用しない（APIのみ使用）
 
   // Responsibility-based Queues
-  PAWMATCH_CRAWLER_QUEUE: Queue // Crawler起動用
-  PAWMATCH_SCREENSHOT_QUEUE: Queue<DispatchMessage>
-  PAWMATCH_SCREENSHOT_DLQ: Queue<DispatchMessage>
-  PAWMATCH_CONVERSION_QUEUE: Queue<DispatchMessage>
-  PAWMATCH_CONVERSION_DLQ: Queue<DispatchMessage>
+  BUDDIES_CRAWLER_QUEUE: Queue // Crawler起動用
+  BUDDIES_SCREENSHOT_QUEUE: Queue<DispatchMessage>
+  BUDDIES_SCREENSHOT_DLQ: Queue<DispatchMessage>
+  BUDDIES_CONVERSION_QUEUE: Queue<DispatchMessage>
+  BUDDIES_CONVERSION_DLQ: Queue<DispatchMessage>
 
   // 統一プレフィックス付き環境変数
-  PAWMATCH_GITHUB_TOKEN?: string
-  PAWMATCH_GITHUB_OWNER: string
-  PAWMATCH_GITHUB_REPO: string
-  PAWMATCH_GITHUB_WORKFLOW_FILE: string
-  PAWMATCH_API_URL: string
-  PAWMATCH_API_KEY?: string
-  PAWMATCH_NODE_ENV?: string
+  BUDDIES_GITHUB_TOKEN?: string
+  BUDDIES_GITHUB_OWNER: string
+  BUDDIES_GITHUB_REPO: string
+  BUDDIES_GITHUB_WORKFLOW_FILE: string
+  BUDDIES_API_URL: string
+  BUDDIES_API_KEY?: string
+  BUDDIES_NODE_ENV?: string
 
   // 後方互換性のため旧名も保持（段階的削除予定）
   GITHUB_TOKEN?: string

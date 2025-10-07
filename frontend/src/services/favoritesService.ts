@@ -27,7 +27,7 @@ export class FavoritesService {
   /**
    * ストレージキーのプレフィックス
    */
-  private static readonly STORAGE_KEY_PREFIX = 'pawmatch_favorites_'
+  private static readonly STORAGE_KEY_PREFIX = 'buddies_favorites_'
 
   /**
    * ペットタイプごとのストレージキーを生成

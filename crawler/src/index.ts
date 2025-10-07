@@ -38,7 +38,7 @@ app.use('*', (c, next) => {
 // ヘルスチェック
 app.get('/', (c) => {
   return c.json({
-    service: 'PawMatch Crawler',
+    service: 'Buddies Crawler',
     status: 'healthy',
     timestamp: new Date().toISOString(),
   })

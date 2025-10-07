@@ -53,7 +53,7 @@ jobs:
         id: prepare-pets
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
         run: |
           # Dispatcher経由の場合
           if [ -n "${{ github.event.inputs.batch_data }}" ]; then
@@ -95,9 +95,9 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
-          PUBLIC_API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
+          PUBLIC_API_KEY: ${{ secrets.BUDDIES_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
@@ -125,9 +125,9 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
-          PUBLIC_API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
+          PUBLIC_API_KEY: ${{ secrets.BUDDIES_API_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -201,8 +201,8 @@ jobs:
         if: steps.capture-screenshots.outputs.screenshot_success_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           # 成功したスクリーンショットのペット情報を抽出
           SUCCESSFUL_PETS=$(cat scripts/logs/capture-results.json | jq '[.results[] | select(.success) | {
@@ -249,8 +249,8 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           # 結果ファイルを読み込み
           RESULTS=$(cat scripts/logs/capture-results.json)
@@ -296,8 +296,8 @@ jobs:
         if: steps.prepare-pets.outputs.pet_count > 0 && github.event.inputs.batch_id
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           # 成功したペットIDを収集
           if [ -f "scripts/logs/capture-results.json" ]; then
@@ -329,8 +329,8 @@ jobs:
       - name: Summary
         if: steps.prepare-pets.outputs.pet_count > 0
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           # 最終結果を読み込み
           if [ -f "scripts/logs/capture-results.json" ]; then

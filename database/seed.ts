@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Database Seeder for PawMatch
+ * Database Seeder for Buddies
  *
  * このスクリプトはローカル開発環境のデータベースにテストデータを投入します。
  * 使用方法: npm run db:seed

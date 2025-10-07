@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-PawMatchは保護犬・保護猫とユーザーをマッチングするWebアプリケーションです。Cloudflare Workers、Next.js、TypeScriptで構築されたマイクロサービスアーキテクチャを採用しています。
+Buddiesは保護犬・保護猫とユーザーをマッチングするWebアプリケーションです。Cloudflare Workers、Next.js、TypeScriptで構築されたマイクロサービスアーキテクチャを採用しています。
 
 ## アーキテクチャ
 
@@ -122,7 +122,7 @@ npm run tail:dispatcher   # ディスパッチャーログ
 
 ### フロントエンドの二重構成
 
-- 犬用 (pawmatch-dogs) と猫用 (pawmatch-cats) で異なるドメイン
+- 犬用 (buddies-dogs) と猫用 (buddies-cats) で異なるドメイン
 - `NEXT_PUBLIC_PET_TYPE` 環境変数で動作を切り替え
 
 ### Cloudflare Workers制約

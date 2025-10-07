@@ -13,7 +13,7 @@ uiRoute.get('/', async (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PawMatch Admin Dashboard</title>
+  <title>Buddies Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -22,7 +22,7 @@ uiRoute.get('/', async (c) => {
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 flex items-center">
           <span class="mr-3">🐾</span>
-          PawMatch Admin Dashboard
+          Buddies Admin Dashboard
         </h1>
         <div class="flex gap-2">
           <button
@@ -144,7 +144,7 @@ uiRoute.get('/table/:tableName', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${tableName} - PawMatch Admin</title>
+  <title>${tableName} - Buddies Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>

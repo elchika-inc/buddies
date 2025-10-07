@@ -5,4 +5,4 @@ export type {
   Permission,
   CreateApiKeyRequest,
   CreateApiKeyResponse,
-} from '@pawmatch/shared/types'
+} from '@buddies/shared/types'

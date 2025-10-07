@@ -2,15 +2,15 @@
 
 ## 設定が必要な環境変数
 
-### 🐕 DogMatch (pawmatch-dogs)
+### 🐕 DogMatch (buddies-dogs)
 
-Cloudflare Dashboard → Pages → pawmatch-dogs → Settings → Environment variables から以下を設定：
+Cloudflare Dashboard → Pages → buddies-dogs → Settings → Environment variables から以下を設定：
 
 #### Production環境
 
 ```
-NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
-NEXT_PUBLIC_APP_URL=https://pawmatch-dogs.elchika.app
+NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app
+NEXT_PUBLIC_APP_URL=https://buddies-dogs.elchika.app
 NEXT_PUBLIC_PET_TYPE=dog
 NEXT_PUBLIC_USE_API=true
 NEXT_PUBLIC_APP_NAME=DogMatch
@@ -20,7 +20,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 #### Preview環境
 
 ```
-NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
+NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://dogmatch-16r.pages.dev
 NEXT_PUBLIC_PET_TYPE=dog
 NEXT_PUBLIC_USE_API=true
@@ -28,15 +28,15 @@ NEXT_PUBLIC_APP_NAME=DogMatch
 NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb
 ```
 
-### 🐱 CatMatch (pawmatch-cats)
+### 🐱 CatMatch (buddies-cats)
 
-Cloudflare Dashboard → Pages → pawmatch-cats → Settings → Environment variables から以下を設定：
+Cloudflare Dashboard → Pages → buddies-cats → Settings → Environment variables から以下を設定：
 
 #### Production環境
 
 ```
-NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
-NEXT_PUBLIC_APP_URL=https://pawmatch-cats.elchika.app
+NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app
+NEXT_PUBLIC_APP_URL=https://buddies-cats.elchika.app
 NEXT_PUBLIC_PET_TYPE=cat
 NEXT_PUBLIC_USE_API=true
 NEXT_PUBLIC_APP_NAME=CatMatch
@@ -46,7 +46,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 #### Preview環境
 
 ```
-NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app
+NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app
 NEXT_PUBLIC_APP_URL=https://catmatch.pages.dev
 NEXT_PUBLIC_PET_TYPE=cat
 NEXT_PUBLIC_USE_API=true

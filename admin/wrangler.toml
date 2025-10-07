@@ -1,11 +1,11 @@
 # =============================================================================
-# PawMatch Admin Service Configuration
+# Buddies Admin Service Configuration
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Base Configuration
 # -----------------------------------------------------------------------------
-name = "pawmatch-admin"
+name = "buddies-admin"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -27,18 +27,18 @@ ADMIN_SECRET = "development-secret-key-change-in-production"
 # D1 Database
 [[d1_databases]]
 binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+database_name = "buddies-db"
+database_id = "1908aab6-5ff7-4aa3-9bd1-372f01544b7f"
 
 # KV Namespace (API Keys Cache)
 [[kv_namespaces]]
 binding = "API_KEYS_CACHE"
-id = "ec30a1e116fb42c081ad0b7f07d413da"
+id = "2423ded5fcce4888b7f6c5ecbddd1b5a"
 
 # R2 Bucket (Image Storage)
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
-bucket_name = "pawmatch-images"
+bucket_name = "buddies-images"
 
 # =============================================================================
 # Environment-specific Configurations
@@ -48,7 +48,7 @@ bucket_name = "pawmatch-images"
 # Production Environment
 # -----------------------------------------------------------------------------
 [env.production]
-name = "pawmatch-admin"
+name = "buddies-admin"
 
 [env.production.vars]
 NODE_ENV = "production"
@@ -59,22 +59,22 @@ ADMIN_SECRET = "production-secret-key-please-change"
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "pawmatch-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+database_name = "buddies-db"
+database_id = "1908aab6-5ff7-4aa3-9bd1-372f01544b7f"
 
 [[env.production.kv_namespaces]]
 binding = "API_KEYS_CACHE"
-id = "ec30a1e116fb42c081ad0b7f07d413da"
+id = "2423ded5fcce4888b7f6c5ecbddd1b5a"
 
 [[env.production.r2_buckets]]
 binding = "IMAGES_BUCKET"
-bucket_name = "pawmatch-images"
+bucket_name = "buddies-images"
 
 # -----------------------------------------------------------------------------
 # Development Environment
 # -----------------------------------------------------------------------------
 [env.development]
-name = "pawmatch-admin-dev"
+name = "buddies-admin-dev"
 
 [env.development.vars]
 NODE_ENV = "development"

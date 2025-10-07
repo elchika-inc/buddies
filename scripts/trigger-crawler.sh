@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Crawler Trigger Script for PawMatch
+# Crawler Trigger Script for Buddies
 # Usage: ./trigger-crawler.sh [dev|prod] [dog|cat|both] [limit]
 
 set -e
@@ -13,7 +13,7 @@ SOURCE="${4:-pet-home}"
 
 # 環境に応じたURLとAPIキー設定
 if [ "$ENV" = "prod" ]; then
-    API_URL="https://pawmatch-api.elchika.app"
+    API_URL="https://buddies-api.elchika.app"
     # 本番環境のAPIキー（.env.productionから読み込むか環境変数から取得）
     if [ -z "$ADMIN_SECRET" ]; then
         echo "Error: ADMIN_SECRET environment variable is not set for production"

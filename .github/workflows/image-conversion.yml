@@ -58,8 +58,8 @@ jobs:
       - name: Prepare conversion list
         id: prepare-list
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -135,8 +135,8 @@ jobs:
         if: steps.prepare-list.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -197,8 +197,8 @@ jobs:
         if: steps.prepare-list.outputs.pet_count > 0
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           RESULTS_FILE="scripts/logs/conversion-results.json"
 
@@ -253,8 +253,8 @@ jobs:
         if: steps.prepare-list.outputs.pet_count > 0 && github.event.inputs.batch_id
         continue-on-error: true
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           RESULTS_FILE="scripts/logs/conversion-results.json"
 
@@ -288,8 +288,8 @@ jobs:
       - name: Summary
         if: steps.prepare-list.outputs.pet_count > 0
         env:
-          API_URL: ${{ secrets.API_URL || 'https://pawmatch-api.elchika.app' }}
-          API_KEY: ${{ secrets.PAWMATCH_API_KEY }}
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
         run: |
           # 最終結果を読み込み
           if [ -f "scripts/logs/conversion-results.json" ]; then

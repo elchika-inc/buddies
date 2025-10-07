@@ -33,7 +33,7 @@ export class PetImageProcessor {
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'PawMatch-Crawler/1.0',
+          'User-Agent': 'Buddies-Crawler/1.0',
         },
       })
 

@@ -17,8 +17,8 @@ import {
 export const Errors = ErrorBuilder
 export const ErrorHandler = SharedErrorHandler
 
-// PawMatch固有のエラークラス（互換性維持）
-export class PawMatchError extends AppError {
+// Buddies固有のエラークラス
+export class BuddiesError extends AppError {
   public readonly status: number
   public override readonly code: string
 
@@ -28,6 +28,9 @@ export class PawMatchError extends AppError {
     this.code = code
   }
 }
+
+// 後方互換性のためのエイリアス
+export const PawMatchError = BuddiesError
 
 export class ValidationError extends AppError {
   constructor(message: string) {

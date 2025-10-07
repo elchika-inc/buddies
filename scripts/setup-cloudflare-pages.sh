@@ -62,7 +62,7 @@ setup_pages_project() {
   cat > pages-env-vars.json << EOF
 {
   "NEXT_PUBLIC_API_KEY": "$API_SECRET_KEY",
-  "NEXT_PUBLIC_API_URL": "https://pawmatch-api.elchika.app",
+  "NEXT_PUBLIC_API_URL": "https://buddies-api.elchika.app",
   "NEXT_PUBLIC_PET_TYPE": "$pet_type"
 }
 EOF
@@ -83,7 +83,7 @@ EOF
           "production": {
             "env_vars": {
               "NEXT_PUBLIC_API_KEY": "'"$API_SECRET_KEY"'",
-              "NEXT_PUBLIC_API_URL": "https://pawmatch-api.elchika.app",
+              "NEXT_PUBLIC_API_URL": "https://buddies-api.elchika.app",
               "NEXT_PUBLIC_PET_TYPE": "'"$pet_type"'"
             }
           }
@@ -97,7 +97,7 @@ EOF
     echo ""
     echo "Add these environment variables to $project_name:"
     echo "  NEXT_PUBLIC_API_KEY=$API_SECRET_KEY"
-    echo "  NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app"
+    echo "  NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app"
     echo "  NEXT_PUBLIC_PET_TYPE=$pet_type"
   fi
   
@@ -108,8 +108,8 @@ EOF
 
 # メインメニュー
 echo "Select Pages project to configure:"
-echo "1) pawmatch-dogs"
-echo "2) pawmatch-cats"
+echo "1) buddies-dogs"
+echo "2) buddies-cats"
 echo "3) Both"
 echo "4) Setup with Cloudflare API Token"
 echo ""
@@ -117,15 +117,15 @@ read -p "Enter choice [1-4]: " choice
 
 case $choice in
   1)
-    setup_pages_project "pawmatch-dogs" "dog"
+    setup_pages_project "buddies-dogs" "dog"
     ;;
   2)
-    setup_pages_project "pawmatch-cats" "cat"
+    setup_pages_project "buddies-cats" "cat"
     ;;
   3)
-    setup_pages_project "pawmatch-dogs" "dog"
+    setup_pages_project "buddies-dogs" "dog"
     echo ""
-    setup_pages_project "pawmatch-cats" "cat"
+    setup_pages_project "buddies-cats" "cat"
     ;;
   4)
     echo ""
@@ -147,18 +147,18 @@ case $choice in
       
       # 再度メニューを表示
       echo "Now select project to configure:"
-      echo "1) pawmatch-dogs"
-      echo "2) pawmatch-cats"
+      echo "1) buddies-dogs"
+      echo "2) buddies-cats"
       echo "3) Both"
       read -p "Enter choice [1-3]: " subchoice
-      
+
       case $subchoice in
-        1) setup_pages_project "pawmatch-dogs" "dog" ;;
-        2) setup_pages_project "pawmatch-cats" "cat" ;;
-        3) 
-          setup_pages_project "pawmatch-dogs" "dog"
+        1) setup_pages_project "buddies-dogs" "dog" ;;
+        2) setup_pages_project "buddies-cats" "cat" ;;
+        3)
+          setup_pages_project "buddies-dogs" "dog"
           echo ""
-          setup_pages_project "pawmatch-cats" "cat"
+          setup_pages_project "buddies-cats" "cat"
           ;;
       esac
     fi
@@ -177,5 +177,5 @@ echo "3. Verify the environment variables are set correctly"
 echo ""
 echo "Required variables:"
 echo "  NEXT_PUBLIC_API_KEY=$API_SECRET_KEY"
-echo "  NEXT_PUBLIC_API_URL=https://pawmatch-api.elchika.app"
+echo "  NEXT_PUBLIC_API_URL=https://buddies-api.elchika.app"
 echo "  NEXT_PUBLIC_PET_TYPE=dog (or cat)"

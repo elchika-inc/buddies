@@ -1,25 +1,25 @@
 # =============================================================================
-# PawMatch Dispatcher Service Configuration
+# Buddies Dispatcher Service Configuration
 # =============================================================================
 
 # -----------------------------------------------------------------------------
 # Base Configuration
 # -----------------------------------------------------------------------------
-name = "pawmatch-dispatcher"
+name = "buddies-dispatcher"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # -----------------------------------------------------------------------------
-# Default Environment Variables (統一プレフィックス: PAWMATCH_)
+# Default Environment Variables (統一プレフィックス: BUDDIES_)
 # -----------------------------------------------------------------------------
 [vars]
-PAWMATCH_NODE_ENV = "production"
-PAWMATCH_GITHUB_OWNER = "elchika-inc"
-PAWMATCH_GITHUB_REPO = "pawmatch"
-PAWMATCH_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
-PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
-# Note: Use `wrangler secret put PAWMATCH_API_KEY --env production` for production
+BUDDIES_NODE_ENV = "production"
+BUDDIES_GITHUB_OWNER = "elchika-inc"
+BUDDIES_GITHUB_REPO = "pawmatch"
+BUDDIES_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
+BUDDIES_API_URL = "https://buddies-api.elchika.app"
+# Note: Use `wrangler secret put BUDDIES_API_KEY --env production` for production
 
 # -----------------------------------------------------------------------------
 # Queue Configuration (Responsibility-based)
@@ -27,41 +27,41 @@ PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
 
 # Crawler Queue (API -> Crawler)
 [[queues.producers]]
-binding = "PAWMATCH_CRAWLER_QUEUE"
-queue = "pawmatch-crawler-queue"
+binding = "BUDDIES_CRAWLER_QUEUE"
+queue = "buddies-crawler-queue"
 
 # Screenshot Queue
 [[queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_QUEUE"
-queue = "pawmatch-screenshot-queue"
+binding = "BUDDIES_SCREENSHOT_QUEUE"
+queue = "buddies-screenshot-queue"
 
 [[queues.consumers]]
-queue = "pawmatch-screenshot-queue"
+queue = "buddies-screenshot-queue"
 max_batch_size = 10
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-screenshot-dlq"
+dead_letter_queue = "buddies-screenshot-dlq"
 
 # Conversion Queue
 [[queues.producers]]
-binding = "PAWMATCH_CONVERSION_QUEUE"
-queue = "pawmatch-conversion-queue"
+binding = "BUDDIES_CONVERSION_QUEUE"
+queue = "buddies-conversion-queue"
 
 [[queues.consumers]]
-queue = "pawmatch-conversion-queue"
+queue = "buddies-conversion-queue"
 max_batch_size = 10
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-conversion-dlq"
+dead_letter_queue = "buddies-conversion-dlq"
 
 # Dead Letter Queues
 [[queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_DLQ"
-queue = "pawmatch-screenshot-dlq"
+binding = "BUDDIES_SCREENSHOT_DLQ"
+queue = "buddies-screenshot-dlq"
 
 [[queues.producers]]
-binding = "PAWMATCH_CONVERSION_DLQ"
-queue = "pawmatch-conversion-dlq"
+binding = "BUDDIES_CONVERSION_DLQ"
+queue = "buddies-conversion-dlq"
 
 # -----------------------------------------------------------------------------
 # Triggers
@@ -82,53 +82,53 @@ enabled = true
 # Production Environment
 # -----------------------------------------------------------------------------
 [env.production]
-name = "pawmatch-dispatcher"
+name = "buddies-dispatcher"
 
 [env.production.vars]
-PAWMATCH_NODE_ENV = "production"
-PAWMATCH_GITHUB_OWNER = "elchika-inc"
-PAWMATCH_GITHUB_REPO = "pawmatch"
-PAWMATCH_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
-PAWMATCH_API_URL = "https://pawmatch-api.elchika.app"
+BUDDIES_NODE_ENV = "production"
+BUDDIES_GITHUB_OWNER = "elchika-inc"
+BUDDIES_GITHUB_REPO = "pawmatch"
+BUDDIES_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
+BUDDIES_API_URL = "https://buddies-api.elchika.app"
 
 # Production Queue Configuration (Responsibility-based)
 # Crawler Queue (API -> Crawler)
 [[env.production.queues.producers]]
-binding = "PAWMATCH_CRAWLER_QUEUE"
-queue = "pawmatch-crawler-queue"
+binding = "BUDDIES_CRAWLER_QUEUE"
+queue = "buddies-crawler-queue"
 
 # Screenshot Queue
 [[env.production.queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_QUEUE"
-queue = "pawmatch-screenshot-queue"
+binding = "BUDDIES_SCREENSHOT_QUEUE"
+queue = "buddies-screenshot-queue"
 
 [[env.production.queues.consumers]]
-queue = "pawmatch-screenshot-queue"
+queue = "buddies-screenshot-queue"
 max_batch_size = 10
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-screenshot-dlq"
+dead_letter_queue = "buddies-screenshot-dlq"
 
 # Conversion Queue
 [[env.production.queues.producers]]
-binding = "PAWMATCH_CONVERSION_QUEUE"
-queue = "pawmatch-conversion-queue"
+binding = "BUDDIES_CONVERSION_QUEUE"
+queue = "buddies-conversion-queue"
 
 [[env.production.queues.consumers]]
-queue = "pawmatch-conversion-queue"
+queue = "buddies-conversion-queue"
 max_batch_size = 10
 max_batch_timeout = 30
 max_retries = 3
-dead_letter_queue = "pawmatch-conversion-dlq"
+dead_letter_queue = "buddies-conversion-dlq"
 
 # Dead Letter Queues
 [[env.production.queues.producers]]
-binding = "PAWMATCH_SCREENSHOT_DLQ"
-queue = "pawmatch-screenshot-dlq"
+binding = "BUDDIES_SCREENSHOT_DLQ"
+queue = "buddies-screenshot-dlq"
 
 [[env.production.queues.producers]]
-binding = "PAWMATCH_CONVERSION_DLQ"
-queue = "pawmatch-conversion-dlq"
+binding = "BUDDIES_CONVERSION_DLQ"
+queue = "buddies-conversion-dlq"
 
 # NOTE: Dispatcher does not use D1 or R2 directly (uses API instead)
 
@@ -136,22 +136,22 @@ queue = "pawmatch-conversion-dlq"
 # Development Environment
 # -----------------------------------------------------------------------------
 [env.development]
-name = "pawmatch-dispatcher-dev"
+name = "buddies-dispatcher-dev"
 
 [env.development.vars]
-PAWMATCH_NODE_ENV = "development"
-PAWMATCH_API_URL = "http://localhost:9789"
-PAWMATCH_API_KEY = "development-api-key-for-local-testing"
+BUDDIES_NODE_ENV = "development"
+BUDDIES_API_URL = "http://localhost:9789"
+BUDDIES_API_KEY = "development-api-key-for-local-testing"
 
 # -----------------------------------------------------------------------------
 # Staging Environment
 # -----------------------------------------------------------------------------
 [env.staging]
-name = "pawmatch-dispatcher-staging"
+name = "buddies-dispatcher-staging"
 
 [env.staging.vars]
-PAWMATCH_NODE_ENV = "staging"
-PAWMATCH_API_URL = "https://staging-pawmatch-api.elchika.app"
+BUDDIES_NODE_ENV = "staging"
+BUDDIES_API_URL = "https://staging-buddies-api.elchika.app"
 
 # -----------------------------------------------------------------------------
 # Local Development Server

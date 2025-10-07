@@ -1,9 +1,9 @@
 {
-  "name": "@pawmatch/api",
+  "name": "@buddies/api",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "PawMatch API - Cloudflare Workers API server with Hono and Drizzle ORM",
+  "description": "Buddies API - Cloudflare Workers API server with Hono and Drizzle ORM",
   "author": "elchika-inc",
   "license": "ISC",
   "scripts": {
@@ -31,7 +31,7 @@
     "clean": "rm -rf .wrangler dist"
   },
   "dependencies": {
-    "@pawmatch/shared": "*",
+    "@buddies/shared": "*",
     "drizzle-orm": "^0.44.5",
     "hono": "^4.9.4"
   },

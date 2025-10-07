@@ -1,5 +1,5 @@
 {
-  "name": "@pawmatch/admin",
+  "name": "@buddies/admin",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -12,9 +12,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "PawMatch Admin Dashboard - Database management interface",
+  "description": "Buddies Admin Dashboard - Database management interface",
   "dependencies": {
-    "@pawmatch/shared": "file:../shared",
+    "@buddies/shared": "file:../shared",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "drizzle-orm": "^0.44.5",
