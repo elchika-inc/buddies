@@ -18,6 +18,7 @@ NODE_ENV = "production"
 ALLOWED_ORIGIN = "*"
 ALLOWED_ORIGINS = "https://buddies-api.elchika.app,http://localhost:8787"
 API_BASE_URL = "https://buddies-api.elchika.app"
+API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
 
@@ -91,6 +92,7 @@ NODE_ENV = "production"
 ALLOWED_ORIGIN = "https://buddies-dogs.elchika.app,https://buddies-cats.elchika.app"
 ALLOWED_ORIGINS = "https://buddies-dogs.elchika.app,https://buddies-cats.elchika.app"
 API_BASE_URL = "https://buddies-api.elchika.app"
+API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
 
@@ -122,7 +124,7 @@ bucket_name = "buddies-images"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "buddies-db"
-database_id = "b397c3a4-3ee4-4259-b004-6de4488e921f"
+database_id = "1908aab6-5ff7-4aa3-9bd1-372f01544b7f"
 migrations_dir = "../database/migrations"
 
 # -----------------------------------------------------------------------------

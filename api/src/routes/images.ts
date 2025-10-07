@@ -8,6 +8,16 @@ import type { Env } from '../types'
 
 const images = new Hono<{ Bindings: Env }>()
 
+// 画像取得（タイプ指定） - より具体的なルートを先に定義
+images.get(
+  '/:type/:filename',
+  cache({
+    cacheName: CONFIG.CACHE_NAME,
+    cacheControl: CONFIG.CACHE_CONTROL,
+  }),
+  withEnv(withImageController(async (controller, c) => controller.getImageByType(c)))
+)
+
 // 画像取得（ファイル名のみ）
 images.get(
   '/:filename',
@@ -16,16 +26,6 @@ images.get(
     cacheControl: CONFIG.CACHE_CONTROL,
   }),
   withEnv(withImageController(async (controller, c) => controller.getImage(c)))
-)
-
-// 画像取得（タイプ指定）
-images.get(
-  '/:type/:filename',
-  cache({
-    cacheName: CONFIG.CACHE_NAME,
-    cacheControl: CONFIG.CACHE_CONTROL,
-  }),
-  withEnv(withImageController(async (controller, c) => controller.getImageByType(c)))
 )
 
 // 画像アップロード（単一）

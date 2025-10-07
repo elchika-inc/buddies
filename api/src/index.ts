@@ -2,8 +2,8 @@ import { Hono } from 'hono'
 import { setupMiddleware } from './middleware/setup'
 import { withEnv } from './middleware/EnvMiddleware'
 import { HealthController } from './controllers'
+import { withImageController } from './factories/ControllerFactory'
 import petRoutes from './routes/pets'
-import imageRoutes from './routes/images'
 import adminRoutes from './routes/admin'
 import statsRoutes from './routes/stats'
 import crawlerRoutes from './routes/crawler'
@@ -31,10 +31,41 @@ app.get(
   })
 )
 
+// デバッグ用テストエンドポイント
+app.get('/api/images/test', (c) => {
+  return c.json({ message: 'Images route is working', timestamp: new Date().toISOString() })
+})
+
+// 画像取得エンドポイント（直接定義）
+app.get(
+  '/api/images/:type/:filename',
+  withEnv(withImageController(async (controller, c) => controller.getImageByType(c)))
+)
+
+app.get(
+  '/api/images/:filename',
+  withEnv(withImageController(async (controller, c) => controller.getImage(c)))
+)
+
+// 画像アップロード
+app.post(
+  '/api/images/upload/:petId',
+  withEnv(withImageController(async (controller, c) => controller.uploadImage(c)))
+)
+
+app.post(
+  '/api/images/upload/batch',
+  withEnv(withImageController(async (controller, c) => controller.uploadBatch(c)))
+)
+
+app.post(
+  '/api/images/sync-flags',
+  withEnv(withImageController(async (controller, c) => controller.syncImageFlags(c)))
+)
+
 // APIルート
 app.route('/api/stats', statsRoutes)
 app.route('/api/pets', petRoutes)
-app.route('/api/images', imageRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/conversion', conversionRoutes)
 

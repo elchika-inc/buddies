@@ -9,7 +9,7 @@ import { getPetType } from '../config/petConfig'
 import { Location } from '../components/LocationModal'
 
 /** APIのベースURL（環境変数から取得、デフォルトは本番環境） */
-const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || 'https://buddies-api.elchika.app'
+const API_BASE_URL = process.env['NEXT_PUBLIC_BUDDIES_API_URL'] || 'https://buddies-api.elchika.app'
 
 /** API共通レスポンス型 */
 interface ApiResponse<T> {
@@ -95,7 +95,7 @@ class PetApi {
       // APIリクエスト（APIキー認証付き）
       const response = await fetch(url, {
         headers: {
-          'X-API-Key': process.env['NEXT_PUBLIC_API_KEY'] || '',
+          'X-API-Key': process.env['NEXT_PUBLIC_BUDDIES_API_KEY'] || '',
         },
       })
 
