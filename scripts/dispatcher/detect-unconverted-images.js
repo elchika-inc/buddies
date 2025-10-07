@@ -212,7 +212,7 @@ async function detectUnconvertedImages(params) {
 
 // APIから画像なしペットを取得（フォールバック用）
 async function fetchFromAPI(limit) {
-  const apiUrl = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+  const apiUrl = process.env.API_URL || 'https://buddies-api.elchika.app'
 
   try {
     const response = await fetch(`${apiUrl}/api/stats`)
@@ -235,7 +235,7 @@ async function fetchFromAPI(limit) {
 
 // APIから追加の未変換ペットを取得
 async function fetchAdditionalFromAPI(limit, skipIds = [], mode = 'all') {
-  const apiUrl = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+  const apiUrl = process.env.API_URL || 'https://buddies-api.elchika.app'
   const apiKey = process.env.API_KEY || process.env.ACTIONS_API_KEY
 
   try {

@@ -11,7 +11,7 @@ export const API_CONFIG = {
     ROTATION_FAILED: 'APIキーのローテーションに失敗しました。',
     LIST_FAILED: 'APIキーの一覧取得に失敗しました。',
   },
-  DOCUMENTATION_URL: 'https://docs.pawmatch.com/api-keys',
+  DOCUMENTATION_URL: 'https://docs.buddies.com/api-keys',
 } as const
 
 // APIキー生成

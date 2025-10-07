@@ -150,7 +150,7 @@ async function convertToWebp(imageKey, petType) {
 
 // データベース更新処理
 async function updateDatabase(results) {
-  const API_URL = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+  const API_URL = process.env.API_URL || 'https://buddies-api.elchika.app'
   const API_ADMIN_SECRET = process.env.API_ADMIN_SECRET || ''
 
   console.log('\n🔄 Updating database with conversion results...')
