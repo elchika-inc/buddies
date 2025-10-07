@@ -11,9 +11,9 @@ export interface Env {
   DB: D1Database
   IMAGES_BUCKET: R2Bucket
   // Responsibility-based Queues
-  PAWMATCH_CRAWLER_DLQ: Queue // Main Crawler DLQ
-  PAWMATCH_SCREENSHOT_QUEUE: Queue // Screenshot Queue (責任ベース)
-  PAWMATCH_SCREENSHOT_DLQ: Queue // Screenshot DLQ
+  BUDDIES_CRAWLER_DLQ: Queue // Main Crawler DLQ
+  BUDDIES_SCREENSHOT_QUEUE: Queue // Screenshot Queue (責任ベース)
+  BUDDIES_SCREENSHOT_DLQ: Queue // Screenshot DLQ
   ALLOWED_ORIGIN?: string
   USE_LOCAL_IMAGES?: string
   API_URL?: string
@@ -245,7 +245,7 @@ async function sendToDLQ(env: Env, originalMessage: CrawlMessage, error: string)
       attempts: (originalMessage.retryCount || 0) + 1,
     }
 
-    await env.PAWMATCH_CRAWLER_DLQ.send(dlqMessage)
+    await env.BUDDIES_CRAWLER_DLQ.send(dlqMessage)
     console.warn('Message sent to DLQ:', dlqMessage)
   } catch (error) {
     console.error('Failed to send message to DLQ:', error)

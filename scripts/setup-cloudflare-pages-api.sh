@@ -99,7 +99,7 @@ set_pages_env() {
     } |
     .production.env_vars.NEXT_PUBLIC_API_URL = {
       type: "plain_text",
-      value: "https://pawmatch-api.elchika.app"
+      value: "https://buddies-api.elchika.app"
     } |
     .production.env_vars.NEXT_PUBLIC_PET_TYPE = {
       type: "plain_text",
@@ -122,20 +122,20 @@ set_pages_env() {
   fi
 }
 
-# pawmatch-dogsが存在するか確認
-if echo "$PROJECTS" | grep -q "pawmatch-dogs"; then
-  set_pages_env "pawmatch-dogs" "dog"
+# buddies-dogsが存在するか確認
+if echo "$PROJECTS" | grep -q "buddies-dogs"; then
+  set_pages_env "buddies-dogs" "dog"
 else
-  echo -e "${YELLOW}⚠️ pawmatch-dogs project not found${NC}"
+  echo -e "${YELLOW}⚠️ buddies-dogs project not found${NC}"
 fi
 
 echo ""
 
-# pawmatch-catsが存在するか確認
-if echo "$PROJECTS" | grep -q "pawmatch-cats"; then
-  set_pages_env "pawmatch-cats" "cat"
+# buddies-catsが存在するか確認
+if echo "$PROJECTS" | grep -q "buddies-cats"; then
+  set_pages_env "buddies-cats" "cat"
 else
-  echo -e "${YELLOW}⚠️ pawmatch-cats project not found${NC}"
+  echo -e "${YELLOW}⚠️ buddies-cats project not found${NC}"
 fi
 
 echo ""

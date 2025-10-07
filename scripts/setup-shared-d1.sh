@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# PawMatch - APIとCrawler間のD1データベース共有設定スクリプト
+# Buddies - APIとCrawler間のD1データベース共有設定スクリプト
 # wrangler v4対応
 # 
 # 概要: APIとCrawlerが同じD1データベースを参照できるよう、

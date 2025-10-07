@@ -12,15 +12,14 @@ import {
   ErrorCategory,
   ErrorHandler as SharedErrorHandler,
   BuddiesError,
-  PawMatchError,
 } from '../../../shared/types/error'
 
 // 互換性のためのエイリアス
 export const Errors = ErrorBuilder
 export const ErrorHandler = SharedErrorHandler
 
-// BuddiesErrorとPawMatchErrorを共有型から再エクスポート
-export { BuddiesError, PawMatchError }
+// BuddiesErrorを共有型から再エクスポート
+export { BuddiesError }
 
 export class ValidationError extends AppError {
   constructor(message: string) {

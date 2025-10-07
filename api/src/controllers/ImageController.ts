@@ -105,7 +105,7 @@ export class ImageController {
       if (isWebp) {
         await this.db.prepare(updateQuery).bind(petId).run()
       } else {
-        const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${petId}.${extension}`
+        const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.${extension}`
         await this.db.prepare(updateQuery).bind(imageUrl, petId).run()
       }
 
@@ -426,7 +426,7 @@ export class ImageController {
               .run()
             console.warn(`[${requestId}] Updated hasWebp flag for ${upload.petId}`)
           } else {
-            const imageUrl = `https://pawmatch-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
+            const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
             await this.db
               .prepare(
                 'UPDATE pets SET hasJpeg = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
@@ -541,7 +541,7 @@ export class ImageController {
           // データベースを更新
           if (hasJpeg || hasWebp) {
             const imageUrl = hasJpeg
-              ? `https://pawmatch-api.elchika.app/api/images/${petType}/${petId}.${jpegExists ? 'jpg' : 'png'}`
+              ? `https://buddies-api.elchika.app/api/images/${petType}/${petId}.${jpegExists ? 'jpg' : 'png'}`
               : null
 
             await this.db
@@ -695,7 +695,7 @@ export class ImageController {
           'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ
           ETag: object.etag || '',
           'Last-Modified': object.uploaded?.toISOString() || new Date().toISOString(),
-          'X-Served-By': 'PawMatch-API',
+          'X-Served-By': 'Buddies-API',
         },
       })
     } catch (error) {

@@ -827,7 +827,7 @@ APIキーのローテーション（マスターキー必須）
    - ヘッダー: `X-API-Key: your-api-key` または `Authorization: Bearer your-api-key`
    - 権限ベースのアクセス制御
    - レート制限付き
-   - 外部APIキー検証サービス経由で検証（`pawmatch-api-keys.naoto24kawa.workers.dev`）
+   - 外部APIキー検証サービス経由で検証（`buddies-api-keys.naoto24kawa.workers.dev`）
    - フォールバック: 環境変数キー（`API_KEY`, `PUBLIC_API_KEY`, `API_SECRET_KEY`）
 
 2. **マスターキー認証**
@@ -859,7 +859,7 @@ APIキーのローテーション（マスターキー必須）
 
 以下のオリジンからのリクエストを許可：
 
-- 本番環境: `https://pawmatch-dogs.elchika.app`, `https://pawmatch-cats.elchika.app`
+- 本番環境: `https://buddies-dogs.elchika.app`, `https://buddies-cats.elchika.app`
 - 開発環境: `http://localhost:3004`
 
 ---

@@ -13,8 +13,8 @@ export interface Env {
   GITHUB_ACTIONS?: string
   CRAWLER_API_KEY?: string
   // Responsibility-based Queues
-  PAWMATCH_CRAWLER_DLQ?: Queue
-  PAWMATCH_SCREENSHOT_QUEUE?: Queue
-  PAWMATCH_SCREENSHOT_DLQ?: Queue
+  BUDDIES_CRAWLER_DLQ?: Queue
+  BUDDIES_SCREENSHOT_QUEUE?: Queue
+  BUDDIES_SCREENSHOT_DLQ?: Queue
   API_SERVICE?: Fetcher // Service Binding for API service
 }

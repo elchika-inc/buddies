@@ -47,7 +47,7 @@ export const CONFIG = {
     optimized: (petType: string, petId: string) => `pets/${petType}s/${petId}/optimized.webp`,
   },
 
-  CACHE_NAME: 'pawmatch-cache',
+  CACHE_NAME: 'buddies-cache',
   CACHE_CONTROL: 'public, max-age=86400',
 }
 

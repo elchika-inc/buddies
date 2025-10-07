@@ -13,10 +13,10 @@ export function setupCors() {
     // 規約ベースのオリジン判定
     const isAllowedOrigin = (origin: string): boolean => {
       const patterns = [
-        /^https:\/\/pawmatch\.pages\.dev$/,
-        /^https:\/\/[^.]+\.pawmatch\.pages\.dev$/,
-        /^https:\/\/pawmatch-dogs\.elchika\.app$/,
-        /^https:\/\/pawmatch-cats\.elchika\.app$/,
+        /^https:\/\/buddies\.pages\.dev$/,
+        /^https:\/\/[^.]+\.buddies\.pages\.dev$/,
+        /^https:\/\/buddies-dogs\.elchika\.app$/,
+        /^https:\/\/buddies-cats\.elchika\.app$/,
         /^https:\/\/[^.]+\.dogmatch-\w+\.pages\.dev$/,
         /^https:\/\/[^.]+\.catmatch\.pages\.dev$/,
         /^http:\/\/localhost:\d{4}$/,

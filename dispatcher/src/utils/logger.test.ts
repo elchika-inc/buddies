@@ -32,7 +32,7 @@ describe('Logger', () => {
   describe('log levels', () => {
     it('should log info messages in production mode', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      const logger = getLogger({ PAWMATCH_NODE_ENV: 'production' } as unknown as Env)
+      const logger = getLogger({ BUDDIES_NODE_ENV: 'production' } as unknown as Env)
 
       logger.info('test message')
 
@@ -44,7 +44,7 @@ describe('Logger', () => {
 
     it('should not log debug messages in production mode', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      const logger = getLogger({ PAWMATCH_NODE_ENV: 'production' } as unknown as Env)
+      const logger = getLogger({ BUDDIES_NODE_ENV: 'production' } as unknown as Env)
 
       logger.debug('debug message')
 
@@ -53,7 +53,7 @@ describe('Logger', () => {
 
     it('should log debug messages in development mode', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      const logger = getLogger({ PAWMATCH_NODE_ENV: 'development' } as unknown as Env)
+      const logger = getLogger({ BUDDIES_NODE_ENV: 'development' } as unknown as Env)
 
       logger.debug('debug message')
 

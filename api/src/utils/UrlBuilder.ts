@@ -6,7 +6,7 @@ export class UrlBuilder {
 
   constructor(baseUrl?: string) {
     // 環境変数から取得、なければデフォルト値を使用
-    this.baseUrl = baseUrl || 'https://pawmatch-api.elchika.app'
+    this.baseUrl = baseUrl || 'https://buddies-api.elchika.app'
   }
 
   /**

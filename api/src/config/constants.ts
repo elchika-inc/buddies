@@ -42,7 +42,7 @@ export const UPLOAD_CONFIG = {
     WEBP: 'image/webp',
   } as const,
   /** デフォルトR2公開URL */
-  DEFAULT_R2_URL: 'pawmatch-images.r2.dev',
+  DEFAULT_R2_URL: 'buddies-images.r2.dev',
 } as const
 
 /**

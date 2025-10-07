@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename)
 class LocalD1Updater {
   constructor() {
     this.apiDir = path.join(__dirname, '../../api')
-    this.dbName = 'pawmatch-db'
+    this.dbName = 'buddies-db'
   }
 
   // SQLコマンドを実行

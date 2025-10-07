@@ -193,7 +193,7 @@ async function main() {
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (compatible; PawMatch-Screenshot-Bot/1.0)',
+    userAgent: 'Mozilla/5.0 (compatible; Buddies-Screenshot-Bot/1.0)',
   })
 
   const page = await context.newPage()

@@ -225,7 +225,7 @@ npm run clean:all
 wrangler d1 list
 
 # バインディングの確認
-wrangler d1 execute pawmatch-db --command "SELECT name FROM sqlite_master WHERE type='table';"
+wrangler d1 execute buddies-db --command "SELECT name FROM sqlite_master WHERE type='table';"
 ```
 
 ## プロジェクト構造
@@ -297,12 +297,12 @@ React SPA の管理画面。データベース管理とシステム監視機能�
 
 ## サポート
 
-問題が発生した場合は、[Issues](https://github.com/[your-org]/pawmatch/issues) で報告してください。
+問題が発生した場合は、[Issues](https://github.com/[your-org]/buddies/issues) で報告してください。
 
 ## 開発チーム
 
 - プロジェクトリード: [@username](https://github.com/username)
-- 開発者: PawMatch Development Team
+- 開発者: Buddies Development Team
 
 ---
 

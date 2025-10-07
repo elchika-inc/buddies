@@ -27,12 +27,12 @@ export class HealthController {
    * @returns {Promise<Response>} ヘルスステータスのレスポンス
    * @example
    * GET /health
-   * Response: { success: true, data: { service: "PawMatch API", status: "healthy", version: "1.0.0" } }
+   * Response: { success: true, data: { service: "Buddies API", status: "healthy", version: "1.0.0" } }
    */
   async getHealthStatus(c: Context) {
     return c.json(
       successResponse({
-        service: 'PawMatch API',
+        service: 'Buddies API',
         status: 'healthy',
         version: '1.0.0',
       })

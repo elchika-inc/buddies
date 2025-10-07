@@ -2,7 +2,7 @@
  * Screenshot Capture API アップロードのデバッグ用テストスクリプト
  *
  * 使用方法:
- * node scripts/test-upload-debug.js --pet-id="test-pet-id" --api-url="https://pawmatch-api.elchika.app"
+ * node scripts/test-upload-debug.js --pet-id="test-pet-id" --api-url="https://buddies-api.elchika.app"
  */
 
 import { promises as fs } from 'fs'
@@ -12,7 +12,7 @@ function parseArgs() {
   const args = process.argv.slice(2)
   const params = {
     petId: 'test-pet-debug-001',
-    apiUrl: 'https://pawmatch-api.elchika.app',
+    apiUrl: 'https://buddies-api.elchika.app',
   }
 
   for (const arg of args) {
@@ -81,7 +81,7 @@ async function testUpload() {
       headers: {
         'X-API-Key': API_KEY || 'test-dummy-key',
         'Content-Type': 'application/json',
-        'User-Agent': 'PawMatch-Debug-Test/1.0',
+        'User-Agent': 'Buddies-Debug-Test/1.0',
       },
       body: requestBody,
     })

@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // APIエンドポイント（環境変数から取得）
-const API_URL = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+const API_URL = process.env.API_URL || 'https://buddies-api.elchika.app'
 const API_ADMIN_SECRET = process.env.API_ADMIN_SECRET || ''
 
 async function updateHasWebpFlags() {

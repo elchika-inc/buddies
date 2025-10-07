@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // API設定
-const API_URL = process.env.API_URL || 'https://pawmatch-api.elchika.app'
+const API_URL = process.env.API_URL || 'https://buddies-api.elchika.app'
 const API_KEY = process.env.API_KEY || process.env.PUBLIC_API_KEY
 
 // コマンドライン引数を解析
@@ -166,7 +166,7 @@ async function captureScreenshot(page, pet) {
       console.log(`  📤 Uploading to R2: ${screenshotKey}`)
 
       const putCommand = new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME || 'pawmatch-images',
+        Bucket: process.env.R2_BUCKET_NAME || 'buddies-images',
         Key: screenshotKey,
         Body: screenshotBuffer,
         ContentType: 'image/png',
@@ -182,7 +182,7 @@ async function captureScreenshot(page, pet) {
         headers: {
           'X-API-Key': API_KEY || 'dummy-key',
           'Content-Type': 'application/json',
-          'User-Agent': 'PawMatch-Screenshot-Capture/1.0',
+          'User-Agent': 'Buddies-Screenshot-Capture/1.0',
         },
         body: JSON.stringify({
           petId: pet.id,
@@ -279,7 +279,7 @@ async function main() {
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (compatible; PawMatch-Screenshot-Bot/1.0)',
+    userAgent: 'Mozilla/5.0 (compatible; Buddies-Screenshot-Bot/1.0)',
   })
 
   const page = await context.newPage()

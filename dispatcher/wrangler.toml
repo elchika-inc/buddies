@@ -16,7 +16,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 BUDDIES_NODE_ENV = "production"
 BUDDIES_GITHUB_OWNER = "elchika-inc"
-BUDDIES_GITHUB_REPO = "pawmatch"
+BUDDIES_GITHUB_REPO = "buddies"
 BUDDIES_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
 BUDDIES_API_URL = "https://buddies-api.elchika.app"
 # Note: Use `wrangler secret put BUDDIES_API_KEY --env production` for production
@@ -87,7 +87,7 @@ name = "buddies-dispatcher"
 [env.production.vars]
 BUDDIES_NODE_ENV = "production"
 BUDDIES_GITHUB_OWNER = "elchika-inc"
-BUDDIES_GITHUB_REPO = "pawmatch"
+BUDDIES_GITHUB_REPO = "buddies"
 BUDDIES_GITHUB_WORKFLOW_FILE = "screenshot-capture.yml"
 BUDDIES_API_URL = "https://buddies-api.elchika.app"
 

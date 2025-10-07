@@ -3,7 +3,7 @@ import typescript from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
 
 /**
- * PawMatch プロジェクト統一ESLint設定
+ * Buddies プロジェクト統一ESLint設定
  * 全ワークスペースで共有するベース設定
  */
 export default [

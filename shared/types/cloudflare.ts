@@ -26,7 +26,7 @@ export interface CloudflareEnv {
   // Queues
   IMAGE_PROCESSING_QUEUE?: Queue
   CRAWLER_QUEUE?: Queue
-  PAWMATCH_DISPATCH_QUEUE?: Queue
+  BUDDIES_DISPATCH_QUEUE?: Queue
 
   // Service Bindings
   IMAGE_WORKER?: {

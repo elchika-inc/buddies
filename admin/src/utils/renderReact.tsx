@@ -7,7 +7,7 @@ import { renderToString } from 'react-dom/server'
 export function renderReactComponent<T extends Record<string, unknown>>(
   Component: React.FC<T>,
   props: T,
-  title: string = 'PawMatch Admin'
+  title: string = 'Buddies Admin'
 ): string {
   const componentHTML = renderToString(<Component {...props} />)
 

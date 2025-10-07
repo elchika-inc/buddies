@@ -21,7 +21,7 @@ inputs:
     required: false
   api-url:
     description: 'API URL'
-    default: 'https://pawmatch-api.elchika.app'
+    default: 'https://buddies-api.elchika.app'
     required: false
   api-key:
     description: 'API Key'

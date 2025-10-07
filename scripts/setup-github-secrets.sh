@@ -47,7 +47,7 @@ fi
 # リポジトリ情報を取得
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
 if [ -z "$REPO" ]; then
-  echo -e "${YELLOW}Enter your GitHub repository (e.g., username/pawmatch):${NC}"
+  echo -e "${YELLOW}Enter your GitHub repository (e.g., username/buddies):${NC}"
   read -r REPO
 fi
 
@@ -91,7 +91,7 @@ else
 fi
 
 # API URL
-set_secret "API_URL" "${API_URL:-https://pawmatch-api.elchika.app}"
+set_secret "API_URL" "${API_URL:-https://buddies-api.elchika.app}"
 
 # R2設定（既存の値を保持）
 echo ""

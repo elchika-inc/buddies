@@ -10,7 +10,7 @@ export { CONFIG } from './constants'
 
 // エラーハンドリング
 export {
-  PawMatchError,
+  BuddiesError,
   ValidationError,
   NotFoundError,
   ServiceUnavailableError,

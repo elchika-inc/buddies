@@ -19,8 +19,8 @@ type ValidationResult = { success: true; keyInfo: KeyInfo } | { success: false; 
 // 定数
 const PUBLIC_PATHS = ['/', '/health', '/health/ready', '/api/stats'] as const
 const ALLOWED_ORIGINS = [
-  'https://pawmatch-dogs.elchika.app',
-  'https://pawmatch-cats.elchika.app',
+  'https://buddies-dogs.elchika.app',
+  'https://buddies-cats.elchika.app',
   'http://localhost:3004',
   'http://localhost:3005',
   'http://localhost:3006',
@@ -90,7 +90,7 @@ async function validateKey(key: string, c: Context<{ Bindings: Env }>): Promise<
   // TODO: 外部認証サービスが復旧したら有効化する
   /*
   try {
-    const response = await fetch('https://pawmatch-api-keys.naoto24kawa.workers.dev/validate', {
+    const response = await fetch('https://buddies-api-keys.naoto24kawa.workers.dev/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -36,10 +36,10 @@ export const AppConfig = {
   // CORS設定
   cors: {
     allowedDomainPatterns: [
-      /^https:\/\/pawmatch\.pages\.dev$/,
-      /^https:\/\/[^.]+\.pawmatch\.pages\.dev$/,
-      /^https:\/\/pawmatch-dogs\.elchika\.app$/,
-      /^https:\/\/pawmatch-cats\.elchika\.app$/,
+      /^https:\/\/buddies\.pages\.dev$/,
+      /^https:\/\/[^.]+\.buddies\.pages\.dev$/,
+      /^https:\/\/buddies-dogs\.elchika\.app$/,
+      /^https:\/\/buddies-cats\.elchika\.app$/,
       /^https:\/\/[^.]+\.dogmatch-\w+\.pages\.dev$/,
       /^https:\/\/[^.]+\.catmatch\.pages\.dev$/,
       /^http:\/\/localhost:\d{4}$/,
@@ -50,7 +50,7 @@ export const AppConfig = {
 
   // キャッシュ設定
   cache: {
-    name: 'pawmatch-cache',
+    name: 'buddies-cache',
     control: 'public, max-age=86400', // 1日
   },
 

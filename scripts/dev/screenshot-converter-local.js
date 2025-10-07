@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename)
 const DEV_CONFIG = {
   API_URL: 'http://localhost:8787',
   R2_LOCAL_DIR: path.join(__dirname, '../../.wrangler/state/v3/r2/miniflare-R2BucketObject'),
-  BUCKET_NAME: 'pawmatch-images-dev',
+  BUCKET_NAME: 'buddies-images-dev',
 }
 
 // コマンドライン引数を解析
@@ -266,7 +266,7 @@ async function main() {
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
-    userAgent: 'Mozilla/5.0 (compatible; PawMatch-Dev-Bot/1.0)',
+    userAgent: 'Mozilla/5.0 (compatible; Buddies-Dev-Bot/1.0)',
   })
 
   const page = await context.newPage()

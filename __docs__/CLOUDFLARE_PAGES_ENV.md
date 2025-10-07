@@ -64,7 +64,7 @@ NEXT_PUBLIC_API_KEY=b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com) にログイン
 2. Pages セクションに移動
-3. 対象プロジェクト（pawmatch-dogs または pawmatch-cats）を選択
+3. 対象プロジェクト（buddies-dogs または buddies-cats）を選択
 4. Settings → Environment variables を開く
 5. Production と Preview それぞれに上記の環境変数を追加
 6. Save をクリック

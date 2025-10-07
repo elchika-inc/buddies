@@ -23,11 +23,11 @@ export interface Env {
   /** R2ストレージバケット */
   IMAGES_BUCKET: R2Bucket // wrangler.tomlに合わせて修正
   /** Screenshot Queue (責務ベース) */
-  PAWMATCH_SCREENSHOT_QUEUE: Queue
+  BUDDIES_SCREENSHOT_QUEUE: Queue
   /** Screenshot DLQ */
-  PAWMATCH_SCREENSHOT_DLQ?: Queue
+  BUDDIES_SCREENSHOT_DLQ?: Queue
   /** Crawler DLQ */
-  PAWMATCH_CRAWLER_DLQ?: Queue
+  BUDDIES_CRAWLER_DLQ?: Queue
   /** APIサービスBinding */
   API_SERVICE?: Fetcher
   /** CORS許可オリジン */
@@ -825,7 +825,7 @@ export class PetHomeCrawler {
       }))
 
       // Queueへバッチ送信
-      await this.env.PAWMATCH_SCREENSHOT_QUEUE.sendBatch(messages)
+      await this.env.BUDDIES_SCREENSHOT_QUEUE.sendBatch(messages)
 
       // checkpointを更新（sent数を増やし、pendingをクリア）
       checkpoint.screenshotQueue.sent = pendingPets.length

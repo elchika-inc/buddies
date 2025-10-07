@@ -13,7 +13,7 @@
  *   export R2_ACCOUNT_ID=xxx
  *   export R2_ACCESS_KEY_ID=xxx
  *   export R2_SECRET_ACCESS_KEY=xxx
- *   export API_URL=https://pawmatch-api.elchika.app
+ *   export API_URL=https://buddies-api.elchika.app
  *   export API_KEY=xxx  # オプション（管理者認証が必要な場合）
  *
  * または.env.localから読み込み:
@@ -52,8 +52,8 @@ const CONFIG = {
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || 'pawmatch-images',
-  API_URL: process.env.API_URL || 'https://pawmatch-api.elchika.app',
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || 'buddies-images',
+  API_URL: process.env.API_URL || 'https://buddies-api.elchika.app',
   API_KEY: process.env.API_KEY,
   DRY_RUN: process.argv.includes('--dry-run'),
   LIMIT: parseInt(process.argv.find((arg) => arg.startsWith('--limit='))?.split('=')[1] || '1000'),

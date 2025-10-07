@@ -78,7 +78,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <span className="mr-3">🐾</span>
-            PawMatch Admin Dashboard
+            Buddies Admin Dashboard
           </h1>
           <div className="flex gap-2">
             <button

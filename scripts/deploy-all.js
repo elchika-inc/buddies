@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * PawMatch Full Deployment Script
+ * Buddies Full Deployment Script
  *
  * デプロイ順序:
  * 1. API (基盤)
@@ -130,8 +130,8 @@ async function deployApps() {
   const appPath = path.join(__dirname, '../app')
 
   const deployPromises = [
-    { name: 'DogMatch', project: 'pawmatch-dogs', color: 'blue' },
-    { name: 'CatMatch', project: 'pawmatch-cats', color: 'green' },
+    { name: 'DogMatch', project: 'buddies-dogs', color: 'blue' },
+    { name: 'CatMatch', project: 'buddies-cats', color: 'green' },
   ].map(async (app) => {
     log(`  📤 Deploying ${app.name}...`, app.color)
 
@@ -158,7 +158,7 @@ async function deployApps() {
 }
 
 async function main() {
-  log('🚀 Starting PawMatch Full Deployment', 'green')
+  log('🚀 Starting Buddies Full Deployment', 'green')
   log('==================================', 'green')
 
   const startTime = Date.now()
@@ -189,9 +189,9 @@ async function main() {
     log('  ✅ CatMatch app deployed')
     log(`\n⏱️ Total deployment time: ${duration}s`, 'cyan')
     log('\nURLs:', 'yellow')
-    log('  API: https://pawmatch-api.elchika.app')
-    log('  DogMatch: https://pawmatch-dogs.elchika.app')
-    log('  CatMatch: https://pawmatch-cats.elchika.app')
+    log('  API: https://buddies-api.elchika.app')
+    log('  DogMatch: https://buddies-dogs.elchika.app')
+    log('  CatMatch: https://buddies-cats.elchika.app')
   } catch (error) {
     log('\n❌ Deployment failed!', 'red')
     console.error(error)

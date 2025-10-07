@@ -178,7 +178,7 @@ export class ImageUploadController {
           },
         })
 
-        urls[format] = `https://${c.env.R2_PUBLIC_URL || 'pawmatch-images.r2.dev'}/${key}`
+        urls[format] = `https://${c.env.R2_PUBLIC_URL || 'buddies-images.r2.dev'}/${key}`
       }
 
       // D1を更新

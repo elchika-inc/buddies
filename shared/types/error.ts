@@ -196,7 +196,7 @@ export class BuddiesError extends AppError {
   }
 }
 
-// 後方互換性のためのエイリアス
+// 後方互換性のためのエイリアス（PawMatchErrorをBuddiesErrorにマップ）
 export const PawMatchError = BuddiesError
 
 /**

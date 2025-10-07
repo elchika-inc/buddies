@@ -248,7 +248,7 @@ async function main() {
 
   // 設定を読み込み
   const config = {
-    apiUrl: process.env.API_URL || args.apiUrl || 'https://pawmatch-api.elchika.app',
+    apiUrl: process.env.API_URL || args.apiUrl || 'https://buddies-api.elchika.app',
     apiKey: process.env.API_KEY || args.apiKey,
     adminSecret: process.env.API_ADMIN_SECRET || args.adminSecret,
   }

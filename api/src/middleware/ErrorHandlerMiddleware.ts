@@ -7,7 +7,7 @@
 import type { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { Result } from '@buddies/shared/types/result'
-import { PawMatchError, type BuddiesError } from '../utils/ErrorHandler'
+import { BuddiesError } from '../utils/ErrorHandler'
 import { errorResponse } from '../utils/ResponseFormatter'
 import type { JsonValue } from '../types/common'
 
@@ -25,8 +25,8 @@ interface ErrorDetails {
  * エラーをErrorDetailsに変換
  */
 function getErrorDetails(error: unknown): ErrorDetails {
-  // PawMatchError（カスタムエラー）
-  if (error instanceof PawMatchError) {
+  // BuddiesError（カスタムエラー）
+  if (error instanceof BuddiesError) {
     return {
       status: error.status,
       code: error.code,

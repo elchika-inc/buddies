@@ -10,8 +10,8 @@
  *   export R2_ACCOUNT_ID=xxx
  *   export R2_ACCESS_KEY_ID=xxx
  *   export R2_SECRET_ACCESS_KEY=xxx
- *   export R2_BUCKET_NAME=pawmatch-images  # オプション（デフォルト: pawmatch-images）
- *   export API_URL=https://pawmatch-api.elchika.app  # オプション
+ *   export R2_BUCKET_NAME=buddies-images  # オプション（デフォルト: buddies-images）
+ *   export API_URL=https://buddies-api.elchika.app  # オプション
  *
  * または.env.localから読み込み:
  *   set -a && source .env.local && set +a
@@ -55,8 +55,8 @@ const CONFIG = {
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || 'pawmatch-images',
-  API_URL: process.env.API_URL || 'https://pawmatch-api.elchika.app',
+  R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || 'buddies-images',
+  API_URL: process.env.API_URL || 'https://buddies-api.elchika.app',
   DRY_RUN: !process.argv.includes('--execute'),
   BATCH_SIZE: 10,
 }
