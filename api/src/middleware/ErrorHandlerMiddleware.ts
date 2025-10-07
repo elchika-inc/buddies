@@ -7,7 +7,7 @@
 import type { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { Result } from '@buddies/shared/types/result'
-import { PawMatchError } from '../utils/ErrorHandler'
+import { BuddiesError, PawMatchError } from '../utils/ErrorHandler'
 import { errorResponse } from '../utils/ResponseFormatter'
 import type { JsonValue } from '../types/common'
 

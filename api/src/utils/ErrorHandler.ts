@@ -11,26 +11,16 @@ import {
   ErrorBuilder,
   ErrorCategory,
   ErrorHandler as SharedErrorHandler,
+  BuddiesError,
+  PawMatchError,
 } from '../../../shared/types/error'
 
 // 互換性のためのエイリアス
 export const Errors = ErrorBuilder
 export const ErrorHandler = SharedErrorHandler
 
-// Buddies固有のエラークラス
-export class BuddiesError extends AppError {
-  public readonly status: number
-  public override readonly code: string
-
-  constructor(message: string, status = 500, code = 'INTERNAL_ERROR') {
-    super(message, ErrorCategory.INTERNAL, status, code)
-    this.status = status
-    this.code = code
-  }
-}
-
-// 後方互換性のためのエイリアス
-export const PawMatchError = BuddiesError
+// BuddiesErrorとPawMatchErrorを共有型から再エクスポート
+export { BuddiesError, PawMatchError }
 
 export class ValidationError extends AppError {
   constructor(message: string) {

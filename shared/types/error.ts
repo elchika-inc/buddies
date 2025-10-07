@@ -180,6 +180,26 @@ export class ErrorHandler {
 }
 
 /**
+ * Buddies専用エラークラス（後方互換性のため）
+ */
+export class BuddiesError extends AppError {
+  public readonly status: number
+
+  constructor(
+    message: string,
+    status: number = 500,
+    code: string = 'BUDDIES_ERROR'
+  ) {
+    super(message, ErrorCategory.INTERNAL, status, code)
+    this.status = status
+    this.name = 'BuddiesError'
+  }
+}
+
+// 後方互換性のためのエイリアス
+export const PawMatchError = BuddiesError
+
+/**
  * グローバルエラーハンドリングミドルウェア
  */
 export async function errorMiddleware(c: Context, next: () => Promise<void>): Promise<Response> {
