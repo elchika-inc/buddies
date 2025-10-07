@@ -3,8 +3,8 @@
  * データの永続化のみに責任を持つ
  */
 
-import { Result } from '@pawmatch/shared/types/result'
-import type { Pet } from '@pawmatch/shared/types'
+import { Result } from '@buddies/shared/types/result'
+import type { Pet } from '@buddies/shared/types'
 
 export interface SavePetOptions {
   upsert?: boolean

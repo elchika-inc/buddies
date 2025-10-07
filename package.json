@@ -15,7 +15,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elchika-inc/pawmatch.git"
+    "url": "https://github.com/elchika-inc/buddies.git"
   },
   "workspaces": [
     "frontend",

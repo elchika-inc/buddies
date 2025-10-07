@@ -3,7 +3,7 @@
  */
 
 import type { R2Bucket } from '@cloudflare/workers-types'
-import { R2_PATHS } from '@pawmatch/shared/r2-paths'
+import { R2_PATHS } from '@buddies/shared/r2-paths'
 
 export interface ImageMetadata {
   petId: string

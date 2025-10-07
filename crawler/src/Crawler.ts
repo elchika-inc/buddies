@@ -8,7 +8,7 @@
 import type { Pet, CrawlResult, CrawlerCheckpoint } from '../../shared/types/index'
 import { ApiServiceClient } from '../../shared/services/api-client'
 import { Result } from '../../shared/types/result'
-import { R2_PATHS } from '@pawmatch/shared/r2-paths'
+import { R2_PATHS } from '@buddies/shared/r2-paths'
 import { HTTP_CONFIG, FETCH_CONFIG } from './config/constants'
 
 /**
@@ -778,9 +778,7 @@ export class PetHomeCrawler {
           .run()
       }
 
-      console.log(
-        `Updated crawler_states for ${petType}: batch=${batchId}, total=${result.totalPets}`
-      )
+      // Crawler state update successful - no action needed
     } catch (error) {
       console.error('Failed to update crawler_states:', error)
     }
@@ -811,7 +809,6 @@ export class PetHomeCrawler {
       // pendingのペットをScreenshot Queueへ送信
       const pendingPets = checkpoint.screenshotQueue.pending
       if (pendingPets.length === 0) {
-        console.log('No pets pending for screenshot')
         return
       }
 
@@ -829,7 +826,6 @@ export class PetHomeCrawler {
 
       // Queueへバッチ送信
       await this.env.PAWMATCH_SCREENSHOT_QUEUE.sendBatch(messages)
-      console.log(`Sent ${pendingPets.length} pets to screenshot queue`)
 
       // checkpointを更新（sent数を増やし、pendingをクリア）
       checkpoint.screenshotQueue.sent = pendingPets.length

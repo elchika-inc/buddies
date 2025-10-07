@@ -3,7 +3,7 @@
  * ページ取得のみに責任を持つ
  */
 
-import { Result } from '@pawmatch/shared/types/result'
+import { Result } from '@buddies/shared/types/result'
 
 export interface FetchOptions {
   headers?: Record<string, string>

@@ -3,7 +3,7 @@
  * ビルダーパターンを削除し、シンプルなファクトリー関数でペットオブジェクトを生成
  */
 
-import type { Pet } from '@pawmatch/shared/types'
+import type { Pet } from '@buddies/shared/types'
 
 // DB レコード型
 export interface DBPetRecord {

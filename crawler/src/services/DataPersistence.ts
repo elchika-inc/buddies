@@ -8,7 +8,7 @@
 import { drizzle } from 'drizzle-orm/d1'
 import { eq } from 'drizzle-orm'
 import { pets } from '../../../database/schema/schema'
-import { R2_PATHS } from '@pawmatch/shared/r2-paths'
+import { R2_PATHS } from '@buddies/shared/r2-paths'
 import { Result, Ok, Err } from '../../../shared/types/result'
 import type { Pet } from '../../../shared/types'
 import type { Env } from '../types'

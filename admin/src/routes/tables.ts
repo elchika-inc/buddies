@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import type { Env } from '../types/env'
-import type { TableInfo } from '@pawmatch/shared/types'
+import type { TableInfo } from '@buddies/shared/types'
 
 export const tablesRoute = new Hono<{ Bindings: Env }>()
 

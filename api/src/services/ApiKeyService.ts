@@ -5,7 +5,7 @@
  * APIキーのCRUD操作はadminワークスペースで行います。
  */
 
-import type { ApiKey, ApiKeyRecord } from '@pawmatch/shared/types'
+import type { ApiKey, ApiKeyRecord } from '@buddies/shared/types'
 
 export class ApiKeyService {
   constructor(

@@ -1,5 +1,12 @@
 {
   "extends": "../tsconfig.workers.json",
+  "compilerOptions": {
+    "paths": {
+      "@buddies/shared/*": ["../shared/*"],
+      "@buddies/shared": ["../shared/types/index.ts"],
+      "@buddies/shared/r2-paths": ["../shared/src/utils/r2-paths.ts"]
+    }
+  },
   "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.bak"]
 }

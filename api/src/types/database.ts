@@ -24,7 +24,7 @@ export type ApiKeySelect = InferSelectModel<typeof apiKeys>
 export type ApiKeyInsert = InferInsertModel<typeof apiKeys>
 
 // 共通型定義をエクスポート
-export type { ApiKey, ApiKeyType, Permission } from '@pawmatch/shared/types'
+export type { ApiKey, ApiKeyType, Permission } from '@buddies/shared/types'
 
 // データベースから返される生のペットデータの型定義（後方互換性のため維持）
 export interface RawPetRecord {

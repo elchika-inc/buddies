@@ -3,7 +3,7 @@
  */
 
 // APIキー関連の型は共通型を使用
-export type { ApiKey, ApiKeyType, Permission } from '@pawmatch/shared/types'
+export type { ApiKey, ApiKeyType, Permission } from '@buddies/shared/types'
 
 export interface SuccessResponse {
   success: true

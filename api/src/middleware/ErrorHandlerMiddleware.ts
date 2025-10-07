@@ -6,7 +6,7 @@
 
 import type { Context, Next } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { Result } from '@pawmatch/shared/types/result'
+import { Result } from '@buddies/shared/types/result'
 import { PawMatchError } from '../utils/ErrorHandler'
 import { errorResponse } from '../utils/ResponseFormatter'
 import type { JsonValue } from '../types/common'
@@ -32,7 +32,7 @@ function getErrorDetails(error: unknown): ErrorDetails {
       code: error.code,
       message: error.message,
       details:
-        'details' in error ? (error as PawMatchError & { details: unknown }).details : undefined,
+        'details' in error ? (error as BuddiesError & { details?: unknown }).details : undefined,
     }
   }
 

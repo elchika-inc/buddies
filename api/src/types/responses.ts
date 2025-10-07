@@ -112,7 +112,7 @@ export interface ImageUploadResponse {
 
 // APIキー関連レスポンス
 // 共通型を使用
-import type { ApiKey } from '@pawmatch/shared/types'
+import type { ApiKey } from '@buddies/shared/types'
 
 export interface ApiKeyResponse
   extends Omit<ApiKey, 'key' | 'permissions' | 'rateLimit' | 'metadata'> {
@@ -120,7 +120,7 @@ export interface ApiKeyResponse
 }
 
 // 作成レスポンスは共通型を再エクスポート
-export type { CreateApiKeyResponse as ApiKeyCreateResponse } from '@pawmatch/shared/types'
+export type { CreateApiKeyResponse as ApiKeyCreateResponse } from '@buddies/shared/types'
 
 // Type guard functions
 export function isApiErrorResponse(response: ApiResponse): response is ApiErrorResponse {

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import type { Env } from '../types/env'
 import { getTable } from '../db/tableRegistry'
 import { getFieldRequirements } from '../db/schema/validation'
-import type { DbRecord } from '@pawmatch/shared/types'
+import type { DbRecord } from '@buddies/shared/types'
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 export const recordsRoute = new Hono<{ Bindings: Env }>()

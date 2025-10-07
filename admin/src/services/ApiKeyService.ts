@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
 import { eq, and } from 'drizzle-orm'
 import { apiKeys } from '../db/schema/tables'
-import type { ApiKey, ApiKeyType, Permission } from '@pawmatch/shared/types'
+import type { ApiKey, ApiKeyType, Permission } from '@buddies/shared/types'
 import { convertDrizzleApiKey } from '../types/ApiKeysSchema'
 import { isExpired } from '../config/ApiKeys'
 

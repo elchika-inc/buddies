@@ -12,11 +12,11 @@ import { getLogger } from '../utils/logger'
 
 export class QueueService {
   /** Screenshot Queue (責務ベース) */
-  private readonly screenshotQueue: Env['PAWMATCH_SCREENSHOT_QUEUE']
-  private readonly screenshotDlq: Env['PAWMATCH_SCREENSHOT_DLQ']
+  private readonly screenshotQueue: Env['BUDDIES_SCREENSHOT_QUEUE']
+  private readonly screenshotDlq: Env['BUDDIES_SCREENSHOT_DLQ']
   /** Conversion Queue (責務ベース) */
-  private readonly conversionQueue: Env['PAWMATCH_CONVERSION_QUEUE']
-  private readonly conversionDlq: Env['PAWMATCH_CONVERSION_DLQ']
+  private readonly conversionQueue: Env['BUDDIES_CONVERSION_QUEUE']
+  private readonly conversionDlq: Env['BUDDIES_CONVERSION_DLQ']
 
   /**
    * コンストラクタ
@@ -25,12 +25,12 @@ export class QueueService {
    */
   constructor(env: Env) {
     // Screenshot Queue
-    this.screenshotQueue = env.PAWMATCH_SCREENSHOT_QUEUE
-    this.screenshotDlq = env.PAWMATCH_SCREENSHOT_DLQ
+    this.screenshotQueue = env['BUDDIES_SCREENSHOT_QUEUE']
+    this.screenshotDlq = env['BUDDIES_SCREENSHOT_DLQ']
 
     // Conversion Queue
-    this.conversionQueue = env.PAWMATCH_CONVERSION_QUEUE
-    this.conversionDlq = env.PAWMATCH_CONVERSION_DLQ
+    this.conversionQueue = env['BUDDIES_CONVERSION_QUEUE']
+    this.conversionDlq = env['BUDDIES_CONVERSION_DLQ']
   }
 
   /**

@@ -7,7 +7,10 @@
     "lib": ["ESNext", "WebWorker", "DOM"],
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/src/*"]
+      "@shared/*": ["../shared/src/*"],
+      "@buddies/shared/*": ["../shared/*"],
+      "@buddies/shared": ["../shared/types/index.ts"],
+      "@buddies/shared/r2-paths": ["../shared/src/utils/r2-paths.ts"]
     }
   },
   "include": ["src/**/*"],

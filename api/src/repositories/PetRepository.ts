@@ -1,6 +1,6 @@
 import type { D1Database } from '@cloudflare/workers-types'
-import { Result } from '@pawmatch/shared/types/result'
-import { isCountResult } from '@pawmatch/shared/types/guards'
+import { Result } from '@buddies/shared/types/result'
+import { isCountResult } from '@buddies/shared/types/guards'
 
 /**
  * ペット情報のデータベース操作を担当するリポジトリ

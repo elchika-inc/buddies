@@ -61,4 +61,4 @@ export function getUrlBuilder(baseUrl?: string): UrlBuilder {
 }
 
 // R2PathBuilderはsharedパッケージから再エクスポート
-export { R2PathBuilder } from '@pawmatch/shared/r2-paths'
+export { R2PathBuilder } from '@buddies/shared/r2-paths'

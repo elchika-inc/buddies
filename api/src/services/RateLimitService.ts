@@ -4,7 +4,7 @@
  * APIキーごとのレート制限を管理
  */
 
-import type { RateLimitResult } from '@pawmatch/shared/types'
+import type { RateLimitResult } from '@buddies/shared/types'
 
 export class RateLimitService {
   private readonly WINDOW_SECONDS = 60 // 1分間のウィンドウ

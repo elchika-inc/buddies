@@ -1,13 +1,13 @@
 import { InferSelectModel, InferInsertModel } from 'drizzle-orm'
 import { apiKeys } from '../db/schema/tables'
-import type { ApiKey, ApiKeyType } from '@pawmatch/shared/types'
+import type { ApiKey, ApiKeyType } from '@buddies/shared/types'
 
 // Drizzleスキーマから推論される型
 export type ApiKeySelect = InferSelectModel<typeof apiKeys>
 export type ApiKeyInsert = InferInsertModel<typeof apiKeys>
 
 // 共通型を再エクスポート
-export type { ApiKey, ApiKeyType, Permission } from '@pawmatch/shared/types'
+export type { ApiKey, ApiKeyType, Permission } from '@buddies/shared/types'
 
 // Drizzleのレコードをアプリケーション型に変換
 export function convertDrizzleApiKey(row: ApiKeySelect): ApiKey {

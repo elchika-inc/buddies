@@ -19,7 +19,7 @@ class Logger {
   private logLevel: LogLevel
 
   constructor(env?: Env) {
-    const envLevel = env?.PAWMATCH_NODE_ENV || 'production'
+    const envLevel = env?.['BUDDIES_NODE_ENV'] || 'production'
     this.logLevel = envLevel === 'development' ? LogLevel.DEBUG : LogLevel.INFO
   }
 

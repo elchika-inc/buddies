@@ -3,7 +3,7 @@
  * ペットホームのHTML解析のみに責任を持つ
  */
 
-import { Result } from '@pawmatch/shared/types/result'
+import { Result } from '@buddies/shared/types/result'
 import * as cheerio from 'cheerio'
 
 export interface ParsedPetInfo {

@@ -18,9 +18,9 @@ export class GitHubService {
   private readonly githubRepo: string
 
   constructor(env: Env) {
-    this.githubToken = env.PAWMATCH_GITHUB_TOKEN || env.GITHUB_TOKEN || ''
-    this.githubOwner = env.PAWMATCH_GITHUB_OWNER || 'elchika-inc'
-    this.githubRepo = env.PAWMATCH_GITHUB_REPO || 'pawmatch'
+    this.githubToken = env['BUDDIES_GITHUB_TOKEN'] || env.GITHUB_TOKEN || ''
+    this.githubOwner = env['BUDDIES_GITHUB_OWNER'] || 'elchika-inc'
+    this.githubRepo = env['BUDDIES_GITHUB_REPO'] || 'buddies'
   }
 
   /**
@@ -131,7 +131,7 @@ export class GitHubService {
       Accept: 'application/vnd.github.v3+json',
       Authorization: `Bearer ${this.githubToken}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'pawmatch-dispatcher/1.0.0',
+      'User-Agent': 'buddies-dispatcher/1.0.0',
     }
   }
 

@@ -33,6 +33,11 @@
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
 
+    "paths": {
+      "@buddies/shared/*": ["./shared/*"],
+      "@buddies/shared": ["./shared/types/index.ts"]
+    },
+
     "noEmit": true,
     "sourceMap": true,
     "declaration": true,
