@@ -12,6 +12,7 @@ import { HtmlParser } from './HtmlParser'
 import { HttpFetcher } from './HttpFetcher'
 import { DataPersistence } from './DataPersistence'
 import type { Env } from '../types'
+import { CRAWL_CONFIG } from '../config/constants'
 
 /**
  * クロール設定
@@ -30,9 +31,6 @@ export interface CrawlConfig {
  */
 export class PetHomeCrawler {
   private static readonly DEFAULT_BASE_URL = 'https://www.pet-home.jp'
-  private static readonly DEFAULT_PETS_PER_PAGE = 20
-  private static readonly DEFAULT_MAX_PAGES = 10
-  private static readonly DEFAULT_MAX_BATCH_SIZE = 100
   private static readonly DEFAULT_REQUESTS_PER_SECOND = 2
 
   private readonly apiClient: ApiServiceClient
@@ -48,9 +46,9 @@ export class PetHomeCrawler {
 
     this.config = {
       baseUrl: config.baseUrl || PetHomeCrawler.DEFAULT_BASE_URL,
-      petsPerPage: config.petsPerPage || PetHomeCrawler.DEFAULT_PETS_PER_PAGE,
-      maxPages: config.maxPages || PetHomeCrawler.DEFAULT_MAX_PAGES,
-      maxBatchSize: config.maxBatchSize || PetHomeCrawler.DEFAULT_MAX_BATCH_SIZE,
+      petsPerPage: config.petsPerPage || CRAWL_CONFIG.DEFAULT_PETS_PER_PAGE,
+      maxPages: config.maxPages || CRAWL_CONFIG.DEFAULT_MAX_PAGES,
+      maxBatchSize: config.maxBatchSize || CRAWL_CONFIG.DEFAULT_MAX_BATCH_SIZE,
       requestsPerSecond: config.requestsPerSecond || PetHomeCrawler.DEFAULT_REQUESTS_PER_SECOND,
       saveImages: config.saveImages ?? true,
     }
@@ -59,7 +57,10 @@ export class PetHomeCrawler {
   /**
    * メインクロール処理
    */
-  async crawl(petType: 'dog' | 'cat', limit: number = 10): Promise<CrawlResult> {
+  async crawl(
+    petType: 'dog' | 'cat',
+    limit: number = CRAWL_CONFIG.DEFAULT_LIMIT
+  ): Promise<CrawlResult> {
     const result: CrawlResult = {
       success: false,
       totalPets: 0,

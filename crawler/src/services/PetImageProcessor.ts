@@ -4,6 +4,7 @@
 
 import type { R2Bucket } from '@cloudflare/workers-types'
 import { R2_PATHS } from '@buddies/shared/r2-paths'
+import { CRAWL_CONFIG } from '../config/constants'
 
 export interface ImageMetadata {
   petId: string
@@ -121,7 +122,7 @@ export class PetImageProcessor {
 
       // レート制限対策のための遅延
       if (index < imageUrls.length - 1) {
-        await this.delay(100)
+        await this.delay(CRAWL_CONFIG.IMAGE_PROCESSING_DELAY)
       }
     }
 

@@ -1,6 +1,6 @@
 import type { z } from 'zod'
-import { PetSchema, DogSchema, CatSchema } from './unified'
-import type { Pet, Dog, Cat } from './unified'
+import type { Pet, Dog, Cat } from './pet'
+import { isPet as isPetFromPet, isDog as isDogFromPet, isCat as isCatFromPet } from './pet'
 
 /**
  * 統一型ガード関数
@@ -11,21 +11,21 @@ import type { Pet, Dog, Cat } from './unified'
  * ペットデータの型ガード
  */
 export function isPet(value: unknown): value is Pet {
-  return PetSchema.safeParse(value).success
+  return isPetFromPet(value)
 }
 
 /**
  * 犬データの型ガード
  */
 export function isDog(pet: Pet): pet is Dog {
-  return pet.type === 'dog' && DogSchema.safeParse(pet).success
+  return isDogFromPet(pet)
 }
 
 /**
  * 猫データの型ガード
  */
 export function isCat(pet: Pet): pet is Cat {
-  return pet.type === 'cat' && CatSchema.safeParse(pet).success
+  return isCatFromPet(pet)
 }
 
 /**

@@ -4,6 +4,7 @@
  */
 
 import { Result } from '@buddies/shared/types/result'
+import { CRAWL_CONFIG } from '../config/constants'
 
 export interface FetchOptions {
   headers?: Record<string, string>
@@ -61,7 +62,7 @@ export class HttpFetcher {
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       if (attempt > 0) {
         // リトライ前に待機（指数バックオフ）
-        await this.delay(Math.min(1000 * Math.pow(2, attempt - 1), 10000))
+        await this.delay(Math.min(1000 * Math.pow(2, attempt - 1), CRAWL_CONFIG.MAX_RETRY_BACKOFF))
       }
 
       const result = await this.singleFetch(url, headers, timeout)

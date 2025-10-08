@@ -47,3 +47,13 @@ export const PET_TYPES = {
   CAT: 'cat',
   BOTH: 'both',
 } as const
+
+/**
+ * デフォルト設定値
+ */
+export const DEFAULTS = {
+  /** デフォルトのクロール取得件数 */
+  CRAWLER_LIMIT: 10,
+  /** デフォルトのリトライ待機時間（秒） */
+  RETRY_AFTER_SECONDS: 60,
+} as const

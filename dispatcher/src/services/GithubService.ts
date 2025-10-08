@@ -4,6 +4,7 @@
  */
 
 import type { Env, ConversionData, PetDispatchData } from '../types'
+import { DEFAULTS } from '../constants'
 
 export class RateLimitError extends Error {
   constructor(public retryAfter: number) {
@@ -155,7 +156,10 @@ export class GitHubService {
 
     // Rate Limitエラーの場合
     if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10)
+      const retryAfter = parseInt(
+        response.headers.get('Retry-After') || String(DEFAULTS.RETRY_AFTER_SECONDS),
+        10
+      )
       return { success: false, error: new RateLimitError(retryAfter) }
     }
 

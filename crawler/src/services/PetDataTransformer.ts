@@ -2,8 +2,8 @@
  * ペットデータ変換専門クラス
  */
 
-import type { Pet } from '../../../shared/types/unified'
-import { createDefaultPet } from '../../../shared/types/unified'
+import type { Pet } from '../../../shared/types/pet'
+import { createPet } from '../../../shared/types/pet'
 import type { ParsedPetInfo } from './PetHomeParser'
 
 // PetDetailInfoのエイリアスを作成（後方互換性のため）
@@ -19,9 +19,10 @@ export class PetDataTransformer {
    * PetDetailInfoからPetへの変換
    */
   transformToPet(petDetail: PetDetailInfo): Pet {
-    // デフォルト値でペットオブジェクトを作成
-    const pet = createDefaultPet(petDetail.type, {
+    // ペットオブジェクトを作成
+    const pet = createPet({
       id: petDetail.id,
+      type: petDetail.type,
       name: petDetail.name,
       breed: petDetail.breed || undefined,
       age: petDetail.age || undefined,

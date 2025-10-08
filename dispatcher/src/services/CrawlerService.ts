@@ -6,6 +6,7 @@
 import { QueueService } from './QueueService'
 import { getLogger } from '../utils/logger'
 import type { Env } from '../types'
+import { DEFAULTS } from '../constants'
 
 export interface CrawlerResponse {
   success: boolean
@@ -53,7 +54,7 @@ export class CrawlerService {
           body: {
             type: 'crawl' as const,
             petType: 'dog' as const,
-            limit: limit || 10,
+            limit: limit || DEFAULTS.CRAWLER_LIMIT,
             timestamp: new Date().toISOString(),
             source: config?.source || 'api', // configから取得、なければ'api'
             config: config
@@ -73,7 +74,7 @@ export class CrawlerService {
           body: {
             type: 'crawl' as const,
             petType: 'cat' as const,
-            limit: limit || 10,
+            limit: limit || DEFAULTS.CRAWLER_LIMIT,
             timestamp: new Date().toISOString(),
             source: config?.source || 'api', // configから取得、なければ'api'
             config: config

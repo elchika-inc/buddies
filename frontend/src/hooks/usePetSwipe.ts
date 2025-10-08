@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { FrontendPet } from '../types/pet'
+import { SWIPE_CONFIG } from '../config/swipe'
 
 /** スワイプ方向の定義 */
 export type SwipeDirection = 'like' | 'pass' | 'superLike'
@@ -34,7 +35,7 @@ interface BrowsingState {
  */
 export function usePetSwipe(pets: FrontendPet[], petType: 'dog' | 'cat') {
   // ローカルストレージのキーを生成（ペットタイプごとに別管理）
-  const browsingKey = `pet-browsing-state-${petType}`
+  const browsingKey = `${SWIPE_CONFIG.storageKeyPrefix}-${petType}`
 
   // 初期状態をローカルストレージから復元（軽量版）
   const [state, setState] = useState<SwipeState>(() => {

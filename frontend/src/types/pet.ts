@@ -1,3 +1,10 @@
+/**
+ * Frontend用ペット型定義
+ *
+ * shared/types/pet.tsから型をインポートし、
+ * Frontend固有の拡張を追加
+ */
+
 // 共通の型定義から再エクスポート
 export type {
   Pet,
@@ -15,29 +22,29 @@ export type {
   Image,
   PetFilter,
   PetSort,
-} from '../../../shared/types/unified'
+  PetResponse,
+  PetsListResponse,
+} from '../../../shared/types/pet'
 
-// 型ガード関数も共通型から再エクスポート
+// ユーティリティ関数も共通型から再エクスポート
 export {
   isPet,
   isDog,
   isCat,
   isPetWithImages,
   isImage,
-  validatePet,
-  validateDog,
-  validateCat,
-  toBooleanFlag,
-  toNumberFlag,
-  createDefaultPet,
-} from '../../../shared/types/unified'
+  toBool,
+  toFlag,
+  createPet,
+  fromDBRecord,
+} from '../../../shared/types/pet'
 
-// Frontend固有の拡張が必要な場合はここに追加
+// Frontend固有の拡張型（必要に応じて使用）
 export interface LocalPetExtensions {
   localImagePath?: string // ローカル開発用画像パス
   displayOrder?: number // UI表示順
   isBookmarked?: boolean // ブックマーク状態
 }
 
-// Frontend用の拡張型（必要に応じて使用）
-export type ExtendedPet = import('../../../shared/types/unified').FrontendPet & LocalPetExtensions
+// Frontend用の拡張ペット型
+export type ExtendedPet = import('../../../shared/types/pet').FrontendPet & LocalPetExtensions

@@ -9,7 +9,7 @@ import type { Pet, CrawlResult, CrawlerCheckpoint } from '../../shared/types/ind
 import { ApiServiceClient } from '../../shared/services/api-client'
 import { Result } from '../../shared/types/result'
 import { R2_PATHS } from '@buddies/shared/r2-paths'
-import { HTTP_CONFIG, FETCH_CONFIG } from './config/constants'
+import { HTTP_CONFIG, FETCH_CONFIG, CRAWL_CONFIG } from './config/constants'
 
 /**
  * Cloudflare Workers環境変数の型定義
@@ -56,10 +56,6 @@ import { pets } from '../../database/schema/schema'
 export class PetHomeCrawler {
   /** ベースURL */
   private static readonly BASE_URL = 'https://www.pet-home.jp'
-  /** デフォルト: 1ページあたりのペット数 */
-  private static readonly DEFAULT_PETS_PER_PAGE = 20
-  /** デフォルト: 最大ページ数 */
-  private static readonly DEFAULT_MAX_PAGES = 10
   /** HTTPリクエスト用ユーザーエージェント */
   private static readonly USER_AGENT = HTTP_CONFIG.USER_AGENT
   /** Drizzle ORMインスタンス */
@@ -87,12 +83,15 @@ export class PetHomeCrawler {
    * メインクロール処理
    *
    * @param petType - クロール対象のペットタイプ（'dog' | 'cat'）
-   * @param limit - 取得するペットの上限数（デフォルト: 10）
+   * @param limit - 取得するペットの上限数
    * @returns クロール結果
    * @description 指定されたタイプのペット情報を取得し、API経由でデータベースに保存
    * 新規作成、更新、エラーの統計情報も返す
    */
-  async crawl(petType: 'dog' | 'cat', limit: number = 10): Promise<CrawlResult> {
+  async crawl(
+    petType: 'dog' | 'cat',
+    limit: number = CRAWL_CONFIG.DEFAULT_LIMIT
+  ): Promise<CrawlResult> {
     const result: CrawlResult = {
       success: false,
       totalPets: 0,
@@ -237,8 +236,8 @@ export class PetHomeCrawler {
    */
   private async fetchPets(petType: 'dog' | 'cat', limit: number): Promise<Pet[]> {
     const pets: Pet[] = []
-    const petsPerPage = this.config?.petsPerPage || PetHomeCrawler.DEFAULT_PETS_PER_PAGE
-    const maxPages = this.config?.maxPages || PetHomeCrawler.DEFAULT_MAX_PAGES
+    const petsPerPage = this.config?.petsPerPage || CRAWL_CONFIG.DEFAULT_PETS_PER_PAGE
+    const maxPages = this.config?.maxPages || CRAWL_CONFIG.DEFAULT_MAX_PAGES
 
     const baseUrl = `${PetHomeCrawler.BASE_URL}/${petType}s/status_2/`
     const actualMaxPages = Math.min(Math.ceil(limit / petsPerPage), maxPages)

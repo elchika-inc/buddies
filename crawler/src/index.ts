@@ -5,6 +5,7 @@ import type { CrawlResult, CrawlerStateRecord, Pet } from '../../shared/types/in
 import { PetHomeCrawler } from './Crawler'
 import { Result } from '../../shared/types/result'
 import type { CrawlMessage, DLQMessage } from './types/queue'
+import { CRAWL_CONFIG } from './config/constants'
 
 // Env型定義
 export interface Env {
@@ -48,7 +49,7 @@ app.get('/', (c) => {
 app.post('/fetch-pet-data/:source/:type?', async (c) => {
   const sourceId = c.req.param('source') || 'pet-home'
   const petType = (c.req.param('type') as 'dog' | 'cat') || 'cat'
-  const limit = parseInt(c.req.query('limit') || '10')
+  const limit = parseInt(c.req.query('limit') || String(CRAWL_CONFIG.DEFAULT_LIMIT))
 
   // ソースIDの検証（pet-homeのみサポート）
   if (sourceId !== 'pet-home') {
@@ -64,8 +65,13 @@ app.post('/fetch-pet-data/:source/:type?', async (c) => {
     return c.json({ error: 'Invalid pet type. Use "dog" or "cat".' }, 400)
   }
 
-  if (limit < 1 || limit > 100) {
-    return c.json({ error: 'Limit must be between 1 and 100.' }, 400)
+  if (limit < CRAWL_CONFIG.MIN_LIMIT || limit > CRAWL_CONFIG.MAX_LIMIT) {
+    return c.json(
+      {
+        error: `Limit must be between ${CRAWL_CONFIG.MIN_LIMIT} and ${CRAWL_CONFIG.MAX_LIMIT}.`,
+      },
+      400
+    )
   }
 
   const result = await crawlPets(c.env, petType, limit)
@@ -116,7 +122,7 @@ app.get('/fetch-status/:source?/:type?', async (c) => {
 // 保存済みペット情報一覧を取得
 app.get('/saved-pets/:type?', async (c) => {
   const petType = c.req.param('type')
-  const limit = parseInt(c.req.query('limit') || '20')
+  const limit = parseInt(c.req.query('limit') || String(CRAWL_CONFIG.DEFAULT_PETS_PER_PAGE))
   const offset = parseInt(c.req.query('offset') || '0')
 
   const result = await getPets(c.env, petType, limit, offset)
@@ -208,7 +214,7 @@ async function getCrawlStatus(
 async function getPets(
   env: Env,
   petType?: string,
-  limit: number = 20,
+  limit: number = CRAWL_CONFIG.DEFAULT_PETS_PER_PAGE,
   offset: number = 0
 ): Promise<Result<Pet[], Error>> {
   try {

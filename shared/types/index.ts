@@ -10,9 +10,6 @@
 export * from './error'
 export * from './result'
 
-// 統一された型定義を再エクスポート
-export * from './unified'
-
 // APIキー関連の型定義を再エクスポート
 export * from './apiKey'
 
@@ -20,10 +17,8 @@ export * from './apiKey'
 export * from './database'
 
 // ============== ペット関連型定義 ==============
-// 統一型定義（unified.ts）から再エクスポートされています
-// 後方互換性のエイリアスは削除されました
-
-// PetRecord型は削除されました。unified.tsのPet型を使用してください
+// 新しい統一型定義（pet.ts）から再エクスポート
+export * from './pet'
 
 // ============== クローラー関連型定義 ==============
 
@@ -212,8 +207,8 @@ export interface CrawlerCheckpoint {
 }
 
 // ============== 型ガード ==============
-// 統一型定義（unified.ts）の型ガードを使用してください
-export { isPet } from './unified'
+// 統一型定義（pet.ts）の型ガードを使用してください
+export { isPet, isDog, isCat } from './pet'
 
 // ============== 変換ヘルパー ==============
 // 統一型定義では変換不要（snake_caseフィールドを統一）

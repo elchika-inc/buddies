@@ -24,6 +24,28 @@ export const BATCH_CONFIG = {
 } as const
 
 /**
+ * クロール設定
+ */
+export const CRAWL_CONFIG = {
+  /** 1ページあたりのペット数 */
+  DEFAULT_PETS_PER_PAGE: 20,
+  /** 最大ページ数 */
+  DEFAULT_MAX_PAGES: 10,
+  /** 最大バッチサイズ */
+  DEFAULT_MAX_BATCH_SIZE: 100,
+  /** デフォルト取得件数 */
+  DEFAULT_LIMIT: 10,
+  /** 最小取得件数 */
+  MIN_LIMIT: 1,
+  /** 最大取得件数 */
+  MAX_LIMIT: 100,
+  /** 画像処理の待機時間（ミリ秒） */
+  IMAGE_PROCESSING_DELAY: 100,
+  /** 最大リトライバックオフ時間（ミリ秒） */
+  MAX_RETRY_BACKOFF: 10000,
+} as const
+
+/**
  * HTTPリクエスト設定
  */
 export const HTTP_CONFIG = {

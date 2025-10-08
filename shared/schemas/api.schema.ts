@@ -5,7 +5,16 @@
  */
 
 import { z } from 'zod'
-import { PetSchema, PetTypeSchema } from '../types/unified'
+
+// PetTypeのZodスキーマ
+const PetTypeSchema = z.enum(['dog', 'cat'])
+
+// 簡易Pet型スキーマ（検証用）
+const SimplePetSchema = z.object({
+  id: z.string(),
+  type: PetTypeSchema,
+  name: z.string(),
+})
 
 /**
  * Crawlerデータ送信スキーマ
@@ -13,7 +22,7 @@ import { PetSchema, PetTypeSchema } from '../types/unified'
 export const CrawlerSubmitSchema = z.object({
   source: z.string().min(1),
   petType: PetTypeSchema,
-  pets: z.array(PetSchema),
+  pets: z.array(SimplePetSchema),
   crawlStats: z.object({
     totalProcessed: z.number().min(0),
     successCount: z.number().min(0),
@@ -53,6 +62,9 @@ export const ScreenshotResultSchema = z.object({
   screenshotKey: z.string().optional(),
   error: z.string().optional(),
 })
+
+// 型エクスポート用
+export { PetTypeSchema }
 
 /**
  * APIレスポンススキーマ

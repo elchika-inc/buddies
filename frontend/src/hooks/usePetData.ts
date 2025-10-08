@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { FrontendPet } from '@/types/pet'
 import { petApi } from '@/services/api'
 import { Location } from '@/components/LocationModal'
+import { API_CONFIG } from '@/config/api'
 
 /**
  * ペットデータの取得と管理を行うカスタムフック
@@ -18,7 +19,7 @@ export function usePetData(selectedLocations?: Location[]) {
    * ペットデータを取得
    */
   const fetchPets = useCallback(
-    async (pageNum: number = 0, limit: number = 50) => {
+    async (pageNum: number = 0, limit: number = API_CONFIG.defaultPageSize) => {
       try {
         setIsLoading(true)
         setError(null)
@@ -47,7 +48,7 @@ export function usePetData(selectedLocations?: Location[]) {
    */
   const loadMore = useCallback(async () => {
     if (!isLoading && hasMore) {
-      await fetchPets(page + 1)
+      await fetchPets(page + 1, API_CONFIG.defaultPageSize)
     }
   }, [fetchPets, page, isLoading, hasMore])
 

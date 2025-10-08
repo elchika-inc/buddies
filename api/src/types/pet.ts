@@ -1,14 +1,39 @@
 /**
  * API用ペット型定義
- * 共通型を拡張してAPI固有の型を定義
+ *
+ * shared/types/pet.tsから型をインポートし、
+ * API固有のリクエスト/レスポンス型を定義
  */
 
-import type { Pet, PetSearchFilters, SortOptions } from '../../../types/shared'
+// 共通の型定義から再エクスポート
+export type {
+  Pet,
+  Dog,
+  Cat,
+  FrontendPet,
+  PetType,
+  PetGender,
+  PetSize,
+  PetWithImages,
+  Image,
+  PetFilter,
+  PetSort,
+  PetResponse,
+  PetsListResponse,
+} from '../../../shared/types/pet'
 
-/**
- * API固有のペット型（必要に応じて拡張）
- */
-export type ApiPet = Pet
+// ユーティリティ関数も再エクスポート
+export {
+  isPet,
+  isDog,
+  isCat,
+  isPetWithImages,
+  isImage,
+  toBool,
+  toFlag,
+  createPet,
+  fromDBRecord,
+} from '../../../shared/types/pet'
 
 /**
  * APIリクエスト型
@@ -19,15 +44,16 @@ export interface CreatePetRequest {
   breed?: string
   age?: string
   gender?: 'male' | 'female' | 'unknown'
+  prefecture?: string
+  city?: string
   location?: string
   description?: string
   imageUrl?: string
-  personality?: string[] | string
-  careRequirements?: string[] | string
+  personality?: string
+  careRequirements?: string
   adoptionFee?: number
   isNeutered?: boolean
   isVaccinated?: boolean
-  healthStatus?: string
   size?: string
   weight?: number
   color?: string
@@ -41,10 +67,19 @@ export type UpdatePetRequest = Partial<CreatePetRequest>
  * API用検索パラメータ
  */
 export interface SearchPetsParams {
-  filters?: PetSearchFilters
-  sort?: SortOptions
+  type?: 'dog' | 'cat'
+  gender?: 'male' | 'female' | 'unknown'
+  prefecture?: string
+  city?: string
   page?: number
   limit?: number
+  sort?:
+    | 'createdAt_desc'
+    | 'createdAt_asc'
+    | 'updatedAt_desc'
+    | 'updatedAt_asc'
+    | 'name_asc'
+    | 'name_desc'
 }
 
 /**
@@ -60,7 +95,3 @@ export interface PetStatistics {
   vaccinatedCount: number
   lastUpdated: string
 }
-
-// 型の再エクスポート
-export type { Pet, PetRecord, PetSearchFilters, SortOptions } from '../../../types/shared'
-export { TypeGuards, TypeConverters } from '../../../types/shared'
