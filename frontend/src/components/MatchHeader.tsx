@@ -31,7 +31,7 @@ export function MatchHeader({
     (pet, index, arr) => arr.findIndex((p) => p.id === pet.id) === index
   )
   const petEmoji = petType === 'dog' ? '🐶' : '🐱'
-  const title = petType === 'dog' ? 'DogMatch' : 'CatMatch'
+  const title = 'Buddies'
 
   return (
     <>

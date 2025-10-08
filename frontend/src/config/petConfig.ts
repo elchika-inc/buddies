@@ -16,7 +16,7 @@ export const getPetType = (): PetType => {
 
 export const petConfig = {
   dog: {
-    title: 'DogMatch',
+    title: 'Buddies',
     description: '保護犬と新しい家族をマッチング',
     primaryColor: 'orange',
     primaryColorHex: '#FFA500',
@@ -24,7 +24,7 @@ export const petConfig = {
     detailRoute: 'dog-detail',
   },
   cat: {
-    title: 'CatMatch',
+    title: 'Buddies',
     description: '保護猫と新しい家族をマッチング',
     primaryColor: 'purple',
     primaryColorHex: '#9333EA',
