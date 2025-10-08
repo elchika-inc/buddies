@@ -8,8 +8,8 @@ import { fileURLToPath } from 'url'
 const R2_PATHS = {
   pets: {
     screenshot: (type, id) => `pets/${type}s/${id}/screenshot.png`,
-    original: (type, id) => `pets/${type}s/${id}/original.jpg`,
-    optimized: (type, id) => `pets/${type}s/${id}/optimized.webp`,
+    optimizedJpeg: (type, id) => `pets/${type}s/${id}/optimized.jpg`,
+    optimizedWebp: (type, id) => `pets/${type}s/${id}/optimized.webp`,
     thumbnail: (type, id) => `pets/${type}s/${id}/thumbnail.webp`,
     medium: (type, id) => `pets/${type}s/${id}/medium.webp`,
     large: (type, id) => `pets/${type}s/${id}/large.webp`,
@@ -160,7 +160,7 @@ async function convertImage(pet) {
         .jpeg({ quality: 85, progressive: true })
         .toBuffer()
 
-      const jpegKey = R2_PATHS.pets.original(pet.type, pet.id)
+      const jpegKey = R2_PATHS.pets.optimizedJpeg(pet.type, pet.id)
 
       await r2Client.send(
         new PutObjectCommand({
@@ -191,7 +191,7 @@ async function convertImage(pet) {
     if (pet.mode === 'all' || pet.mode === 'missing-webp') {
       const webpBuffer = await sharpInstance.clone().webp({ quality: 80 }).toBuffer()
 
-      const webpKey = R2_PATHS.pets.optimized(pet.type, pet.id)
+      const webpKey = R2_PATHS.pets.optimizedWebp(pet.type, pet.id)
 
       await r2Client.send(
         new PutObjectCommand({
