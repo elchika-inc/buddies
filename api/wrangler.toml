@@ -95,6 +95,7 @@ API_BASE_URL = "https://buddies-api.elchika.app"
 API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 PUBLIC_API_KEY = "b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb"
 CRAWLER_API_KEY = "crawler-secret-key-2024"
+API_ADMIN_SECRET = "admin_sk_super_secure_admin_key_2024"
 
 [[env.production.services]]
 binding = "DISPATCHER"

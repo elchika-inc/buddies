@@ -98,16 +98,13 @@ export class ImageController {
       })
 
       // データベースのフラグを更新
+      const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.${extension}`
+
       const updateQuery = isWebp
-        ? 'UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+        ? 'UPDATE pets SET hasWebp = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
         : 'UPDATE pets SET hasJpeg = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
 
-      if (isWebp) {
-        await this.db.prepare(updateQuery).bind(petId).run()
-      } else {
-        const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.${extension}`
-        await this.db.prepare(updateQuery).bind(imageUrl, petId).run()
-      }
+      await this.db.prepare(updateQuery).bind(imageUrl, petId).run()
 
       return c.json({
         success: true,
@@ -420,11 +417,14 @@ export class ImageController {
 
           // データベースのフラグを更新
           if (isWebp) {
+            const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${upload.petId}.webp`
             await this.db
-              .prepare('UPDATE pets SET hasWebp = 1, updatedAt = CURRENT_TIMESTAMP WHERE id = ?')
-              .bind(upload.petId)
+              .prepare(
+                'UPDATE pets SET hasWebp = 1, imageUrl = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?'
+              )
+              .bind(imageUrl, upload.petId)
               .run()
-            console.warn(`[${requestId}] Updated hasWebp flag for ${upload.petId}`)
+            console.warn(`[${requestId}] Updated hasWebp flag and imageUrl for ${upload.petId}`)
           } else {
             const imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${upload.petId}.${isPng ? 'png' : 'jpg'}`
             await this.db
@@ -540,9 +540,15 @@ export class ImageController {
 
           // データベースを更新
           if (hasJpeg || hasWebp) {
-            const imageUrl = hasJpeg
-              ? `https://buddies-api.elchika.app/api/images/${petType}/${petId}.${jpegExists ? 'jpg' : 'png'}`
-              : null
+            // 優先順位: JPEG > PNG > WebP
+            let imageUrl: string
+            if (jpegExists) {
+              imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.jpg`
+            } else if (pngExists) {
+              imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.png`
+            } else {
+              imageUrl = `https://buddies-api.elchika.app/api/images/${petType}/${petId}.webp`
+            }
 
             await this.db
               .prepare(
