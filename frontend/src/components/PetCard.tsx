@@ -34,8 +34,6 @@ const failedImages = new Set<string>()
 type PetCardProps = {
   /** 表示するペット情報 */
   pet: FrontendPet
-  /** カードタップ時のコールバック関数 */
-  onTap?: () => void
   /** 優先的に読み込むかどうか */
   priority?: boolean
   /** お気に入りの評価レベル */
@@ -46,7 +44,7 @@ type PetCardProps = {
  * ペット情報を表示するカードコンポーネント
  * Tinder風のUIでペット情報を魅力的に表示
  */
-export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCardProps) {
+export function PetCard({ pet, priority = false, favoriteRating }: PetCardProps) {
   /** 画像読み込みエラー状態を管理 */
   const [imageError, setImageError] = useState(false)
   /** 画像読み込み完了状態を管理 */
@@ -88,9 +86,6 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
       failedImages.delete(imageUrl)
     }
   }
-
-  // クリック処理はPetSwipeCardで管理するため、ここでは何もしない
-  // onTapはpropsとして渡されるが、PetSwipeCard内で呼ばれる
 
   // ペットが変更されたときに画像読み込み状態を管理
   useEffect(() => {

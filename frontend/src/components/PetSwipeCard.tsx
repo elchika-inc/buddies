@@ -242,7 +242,6 @@ export function PetSwipeCard({
     >
       <PetCard
         pet={pet}
-        onTap={onTap}
         priority={cardIndex < 5} // 最初の5枚のカードを優先読み込み（プリロード）
         favoriteRating={favoriteRating} // 評価レベルを渡す
       />

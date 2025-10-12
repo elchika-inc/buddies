@@ -35,8 +35,6 @@ const KEYBOARD_SHORTCUTS = {
   '?': 'help', // ヘルプ表示
 } as const
 
-type SwipeAction = 'pass' | 'like' | 'superLike' | 'detail' | 'help'
-
 interface UseKeyboardSwipeProps {
   onSwipe: (action: 'pass' | 'like' | 'superLike') => void
   onDetail?: () => void
