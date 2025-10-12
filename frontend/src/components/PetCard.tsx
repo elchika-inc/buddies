@@ -8,6 +8,9 @@ import type { FavoriteRating } from '@/types/favorites'
 // コンポーネントがアンマウントされても情報を保持
 const globalLoadedImages = new Set<string>()
 
+// エラーが発生した画像URLを記録（無限ループ防止）
+const failedImages = new Set<string>()
+
 /**
  * ペットカードコンポーネントのプロパティ
  */
@@ -45,19 +48,31 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
   // 画像がキャッシュ済みかどうか（初回読み込みでない）
   const isImageCached = imageUrl ? globalLoadedImages.has(imageUrl) : false
 
-  /** 画像読み込みエラー時の処理 */
-  const handleImageError = () => {
-    setImageError(true)
+  /** メイン画像読み込みエラー時の処理 */
+  const handleMainImageError = () => {
+    // 既に失敗記録がある画像の場合は無限ループ防止
+    if (imageUrl && !failedImages.has(imageUrl)) {
+      failedImages.add(imageUrl)
+      setImageError(true)
+    }
     setImageLoaded(true) // エラー時も読み込み完了とする
   }
 
-  /** 画像読み込み完了時の処理 */
-  const handleImageLoad = () => {
+  /** メイン画像読み込み完了時の処理 */
+  const handleMainImageLoad = () => {
     setImageLoaded(true)
     // 読み込み完了した画像URLをキャッシュに追加
     if (imageUrl) {
       globalLoadedImages.add(imageUrl)
+      // 成功したら失敗記録から削除
+      failedImages.delete(imageUrl)
     }
+  }
+
+  /** 背景画像読み込み完了時の処理（エラーハンドリングなし） */
+  const handleBgImageLoad = () => {
+    // 背景画像の読み込み完了は特に処理しない
+    // エラーが発生しても無視する
   }
 
   /** カードクリック時の処理 */
@@ -69,16 +84,20 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
 
   // ペットが変更されたときに画像読み込み状態を管理
   useEffect(() => {
+    // エラー状態をリセット
+    setImageError(false)
+
     // 画像URLがキャッシュに存在する場合は即座に表示
     if (imageUrl && globalLoadedImages.has(imageUrl)) {
       setImageLoaded(true)
-      setImageError(false)
+    } else if (imageUrl && failedImages.has(imageUrl)) {
+      // 失敗した画像も即座に表示状態にする（フォールバック画像が表示される）
+      setImageLoaded(true)
     } else {
       // 新しい画像のみ読み込み待ち状態にする
       setImageLoaded(false)
-      setImageError(false)
     }
-  }, [imageUrl, pet.id])
+  }, [pet.id, imageUrl]) // ペットIDまたは画像URLが変更された時に実行
 
   return (
     <div
@@ -98,8 +117,8 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             sizes="100vw"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
+            onLoad={handleBgImageLoad}
+            // onError は設定しない（背景画像の失敗は無視）
             quality={15} // 背景画像は低品質で読み込み高速化（WebPなので軽量）
           />
         )}
@@ -118,8 +137,8 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 60vw, 500px"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
+            onLoad={handleMainImageLoad}
+            onError={handleMainImageError}
             quality={priority ? 90 : 75} // 優先画像は高品質、プリロード画像は中品質
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAFwAAAwEAAAAAAAAAAAAAAAAAAAQFBv/EAB4QAAICAgIDAAAAAAAAAAAAAAECAAMEEQUSEyEi/8QAFwEAAwEAAAAAAAAAAAAAAAAAAAECA//EABcRAQEBAQAAAAAAAAAAAAAAAAEAEQL/2gAMAwEAAhEDEQA/ANPi5L0W4mLjVKz2IXdj6VfRPuXMfkLEy2qtrRUsQOjVnY+SOup5+JzcjFfJsWou1hXq4B9aA16npycvkMdmtxcYXVMdruemtH76isdLqctBBAlo5//Z" // 20x20のぼかし画像
