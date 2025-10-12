@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react'
 import { getPetType } from '@/config/petConfig'
 import type { FavoriteRating } from '@/types/favorites'
 
+// グローバルで読み込み済み画像URLを管理
+// コンポーネントがアンマウントされても情報を保持
+const globalLoadedImages = new Set<string>()
+
 /**
  * ペットカードコンポーネントのプロパティ
  */
@@ -38,6 +42,9 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
   // 画像URL（APIからWebP優先で返される）
   const imageUrl = imageError ? fallbackImage : pet.imageUrl || fallbackImage
 
+  // 画像がキャッシュ済みかどうか（初回読み込みでない）
+  const isImageCached = imageUrl ? globalLoadedImages.has(imageUrl) : false
+
   /** 画像読み込みエラー時の処理 */
   const handleImageError = () => {
     setImageError(true)
@@ -47,6 +54,10 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
   /** 画像読み込み完了時の処理 */
   const handleImageLoad = () => {
     setImageLoaded(true)
+    // 読み込み完了した画像URLをキャッシュに追加
+    if (imageUrl) {
+      globalLoadedImages.add(imageUrl)
+    }
   }
 
   /** カードクリック時の処理 */
@@ -56,11 +67,18 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
     }
   }
 
-  // ペットが変更されたときに画像読み込み状態をリセット
+  // ペットが変更されたときに画像読み込み状態を管理
   useEffect(() => {
-    setImageLoaded(false)
-    setImageError(false)
-  }, [pet.id])
+    // 画像URLがキャッシュに存在する場合は即座に表示
+    if (imageUrl && globalLoadedImages.has(imageUrl)) {
+      setImageLoaded(true)
+      setImageError(false)
+    } else {
+      // 新しい画像のみ読み込み待ち状態にする
+      setImageLoaded(false)
+      setImageError(false)
+    }
+  }, [imageUrl, pet.id])
 
   return (
     <div
@@ -74,9 +92,9 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             src={imageUrl}
             alt=""
             fill
-            className={`object-cover opacity-50 scale-110 blur-xl transition-opacity duration-500 ${
-              imageLoaded ? 'opacity-50' : 'opacity-0'
-            }`}
+            className={`object-cover scale-110 blur-xl ${
+              !isImageCached ? 'transition-opacity duration-500' : ''
+            } ${imageLoaded ? 'opacity-50' : 'opacity-0'}`}
             sizes="100vw"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
@@ -94,9 +112,9 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             src={imageUrl}
             alt={pet.name}
             fill
-            className={`object-contain transition-opacity duration-500 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`object-contain ${
+              !isImageCached ? 'transition-opacity duration-500' : ''
+            } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 60vw, 500px"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
