@@ -1,0 +1,40 @@
+{
+  "name": "@buddies/lp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Buddies Landing Page - 保護犬・保護猫マッチングアプリのランディングページ",
+  "author": "elchika-inc",
+  "license": "ISC",
+  "scripts": {
+    "dev": "next dev -p 3005",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "screenshots": "node scripts/take-screenshots.js",
+    "deploy": "npm run build && npx wrangler pages deploy out --project-name=buddies-lp"
+  },
+  "dependencies": {
+    "@buddies/shared": "*",
+    "next": "14.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.263.1",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^1.14.0"
+  },
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.14",
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.16.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.6.0"
+  }
+}

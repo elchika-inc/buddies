@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { FrontendPet } from '@/types/pet'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getPetType } from '@/config/petConfig'
 import type { FavoriteRating } from '@/types/favorites'
 
@@ -25,6 +25,8 @@ type PetCardProps = {
 export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCardProps) {
   /** 画像読み込みエラー状態を管理 */
   const [imageError, setImageError] = useState(false)
+  /** 画像読み込み完了状態を管理 */
+  const [imageLoaded, setImageLoaded] = useState(false)
   /** ペットタイプ（犬/猫）を取得 */
   const petType = getPetType()
   // フォールバック画像URL（ペットタイプ別）
@@ -39,6 +41,12 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
   /** 画像読み込みエラー時の処理 */
   const handleImageError = () => {
     setImageError(true)
+    setImageLoaded(true) // エラー時も読み込み完了とする
+  }
+
+  /** 画像読み込み完了時の処理 */
+  const handleImageLoad = () => {
+    setImageLoaded(true)
   }
 
   /** カードクリック時の処理 */
@@ -48,22 +56,31 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
     }
   }
 
+  // ペットが変更されたときに画像読み込み状態をリセット
+  useEffect(() => {
+    setImageLoaded(false)
+    setImageError(false)
+  }, [pet.id])
+
   return (
     <div
       className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer"
       onClick={handleClick}
     >
       {/* ぼかし背景画像 - CSS backdropFilterで最適化 */}
-      <div className="absolute inset-0 bg-gray-100">
+      <div className="absolute inset-0 bg-white">
         {imageUrl && (
           <Image
             src={imageUrl}
             alt=""
             fill
-            className="object-cover opacity-30 scale-110 blur-xl"
+            className={`object-cover opacity-50 scale-110 blur-xl transition-opacity duration-500 ${
+              imageLoaded ? 'opacity-50' : 'opacity-0'
+            }`}
             sizes="100vw"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
+            onLoad={handleImageLoad}
             onError={handleImageError}
             quality={15} // 背景画像は低品質で読み込み高速化（WebPなので軽量）
           />
@@ -77,20 +94,23 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             src={imageUrl}
             alt={pet.name}
             fill
-            className="object-contain"
+            className={`object-contain transition-opacity duration-500 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 60vw, 500px"
             loading={priority ? 'eager' : 'lazy'}
             priority={priority}
+            onLoad={handleImageLoad}
             onError={handleImageError}
             quality={priority ? 90 : 75} // 優先画像は高品質、プリロード画像は中品質
             placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=" // プレースホルダー用のぼかし画像
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAFwAAAwEAAAAAAAAAAAAAAAAAAAQFBv/EAB4QAAICAgIDAAAAAAAAAAAAAAECAAMEEQUSEyEi/8QAFwEAAwEAAAAAAAAAAAAAAAAAAAECA//EABcRAQEBAQAAAAAAAAAAAAAAAAEAEQL/2gAMAwEAAhEDEQA/ANPi5L0W4mLjVKz2IXdj6VfRPuXMfkLEy2qtrRUsQOjVnY+SOup5+JzcjFfJsWou1hXq4B9aA16npycvkMdmtxcYXVMdruemtH76isdLqctBBAlo5//Z" // 20x20のぼかし画像
           />
         )}
       </div>
 
       {/* グラデーションオーバーレイ */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent pointer-events-none" />
 
       {/* お気に入りバッジ */}
       {favoriteRating && (

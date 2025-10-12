@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* 見出しやボタンテキストは不自然な改行を防ぐ */
+  h1, h2, h3, h4, h5, h6, button {
+    word-break: keep-all;
+  }
+
+  /* アンチエイリアシング */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  /* ボタンスタイル */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-primary-500 rounded-full hover:bg-primary-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-secondary-500 rounded-full hover:bg-secondary-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105;
+  }
+
+  /* セクションコンテナ */
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+  }
+
+  /* グラデーション背景 */
+  .gradient-bg-orange {
+    @apply bg-gradient-to-br from-orange-50 via-white to-yellow-50;
+  }
+
+  .gradient-bg-purple {
+    @apply bg-gradient-to-br from-purple-50 via-white to-pink-50;
+  }
+}
+
+@layer utilities {
+  /* テキストグラデーション */
+  .text-gradient-orange {
+    @apply bg-gradient-to-r from-orange-500 to-yellow-500 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent;
+  }
+}

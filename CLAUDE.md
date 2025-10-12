@@ -15,6 +15,7 @@ Buddiesは保護犬・保護猫とユーザーをマッチングするWebアプ�
 - `crawler/` - ペット情報収集用クローラー (Cloudflare Workers)
 - `dispatcher/` - タスク分散処理サービス (Cloudflare Workers)
 - `admin/` - データベース管理画面 (Cloudflare Workers + React)
+- `lp/` - ランディングページ (Next.js 14 静的エクスポート + Cloudflare Pages)
 - `shared/` - 共通の型定義とユーティリティ
 
 ### 技術スタック
@@ -43,6 +44,7 @@ npm run dev:api      # API (Wrangler dev --local)
 npm run dev:crawler  # クローラー
 npm run dev:dispatcher
 npm run dev:admin    # 管理画面 (port 8788)
+npm run dev:lp       # ランディングページ (port 3005)
 ```
 
 ### ビルド・テスト・リント
@@ -85,6 +87,9 @@ npm run db:seed
 npm run deploy:dog   # 犬用サイト
 npm run deploy:cat   # 猫用サイト
 
+# LPデプロイ
+npm run deploy:lp    # ランディングページ (buddies.elchika.app)
+
 # Workers全体デプロイ
 npm run deploy:workers
 
@@ -95,9 +100,10 @@ npm run deploy:all
 ### ログ監視
 
 ```bash
-npm run tail              # API ログ
+npm run tail:api          # API ログ
 npm run tail:crawler      # クローラーログ
 npm run tail:dispatcher   # ディスパッチャーログ
+npm run tail:admin        # 管理画面ログ
 ```
 
 ## 重要な設定ファイル
@@ -149,3 +155,58 @@ npm run clean:dist
 # 完全クリーンアップ
 npm run clean:all
 ```
+
+### 画像処理管理
+
+```bash
+# 対話型UI（推奨）
+./scripts/manage-images.sh
+
+# 画像ステータス確認
+./scripts/check-image-status.sh
+
+# スクリーンショット取得
+./scripts/trigger-screenshot.sh 50
+
+# 画像変換
+./scripts/trigger-conversion.sh all 50
+```
+
+詳細は [**docs**/MANUAL_TRIGGER_GUIDE.md](__docs__/MANUAL_TRIGGER_GUIDE.md) を参照してください。
+
+### ランディングページ（LP）
+
+```bash
+# LP開発サーバー起動
+npm run dev:lp
+
+# 本番環境からスクリーンショット取得（Playwright）
+npm run lp:screenshots
+
+# LPビルド（静的HTMLエクスポート）
+npm run build:lp
+
+# LPデプロイ（Cloudflare Pages）
+npm run deploy:lp
+```
+
+#### スクリーンショット取得
+
+本番環境（buddies-dogs.elchika.app / buddies-cats.elchika.app）から、Playwrightでスマホサイズのスクリーンショットを自動取得します。
+
+取得されるスクリーンショット:
+
+- `lp/public/screenshots/dog/` - 保護犬アプリの画面 (hero, swipe, detail, favorites, location)
+- `lp/public/screenshots/cat/` - 保護猫アプリの画面 (hero, swipe, detail, favorites, location)
+
+#### SEO対策
+
+LPは完璧なSEO対策を実装しています:
+
+- ✅ メタデータ（title, description, OGP, Twitter Card）
+- ✅ 構造化データ（JSON-LD: Organization, WebApplication, FAQPage）
+- ✅ sitemap.xml, robots.txt
+- ✅ セマンティックHTML、アクセシビリティ対応
+- ✅ 完全な静的HTML生成（JavaScriptなしでも表示可能）
+
+詳細は [lp/README.md](lp/README.md) を参照してください。

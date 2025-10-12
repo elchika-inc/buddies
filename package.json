@@ -23,7 +23,8 @@
     "crawler",
     "dispatcher",
     "admin",
-    "shared"
+    "shared",
+    "lp"
   ],
   "engines": {
     "node": ">=18.0.0",
@@ -39,6 +40,7 @@
     "dev:crawler": "npm run -w @buddies/crawler dev",
     "dev:dispatcher": "npm run -w @buddies/dispatcher dev",
     "dev:admin": "npm run -w @buddies/admin dev",
+    "dev:lp": "npm run -w @buddies/lp dev",
     "// ========================================": "ビルド",
     "build": "npm run build --workspaces --if-present",
     "build:app": "npm run -w @buddies/frontend build",
@@ -46,6 +48,7 @@
     "build:crawler": "npm run -w @buddies/crawler build",
     "build:dispatcher": "npm run -w @buddies/dispatcher build",
     "build:admin": "npm run -w @buddies/admin build",
+    "build:lp": "npm run -w @buddies/lp build",
     "// ========================================": "品質チェック",
     "test": "npm run test --workspaces --if-present",
     "test:app": "npm run -w @buddies/frontend test",
@@ -74,6 +77,7 @@
     "deploy:crawler": "npm run -w @buddies/crawler deploy",
     "deploy:dispatcher": "npm run -w @buddies/dispatcher deploy",
     "deploy:admin": "npm run -w @buddies/admin deploy",
+    "deploy:lp": "npm run -w @buddies/lp deploy",
     "deploy:frontend": "concurrently 'npm:deploy:dog' 'npm:deploy:cat'",
     "deploy:workers": "concurrently 'npm:deploy:api' 'npm:deploy:crawler' 'npm:deploy:dispatcher' 'npm:deploy:admin'",
     "deploy:all": "npm run deploy:workers && npm run deploy:frontend",
@@ -101,7 +105,14 @@
     "prepare": "husky",
     "// ========================================": "開発ツール",
     "check:deps": "npm outdated || true",
-    "check:security": "npm audit --audit-level=moderate"
+    "check:security": "npm audit --audit-level=moderate",
+    "// ========================================": "画像処理管理",
+    "images": "tsx scripts/ts/manage-images.ts",
+    "images:status": "tsx scripts/ts/check-image-status.ts",
+    "images:screenshot": "tsx scripts/ts/trigger-screenshot.ts",
+    "images:convert": "tsx scripts/ts/trigger-conversion.ts",
+    "// ========================================": "LP関連",
+    "lp:screenshots": "npm run -w @buddies/lp screenshots"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250906.0",
