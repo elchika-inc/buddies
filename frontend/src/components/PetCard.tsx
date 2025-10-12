@@ -89,12 +89,8 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
     }
   }
 
-  /** カードクリック時の処理 */
-  const handleClick = () => {
-    if (onTap) {
-      onTap()
-    }
-  }
+  // クリック処理はPetSwipeCardで管理するため、ここでは何もしない
+  // onTapはpropsとして渡されるが、PetSwipeCard内で呼ばれる
 
   // ペットが変更されたときに画像読み込み状態を管理
   useEffect(() => {
@@ -135,10 +131,7 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
   }, [pet.id, fallbackImage]) // ペットIDとfallbackImageが変更された時のみ実行
 
   return (
-    <div
-      className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer"
-      onClick={handleClick}
-    >
+    <div className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer">
       {/* ぼかし背景画像 - 雰囲気を演出 */}
       <div className="absolute inset-0 bg-gray-100">
         {imageUrl && (

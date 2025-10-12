@@ -5,10 +5,13 @@ import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
 import { LocationModal, Location } from './LocationModal'
 import { PetDetailModal } from './PetDetailModal'
+import { KeyboardHelpModal } from './KeyboardHelpModal'
+import { KeyboardHint } from './KeyboardHint'
 import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { usePetData } from '@/hooks/usePetData'
 import { useModals } from '@/hooks/useModals'
 import { useFavorites } from '@/hooks/useFavorites'
+import { useKeyboardSwipe } from '@/hooks/useKeyboardSwipe'
 import { useState, useCallback } from 'react'
 import { getPetType } from '@/config/petConfig'
 
@@ -16,6 +19,7 @@ export function PetMatchApp() {
   const petType = getPetType()
 
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
 
   // カスタムフックで状態管理を分離（地域フィルタを渡す）
   const { pets, isLoading, reset: resetPets } = usePetData(selectedLocations)
@@ -78,6 +82,14 @@ export function PetMatchApp() {
     setTimeout(() => setButtonSwipeDirection(null), 100)
     handleSwipe(direction)
   }
+
+  // キーボード操作の設定
+  useKeyboardSwipe({
+    onSwipe: triggerButtonSwipe,
+    onDetail: currentPet ? () => openPetDetailModal(currentPet) : undefined,
+    onHelp: () => setShowKeyboardHelp((prev) => !prev),
+    disabled: !currentPet || detailModalOpen || locationModalOpen,
+  })
 
   // リセット処理（全データ閲覧完了時のみ呼ばれる）
   const handleReset = () => {
@@ -192,6 +204,10 @@ export function PetMatchApp() {
       {selectedPet && (
         <PetDetailModal pet={selectedPet} isOpen={detailModalOpen} onClose={closePetDetailModal} />
       )}
+
+      <KeyboardHelpModal isOpen={showKeyboardHelp} onClose={() => setShowKeyboardHelp(false)} />
+
+      <KeyboardHint />
     </div>
   )
 }

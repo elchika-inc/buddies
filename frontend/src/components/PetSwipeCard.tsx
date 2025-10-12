@@ -29,14 +29,23 @@ export function PetSwipeCard({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [isExiting, setIsExiting] = useState(false)
   const [exitDirection, setExitDirection] = useState<SwipeDirection | null>(null)
+  const [hasDragged, setHasDragged] = useState(false) // ドラッグが実際に移動したかどうか
+  const [dragStartTime, setDragStartTime] = useState(0) // ドラッグ開始時間
 
   const { getSwipeDirection, getIndicatorOpacity } = useSwipeGesture()
+
+  // クリックとドラッグを判定するための閾値（ピクセル）
+  const CLICK_THRESHOLD = 5
+  // クリックとドラッグを判定するための時間閾値（ミリ秒）
+  const CLICK_TIME_THRESHOLD = 200
 
   // ドラッグ操作のハンドラー
   const handleDragStart = useCallback(
     (_clientX: number, _clientY: number) => {
       if (!isTopCard) return
       setIsDragging(true)
+      setHasDragged(false) // ドラッグ開始時はまだ移動していない
+      setDragStartTime(Date.now()) // ドラッグ開始時間を記録
     },
     [isTopCard]
   )
@@ -50,14 +59,33 @@ export function PetSwipeCard({
         y: clientY - startY,
       }
       setDragOffset(newOffset)
+
+      // ドラッグの移動量が閾値を超えたかチェック
+      const dragDistance = Math.sqrt(newOffset.x ** 2 + newOffset.y ** 2)
+      if (!hasDragged && dragDistance > CLICK_THRESHOLD) {
+        setHasDragged(true) // 実際にドラッグが発生した
+      }
     },
-    [isDragging, isTopCard]
+    [isDragging, isTopCard, hasDragged, CLICK_THRESHOLD]
   )
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging || !isTopCard) return
 
     setIsDragging(false)
+    const dragDuration = Date.now() - dragStartTime
+
+    // ドラッグがほとんど動いていない & 短時間の場合はクリックとして処理
+    const dragDistance = Math.sqrt(dragOffset.x ** 2 + dragOffset.y ** 2)
+    if (!hasDragged && dragDistance <= CLICK_THRESHOLD && dragDuration < CLICK_TIME_THRESHOLD) {
+      // クリック（タップ）として処理
+      if (onTap) {
+        onTap()
+      }
+      setDragOffset({ x: 0, y: 0 })
+      setHasDragged(false)
+      return
+    }
 
     const direction = getSwipeDirection(dragOffset.x, dragOffset.y)
     if (direction) {
@@ -68,18 +96,34 @@ export function PetSwipeCard({
         setIsExiting(false)
         setExitDirection(null)
         setDragOffset({ x: 0, y: 0 })
+        setHasDragged(false)
       }, 300)
     } else {
       // スワイプ閾値未満の場合は元に戻す
       setDragOffset({ x: 0, y: 0 })
+      setHasDragged(false)
     }
-  }, [isDragging, isTopCard, dragOffset, getSwipeDirection, onSwipe])
+  }, [
+    isDragging,
+    isTopCard,
+    dragOffset,
+    getSwipeDirection,
+    onSwipe,
+    hasDragged,
+    dragStartTime,
+    onTap,
+    CLICK_THRESHOLD,
+    CLICK_TIME_THRESHOLD,
+  ])
 
   // マウスイベント
   const [startPos, setStartPos] = useState({ x: 0, y: 0 })
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      e.preventDefault() // デフォルトのドラッグ動作を防ぐ
+      e.stopPropagation() // 親要素へのイベント伝播を防ぐ
+
       const startX = e.clientX
       const startY = e.clientY
       setStartPos({ x: startX, y: startY })
@@ -104,6 +148,8 @@ export function PetSwipeCard({
   // タッチイベント
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
+      e.stopPropagation() // 親要素へのイベント伝播を防ぐ
+
       const touch = e.touches[0]
       if (!touch) return
       const startX = touch.clientX
@@ -133,6 +179,8 @@ export function PetSwipeCard({
     setIsDragging(false)
     setIsExiting(false)
     setExitDirection(null)
+    setHasDragged(false)
+    setDragStartTime(0)
   }, [pet.id, isTopCard])
 
   // ボタンスワイプの処理
