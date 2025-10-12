@@ -11,6 +11,23 @@ const globalLoadedImages = new Set<string>()
 // エラーが発生した画像URLを記録（無限ループ防止）
 const failedImages = new Set<string>()
 
+// バックグラウンドで画像をプリフェッチ
+export function prefetchImage(url: string) {
+  if (!url || globalLoadedImages.has(url) || failedImages.has(url)) {
+    return
+  }
+
+  // ブラウザの画像プリロード機能を使用
+  const img = document.createElement('img')
+  img.src = url
+  img.onload = () => {
+    globalLoadedImages.add(url)
+  }
+  img.onerror = () => {
+    failedImages.add(url)
+  }
+}
+
 /**
  * ペットカードコンポーネントのプロパティ
  */
@@ -23,13 +40,21 @@ type PetCardProps = {
   priority?: boolean
   /** お気に入りの評価レベル */
   favoriteRating?: FavoriteRating | null
+  /** カードのインデックス（品質調整用） */
+  cardIndex?: number
 }
 
 /**
  * ペット情報を表示するカードコンポーネント
  * Tinder風のUIでペット情報を魅力的に表示
  */
-export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCardProps) {
+export function PetCard({
+  pet,
+  onTap,
+  priority = false,
+  favoriteRating,
+  cardIndex = 0,
+}: PetCardProps) {
   /** 画像読み込みエラー状態を管理 */
   const [imageError, setImageError] = useState(false)
   /** 画像読み込み完了状態を管理 */
@@ -47,6 +72,14 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
 
   // 画像がキャッシュ済みかどうか（初回読み込みでない）
   const isImageCached = imageUrl ? globalLoadedImages.has(imageUrl) : false
+
+  // カードインデックスに基づく段階的な品質設定
+  const getImageQuality = () => {
+    if (cardIndex <= 2) return 90 // 最初の3枚は最高品質
+    if (cardIndex <= 5) return 80 // 次の3枚は高品質
+    if (cardIndex <= 8) return 70 // 次の3枚は中品質
+    return 60 // それ以降は低品質
+  }
 
   /** メイン画像読み込みエラー時の処理 */
   const handleMainImageError = () => {
@@ -69,12 +102,6 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
     }
   }
 
-  /** 背景画像読み込み完了時の処理（エラーハンドリングなし） */
-  const handleBgImageLoad = () => {
-    // 背景画像の読み込み完了は特に処理しない
-    // エラーが発生しても無視する
-  }
-
   /** カードクリック時の処理 */
   const handleClick = () => {
     if (onTap) {
@@ -84,45 +111,49 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
 
   // ペットが変更されたときに画像読み込み状態を管理
   useEffect(() => {
-    // エラー状態をリセット
-    setImageError(false)
+    // ペットのオリジナル画像URL（エラー前のURL）
+    const originalImageUrl = pet.imageUrl || fallbackImage
+    let timeoutId: NodeJS.Timeout | undefined
 
     // 画像URLがキャッシュに存在する場合は即座に表示
-    if (imageUrl && globalLoadedImages.has(imageUrl)) {
+    if (originalImageUrl && globalLoadedImages.has(originalImageUrl)) {
       setImageLoaded(true)
-    } else if (imageUrl && failedImages.has(imageUrl)) {
-      // 失敗した画像も即座に表示状態にする（フォールバック画像が表示される）
+      setImageError(false)
+    } else if (originalImageUrl && failedImages.has(originalImageUrl)) {
+      // 失敗した画像は即座にエラー状態＋表示状態にする
+      setImageError(true)
       setImageLoaded(true)
     } else {
       // 新しい画像のみ読み込み待ち状態にする
       setImageLoaded(false)
+      setImageError(false)
+
+      // 5秒後にタイムアウトしてフォールバック画像を表示
+      timeoutId = setTimeout(() => {
+        // タイムアウト時に再度キャッシュをチェック
+        if (!globalLoadedImages.has(originalImageUrl) && !failedImages.has(originalImageUrl)) {
+          console.warn(`Image loading timeout for pet ${pet.id}`)
+          failedImages.add(originalImageUrl)
+          setImageError(true)
+          setImageLoaded(true)
+        }
+      }, 5000)
     }
-  }, [pet.id, imageUrl]) // ペットIDまたは画像URLが変更された時に実行
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [pet.id, fallbackImage]) // ペットIDとfallbackImageが変更された時のみ実行
 
   return (
     <div
       className="relative w-full h-full rounded-2xl shadow-lg overflow-hidden bg-white cursor-pointer"
       onClick={handleClick}
     >
-      {/* ぼかし背景画像 - CSS backdropFilterで最適化 */}
-      <div className="absolute inset-0 bg-white">
-        {imageUrl && (
-          <Image
-            src={imageUrl}
-            alt=""
-            fill
-            className={`object-cover scale-110 blur-xl ${
-              !isImageCached ? 'transition-opacity duration-500' : ''
-            } ${imageLoaded ? 'opacity-50' : 'opacity-0'}`}
-            sizes="100vw"
-            loading={priority ? 'eager' : 'lazy'}
-            priority={priority}
-            onLoad={handleBgImageLoad}
-            // onError は設定しない（背景画像の失敗は無視）
-            quality={15} // 背景画像は低品質で読み込み高速化（WebPなので軽量）
-          />
-        )}
-      </div>
+      {/* グラデーション背景 - 画像リクエストを削減 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100" />
 
       {/* メイン画像 */}
       <div className="relative w-full h-full">
@@ -139,7 +170,7 @@ export function PetCard({ pet, onTap, priority = false, favoriteRating }: PetCar
             priority={priority}
             onLoad={handleMainImageLoad}
             onError={handleMainImageError}
-            quality={priority ? 90 : 75} // 優先画像は高品質、プリロード画像は中品質
+            quality={getImageQuality()} // カードインデックスに基づく段階的な品質
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAUABQDASIAAhEBAxEB/8QAFwAAAwEAAAAAAAAAAAAAAAAAAAQFBv/EAB4QAAICAgIDAAAAAAAAAAAAAAECAAMEEQUSEyEi/8QAFwEAAwEAAAAAAAAAAAAAAAAAAAECA//EABcRAQEBAQAAAAAAAAAAAAAAAAEAEQL/2gAMAwEAAhEDEQA/ANPi5L0W4mLjVKz2IXdj6VfRPuXMfkLEy2qtrRUsQOjVnY+SOup5+JzcjFfJsWou1hXq4B9aA16npycvkMdmtxcYXVMdruemtH76isdLqctBBAlo5//Z" // 20x20のぼかし画像
           />

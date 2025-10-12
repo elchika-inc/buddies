@@ -5,11 +5,12 @@ import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
 import { LocationModal, Location } from './LocationModal'
 import { PetDetailModal } from './PetDetailModal'
+import { prefetchImage } from './PetCard'
 import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { usePetData } from '@/hooks/usePetData'
 import { useModals } from '@/hooks/useModals'
 import { useFavorites } from '@/hooks/useFavorites'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { getPetType } from '@/config/petConfig'
 
 export function PetMatchApp() {
@@ -68,9 +69,27 @@ export function PetMatchApp() {
   const nextPet =
     currentIndex >= 0 && currentIndex < pets.length - 1 ? pets[currentIndex + 1] : null
 
-  // プリロード用のペット（次の2-7枚、計6枚）
+  // プリロード用のペット（次の2-11枚、計10枚）
   const preloadPets =
-    currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 8).filter(Boolean) : []
+    currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 12).filter(Boolean) : []
+
+  // バックグラウンドで追加の画像をプリフェッチ（12-20枚目）
+  useEffect(() => {
+    if (currentIndex >= 0) {
+      // 少し遅延してから背景でプリフェッチ
+      const timeoutId = setTimeout(() => {
+        const backgroundPets = pets.slice(currentIndex + 12, currentIndex + 20)
+        backgroundPets.forEach((pet) => {
+          if (pet?.imageUrl) {
+            prefetchImage(pet.imageUrl)
+          }
+        })
+      }, 2000) // 2秒後に開始
+
+      return () => clearTimeout(timeoutId)
+    }
+    return undefined
+  }, [currentIndex, pets])
 
   // ボタンスワイプのトリガー
   const triggerButtonSwipe = (direction: 'like' | 'pass' | 'superLike') => {

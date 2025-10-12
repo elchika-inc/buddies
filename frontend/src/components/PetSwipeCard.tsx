@@ -195,8 +195,9 @@ export function PetSwipeCard({
       <PetCard
         pet={pet}
         onTap={onTap}
-        priority={cardIndex < 3} // 最初の3枚のカードを優先読み込み（プリロード）
+        priority={cardIndex < 8} // 最初の8枚のカードを優先読み込み（プリロード）
         favoriteRating={favoriteRating} // 評価レベルを渡す
+        cardIndex={cardIndex} // カードインデックスを渡して段階的品質を適用
       />
 
       {showIndicator && (
