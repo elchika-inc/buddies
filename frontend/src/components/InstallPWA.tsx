@@ -21,7 +21,7 @@ export default function InstallPWA() {
     // PWAがすでにインストールされているかチェック
     const checkStandalone = () => {
       const standalone = window.matchMedia('(display-mode: standalone)').matches
-      const iosStandalone = (window.navigator as any).standalone === true
+      const iosStandalone = window.navigator.standalone === true
       setIsStandalone(standalone || iosStandalone)
     }
 

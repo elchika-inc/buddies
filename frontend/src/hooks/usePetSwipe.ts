@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { FrontendPet } from '../types/pet'
-import { SWIPE_CONFIG } from '../config/swipe'
+import { FrontendPet } from '@/types/pet'
+import { SWIPE_CONFIG } from '@/config/swipe'
 
 /** スワイプ方向の定義 */
 export type SwipeDirection = 'like' | 'pass' | 'superLike'
@@ -256,68 +256,4 @@ export function useSwipeGesture() {
   }
 }
 
-/**
- * ローカルストレージ永続化Hook
- * スワイプ履歴を保存・復元
- */
-export function useSwipeHistory(key: string) {
-  /** ローカルストレージから履歴を復元、失敗時は初期値を使用 */
-  const [history, setHistory] = useState<SwipeState>(() => {
-    try {
-      const saved = localStorage.getItem(key)
-      return saved
-        ? JSON.parse(saved)
-        : {
-            currentIndex: 0,
-            likes: [],
-            passes: [],
-            superLikes: [],
-          }
-    } catch {
-      // パースエラー時は初期状態を返す
-      return {
-        currentIndex: 0,
-        likes: [],
-        passes: [],
-        superLikes: [],
-      }
-    }
-  })
-
-  /**
-   * 履歴をローカルストレージに保存
-   * @param state 保存するスワイプ状態
-   */
-  const saveHistory = useCallback(
-    (state: SwipeState) => {
-      try {
-        localStorage.setItem(key, JSON.stringify(state))
-        setHistory(state)
-      } catch (error) {
-        console.error('Failed to save history:', error)
-      }
-    },
-    [key]
-  )
-
-  /** 履歴をクリア（初期状態に戻す） */
-  const clearHistory = useCallback(() => {
-    try {
-      localStorage.removeItem(key)
-      setHistory({
-        currentIndex: 0,
-        likes: [],
-        passes: [],
-        superLikes: [],
-      })
-    } catch (error) {
-      console.error('Failed to clear history:', error)
-    }
-  }, [key])
-
-  return {
-    history,
-    saveHistory,
-    clearHistory,
-  }
-}
+// 未使用のuseSwipeHistory関数を削除

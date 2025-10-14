@@ -46,6 +46,7 @@ export function transformToLegacyFormat<T>(unifiedResponse: UnifiedApiResponse<T
     case 'petList':
       return transformPetListResponse(dataObj['pets'] as FrontendPet[], meta)
     case 'singlePet':
+      // 型ガードで確認済み、unknownを経由してキャスト
       return transformSinglePetResponse(dataObj as unknown as FrontendPet)
     case 'prefectures':
       return transformPrefecturesResponse(dataObj['prefectures'] as string[])

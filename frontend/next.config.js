@@ -45,10 +45,21 @@ const nextConfig = {
         pathname: '/user_file/**',
       },
       {
+        protocol: 'https',
+        hostname: 'buddies-api.elchika.app',
+        pathname: '/api/images/**',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
         port: '8787',
         pathname: '/images/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '9789',
+        pathname: '/api/images/**',
       },
     ],
   },

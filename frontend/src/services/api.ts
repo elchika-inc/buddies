@@ -3,10 +3,10 @@
  * ペット情報の取得を担当するサービス層
  */
 
-import { FrontendPet } from '../types/pet'
-import type { Pet as SharedPet } from '../../../shared/types'
-import { getPetType } from '../config/petConfig'
-import { Location } from '../components/LocationModal'
+import { FrontendPet } from '@/types/pet'
+import type { Pet as SharedPet } from '@buddies/shared/types'
+import { getPetType } from '@/config/petConfig'
+import { Location } from '@/components/LocationModal'
 
 /** APIのベースURL（環境変数から取得、デフォルトは本番環境） */
 const API_BASE_URL = process.env['NEXT_PUBLIC_BUDDIES_API_URL'] || 'https://buddies-api.elchika.app'
