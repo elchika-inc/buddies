@@ -16,14 +16,10 @@ describe('LocationRegion', () => {
     prefectures: ['東京都', '神奈川県'],
     isExpanded: false,
     isAllSelected: false,
-    expandedPrefectures: [],
     onToggleRegion: jest.fn(),
     onToggleRegionAll: jest.fn(),
-    onTogglePrefecture: jest.fn(),
-    onTogglePrefectureAll: jest.fn(),
     onToggleLocation: jest.fn(),
     isLocationSelected: jest.fn(() => false),
-    isPrefectureAllSelected: jest.fn(() => false),
   }
 
   beforeEach(() => {
@@ -52,7 +48,7 @@ describe('LocationRegion', () => {
     render(<LocationRegion {...defaultProps} />)
 
     const checkbox = screen.getAllByRole('checkbox')[0]
-    fireEvent.change(checkbox)
+    fireEvent.click(checkbox)
 
     expect(defaultProps.onToggleRegionAll).toHaveBeenCalled()
   })
@@ -80,15 +76,6 @@ describe('LocationRegion', () => {
     expect(screen.getByText('神奈川県')).toBeInTheDocument()
   })
 
-  it('都道府県をクリックするとコールバックが呼ばれる', () => {
-    render(<LocationRegion {...defaultProps} isExpanded={true} />)
-
-    const prefectureButton = screen.getByText('東京都')
-    fireEvent.click(prefectureButton)
-
-    expect(defaultProps.onTogglePrefecture).toHaveBeenCalledWith('東京都')
-  })
-
   it('都道府県のチェックボックスをクリックするとコールバックが呼ばれる', () => {
     render(<LocationRegion {...defaultProps} isExpanded={true} />)
 
@@ -96,40 +83,20 @@ describe('LocationRegion', () => {
     // 最初が地域、次が都道府県のチェックボックス
     fireEvent.click(prefectureCheckboxes[1])
 
-    expect(defaultProps.onTogglePrefectureAll).toHaveBeenCalledWith('東京都')
-  })
-
-  it('都道府県が展開されている場合は市区町村が表示される', () => {
-    render(<LocationRegion {...defaultProps} isExpanded={true} expandedPrefectures={['東京都']} />)
-
-    expect(screen.getByText('すべて')).toBeInTheDocument()
-    expect(screen.getByText('渋谷区')).toBeInTheDocument()
-    expect(screen.getByText('新宿区')).toBeInTheDocument()
-    expect(screen.getByText('中央区')).toBeInTheDocument()
-  })
-
-  it('市区町村をクリックするとコールバックが呼ばれる', () => {
-    render(<LocationRegion {...defaultProps} isExpanded={true} expandedPrefectures={['東京都']} />)
-
-    const cityCheckbox = screen.getByLabelText('渋谷区')
-    fireEvent.change(cityCheckbox)
-
-    expect(defaultProps.onToggleLocation).toHaveBeenCalled()
+    expect(defaultProps.onToggleLocation).toHaveBeenCalledWith({ prefecture: '東京都', city: '' })
   })
 
   it('選択状態が正しく反映される', () => {
     const props = {
       ...defaultProps,
       isAllSelected: true,
-      isPrefectureAllSelected: jest.fn((prefecture) => prefecture === '東京都'),
-      isLocationSelected: jest.fn((location) => location.city === '渋谷区'),
+      isLocationSelected: jest.fn((location) => location.prefecture === '東京都'),
     }
 
-    render(<LocationRegion {...props} isExpanded={true} expandedPrefectures={['東京都']} />)
+    render(<LocationRegion {...props} isExpanded={true} />)
 
     const checkboxes = screen.getAllByRole('checkbox')
     expect(checkboxes[0]).toBeChecked() // 地域
     expect(checkboxes[1]).toBeChecked() // 東京都
-    expect(checkboxes[3]).toBeChecked() // 渋谷区
   })
 })

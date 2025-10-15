@@ -6,7 +6,7 @@
     "dev": "wrangler dev --port 8788",
     "build": "wrangler build --env production",
     "deploy": "wrangler deploy --env production",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No tests for admin\"",
     "type-check": "tsc --noEmit"
   },
   "keywords": [],
