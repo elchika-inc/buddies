@@ -42,6 +42,39 @@ uiRoute.get('/', async (c) => {
         </div>
       </div>
 
+      <!-- ヘルスチェックセクション -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">サービスヘルスステータス</h2>
+
+        <div id="healthError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg"></div>
+
+        <div id="healthLoading" class="text-center py-8">
+          <div class="inline-flex items-center">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            ヘルスチェック中...
+          </div>
+        </div>
+
+        <div id="healthContent" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Workers -->
+          <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Workers</h3>
+            <div id="workersHealth" class="space-y-2"></div>
+          </div>
+
+          <!-- Pages -->
+          <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Pages</h3>
+            <div id="pagesHealth" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div id="healthSummary" class="hidden mt-4 text-sm text-gray-600 text-center"></div>
+      </div>
+
       <div class="mb-8">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">管理機能</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -87,6 +120,86 @@ uiRoute.get('/', async (c) => {
   </div>
 
   <script>
+    // ヘルスチェック取得
+    async function fetchHealthCheck() {
+      const healthError = document.getElementById('healthError');
+      const healthLoading = document.getElementById('healthLoading');
+      const healthContent = document.getElementById('healthContent');
+      const healthSummary = document.getElementById('healthSummary');
+
+      healthError.classList.add('hidden');
+      healthLoading.classList.remove('hidden');
+      healthContent.classList.add('hidden');
+      healthSummary.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/health/check');
+        if (!response.ok) {
+          throw new Error('ヘルスチェックに失敗しました');
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message || 'ヘルスチェックエラー');
+        }
+
+        const health = result.data;
+
+        // Workersステータス表示
+        const workersHealth = document.getElementById('workersHealth');
+        workersHealth.innerHTML = health.workers.map(worker => {
+          const statusColor = worker.status === 'healthy' ? 'bg-green-50 border-green-200' :
+                             worker.status === 'unhealthy' ? 'bg-red-50 border-red-200' :
+                             'bg-gray-50 border-gray-200';
+          const statusIcon = worker.status === 'healthy' ? '✅' :
+                            worker.status === 'unhealthy' ? '❌' : '⚠️';
+
+          return \`
+            <div class="p-3 rounded-lg border \${statusColor}">
+              <div class="flex justify-between items-center">
+                <span class="font-medium">\${statusIcon} \${worker.name}</span>
+                \${worker.responseTime !== undefined ? \`<span class="text-sm text-gray-600">\${worker.responseTime}ms</span>\` : ''}
+              </div>
+              \${worker.error ? \`<div class="mt-1 text-xs text-gray-600">\${worker.error}</div>\` : ''}
+            </div>
+          \`;
+        }).join('');
+
+        // Pagesステータス表示
+        const pagesHealth = document.getElementById('pagesHealth');
+        pagesHealth.innerHTML = health.pages.map(page => {
+          const statusColor = page.status === 'healthy' ? 'bg-green-50 border-green-200' :
+                             page.status === 'unhealthy' ? 'bg-red-50 border-red-200' :
+                             'bg-gray-50 border-gray-200';
+          const statusIcon = page.status === 'healthy' ? '✅' :
+                            page.status === 'unhealthy' ? '❌' : '⚠️';
+
+          return \`
+            <div class="p-3 rounded-lg border \${statusColor}">
+              <div class="flex justify-between items-center">
+                <span class="font-medium">\${statusIcon} \${page.name}</span>
+                \${page.responseTime !== undefined ? \`<span class="text-sm text-gray-600">\${page.responseTime}ms</span>\` : ''}
+              </div>
+              \${page.error ? \`<div class="mt-1 text-xs text-gray-600">\${page.error}</div>\` : ''}
+            </div>
+          \`;
+        }).join('');
+
+        // サマリー表示
+        healthSummary.textContent = \`サマリー: \${health.summary.healthy}件正常 / \${health.summary.unhealthy}件異常 / \${health.summary.skipped}件スキップ（自動更新: 60秒間隔）\`;
+
+        healthLoading.classList.add('hidden');
+        healthContent.classList.remove('hidden');
+        healthSummary.classList.remove('hidden');
+
+      } catch (error) {
+        console.error('Health check error:', error);
+        healthError.textContent = 'ヘルスチェックエラー: ' + error.message;
+        healthError.classList.remove('hidden');
+        healthLoading.classList.add('hidden');
+      }
+    }
+
     // データ取得関数
     async function fetchTables() {
       const loadingDiv = document.getElementById('loadingDiv');
@@ -143,9 +256,18 @@ uiRoute.get('/', async (c) => {
 
     // 初回データ読み込み
     fetchTables();
+    fetchHealthCheck();
+
+    // 60秒ごとにヘルスチェック自動更新
+    setInterval(() => {
+      fetchHealthCheck();
+    }, 60000);
 
     // リフレッシュボタン
-    document.getElementById('refreshBtn').onclick = fetchTables;
+    document.getElementById('refreshBtn').onclick = () => {
+      fetchTables();
+      fetchHealthCheck();
+    };
 
     // ログアウトボタン
     document.getElementById('logoutBtn').onclick = () => {
