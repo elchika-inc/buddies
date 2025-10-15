@@ -1,5 +1,7 @@
 import { Hono } from 'hono'
 import type { Env } from '../types/env'
+import { apiKeysUiRoute } from './ui-api-keys'
+import { dashboardUiRoute } from './ui-dashboard'
 
 /**
  * UIルート
@@ -37,6 +39,26 @@ uiRoute.get('/', async (c) => {
           >
             ログアウト
           </button>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">管理機能</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a href="/dashboard" class="p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer block">
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-3">📊</span>
+              <div class="text-lg font-semibold text-gray-800">ダッシュボード</div>
+            </div>
+            <div class="text-gray-600 text-sm">統計・グラフ・クローラー実行状況</div>
+          </a>
+          <a href="/api-keys" class="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer block">
+            <div class="flex items-center mb-2">
+              <span class="text-2xl mr-3">🔑</span>
+              <div class="text-lg font-semibold text-gray-800">APIキー管理</div>
+            </div>
+            <div class="text-gray-600 text-sm">APIキーの作成・管理・ローテーション</div>
+          </a>
         </div>
       </div>
 
@@ -562,3 +584,9 @@ uiRoute.get('/table/:tableName', (c) => {
 
   return c.html(html)
 })
+
+// APIキー管理ページ
+uiRoute.route('/api-keys', apiKeysUiRoute)
+
+// ダッシュボードページ
+uiRoute.route('/dashboard', dashboardUiRoute)
