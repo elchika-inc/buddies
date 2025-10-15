@@ -19,10 +19,27 @@ NODE_ENV = "development"
 ALLOWED_IPS = ""
 # 管理者認証用シークレット（本番環境では必ず変更すること）
 ADMIN_SECRET = "development-secret-key-change-in-production"
+# ヘルスチェック対象URL
+FRONTEND_DOG_URL = "https://buddies-dogs.elchika.app"
+FRONTEND_CAT_URL = "https://buddies-cats.elchika.app"
+LP_URL = "https://buddies.elchika.app"
 
 # -----------------------------------------------------------------------------
 # Resource Bindings
 # -----------------------------------------------------------------------------
+
+# Service Bindings (Workers ヘルスチェック用)
+[[services]]
+binding = "API_SERVICE"
+service = "buddies-api"
+
+[[services]]
+binding = "CRAWLER_SERVICE"
+service = "buddies-crawler"
+
+[[services]]
+binding = "DISPATCHER_SERVICE"
+service = "buddies-dispatcher"
 
 # D1 Database
 [[d1_databases]]
@@ -56,6 +73,23 @@ NODE_ENV = "production"
 ALLOWED_IPS = ""
 # 本番環境では必ず強力なシークレットに変更すること
 ADMIN_SECRET = "production-secret-key-please-change"
+# ヘルスチェック対象URL
+FRONTEND_DOG_URL = "https://buddies-dogs.elchika.app"
+FRONTEND_CAT_URL = "https://buddies-cats.elchika.app"
+LP_URL = "https://buddies.elchika.app"
+
+# Service Bindings (Workers ヘルスチェック用)
+[[env.production.services]]
+binding = "API_SERVICE"
+service = "buddies-api"
+
+[[env.production.services]]
+binding = "CRAWLER_SERVICE"
+service = "buddies-crawler"
+
+[[env.production.services]]
+binding = "DISPATCHER_SERVICE"
+service = "buddies-dispatcher"
 
 [[env.production.d1_databases]]
 binding = "DB"

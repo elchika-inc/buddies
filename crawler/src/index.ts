@@ -45,6 +45,15 @@ app.get('/', (c) => {
   })
 })
 
+// ヘルスチェックエンドポイント（Service Bindings用）
+app.get('/health', (c) => {
+  return c.json({
+    service: 'Buddies Crawler',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+  })
+})
+
 // ペット情報を外部サイトから取得
 app.post('/fetch-pet-data/:source/:type?', async (c) => {
   const sourceId = c.req.param('source') || 'pet-home'

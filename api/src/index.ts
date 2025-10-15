@@ -31,6 +31,15 @@ app.get(
   })
 )
 
+// ヘルスチェックエンドポイント（Service Bindings用）
+app.get(
+  '/health',
+  withEnv(async (c) => {
+    const healthController = new HealthController(c.env.DB, c.env.IMAGES_BUCKET)
+    return healthController.getHealthStatus(c)
+  })
+)
+
 // デバッグ用テストエンドポイント
 app.get('/api/images/test', (c) => {
   return c.json({ message: 'Images route is working', timestamp: new Date().toISOString() })

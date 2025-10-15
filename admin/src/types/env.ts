@@ -9,4 +9,14 @@ export interface Env extends CloudflareEnv {
   ALLOWED_IPS: string
   ADMIN_SECRET: string
   MASTER_SECRET?: string
+
+  // ヘルスチェック対象URL
+  FRONTEND_DOG_URL: string
+  FRONTEND_CAT_URL: string
+  LP_URL: string
+
+  // Service Bindings (Workers ヘルスチェック用)
+  API_SERVICE: Fetcher
+  CRAWLER_SERVICE: Fetcher
+  DISPATCHER_SERVICE: Fetcher
 }

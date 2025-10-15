@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useErrorHandler } from '../hooks/useErrorHandler'
 import { useToast } from '../hooks/useToast'
+import { useHealthCheck } from '../hooks/useHealthCheck'
+import type { ServiceStatus } from '../types/health'
 
 interface TableInfo {
   name: string
@@ -18,6 +20,7 @@ export const Dashboard: React.FC = () => {
   // カスタムフックの使用
   const { error, handleError, clearError } = useErrorHandler()
   const { toasts, showToast } = useToast()
+  const { health, loading: healthLoading, error: healthError } = useHealthCheck()
 
   /**
    * データ取得
@@ -70,6 +73,38 @@ export const Dashboard: React.FC = () => {
     fetchTables()
   }, [fetchTables])
 
+  /**
+   * ステータスに応じたアイコンを取得
+   */
+  const getStatusIcon = (status: ServiceStatus) => {
+    switch (status) {
+      case 'healthy':
+        return '✅'
+      case 'unhealthy':
+        return '❌'
+      case 'skipped':
+        return '⚠️'
+      default:
+        return '❓'
+    }
+  }
+
+  /**
+   * ステータスに応じた背景色を取得
+   */
+  const getStatusColor = (status: ServiceStatus) => {
+    switch (status) {
+      case 'healthy':
+        return 'bg-green-50 border-green-200'
+      case 'unhealthy':
+        return 'bg-red-50 border-red-200'
+      case 'skipped':
+        return 'bg-gray-50 border-gray-200'
+      default:
+        return 'bg-gray-50 border-gray-200'
+    }
+  }
+
   // セッション認証されていればダッシュボードが表示される
 
   return (
@@ -112,6 +147,96 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ヘルスチェックセクション */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">サービスヘルスステータス</h2>
+
+          {healthError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              ヘルスチェックエラー: {healthError}
+            </div>
+          )}
+
+          {healthLoading && !health ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                ヘルスチェック中...
+              </div>
+            </div>
+          ) : health ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Workers ヘルスステータス */}
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Workers</h3>
+                <div className="space-y-2">
+                  {health.workers.map((worker) => (
+                    <div
+                      key={worker.name}
+                      className={`p-3 rounded-lg border ${getStatusColor(worker.status)}`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">
+                          {getStatusIcon(worker.status)} {worker.name}
+                        </span>
+                        {worker.responseTime !== undefined && (
+                          <span className="text-sm text-gray-600">
+                            {worker.responseTime}ms
+                          </span>
+                        )}
+                      </div>
+                      {worker.error && (
+                        <div className="mt-1 text-xs text-gray-600">
+                          {worker.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pages ヘルスステータス */}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Pages</h3>
+                <div className="space-y-2">
+                  {health.pages.map((page) => (
+                    <div
+                      key={page.name}
+                      className={`p-3 rounded-lg border ${getStatusColor(page.status)}`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">
+                          {getStatusIcon(page.status)} {page.name}
+                        </span>
+                        {page.responseTime !== undefined && (
+                          <span className="text-sm text-gray-600">
+                            {page.responseTime}ms
+                          </span>
+                        )}
+                      </div>
+                      {page.error && (
+                        <div className="mt-1 text-xs text-gray-600">
+                          {page.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {health && (
+            <div className="mt-4 text-sm text-gray-600 text-center">
+              サマリー: {health.summary.healthy}件正常 / {health.summary.unhealthy}件異常 / {health.summary.skipped}件スキップ
+              （自動更新: 60秒間隔）
+            </div>
+          )}
+        </div>
 
         <div>
           <h2 className="text-xl font-semibold text-gray-800 mb-6">データベーステーブル</h2>

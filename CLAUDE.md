@@ -27,6 +27,56 @@ Buddiesは保護犬・保護猫とユーザーをマッチングするWebアプ�
 - **Build**: TypeScript + Wrangler
 - **Testing**: Vitest (API/Workers), Jest (Frontend)
 
+### モノレポ構造
+
+このプロジェクトはnpmワークスペースを使用したモノレポ構成です。
+
+**重要なポイント:**
+
+- `shared/`パッケージはTypeScriptソースを直接エクスポート（ビルド不要）
+- 各ワークスペースは独自にTypeScriptをコンパイル
+- ワークスペース間の依存関係は`package.json`で`"@buddies/shared": "*"`のように宣言
+- `npm install`により自動的にワークスペース間がリンクされる
+
+## 初回セットアップ
+
+### 前提条件
+
+- Node.js >= 18.0.0
+- npm >= 10.0.0
+
+### セットアップ手順
+
+```bash
+# 1. 全ワークスペースの依存関係をインストール＆データベース初期化
+npm run setup:first-time
+
+# または、段階的に実行する場合：
+
+# 1-1. 依存関係のインストール
+npm install
+
+# 1-2. データベース＆サンプルデータの準備
+npm run setup
+
+# 2. 開発サーバー起動
+npm run start
+```
+
+**`setup:first-time`の実行内容:**
+
+1. `npm install` - 全ワークスペースの依存関係をインストール
+2. `db:reset` - ローカルD1データベースをリセット
+3. `db:generate-placeholders` - プレースホルダー画像を生成（犬5枚、猫5枚）
+4. `db:seed` - サンプルデータを投入（犬10匹、猫10匹）
+
+### データリフレッシュ（開発中）
+
+```bash
+# 既存データをクリアして再生成
+npm run dev:refresh
+```
+
 ## 開発コマンド
 
 ### 基本開発コマンド

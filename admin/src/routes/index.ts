@@ -3,6 +3,7 @@ import { tablesRoute } from './tables'
 import { recordsRoute } from './records'
 import { apiKeysRoute } from './apiKeys'
 import { dashboardRoute } from './dashboard'
+import { healthRoute } from './health'
 import { uiRoute } from './ui'
 import type { Env } from '../types/env'
 
@@ -25,6 +26,7 @@ export function registerRoutes(app: Hono<{ Bindings: Env }>): void {
   app.route('/api/records', recordsRoute)
   app.route('/api/keys', apiKeysRoute)
   app.route('/api/dashboard', dashboardRoute)
+  app.route('/api/health', healthRoute)
 
   // UI ルート（Basic認証で保護されている）
   app.route('/', uiRoute)

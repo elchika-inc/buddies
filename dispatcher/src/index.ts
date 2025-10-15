@@ -31,6 +31,12 @@ const setupRoutes = (app: Hono<{ Bindings: Env }>) => {
     return controller.healthCheck(c)
   })
 
+  // ヘルスチェックエンドポイント（Service Bindings用）
+  app.get('/health', async (c) => {
+    const controller = new DispatchController(c.env)
+    return controller.healthCheck(c)
+  })
+
   // ディスパッチエンドポイント
   app.post('/dispatch', async (c) => {
     const controller = new DispatchController(c.env)

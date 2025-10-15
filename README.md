@@ -218,6 +218,40 @@ Buddiesの活動を支援していただける方を募集しています。
 
 ---
 
+## 🛠️ 開発者向け情報
+
+### 技術スタック
+
+- **Frontend**: Next.js 14 + React + TypeScript
+- **API**: Cloudflare Workers + Hono + Drizzle ORM
+- **Database**: Cloudflare D1 (SQLite)
+- **Infrastructure**: Cloudflare Pages / Workers
+
+### 初回セットアップ
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/elchika-inc/buddies.git
+cd buddies
+
+# 依存関係のインストール＆データベース初期化
+npm run setup:first-time
+
+# 開発サーバー起動
+npm run start
+```
+
+### 詳細なドキュメント
+
+- [CLAUDE.md](./CLAUDE.md) - 開発環境セットアップ、コマンド一覧、アーキテクチャ説明
+- [database/fixtures/images/README.md](./database/fixtures/images/README.md) - ローカル画像データの準備方法
+
+### コントリビューション
+
+プルリクエストを歓迎します！詳細は[CLAUDE.md](./CLAUDE.md)を参照してください。
+
+---
+
 <div align="center">
 
 **一頭でも多くの保護動物に、温かい家庭を。**
