@@ -8,6 +8,7 @@ import adminRoutes from './routes/admin'
 import statsRoutes from './routes/stats'
 import crawlerRoutes from './routes/crawler'
 import conversionRoutes from './routes/conversion'
+import workflowRoutes from './routes/workflow'
 import { DispatcherServiceClient } from '../../shared/services/dispatcher-client'
 import { Result } from '../../shared/types/result'
 import type { Env } from './types'
@@ -77,6 +78,7 @@ app.route('/api/stats', statsRoutes)
 app.route('/api/pets', petRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/conversion', conversionRoutes)
+app.route('/api/workflow', workflowRoutes)
 
 // 内部APIルート
 app.route('/crawler', crawlerRoutes)

@@ -60,6 +60,12 @@ const setupRoutes = (app: Hono<{ Bindings: Env }>) => {
     const controller = new DispatchController(c.env)
     return controller.handleDispatchConversion(c)
   })
+
+  // GitHub Actionsワークフロー実行履歴エンドポイント
+  app.get('/github-actions', async (c) => {
+    const controller = new DispatchController(c.env)
+    return controller.handleGithubActions(c)
+  })
 }
 
 // ルートをセットアップ

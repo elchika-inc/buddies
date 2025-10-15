@@ -42,6 +42,32 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Record workflow start
+        id: workflow-start
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
+        run: |
+          RESPONSE=$(curl -s -X POST "${API_URL}/api/workflow/start" \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: ${API_KEY}" \
+            -d "{
+              \"syncType\": \"conversion\",
+              \"metadata\": {
+                \"batchId\": \"${{ github.event.inputs.batch_id }}\",
+                \"githubRunId\": ${{ github.run_id }},
+                \"githubRunUrl\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",
+                \"workflowFile\": \"image-conversion.yml\",
+                \"limit\": \"${{ github.event.inputs.limit || '50' }}\",
+                \"conversionMode\": \"${{ github.event.inputs.conversion_mode || 'all' }}\",
+                \"source\": \"${{ github.event.inputs.source || 'manual' }}\"
+              }
+            }")
+
+          WORKFLOW_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "workflow_id=${WORKFLOW_ID}" >> $GITHUB_OUTPUT
+          echo "✅ Workflow started with ID: ${WORKFLOW_ID}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -351,3 +377,46 @@ jobs:
               '
             fi
           fi
+
+      - name: Record workflow completion
+        if: always()
+        env:
+          API_URL: ${{ secrets.API_URL || 'https://buddies-api.elchika.app' }}
+          API_KEY: ${{ secrets.BUDDIES_API_KEY }}
+        run: |
+          # 結果を集計
+          if [ -f "scripts/logs/conversion-results.json" ]; then
+            TOTAL=$(jq '.totalProcessed // 0' scripts/logs/conversion-results.json)
+            SUCCESS=$(jq '.successful // 0' scripts/logs/conversion-results.json)
+            FAILED=$(jq '.failed // 0' scripts/logs/conversion-results.json)
+          else
+            TOTAL=0
+            SUCCESS=0
+            FAILED=0
+          fi
+
+          # Artifacts URL
+          ARTIFACTS_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # 成功/失敗に応じてエンドポイントを選択
+          if [ "${{ job.status }}" == "success" ]; then
+            ENDPOINT="complete"
+            PAYLOAD="{
+              \"totalRecords\": ${TOTAL},
+              \"processedRecords\": ${SUCCESS},
+              \"failedRecords\": ${FAILED}
+            }"
+          else
+            ENDPOINT="fail"
+            PAYLOAD="{
+              \"errorMessage\": \"Workflow failed with status: ${{ job.status }}. Check logs at: ${ARTIFACTS_URL}\"
+            }"
+          fi
+
+          # APIに記録
+          curl -s -X PUT "${API_URL}/api/workflow/${{ steps.workflow-start.outputs.workflow_id }}/${ENDPOINT}" \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: ${API_KEY}" \
+            -d "$PAYLOAD"
+
+          echo "✅ Workflow completion recorded (Status: ${{ job.status }})"

@@ -288,6 +288,81 @@ dashboardRoute.get('/crawler-stats', async (c) => {
 })
 
 /**
+ * GitHub Actionsワークフロー実行履歴
+ * Dispatcher ServiceからGitHub Actions情報を取得
+ */
+dashboardRoute.get('/github-actions', async (c) => {
+  try {
+    // Dispatcher Serviceを使ってGitHub Actions情報を取得
+    const response = await c.env.DISPATCHER_SERVICE.fetch(
+      new Request('https://dummy/github-actions', {
+        method: 'GET',
+      })
+    )
+
+    if (!response.ok) {
+      throw new Error(`Dispatcher service error: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json() as {
+      success: boolean
+      data: unknown[]
+      error?: string
+    }
+
+    return c.json(data)
+  } catch (error) {
+    console.error('Error fetching GitHub Actions:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to fetch GitHub Actions',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      data: []
+    })
+  }
+})
+
+/**
+ * スクリーンショット取得トリガー
+ * APIのtrigger-screenshotエンドポイントを呼び出す
+ */
+dashboardRoute.post('/trigger-screenshot', async (c) => {
+  try {
+    const body = await c.req.json() as { limit?: number }
+    const limit = body.limit || 50
+
+    // APIを呼び出してスクリーンショット処理をトリガー
+    const response = await fetch('https://buddies-api.elchika.app/api/admin/trigger-screenshot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': c.env.ADMIN_SECRET,
+        'X-Admin-Secret': c.env.ADMIN_SECRET,
+      },
+      body: JSON.stringify({ limit }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to trigger screenshot')
+    }
+
+    return c.json({
+      success: true,
+      data,
+    })
+  } catch (error) {
+    console.error('Error triggering screenshot:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to trigger screenshot',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, 500)
+  }
+})
+
+/**
  * 画像統計（R2バケット情報含む）
  */
 dashboardRoute.get('/image-stats', async (c) => {

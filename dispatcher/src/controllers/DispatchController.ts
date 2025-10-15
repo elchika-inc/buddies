@@ -7,6 +7,7 @@ import type { Context } from 'hono'
 import { DispatchService } from '../services/DispatchService'
 import { CrawlerService } from '../services/CrawlerService'
 import { ConversionService } from '../services/ConversionService'
+import { GitHubService } from '../services/GithubService'
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -28,11 +29,13 @@ export class DispatchController {
   private dispatchService: DispatchService
   private crawlerService: CrawlerService
   private conversionService: ConversionService
+  private githubService: GitHubService
 
   constructor(env: Env) {
     this.dispatchService = new DispatchService(env)
     this.crawlerService = new CrawlerService(env)
     this.conversionService = new ConversionService(env)
+    this.githubService = new GitHubService(env)
   }
 
   /**
@@ -160,6 +163,37 @@ export class DispatchController {
       }
 
       return c.json(createSuccessResponse(result, result.message), HTTP_STATUS.OK)
+    } catch (error) {
+      // エラーはレスポンスヘルパーで処理
+      return c.json(createErrorResponse(error as Error), HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  /**
+   * GitHub Actionsワークフロー実行履歴エンドポイント
+   */
+  async handleGithubActions(c: Context<{ Bindings: Env }>): Promise<Response> {
+    try {
+      const result = await this.githubService.getWorkflowRuns(10)
+
+      if (!result.success) {
+        return c.json(
+          {
+            success: false,
+            error: result.error || 'Failed to fetch GitHub Actions',
+            data: [],
+          },
+          HTTP_STATUS.INTERNAL_SERVER_ERROR
+        )
+      }
+
+      return c.json(
+        {
+          success: true,
+          data: result.data || [],
+        },
+        HTTP_STATUS.OK
+      )
     } catch (error) {
       // エラーはレスポンスヘルパーで処理
       return c.json(createErrorResponse(error as Error), HTTP_STATUS.INTERNAL_SERVER_ERROR)

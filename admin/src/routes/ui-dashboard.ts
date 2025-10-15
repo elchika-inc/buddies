@@ -91,161 +91,13 @@ dashboardUiRoute.get('/', (c) => {
         </div>
       </div>
 
-      <!-- グラフエリア -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- 日別登録件数グラフ -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h2 class="text-sm font-semibold text-gray-900 mb-3">日別登録件数（30日間）</h2>
-          <canvas id="createdChart"></canvas>
-        </div>
-
-        <!-- タイプ別登録件数グラフ -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h2 class="text-sm font-semibold text-gray-900 mb-3">ペットタイプ別</h2>
-          <canvas id="typeChart"></canvas>
-        </div>
-      </div>
-
-      <!-- クローラー統計 -->
-      <div class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-sm font-semibold text-gray-900 mb-3">クローラー実行状況</h2>
-        <div id="crawlerStats" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <!-- 動的に生成される -->
-        </div>
-      </div>
-
-      <!-- 画像統計 -->
-      <div class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-          <span class="text-lg mr-2">📸</span>
-          画像・R2バケット統計
-        </h2>
-
-        <!-- スクリーンショット処理の詳細 -->
-        <div class="mb-4">
-          <h3 class="text-xs font-semibold text-gray-800 mb-2 flex items-center">
-            <span class="mr-1">📷</span>
-            スクリーンショット処理状況
-          </h3>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <!-- スクリーンショット統計カード -->
-            <div class="grid grid-cols-2 gap-2">
-              <div class="bg-gray-50 rounded p-2 border border-gray-200">
-                <p class="text-xs text-gray-600 mb-0.5">未処理</p>
-                <p id="screenshotNotStarted" class="text-lg font-bold text-gray-700">-</p>
-              </div>
-              <div class="bg-blue-50 rounded p-2 border border-blue-200">
-                <p class="text-xs text-blue-600 mb-0.5">処理中</p>
-                <p id="screenshotPending" class="text-lg font-bold text-blue-700">-</p>
-              </div>
-              <div class="bg-green-50 rounded p-2 border border-green-200">
-                <p class="text-xs text-green-600 mb-0.5">成功</p>
-                <p id="screenshotSuccess" class="text-lg font-bold text-green-700">-</p>
-              </div>
-              <div class="bg-red-50 rounded p-2 border border-red-200">
-                <p class="text-xs text-red-600 mb-0.5">失敗</p>
-                <p id="screenshotFailed" class="text-lg font-bold text-red-700">-</p>
-              </div>
-            </div>
-
-            <!-- スクリーンショットグラフ -->
-            <div class="bg-gray-50 rounded p-3">
-              <canvas id="screenshotChart"></canvas>
-            </div>
-          </div>
-
-          <!-- 成功率インジケーター -->
-          <div class="mt-2 bg-gradient-to-r from-blue-50 to-green-50 rounded p-2">
-            <div class="flex justify-between items-center mb-1">
-              <span class="text-xs font-medium text-gray-700">成功率</span>
-              <span id="screenshotSuccessRate" class="text-sm font-bold text-green-700">-</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div id="screenshotSuccessBar" class="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 画像変換（WebP）処理の詳細 -->
-        <div class="mb-4">
-          <h3 class="text-xs font-semibold text-gray-800 mb-2 flex items-center">
-            <span class="mr-1">🔄</span>
-            画像変換（WebP）処理状況
-          </h3>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <!-- 変換統計カード -->
-            <div class="grid grid-cols-2 gap-2">
-              <div class="bg-blue-50 rounded p-2 border border-blue-200">
-                <p class="text-xs text-blue-600 mb-0.5">変換対象</p>
-                <p id="conversionTarget" class="text-lg font-bold text-blue-700">-</p>
-              </div>
-              <div class="bg-green-50 rounded p-2 border border-green-200">
-                <p class="text-xs text-green-600 mb-0.5">変換完了</p>
-                <p id="conversionCompleted" class="text-lg font-bold text-green-700">-</p>
-              </div>
-              <div class="bg-orange-50 rounded p-2 border border-orange-200">
-                <p class="text-xs text-orange-600 mb-0.5">変換待ち</p>
-                <p id="conversionPending" class="text-lg font-bold text-orange-700">-</p>
-              </div>
-              <div class="bg-purple-50 rounded p-2 border border-purple-200">
-                <p class="text-xs text-purple-600 mb-0.5">変換率</p>
-                <p id="conversionRate" class="text-lg font-bold text-purple-700">-</p>
-              </div>
-            </div>
-
-            <!-- 変換グラフ -->
-            <div class="bg-gray-50 rounded p-3">
-              <canvas id="conversionChart"></canvas>
-            </div>
-          </div>
-
-          <!-- 変換進捗インジケーター -->
-          <div class="mt-2 bg-gradient-to-r from-purple-50 to-green-50 rounded p-2">
-            <div class="flex justify-between items-center mb-1">
-              <span class="text-xs font-medium text-gray-700">変換進捗</span>
-              <span id="conversionProgressRate" class="text-sm font-bold text-purple-700">-</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div id="conversionProgressBar" class="bg-gradient-to-r from-purple-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- R2バケット情報 -->
-        <div class="bg-gray-50 rounded p-3">
-          <h3 class="text-xs font-semibold text-gray-700 mb-2">R2バケット（buddies-images）</h3>
-          <div class="grid grid-cols-3 gap-3">
-            <div>
-              <p class="text-xs text-gray-500">オブジェクト数</p>
-              <p id="r2ObjectCount" class="text-sm font-semibold text-gray-900">-</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500">合計サイズ</p>
-              <p id="r2TotalSize" class="text-sm font-semibold text-gray-900">-</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500">ステータス</p>
-              <p id="r2Status" class="text-sm font-semibold text-green-600">-</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 都道府県別統計 -->
-      <div class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-sm font-semibold text-gray-900 mb-3">都道府県別ペット数（上位10件）</h2>
-        <canvas id="prefectureChart"></canvas>
-      </div>
-
-      <!-- クローラー実行履歴とワークフロー実行履歴 -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- 実行履歴 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- クローラー実行履歴 -->
         <div class="bg-white rounded-lg shadow p-4">
           <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
             <span class="text-lg mr-2">📜</span>
-            クローラー実行履歴（30日間）
+            クローラー実行履歴
           </h2>
           <div id="crawlerHistory" class="space-y-2 max-h-96 overflow-y-auto">
             <!-- 動的に生成される -->
@@ -262,6 +114,140 @@ dashboardUiRoute.get('/', (c) => {
             <!-- 動的に生成される -->
           </div>
         </div>
+
+        <!-- GitHub Actions実行履歴 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+            <span class="text-lg mr-2">🔄</span>
+            GitHub Actions
+          </h2>
+          <div id="githubActions" class="space-y-2 max-h-96 overflow-y-auto">
+            <!-- 動的に生成される -->
+          </div>
+        </div>
+      </div>
+
+      <!-- グラフエリア -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- 日別登録件数グラフ -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">日別登録件数（30日間）</h2>
+          <div style="max-height: 200px;">
+            <canvas id="createdChart"></canvas>
+          </div>
+        </div>
+
+        <!-- タイプ別登録件数グラフ -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">ペットタイプ別</h2>
+          <div style="max-height: 200px;">
+            <canvas id="typeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 都道府県別統計 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">都道府県別（上位10件）</h2>
+          <div style="max-height: 200px;">
+            <canvas id="prefectureChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- クローラー統計と画像統計 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- クローラー統計 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">クローラー実行状況</h2>
+          <div id="crawlerStats" class="grid grid-cols-1 gap-3">
+            <!-- 動的に生成される -->
+          </div>
+        </div>
+
+        <!-- 画像統計 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+            <span class="text-lg mr-2">📸</span>
+            画像・R2バケット統計
+          </h2>
+
+          <!-- スクリーンショット処理 -->
+          <div class="mb-3">
+            <h3 class="text-xs font-semibold text-gray-800 mb-2">📷 スクリーンショット処理</h3>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-gray-50 rounded p-2 border border-gray-200">
+                <p class="text-xs text-gray-600">未処理</p>
+                <p id="screenshotNotStarted" class="text-base font-bold text-gray-700">-</p>
+              </div>
+              <div class="bg-green-50 rounded p-2 border border-green-200">
+                <p class="text-xs text-green-600">成功</p>
+                <p id="screenshotSuccess" class="text-base font-bold text-green-700">-</p>
+              </div>
+              <div class="bg-red-50 rounded p-2 border border-red-200">
+                <p class="text-xs text-red-600">失敗</p>
+                <p id="screenshotFailed" class="text-base font-bold text-red-700">-</p>
+              </div>
+            </div>
+            <div class="mt-2 bg-gradient-to-r from-blue-50 to-green-50 rounded p-2">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-medium text-gray-700">成功率</span>
+                <span id="screenshotSuccessRate" class="text-sm font-bold text-green-700">-</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="screenshotSuccessBar" class="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+            <button
+              id="triggerScreenshotBtn"
+              class="mt-2 w-full px-3 py-2 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              📸 スクリーンショット取得を実行（50件）
+            </button>
+          </div>
+
+          <!-- 画像変換 -->
+          <div class="mb-3">
+            <h3 class="text-xs font-semibold text-gray-800 mb-2">🔄 画像変換（WebP）</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-green-50 rounded p-2 border border-green-200">
+                <p class="text-xs text-green-600">変換完了</p>
+                <p id="conversionCompleted" class="text-base font-bold text-green-700">-</p>
+              </div>
+              <div class="bg-orange-50 rounded p-2 border border-orange-200">
+                <p class="text-xs text-orange-600">変換待ち</p>
+                <p id="conversionPending" class="text-base font-bold text-orange-700">-</p>
+              </div>
+            </div>
+            <div class="mt-2 bg-gradient-to-r from-purple-50 to-green-50 rounded p-2">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-medium text-gray-700">変換進捗</span>
+                <span id="conversionProgressRate" class="text-sm font-bold text-purple-700">-</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="conversionProgressBar" class="bg-gradient-to-r from-purple-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- R2バケット情報 -->
+          <div class="bg-gray-50 rounded p-2">
+            <h3 class="text-xs font-semibold text-gray-700 mb-2">💾 R2バケット</h3>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <p class="text-xs text-gray-500">オブジェクト</p>
+                <p id="r2ObjectCount" class="text-sm font-semibold text-gray-900">-</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">サイズ</p>
+                <p id="r2TotalSize" class="text-sm font-semibold text-gray-900">-</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">ステータス</p>
+                <p id="r2Status" class="text-sm font-semibold text-green-600">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -270,8 +256,6 @@ dashboardUiRoute.get('/', (c) => {
     let createdChart = null;
     let typeChart = null;
     let prefectureChart = null;
-    let screenshotChart = null;
-    let conversionChart = null;
 
     // データ取得
     async function fetchDashboardData() {
@@ -332,6 +316,14 @@ dashboardUiRoute.get('/', (c) => {
         if (workflowHistoryData.success) {
           renderWorkflowHistory(workflowHistoryData.data);
         }
+
+        // GitHub Actions実行履歴
+        const githubActionsRes = await fetch('/api/dashboard/github-actions');
+        const githubActionsData = await githubActionsRes.json();
+
+        if (githubActionsData.success) {
+          renderGithubActions(githubActionsData.data);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         alert('データの取得に失敗しました');
@@ -364,11 +356,10 @@ dashboardUiRoute.get('/', (c) => {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: true,
-              position: 'top'
+              display: false
             }
           },
           scales: {
@@ -412,7 +403,7 @@ dashboardUiRoute.get('/', (c) => {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               position: 'bottom'
@@ -447,7 +438,7 @@ dashboardUiRoute.get('/', (c) => {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               display: false
@@ -521,7 +512,6 @@ dashboardUiRoute.get('/', (c) => {
     function renderImageStats(data) {
       // スクリーンショット統計
       document.getElementById('screenshotNotStarted').textContent = data.screenshot.notStarted.toLocaleString();
-      document.getElementById('screenshotPending').textContent = data.screenshot.pending.toLocaleString();
       document.getElementById('screenshotSuccess').textContent = data.screenshot.success.toLocaleString();
       document.getElementById('screenshotFailed').textContent = data.screenshot.failed.toLocaleString();
       document.getElementById('screenshotSuccessRate').textContent = data.screenshot.successRate + '%';
@@ -531,10 +521,8 @@ dashboardUiRoute.get('/', (c) => {
       successBar.style.width = data.screenshot.successRate + '%';
 
       // 画像変換統計
-      document.getElementById('conversionTarget').textContent = data.conversion.target.toLocaleString();
       document.getElementById('conversionCompleted').textContent = data.conversion.completed.toLocaleString();
       document.getElementById('conversionPending').textContent = data.conversion.pending.toLocaleString();
-      document.getElementById('conversionRate').textContent = data.conversion.rate + '%';
       document.getElementById('conversionProgressRate').textContent = data.conversion.rate + '%';
 
       // 変換進捗プログレスバー
@@ -552,112 +540,12 @@ dashboardUiRoute.get('/', (c) => {
       const statusElement = document.getElementById('r2Status');
       if (data.r2.error) {
         statusElement.textContent = 'エラー';
-        statusElement.className = 'text-lg font-semibold text-red-600';
+        statusElement.className = 'text-sm font-semibold text-red-600';
         statusElement.title = data.r2.error;
       } else {
         statusElement.textContent = '正常';
-        statusElement.className = 'text-lg font-semibold text-green-600';
+        statusElement.className = 'text-sm font-semibold text-green-600';
       }
-
-      // スクリーンショットグラフ
-      renderScreenshotChart(data.screenshot);
-
-      // 画像変換グラフ
-      renderConversionChart(data.conversion);
-    }
-
-    // スクリーンショットグラフ
-    function renderScreenshotChart(data) {
-      const ctx = document.getElementById('screenshotChart').getContext('2d');
-
-      if (screenshotChart) {
-        screenshotChart.destroy();
-      }
-
-      screenshotChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['未処理', '処理中', '成功', '失敗'],
-          datasets: [{
-            data: [data.notStarted, data.pending, data.success, data.failed],
-            backgroundColor: [
-              'rgba(156, 163, 175, 0.8)',
-              'rgba(59, 130, 246, 0.8)',
-              'rgba(34, 197, 94, 0.8)',
-              'rgba(239, 68, 68, 0.8)'
-            ],
-            borderWidth: 2,
-            borderColor: '#fff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: {
-                  size: 11
-                }
-              }
-            },
-            title: {
-              display: true,
-              text: 'スクリーンショット処理内訳',
-              font: {
-                size: 12
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // 画像変換グラフ
-    function renderConversionChart(data) {
-      const ctx = document.getElementById('conversionChart').getContext('2d');
-
-      if (conversionChart) {
-        conversionChart.destroy();
-      }
-
-      conversionChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: ['変換完了', '変換待ち'],
-          datasets: [{
-            data: [data.completed, data.pending],
-            backgroundColor: [
-              'rgba(34, 197, 94, 0.8)',
-              'rgba(251, 146, 60, 0.8)'
-            ],
-            borderWidth: 2,
-            borderColor: '#fff'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: {
-                  size: 11
-                }
-              }
-            },
-            title: {
-              display: true,
-              text: 'WebP変換進捗',
-              font: {
-                size: 12
-              }
-            }
-          }
-        }
-      });
     }
 
     // クローラー実行履歴
@@ -727,6 +615,40 @@ dashboardUiRoute.get('/', (c) => {
         const completedAt = item.completedAt ? new Date(item.completedAt).toLocaleString('ja-JP') : '-';
         const createdAt = new Date(item.createdAt).toLocaleString('ja-JP');
 
+        // metadataをパース
+        let metadata = null;
+        try {
+          metadata = item.metadata ? JSON.parse(item.metadata) : null;
+        } catch (e) {
+          console.error('Failed to parse metadata:', e);
+        }
+
+        // エラーメッセージをリンク化
+        let errorMessageHtml = '';
+        if (item.status === 'failed' && metadata?.errorMessage) {
+          // URLを検出してリンク化
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const messageWithLinks = metadata.errorMessage.replace(urlRegex, (url) => {
+            return \`<a href="\${url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline break-all">\${url}</a>\`;
+          });
+
+          errorMessageHtml = \`
+            <div class="mt-2 p-2 bg-red-50 rounded border border-red-200">
+              <p class="text-xs text-red-700">\${messageWithLinks}</p>
+            </div>
+          \`;
+        }
+
+        // GitHub Run URLを表示
+        let githubRunLink = '';
+        if (metadata?.githubRunUrl) {
+          githubRunLink = \`
+            <a href="\${metadata.githubRunUrl}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 underline">
+              GitHub Actions →
+            </a>
+          \`;
+        }
+
         // ステータスに応じた色とラベル
         let statusBadge = '';
         switch (item.status) {
@@ -752,6 +674,7 @@ dashboardUiRoute.get('/', (c) => {
               <div>
                 <h4 class="text-sm font-semibold text-gray-900">\${item.syncType}</h4>
                 <p class="text-xs text-gray-500">\${createdAt}</p>
+                \${githubRunLink}
               </div>
               \${statusBadge}
             </div>
@@ -773,6 +696,7 @@ dashboardUiRoute.get('/', (c) => {
                 <p class="font-semibold">\${item.totalRecords > 0 ? Math.round((item.processedRecords / item.totalRecords) * 100) : 0}%</p>
               </div>
             </div>
+            \${errorMessageHtml}
             \${item.startedAt ? \`
               <div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
                 \${startedAt} 〜 \${completedAt}
@@ -785,9 +709,118 @@ dashboardUiRoute.get('/', (c) => {
       container.innerHTML = html;
     }
 
+    // GitHub Actions実行履歴
+    function renderGithubActions(data) {
+      const container = document.getElementById('githubActions');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = \`
+          <div class="bg-gray-50 rounded-lg p-6 text-center">
+            <p class="text-gray-500 mb-2">GitHub Actions履歴がありません</p>
+            <p class="text-xs text-gray-400">GITHUB_TOKENが設定されていない可能性があります</p>
+          </div>
+        \`;
+        return;
+      }
+
+      const html = data.map(run => {
+        const createdAt = new Date(run.createdAt).toLocaleString('ja-JP');
+
+        // ステータスに応じた色とラベル
+        let statusBadge = '';
+        if (run.status === 'completed') {
+          if (run.conclusion === 'success') {
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">✓ 成功</span>';
+          } else if (run.conclusion === 'failure') {
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">✗ 失敗</span>';
+          } else if (run.conclusion === 'cancelled') {
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">キャンセル</span>';
+          } else {
+            statusBadge = \`<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">\${run.conclusion || run.status}</span>\`;
+          }
+        } else if (run.status === 'in_progress') {
+          statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">⏳ 実行中</span>';
+        } else if (run.status === 'queued') {
+          statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">待機中</span>';
+        } else {
+          statusBadge = \`<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">\${run.status}</span>\`;
+        }
+
+        return \`
+          <a href="\${run.url}" target="_blank" class="block border border-gray-200 rounded p-2 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-start mb-1">
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-semibold text-gray-900 truncate">\${run.name}</h4>
+                <p class="text-xs text-gray-500 truncate">\${run.title}</p>
+              </div>
+              \${statusBadge}
+            </div>
+            <div class="flex justify-between items-center text-xs text-gray-600">
+              <span>\${run.branch}</span>
+              <span>\${createdAt}</span>
+            </div>
+          </a>
+        \`;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
     // リフレッシュボタン
     document.getElementById('refreshBtn').onclick = () => {
       fetchDashboardData();
+    };
+
+    // スクリーンショット取得トリガーボタン
+    document.getElementById('triggerScreenshotBtn').onclick = async () => {
+      const btn = document.getElementById('triggerScreenshotBtn');
+      const originalText = btn.textContent;
+
+      // 確認ダイアログを表示
+      const confirmed = confirm(
+        'スクリーンショット取得を実行しますか？\\n\\n' +
+        '対象: 最大50件のペット\\n' +
+        '処理: GitHub Actionsワークフローが起動されます\\n\\n' +
+        '※ 実行には数分かかる場合があります'
+      );
+
+      if (!confirmed) {
+        return; // キャンセルされた場合は何もしない
+      }
+
+      try {
+        // ボタンを無効化
+        btn.disabled = true;
+        btn.textContent = '📸 実行中...';
+
+        // APIを呼び出し
+        const response = await fetch('/api/dashboard/trigger-screenshot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ limit: 50 }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // 成功メッセージ
+          alert(\`スクリーンショット取得を開始しました\\n\\nBatch ID: \${result.data.batchId || 'N/A'}\\n対象件数: \${result.data.petCount || 0}件\\n戦略: \${result.data.strategy || 'N/A'}\`);
+
+          // ダッシュボードデータを再取得
+          await fetchDashboardData();
+        } else {
+          throw new Error(result.message || 'スクリーンショット取得の開始に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error triggering screenshot:', error);
+        alert(\`エラーが発生しました: \${error.message}\`);
+      } finally {
+        // ボタンを再度有効化
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     };
 
     // 初期化

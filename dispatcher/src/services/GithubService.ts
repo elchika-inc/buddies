@@ -137,6 +137,79 @@ export class GitHubService {
   }
 
   /**
+   * ワークフロー実行履歴を取得
+   */
+  async getWorkflowRuns(perPage: number = 10): Promise<{
+    success: boolean
+    data?: unknown[]
+    error?: string
+  }> {
+    try {
+      const url = `https://api.github.com/repos/${this.githubOwner}/${this.githubRepo}/actions/runs?per_page=${perPage}`
+
+      const response = await fetch(url, {
+        headers: this.buildHeaders(),
+      })
+
+      if (!response.ok) {
+        const errorBody = await response.text()
+        console.error('GitHub API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+        })
+        return {
+          success: false,
+          error: `GitHub API error: ${response.status} ${response.statusText}`,
+        }
+      }
+
+      const data = (await response.json()) as {
+        workflow_runs: Array<{
+          id: number
+          name: string
+          display_title: string
+          status: string
+          conclusion: string | null
+          workflow_id: number
+          created_at: string
+          updated_at: string
+          run_started_at: string
+          html_url: string
+          head_branch: string
+          event: string
+        }>
+      }
+
+      // 必要な情報のみを抽出
+      const runs = data.workflow_runs.map((run) => ({
+        id: run.id,
+        name: run.name,
+        title: run.display_title,
+        status: run.status,
+        conclusion: run.conclusion,
+        createdAt: run.created_at,
+        updatedAt: run.updated_at,
+        startedAt: run.run_started_at,
+        url: run.html_url,
+        branch: run.head_branch,
+        event: run.event,
+      }))
+
+      return {
+        success: true,
+        data: runs,
+      }
+    } catch (error) {
+      console.error('Error fetching workflow runs:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+    }
+  }
+
+  /**
    * エラーレスポンスを処理
    */
   private async handleErrorResponse(
