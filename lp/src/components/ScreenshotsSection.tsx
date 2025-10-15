@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { useState } from 'react'
+import { FADE_IN, staggerTransition } from '@/lib/animation-constants'
 
 const screenshots = {
   dog: [
@@ -19,16 +20,16 @@ const screenshots = {
 
 export function ScreenshotsSection() {
   const [activeTab, setActiveTab] = useState<'dog' | 'cat'>('dog')
+  const currentScreenshots = screenshots[activeTab]
 
   return (
-    <section className="section-container bg-white">
-      <div className="max-w-7xl mx-auto">
+    <section className="gradient-bg-purple py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-8 sm:px-16 md:px-20 lg:px-24">
         {/* セクションヘッダー */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          {...FADE_IN}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -49,6 +50,7 @@ export function ScreenshotsSection() {
                   ? 'bg-orange-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
+              aria-label="保護犬のスクリーンショットを表示"
             >
               保護犬
             </button>
@@ -59,31 +61,26 @@ export function ScreenshotsSection() {
                   ? 'bg-purple-500 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
+              aria-label="保護猫のスクリーンショットを表示"
             >
               保護猫
             </button>
           </div>
         </div>
 
-        {/* スクリーンショットグリッド */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
-        >
-          {screenshots[activeTab].map((screenshot, index) => (
+        {/* シンプルなグリッド表示（PC・モバイル共通） */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {currentScreenshots.map((screenshot, index) => (
             <motion.div
-              key={index}
+              key={`${activeTab}-${index}`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group relative"
+              transition={staggerTransition(index)}
+              className="group"
             >
               {/* スマホフレーム */}
-              <div className="relative bg-gray-900 rounded-3xl p-3 shadow-2xl group-hover:shadow-3xl transition-all duration-300 transform group-hover:-translate-y-2">
+              <div className="relative bg-gray-900 rounded-3xl p-3 transition-all duration-300 transform group-hover:-translate-y-2 shadow-xl">
                 {/* ノッチ */}
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-gray-900 rounded-b-2xl z-10" />
 
@@ -94,18 +91,18 @@ export function ScreenshotsSection() {
                     alt={screenshot.alt}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 25vw"
+                    sizes="(min-width: 768px) 33vw, 100vw"
                   />
                 </div>
               </div>
 
               {/* タイトル */}
-              <p className="text-center mt-4 text-sm font-semibold text-gray-700">
+              <p className="text-center mt-4 text-base font-semibold text-gray-900">
                 {screenshot.title}
               </p>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   )

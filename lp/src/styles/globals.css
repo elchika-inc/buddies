@@ -9,13 +9,13 @@
 
   body {
     @apply bg-white text-gray-900;
-    word-break: normal;
-    overflow-wrap: break-word;
   }
 
-  /* 見出しやボタンテキストは不自然な改行を防ぐ */
-  h1, h2, h3, h4, h5, h6, button {
+  /* 日本語の不自然な改行を防ぐ */
+  h1, h2, h3, h4, h5, h6, p, button, a, span, div {
     word-break: keep-all;
+    overflow-wrap: anywhere;
+    line-break: strict;
   }
 
   /* アンチエイリアシング */
@@ -37,7 +37,7 @@
 
   /* セクションコンテナ */
   .section-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24;
+    @apply max-w-7xl mx-auto px-12 sm:px-16 md:px-20 lg:px-24 py-16 md:py-24;
   }
 
   /* グラデーション背景 */

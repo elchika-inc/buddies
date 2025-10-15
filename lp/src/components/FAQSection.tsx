@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { faqData } from './StructuredData'
+import { ANIMATION_DURATION, ANIMATION_DELAY, FADE_IN, staggerTransition } from '@/lib/animation-constants'
 
 // FAQ質問をfaqDataから取得
 const faqs = faqData.mainEntity.map((entity) => ({
@@ -19,14 +20,13 @@ export function FAQSection() {
   }
 
   return (
-    <section className="section-container gradient-bg-orange">
-      <div className="max-w-4xl mx-auto">
+    <section className="gradient-bg-orange py-16 md:py-24">
+      <div className="max-w-4xl mx-auto px-8 sm:px-16 md:px-20 lg:px-24">
         {/* セクションヘッダー */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          {...FADE_IN}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -45,9 +45,9 @@ export function FAQSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
+              transition={staggerTransition(index)}
             >
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-white rounded-2xl overflow-hidden">
                 {/* 質問 */}
                 <button
                   onClick={() => toggleFAQ(index)}
@@ -59,7 +59,7 @@ export function FAQSection() {
                   </h3>
                   <motion.div
                     animate={{ rotate: openIndex === index ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: ANIMATION_DURATION.FAST }}
                     className="flex-shrink-0"
                   >
                     <ChevronDown className="w-6 h-6 text-orange-500" />
@@ -73,7 +73,7 @@ export function FAQSection() {
                     height: openIndex === index ? 'auto' : 0,
                     opacity: openIndex === index ? 1 : 0,
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: ANIMATION_DURATION.FAST }}
                   className="overflow-hidden"
                 >
                   <div className="px-6 md:px-8 pb-6 pt-2">
@@ -90,7 +90,7 @@ export function FAQSection() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: ANIMATION_DURATION.STANDARD, delay: ANIMATION_DELAY.MEDIUM }}
           className="mt-12 text-center"
         >
           <p className="text-gray-600">

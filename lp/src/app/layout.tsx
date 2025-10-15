@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import '@/styles/globals.css'
+import { env } from '@/config/env'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -8,7 +9,7 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const SITE_URL = process.env['NEXT_PUBLIC_SITE_URL'] || 'https://buddies.elchika.app'
+const SITE_URL = env.SITE_URL
 
 // SEO最適化されたメタデータ
 export const metadata: Metadata = {
@@ -80,7 +81,7 @@ export const metadata: Metadata = {
 
   // Google Search Console検証（環境変数から取得）
   verification: {
-    google: process.env['NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION'],
+    google: env.GOOGLE_SITE_VERIFICATION,
   },
 
   // その他のメタデータ

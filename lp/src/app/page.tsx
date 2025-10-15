@@ -1,5 +1,4 @@
 import { HeroSection } from '@/components/HeroSection'
-import { FeaturesSection } from '@/components/FeaturesSection'
 import { HowItWorksSection } from '@/components/HowItWorksSection'
 import { ScreenshotsSection } from '@/components/ScreenshotsSection'
 import { FAQSection } from '@/components/FAQSection'
@@ -16,9 +15,8 @@ export default function HomePage() {
       {/* メインコンテンツ */}
       <main>
         <HeroSection />
-        <FeaturesSection />
-        <HowItWorksSection />
         <ScreenshotsSection />
+        <HowItWorksSection />
         <FAQSection />
         <CTASection />
       </main>

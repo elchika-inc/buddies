@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { MapPin, Heart, MessageCircle } from 'lucide-react'
+import { ANIMATION_DURATION, FADE_IN, staggerTransition } from '@/lib/animation-constants'
 
 const steps = [
   {
@@ -14,8 +15,8 @@ const steps = [
   {
     number: '02',
     icon: Heart,
-    title: 'スワイプで探す',
-    description: 'ペットのプロフィールを見ながら、右スワイプで「いいね」、左スワイプで「次へ」。',
+    title: '直感で選ぶ',
+    description: 'ペットのプロフィールを見ながら、指先の直感で。右で「いいね」、左で「次へ」。',
     color: 'from-pink-400 to-pink-600',
   },
   {
@@ -29,14 +30,13 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="section-container gradient-bg-purple">
-      <div className="max-w-7xl mx-auto">
+    <section className="gradient-bg-purple py-16 md:py-24">
+      <div className="max-w-7xl mx-auto px-8 sm:px-16 md:px-20 lg:px-24">
         {/* セクションヘッダー */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          {...FADE_IN}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-20"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -59,13 +59,13 @@ export function HowItWorksSection() {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
+                transition={staggerTransition(index)}
                 className="relative"
               >
-                <div className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                <div className="bg-white rounded-3xl p-8 transition-all duration-300 transform hover:-translate-y-2">
                   {/* ステップ番号 */}
                   <div
-                    className={`absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}
+                    className={`absolute -top-6 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center`}
                   >
                     <span className="text-white font-bold text-xl">{step.number}</span>
                   </div>
@@ -97,7 +97,7 @@ export function HowItWorksSection() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: ANIMATION_DURATION.STANDARD, delay: 0.8 }}
           className="text-center mt-16"
         >
           <p className="text-lg text-gray-600 mb-4">今すぐ始めて、新しい家族を見つけましょう</p>

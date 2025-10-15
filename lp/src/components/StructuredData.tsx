@@ -3,7 +3,9 @@
  * SEO向上のためにGoogleなどの検索エンジンにリッチな情報を提供
  */
 
-const SITE_URL = process.env['NEXT_PUBLIC_SITE_URL'] || 'https://buddies.elchika.app'
+import { env } from '@/config/env'
+
+const SITE_URL = env.SITE_URL
 
 // Organization構造化データ
 const organizationData = {

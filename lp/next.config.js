@@ -19,13 +19,6 @@ const nextConfig = {
 
   // パワードバイヘッダーを無効化（セキュリティ）
   poweredByHeader: false,
-
-  // 環境変数
-  env: {
-    NEXT_PUBLIC_SITE_URL: process.env['NEXT_PUBLIC_SITE_URL'] || 'https://buddies.elchika.app',
-    NEXT_PUBLIC_APP_URL_DOG: process.env['NEXT_PUBLIC_APP_URL_DOG'] || 'https://buddies-dogs.elchika.app',
-    NEXT_PUBLIC_APP_URL_CAT: process.env['NEXT_PUBLIC_APP_URL_CAT'] || 'https://buddies-cats.elchika.app',
-  },
 }
 
 module.exports = nextConfig
