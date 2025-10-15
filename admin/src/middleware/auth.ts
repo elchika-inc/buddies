@@ -12,7 +12,7 @@ export function auth(c: Context<{ Bindings: Env }>, next: Next) {
   return basicAuth({
     username: 'admin',
     password: adminSecret,
-    realm: '管理者パスワードを入力してください',
+    realm: 'Admin Authentication Required',
     hashFunction: (value: string) => value, // パスワードはすでにプレーンテキスト
   })(c, next)
 }

@@ -19,9 +19,9 @@ uiRoute.get('/', async (c) => {
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
-<body>
-  <div class="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-6">
-    <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-5xl">
+<body class="bg-gray-100">
+  <div class="min-h-screen p-4">
+    <div class="max-w-[1600px] mx-auto space-y-4">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900 flex items-center">
           <span class="mr-3">🐾</span>
@@ -383,7 +383,7 @@ uiRoute.get('/', async (c) => {
 
         // サマリー表示
         const now = new Date();
-        healthSummary.textContent = \`サマリー: \${health.summary.healthy}件正常 / \${health.summary.unhealthy}件異常 / \${health.summary.skipped}件スキップ（最終更新: \${now.toLocaleTimeString('ja-JP')}）\`;
+        healthSummary.textContent = \`最終更新: \${now.toLocaleTimeString('ja-JP')}\`;
 
         healthLoading.classList.add('hidden');
         healthContent.classList.remove('hidden');
@@ -646,7 +646,7 @@ uiRoute.get('/', async (c) => {
 
         let errorMessageHtml = '';
         if (item.status === 'failed' && metadata?.errorMessage) {
-          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const urlRegex = /(https?:\\/\\/[^\\s]+)/g;
           const messageWithLinks = metadata.errorMessage.replace(urlRegex, (url) => \`<a href="\${url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline break-all">\${url}</a>\`);
           errorMessageHtml = \`<div class="mt-2 p-2 bg-red-50 rounded border border-red-200"><p class="text-xs text-red-700">\${messageWithLinks}</p></div>\`;
         }
@@ -1380,7 +1380,7 @@ uiRoute.get('/health', (c) => {
 
         // サマリー表示
         const now = new Date();
-        healthSummary.textContent = \`サマリー: \${health.summary.healthy}件正常 / \${health.summary.unhealthy}件異常 / \${health.summary.skipped}件スキップ（最終更新: \${now.toLocaleTimeString('ja-JP')}）\`;
+        healthSummary.textContent = \`最終更新: \${now.toLocaleTimeString('ja-JP')}\`;
 
         healthLoading.classList.add('hidden');
         healthContent.classList.remove('hidden');
