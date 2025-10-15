@@ -24,11 +24,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local env files
-.env
+# Note: .env contains default values and should be committed
+# Only .env.local and environment-specific files are ignored
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 .dev.vars
 
 # IDE

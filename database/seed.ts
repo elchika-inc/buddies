@@ -3,14 +3,45 @@
  * Database Seeder for Buddies
  *
  * このスクリプトはローカル開発環境のデータベースにテストデータを投入します。
- * 使用方法: npm run db:seed
+ *
+ * 使用方法:
+ *   npm run db:seed                                 # デフォルト（犬5匹、猫5匹）
+ *   npm run db:seed -- --dogs=10 --cats=15          # 件数指定
+ *   npm run db:seed -- --clear                      # 全削除してシード
+ *   npm run db:seed -- --append --dogs=5            # 既存データ保持で追加
+ *   npm run db:seed -- --skip-images                # 画像なしでデータのみ
+ *   npm run db:seed -- --generate-placeholders      # プレースホルダー画像を自動生成
  */
 
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { pets, apiKeys } from './schema/schema'
 import * as crypto from 'crypto'
-// import * as bcrypt from 'bcrypt'
+import minimist from 'minimist'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import { PetDataGenerator } from './generators/PetDataGenerator'
+import { ImageManager } from './utils/ImageManager'
+import { R2LocalUploader } from './utils/R2LocalUploader'
+
+const execAsync = promisify(exec)
+
+// コマンドライン引数のパース
+const args = minimist(process.argv.slice(2), {
+  default: {
+    dogs: 5,
+    cats: 5,
+    clear: false,
+    append: false,
+    'skip-images': false,
+    'generate-placeholders': false,
+  },
+  boolean: ['clear', 'append', 'skip-images', 'generate-placeholders'],
+  alias: {
+    d: 'dogs',
+    c: 'cats',
+  },
+})
 
 // SQLiteデータベースファイルのパス
 const DB_PATH = './api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite'
@@ -36,283 +67,217 @@ function generateApiKey(): string {
   return crypto.randomBytes(32).toString('hex')
 }
 
-// async function hashPassword(password: string): Promise<string> {
-//   return bcrypt.hash(password, 10)
-// }
+/**
+ * プレースホルダー画像を自動生成
+ */
+async function generatePlaceholders(dogCount: number, catCount: number): Promise<void> {
+  console.log('🖼️  プレースホルダー画像を生成中...')
+  try {
+    await execAsync(`tsx database/generate-placeholders.ts --dogs=${dogCount} --cats=${catCount}`)
+  } catch (error) {
+    console.error('❌ プレースホルダー画像の生成に失敗しました:', error)
+    throw error
+  }
+}
 
-// シードデータ
+/**
+ * シードデータ
+ */
 async function seed() {
+  const dogCount = parseInt(args.dogs as string, 10)
+  const catCount = parseInt(args.cats as string, 10)
+  const shouldClear = args.clear
+  const shouldAppend = args.append
+  const skipImages = args['skip-images']
+  const generatePlaceholderImages = args['generate-placeholders']
+
   console.log('🌱 Seeding database...')
+  console.log('')
+  console.log('📋 設定:')
+  console.log(`  - 犬: ${dogCount}匹`)
+  console.log(`  - 猫: ${catCount}匹`)
+  console.log(`  - クリアモード: ${shouldClear ? 'はい' : 'いいえ'}`)
+  console.log(`  - 追加モード: ${shouldAppend ? 'はい' : 'いいえ'}`)
+  console.log(`  - 画像スキップ: ${skipImages ? 'はい' : 'いいえ'}`)
+  console.log(`  - プレースホルダー生成: ${generatePlaceholderImages ? 'はい' : 'いいえ'}`)
+  console.log('')
 
   try {
-    // 既存のデータをクリア
-    console.log('🧹 Clearing existing data...')
-    await db.delete(pets)
-    await db.delete(apiKeys)
+    // プレースホルダー画像を生成（必要な場合）
+    if (generatePlaceholderImages && !skipImages) {
+      // 画像が足りない場合のみ生成
+      const imageManager = new ImageManager()
+      const existingDogImages = imageManager.getImageCount('dog')
+      const existingCatImages = imageManager.getImageCount('cat')
 
+      const dogsToGenerate = Math.max(0, Math.min(dogCount, 10) - existingDogImages)
+      const catsToGenerate = Math.max(0, Math.min(catCount, 10) - existingCatImages)
 
-    // テスト用ペット
-    console.log('🐾 Creating pets...')
-    const petData = [
-      // 犬
-      {
-        id: generateId(),
-        type: 'dog',
-        name: 'ポチ',
-        breed: '柴犬',
-        age: '2歳',
-        gender: 'male',
-        prefecture: '東京都',
-        city: '渋谷区',
-        location: '東京都渋谷区',
-        description: '人懐っこくて元気な柴犬です。散歩が大好きで、他の犬とも仲良くできます。',
-        personality: '明るく活発、人懐っこい',
-        medicalInfo: 'ワクチン接種済み、去勢手術済み',
-        careRequirements: '毎日の散歩が必要です',
-        goodWith: '子供、他の犬',
-        healthNotes: '健康状態良好',
-        color: '赤茶',
-        weight: 10.5,
-        size: 'medium',
-        coatLength: 'short',
-        isNeutered: 1,
-        isVaccinated: 1,
-        vaccinationStatus: '完了',
-        exerciseLevel: 'high',
-        trainingLevel: 'basic',
-        socialLevel: 'high',
-        goodWithKids: 1,
-        goodWithDogs: 1,
-        goodWithCats: 0,
-        specialNeeds: 0,
-        adoptionFee: 30000,
-        status: 'available',
-        imageUrl: 'https://placedog.net/400/400?id=1',
-        hasJpeg: 1,
-        hasWebp: 1, // WebP画像対応フラグ
-        additionalImages: JSON.stringify([
-          'https://placedog.net/400/400?id=2',
-          'https://placedog.net/400/400?id=3'
-        ]),
-        shelterId: generateId(),
-        rescueDate: '2024-01-15',
-        isPromoted: 1,
-        viewCount: 150,
-        likeCount: 45,
-        applicationCount: 3,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: generateId(),
-        type: 'dog',
-        name: 'ココ',
-        breed: 'トイプードル',
-        age: '3歳',
-        gender: 'female',
-        prefecture: '東京都',
-        city: '世田谷区',
-        location: '東京都世田谷区',
-        description: '小型で飼いやすいトイプードルです。室内飼いに適しています。',
-        personality: '穏やか、甘えん坊',
-        medicalInfo: 'ワクチン接種済み、避妊手術済み',
-        careRequirements: '定期的なトリミングが必要',
-        goodWith: '子供、高齢者',
-        healthNotes: '健康状態良好',
-        color: 'ブラウン',
-        weight: 4.2,
-        size: 'small',
-        coatLength: 'long',
-        isNeutered: 1,
-        isVaccinated: 1,
-        vaccinationStatus: '完了',
-        exerciseLevel: 'medium',
-        trainingLevel: 'advanced',
-        socialLevel: 'medium',
-        goodWithKids: 1,
-        goodWithDogs: 1,
-        goodWithCats: 1,
-        specialNeeds: 0,
-        adoptionFee: 35000,
-        status: 'available',
-        imageUrl: 'https://placedog.net/400/400?id=4',
-        hasJpeg: 1,
-        hasWebp: 1, // WebP画像対応フラグ
-        additionalImages: JSON.stringify([
-          'https://placedog.net/400/400?id=5'
-        ]),
-        shelterId: generateId(),
-        rescueDate: '2024-02-01',
-        isPromoted: 0,
-        viewCount: 89,
-        likeCount: 23,
-        applicationCount: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      // 猫
-      {
-        id: generateId(),
-        type: 'cat',
-        name: 'ミケ',
-        breed: '三毛猫',
-        age: '1歳',
-        gender: 'female',
-        prefecture: '大阪府',
-        city: '大阪市',
-        location: '大阪府大阪市',
-        description: '美しい三毛模様の猫です。人見知りしない性格で、初めての方でも飼いやすいです。',
-        personality: '人懐っこい、好奇心旺盛',
-        medicalInfo: 'ワクチン接種済み、避妊手術済み、FIV/FeLV陰性',
-        careRequirements: '室内飼いのみ',
-        goodWith: '子供、他の猫',
-        healthNotes: '健康状態良好',
-        color: '三毛',
-        weight: 3.8,
-        size: 'small',
-        coatLength: 'medium',
-        isNeutered: 1,
-        isVaccinated: 1,
-        vaccinationStatus: '完了',
-        isFivFelvTested: 1,
-        socialLevel: 'high',
-        indoorOutdoor: 'indoor',
-        goodWithKids: 1,
-        goodWithDogs: 0,
-        goodWithCats: 1,
-        specialNeeds: 0,
-        adoptionFee: 25000,
-        status: 'available',
-        imageUrl: 'https://placekitten.com/400/400?image=1',
-        hasJpeg: 1,
-        hasWebp: 1, // WebP画像対応フラグ
-        additionalImages: JSON.stringify([
-          'https://placekitten.com/400/400?image=2',
-          'https://placekitten.com/400/400?image=3'
-        ]),
-        shelterId: generateId(),
-        rescueDate: '2024-03-01',
-        isPromoted: 1,
-        viewCount: 203,
-        likeCount: 67,
-        applicationCount: 5,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: generateId(),
-        type: 'cat',
-        name: 'クロ',
-        breed: '黒猫',
-        age: '4歳',
-        gender: 'male',
-        prefecture: '大阪府',
-        city: '堺市',
-        location: '大阪府堺市',
-        description: '落ち着いた性格の黒猫です。静かな環境を好みます。',
-        personality: '穏やか、独立心あり',
-        medicalInfo: 'ワクチン接種済み、去勢手術済み、FIV/FeLV陰性',
-        careRequirements: '静かな環境、室内飼いのみ',
-        goodWith: '大人、単独飼育推奨',
-        healthNotes: '健康状態良好',
-        color: '黒',
-        weight: 5.2,
-        size: 'medium',
-        coatLength: 'short',
-        isNeutered: 1,
-        isVaccinated: 1,
-        vaccinationStatus: '完了',
-        isFivFelvTested: 1,
-        socialLevel: 'low',
-        indoorOutdoor: 'indoor',
-        goodWithKids: 0,
-        goodWithDogs: 0,
-        goodWithCats: 0,
-        specialNeeds: 0,
-        adoptionFee: 20000,
-        status: 'available',
-        imageUrl: 'https://placekitten.com/400/400?image=4',
-        hasJpeg: 1,
-        hasWebp: 1, // WebP画像対応フラグ
-        additionalImages: JSON.stringify([
-          'https://placekitten.com/400/400?image=5'
-        ]),
-        shelterId: generateId(),
-        rescueDate: '2024-01-20',
-        isPromoted: 0,
-        viewCount: 76,
-        likeCount: 12,
-        applicationCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      if (dogsToGenerate > 0 || catsToGenerate > 0) {
+        await generatePlaceholders(dogsToGenerate, catsToGenerate)
       }
-    ]
+    }
 
-    const insertedPets = await db.insert(pets).values(petData).returning()
-    console.log(`✅ ${insertedPets.length} pets created`)
-
-
-    // テスト用APIキー
-    console.log('🔑 Creating API keys...')
-    const apiKeyData = [
-      {
-        id: generateId(),
-        key: generateApiKey(),
-        name: 'Development API Key',
-        type: 'admin',
-        permissions: JSON.stringify(['*']),
-        rateLimit: 1000,
-        expiresAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: null,
-        isActive: 1,
-        metadata: JSON.stringify({ environment: 'development' })
-      },
-      {
-        id: generateId(),
-        key: generateApiKey(),
-        name: 'Test Public API Key',
-        type: 'public',
-        permissions: JSON.stringify(['pets:read', 'shelters:read']),
-        rateLimit: 100,
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1年後
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: null,
-        isActive: 1,
-        metadata: null
-      },
-      {
-        id: generateId(),
-        key: generateApiKey(),
-        name: 'Internal Service Key',
-        type: 'internal',
-        permissions: JSON.stringify(['pets:*', 'shelters:*', 'users:read']),
-        rateLimit: 500,
-        expiresAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: null,
-        isActive: 1,
-        metadata: JSON.stringify({ service: 'crawler' })
+    // 既存のデータをクリア（clearモードの場合）
+    if (shouldClear || !shouldAppend) {
+      console.log('🧹 既存データをクリア中...')
+      await db.delete(pets)
+      if (!shouldAppend) {
+        await db.delete(apiKeys)
       }
-    ]
+      console.log('  ✅ クリア完了')
+      console.log('')
+    }
 
-    const insertedApiKeys = await db.insert(apiKeys).values(apiKeyData).returning()
-    console.log(`✅ ${insertedApiKeys.length} API keys created`)
+    // ペットデータ生成
+    const generator = new PetDataGenerator()
+    console.log('🐾 ペットデータを生成中...')
 
-    // 作成したAPIキーを表示
-    console.log('\n📝 Created API Keys:')
-    insertedApiKeys.forEach(key => {
-      console.log(`  - ${key.name}: ${key.key}`)
-    })
+    const dogData = generator.generateMultiple('dog', dogCount)
+    const catData = generator.generateMultiple('cat', catCount)
+    const allPets = [...dogData, ...catData]
 
-    console.log('\n✨ Database seeding completed successfully!')
-    console.log('\n📊 Summary:')
-    console.log(`  - Pets: ${insertedPets.length}`)
-    console.log(`  - API Keys: ${insertedApiKeys.length}`)
+    console.log(`  ✅ ${allPets.length}匹のペットデータを生成しました`)
+    console.log('')
 
+    // 画像の準備
+    let shouldUploadImages = false
+    const imageManager = new ImageManager()
+    const uploader = new R2LocalUploader()
+
+    if (!skipImages) {
+      // APIサーバーが起動しているかチェック
+      console.log('🔍 APIサーバーをチェック中...')
+      const isApiRunning = await uploader.checkApiServer()
+
+      if (!isApiRunning) {
+        console.warn('⚠️  APIサーバーが起動していません。')
+        console.warn('    画像のアップロードには API サーバーが必要です。')
+        console.warn('    別のターミナルで `npm run dev:api` を実行してください。')
+        console.warn('')
+        console.warn('    データのみ保存します（画像なし）...')
+      } else {
+        console.log('  ✅ APIサーバーが起動しています')
+
+        // 画像統計を表示
+        imageManager.printStats()
+
+        shouldUploadImages = imageManager.hasImages('dog') || imageManager.hasImages('cat')
+        if (!shouldUploadImages) {
+          console.warn('⚠️  画像が見つかりません。')
+          console.warn('    プレースホルダー画像を生成するには:')
+          console.warn('      npm run db:generate-placeholders -- --dogs=5 --cats=5')
+          console.warn('')
+          console.warn('    データのみ保存します（画像なし）...')
+        }
+      }
+      console.log('')
+    }
+
+    // データベースに保存
+    console.log('💾 データベースに保存中...')
+    const insertedPets = await db.insert(pets).values(allPets).returning()
+    console.log(`  ✅ ${insertedPets.length}匹のペットを保存しました`)
+    console.log('')
+
+    // 画像をアップロード
+    if (shouldUploadImages) {
+      console.log('📤 画像をローカルR2にアップロード中...')
+
+      let uploadSuccess = 0
+      let uploadFailed = 0
+
+      for (let i = 0; i < insertedPets.length; i++) {
+        const pet = insertedPets[i]
+        if (!pet) continue
+
+        const petType = pet.type as 'dog' | 'cat'
+        const imageFile = imageManager.getImageByIndex(petType, i)
+
+        if (imageFile) {
+          const result = await uploader.uploadImage(pet.id, petType, imageFile, 'original')
+
+          if (result.success) {
+            uploadSuccess++
+            console.log(`  ✅ [${i + 1}/${insertedPets.length}] ${pet.name} (${pet.type})`)
+          } else {
+            uploadFailed++
+            console.error(`  ❌ [${i + 1}/${insertedPets.length}] ${pet.name}: ${result.error}`)
+          }
+        }
+
+        // 進捗表示のため少し待つ
+        if (i % 5 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+      }
+
+      console.log('')
+      console.log(`  ✅ アップロード成功: ${uploadSuccess}枚`)
+      if (uploadFailed > 0) {
+        console.log(`  ❌ アップロード失敗: ${uploadFailed}枚`)
+      }
+      console.log('')
+
+      // データベースの画像フラグを更新
+      if (uploadSuccess > 0) {
+        console.log('🔄 画像フラグを更新中...')
+        for (const pet of insertedPets) {
+          if (!pet) continue
+          await db
+            .update(pets)
+            .set({
+              hasJpeg: 1,
+              hasWebp: 0,
+              imageUrl: `http://localhost:9789/api/images/${pet.type}/${pet.id}.jpg`,
+              updatedAt: new Date().toISOString(),
+            })
+            .where({ id: pet.id })
+        }
+        console.log('  ✅ 更新完了')
+        console.log('')
+      }
+    }
+
+    // APIキーの作成（初回のみ）
+    if (!shouldAppend) {
+      console.log('🔑 APIキーを作成中...')
+      const apiKeyData = [
+        {
+          id: generateId(),
+          key: 'b80f83e113c5463a811607a30afd133dbb0b3c39a0eb41ebac716e29eeda27fb',
+          name: 'Development API Key',
+          type: 'admin',
+          permissions: JSON.stringify(['*']),
+          rateLimit: 1000,
+          expiresAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastUsedAt: null,
+          isActive: 1,
+          metadata: JSON.stringify({ environment: 'development' }),
+        },
+      ]
+
+      const insertedApiKeys = await db.insert(apiKeys).values(apiKeyData).returning()
+      console.log(`  ✅ ${insertedApiKeys.length}個のAPIキーを作成しました`)
+      console.log('')
+    }
+
+    console.log('✨ データベースシードが完了しました！')
+    console.log('')
+    console.log('📊 サマリー:')
+    console.log(`  - ペット総数: ${insertedPets.length}匹`)
+    console.log(`    - 犬: ${dogCount}匹`)
+    console.log(`    - 猫: ${catCount}匹`)
+    if (shouldUploadImages) {
+      console.log(`  - 画像アップロード: 完了`)
+    }
+    console.log('')
+    console.log('🚀 次のステップ:')
+    console.log('  1. API サーバーを起動（未起動の場合）: npm run dev:api')
+    console.log('  2. ブラウザで確認: http://localhost:9789/api/pets')
+    console.log('')
   } catch (error) {
     console.error('❌ Seeding failed:', error)
     process.exit(1)
