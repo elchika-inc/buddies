@@ -133,7 +133,9 @@ uiRoute.get('/', async (c) => {
       healthSummary.classList.add('hidden');
 
       try {
-        const response = await fetch('/api/health/check');
+        const response = await fetch('/api/health/check', {
+          credentials: 'include'  // Basic認証のクレデンシャルを含める
+        });
         if (!response.ok) {
           throw new Error('ヘルスチェックに失敗しました');
         }
@@ -154,14 +156,15 @@ uiRoute.get('/', async (c) => {
           const statusIcon = worker.status === 'healthy' ? '✅' :
                             worker.status === 'unhealthy' ? '❌' : '⚠️';
 
+          // Workers は内部サービスなので、Cloudflare ダッシュボードへのリンク（クリック可能）
           return \`
-            <div class="p-3 rounded-lg border \${statusColor}">
+            <a href="https://dash.cloudflare.com" target="_blank" class="block p-3 rounded-lg border \${statusColor} hover:shadow-md transition-shadow cursor-pointer">
               <div class="flex justify-between items-center">
                 <span class="font-medium">\${statusIcon} \${worker.name}</span>
                 \${worker.responseTime !== undefined ? \`<span class="text-sm text-gray-600">\${worker.responseTime}ms</span>\` : ''}
               </div>
               \${worker.error ? \`<div class="mt-1 text-xs text-gray-600">\${worker.error}</div>\` : ''}
-            </div>
+            </a>
           \`;
         }).join('');
 
@@ -174,14 +177,15 @@ uiRoute.get('/', async (c) => {
           const statusIcon = page.status === 'healthy' ? '✅' :
                             page.status === 'unhealthy' ? '❌' : '⚠️';
 
+          // Pagesは実際のURLにリンク（クリック可能）
           return \`
-            <div class="p-3 rounded-lg border \${statusColor}">
+            <a href="\${page.url}" target="_blank" class="block p-3 rounded-lg border \${statusColor} hover:shadow-md transition-shadow cursor-pointer">
               <div class="flex justify-between items-center">
                 <span class="font-medium">\${statusIcon} \${page.name}</span>
                 \${page.responseTime !== undefined ? \`<span class="text-sm text-gray-600">\${page.responseTime}ms</span>\` : ''}
               </div>
               \${page.error ? \`<div class="mt-1 text-xs text-gray-600">\${page.error}</div>\` : ''}
-            </div>
+            </a>
           \`;
         }).join('');
 
@@ -215,7 +219,9 @@ uiRoute.get('/', async (c) => {
       refreshBtn.disabled = true;
 
       try {
-        const response = await fetch('/api/tables');
+        const response = await fetch('/api/tables', {
+          credentials: 'include'  // Basic認証のクレデンシャルを含める
+        });
         if (!response.ok) {
           throw new Error('テーブル情報の取得に失敗しました');
         }
