@@ -17,23 +17,23 @@ dashboardUiRoute.get('/', (c) => {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="min-h-screen bg-gray-100 p-6">
-    <div class="max-w-7xl mx-auto space-y-6">
+  <div class="min-h-screen bg-gray-100 p-4">
+    <div class="max-w-[1600px] mx-auto space-y-4">
       <!-- ヘッダー -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-lg shadow p-4">
         <div class="flex justify-between items-center">
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center">
-            <span class="mr-3">📊</span>
+          <h1 class="text-xl font-bold text-gray-900 flex items-center">
+            <span class="mr-2">📊</span>
             ダッシュボード
           </h1>
           <div class="flex gap-2">
             <button
               id="refreshBtn"
-              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              class="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
             >
               更新
             </button>
-            <a href="/" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+            <a href="/" class="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700">
               ホーム
             </a>
           </div>
@@ -41,202 +41,227 @@ dashboardUiRoute.get('/', (c) => {
       </div>
 
       <!-- 統計サマリー -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow p-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-lg shadow p-3">
           <div class="flex items-center">
-            <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
-              <span class="text-2xl">🐾</span>
+            <div class="flex-shrink-0 bg-blue-100 rounded-md p-2">
+              <span class="text-xl">🐾</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">総ペット数</p>
-              <p id="totalPets" class="text-2xl font-semibold text-gray-900">-</p>
+            <div class="ml-3">
+              <p class="text-xs font-medium text-gray-600">総ペット数</p>
+              <p id="totalPets" class="text-xl font-semibold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-3">
           <div class="flex items-center">
-            <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-              <span class="text-2xl">✨</span>
+            <div class="flex-shrink-0 bg-green-100 rounded-md p-2">
+              <span class="text-xl">✨</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">今日の新規登録</p>
-              <p id="todayPets" class="text-2xl font-semibold text-gray-900">-</p>
+            <div class="ml-3">
+              <p class="text-xs font-medium text-gray-600">今日の新規登録</p>
+              <p id="todayPets" class="text-xl font-semibold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-3">
           <div class="flex items-center">
-            <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-              <span class="text-2xl">🔄</span>
+            <div class="flex-shrink-0 bg-yellow-100 rounded-md p-2">
+              <span class="text-xl">🔄</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">今日の更新</p>
-              <p id="todayUpdates" class="text-2xl font-semibold text-gray-900">-</p>
+            <div class="ml-3">
+              <p class="text-xs font-medium text-gray-600">今日の更新</p>
+              <p id="todayUpdates" class="text-xl font-semibold text-gray-900">-</p>
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-white rounded-lg shadow p-3">
           <div class="flex items-center">
-            <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
-              <span class="text-2xl">🔑</span>
+            <div class="flex-shrink-0 bg-purple-100 rounded-md p-2">
+              <span class="text-xl">🔑</span>
             </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">アクティブAPIキー</p>
-              <p id="activeApiKeys" class="text-2xl font-semibold text-gray-900">-</p>
+            <div class="ml-3">
+              <p class="text-xs font-medium text-gray-600">アクティブAPIキー</p>
+              <p id="activeApiKeys" class="text-xl font-semibold text-gray-900">-</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- グラフエリア -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- 日別登録件数グラフ -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">日別登録件数（30日間）</h2>
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">日別登録件数（30日間）</h2>
           <canvas id="createdChart"></canvas>
         </div>
 
         <!-- タイプ別登録件数グラフ -->
-        <div class="bg-white rounded-lg shadow p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">ペットタイプ別</h2>
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3">ペットタイプ別</h2>
           <canvas id="typeChart"></canvas>
         </div>
       </div>
 
       <!-- クローラー統計 -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">クローラー実行状況</h2>
-        <div id="crawlerStats" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-sm font-semibold text-gray-900 mb-3">クローラー実行状況</h2>
+        <div id="crawlerStats" class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <!-- 動的に生成される -->
         </div>
       </div>
 
       <!-- 画像統計 -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <span class="text-2xl mr-2">📸</span>
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+          <span class="text-lg mr-2">📸</span>
           画像・R2バケット統計
         </h2>
 
         <!-- スクリーンショット処理の詳細 -->
-        <div class="mb-8">
-          <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center">
-            <span class="mr-2">📷</span>
+        <div class="mb-4">
+          <h3 class="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+            <span class="mr-1">📷</span>
             スクリーンショット処理状況
           </h3>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <!-- スクリーンショット統計カード -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <p class="text-xs text-gray-600 mb-1">未処理</p>
-                <p id="screenshotNotStarted" class="text-xl font-bold text-gray-700">-</p>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-gray-50 rounded p-2 border border-gray-200">
+                <p class="text-xs text-gray-600 mb-0.5">未処理</p>
+                <p id="screenshotNotStarted" class="text-lg font-bold text-gray-700">-</p>
               </div>
-              <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <p class="text-xs text-blue-600 mb-1">処理中</p>
-                <p id="screenshotPending" class="text-xl font-bold text-blue-700">-</p>
+              <div class="bg-blue-50 rounded p-2 border border-blue-200">
+                <p class="text-xs text-blue-600 mb-0.5">処理中</p>
+                <p id="screenshotPending" class="text-lg font-bold text-blue-700">-</p>
               </div>
-              <div class="bg-green-50 rounded-lg p-3 border border-green-200">
-                <p class="text-xs text-green-600 mb-1">成功</p>
-                <p id="screenshotSuccess" class="text-xl font-bold text-green-700">-</p>
+              <div class="bg-green-50 rounded p-2 border border-green-200">
+                <p class="text-xs text-green-600 mb-0.5">成功</p>
+                <p id="screenshotSuccess" class="text-lg font-bold text-green-700">-</p>
               </div>
-              <div class="bg-red-50 rounded-lg p-3 border border-red-200">
-                <p class="text-xs text-red-600 mb-1">失敗</p>
-                <p id="screenshotFailed" class="text-xl font-bold text-red-700">-</p>
+              <div class="bg-red-50 rounded p-2 border border-red-200">
+                <p class="text-xs text-red-600 mb-0.5">失敗</p>
+                <p id="screenshotFailed" class="text-lg font-bold text-red-700">-</p>
               </div>
             </div>
 
             <!-- スクリーンショットグラフ -->
-            <div class="bg-gray-50 rounded-lg p-4">
+            <div class="bg-gray-50 rounded p-3">
               <canvas id="screenshotChart"></canvas>
             </div>
           </div>
 
           <!-- 成功率インジケーター -->
-          <div class="mt-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">スクリーンショット成功率</span>
-              <span id="screenshotSuccessRate" class="text-lg font-bold text-green-700">-</span>
+          <div class="mt-2 bg-gradient-to-r from-blue-50 to-green-50 rounded p-2">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-medium text-gray-700">成功率</span>
+              <span id="screenshotSuccessRate" class="text-sm font-bold text-green-700">-</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div id="screenshotSuccessBar" class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div id="screenshotSuccessBar" class="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
             </div>
           </div>
         </div>
 
         <!-- 画像変換（WebP）処理の詳細 -->
-        <div class="mb-6">
-          <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center">
-            <span class="mr-2">🔄</span>
+        <div class="mb-4">
+          <h3 class="text-xs font-semibold text-gray-800 mb-2 flex items-center">
+            <span class="mr-1">🔄</span>
             画像変換（WebP）処理状況
           </h3>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <!-- 変換統計カード -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <p class="text-xs text-blue-600 mb-1">変換対象</p>
-                <p id="conversionTarget" class="text-xl font-bold text-blue-700">-</p>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-blue-50 rounded p-2 border border-blue-200">
+                <p class="text-xs text-blue-600 mb-0.5">変換対象</p>
+                <p id="conversionTarget" class="text-lg font-bold text-blue-700">-</p>
               </div>
-              <div class="bg-green-50 rounded-lg p-3 border border-green-200">
-                <p class="text-xs text-green-600 mb-1">変換完了</p>
-                <p id="conversionCompleted" class="text-xl font-bold text-green-700">-</p>
+              <div class="bg-green-50 rounded p-2 border border-green-200">
+                <p class="text-xs text-green-600 mb-0.5">変換完了</p>
+                <p id="conversionCompleted" class="text-lg font-bold text-green-700">-</p>
               </div>
-              <div class="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                <p class="text-xs text-orange-600 mb-1">変換待ち</p>
-                <p id="conversionPending" class="text-xl font-bold text-orange-700">-</p>
+              <div class="bg-orange-50 rounded p-2 border border-orange-200">
+                <p class="text-xs text-orange-600 mb-0.5">変換待ち</p>
+                <p id="conversionPending" class="text-lg font-bold text-orange-700">-</p>
               </div>
-              <div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                <p class="text-xs text-purple-600 mb-1">変換率</p>
-                <p id="conversionRate" class="text-xl font-bold text-purple-700">-</p>
+              <div class="bg-purple-50 rounded p-2 border border-purple-200">
+                <p class="text-xs text-purple-600 mb-0.5">変換率</p>
+                <p id="conversionRate" class="text-lg font-bold text-purple-700">-</p>
               </div>
             </div>
 
             <!-- 変換グラフ -->
-            <div class="bg-gray-50 rounded-lg p-4">
+            <div class="bg-gray-50 rounded p-3">
               <canvas id="conversionChart"></canvas>
             </div>
           </div>
 
           <!-- 変換進捗インジケーター -->
-          <div class="mt-4 bg-gradient-to-r from-purple-50 to-green-50 rounded-lg p-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">WebP変換進捗</span>
-              <span id="conversionProgressRate" class="text-lg font-bold text-purple-700">-</span>
+          <div class="mt-2 bg-gradient-to-r from-purple-50 to-green-50 rounded p-2">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-medium text-gray-700">変換進捗</span>
+              <span id="conversionProgressRate" class="text-sm font-bold text-purple-700">-</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div id="conversionProgressBar" class="bg-gradient-to-r from-purple-500 to-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div id="conversionProgressBar" class="bg-gradient-to-r from-purple-500 to-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
             </div>
           </div>
         </div>
 
         <!-- R2バケット情報 -->
-        <div class="bg-gray-50 rounded-lg p-4">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">R2バケット（buddies-images）</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-50 rounded p-3">
+          <h3 class="text-xs font-semibold text-gray-700 mb-2">R2バケット（buddies-images）</h3>
+          <div class="grid grid-cols-3 gap-3">
             <div>
               <p class="text-xs text-gray-500">オブジェクト数</p>
-              <p id="r2ObjectCount" class="text-lg font-semibold text-gray-900">-</p>
+              <p id="r2ObjectCount" class="text-sm font-semibold text-gray-900">-</p>
             </div>
             <div>
               <p class="text-xs text-gray-500">合計サイズ</p>
-              <p id="r2TotalSize" class="text-lg font-semibold text-gray-900">-</p>
+              <p id="r2TotalSize" class="text-sm font-semibold text-gray-900">-</p>
             </div>
             <div>
               <p class="text-xs text-gray-500">ステータス</p>
-              <p id="r2Status" class="text-lg font-semibold text-green-600">-</p>
+              <p id="r2Status" class="text-sm font-semibold text-green-600">-</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 都道府県別統計 -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">都道府県別ペット数（上位10件）</h2>
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-sm font-semibold text-gray-900 mb-3">都道府県別ペット数（上位10件）</h2>
         <canvas id="prefectureChart"></canvas>
+      </div>
+
+      <!-- クローラー実行履歴とワークフロー実行履歴 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- クローラー実行履歴 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+            <span class="text-lg mr-2">📜</span>
+            クローラー実行履歴（30日間）
+          </h2>
+          <div id="crawlerHistory" class="space-y-2 max-h-96 overflow-y-auto">
+            <!-- 動的に生成される -->
+          </div>
+        </div>
+
+        <!-- ワークフロー実行履歴 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+            <span class="text-lg mr-2">⚙️</span>
+            ワークフロー実行履歴
+          </h2>
+          <div id="workflowHistory" class="space-y-2 max-h-96 overflow-y-auto">
+            <!-- 動的に生成される -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -290,6 +315,22 @@ dashboardUiRoute.get('/', (c) => {
 
         if (imageData.success) {
           renderImageStats(imageData.data);
+        }
+
+        // クローラー実行履歴
+        const crawlerHistoryRes = await fetch('/api/dashboard/crawler-history?days=30');
+        const crawlerHistoryData = await crawlerHistoryRes.json();
+
+        if (crawlerHistoryData.success) {
+          renderCrawlerHistory(crawlerHistoryData.data);
+        }
+
+        // ワークフロー実行履歴
+        const workflowHistoryRes = await fetch('/api/dashboard/workflow-history');
+        const workflowHistoryData = await workflowHistoryRes.json();
+
+        if (workflowHistoryData.success) {
+          renderWorkflowHistory(workflowHistoryData.data);
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -434,40 +475,39 @@ dashboardUiRoute.get('/', (c) => {
         const lastCrawl = stat.lastCrawlAt ? new Date(stat.lastCrawlAt).toLocaleString('ja-JP') : '未実行';
 
         return \`
-          <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex justify-between items-start mb-3">
+          <div class="border border-gray-200 rounded p-3">
+            <div class="flex justify-between items-start mb-2">
               <div>
-                <h3 class="font-semibold text-gray-900">\${stat.petType === 'dog' ? '🐕 犬' : '🐈 猫'}</h3>
-                <p class="text-xs text-gray-500">ソース: \${stat.sourceId}</p>
+                <h3 class="text-sm font-semibold text-gray-900">\${stat.petType === 'dog' ? '🐕 犬' : '🐈 猫'}</h3>
+                <p class="text-xs text-gray-500">\${stat.sourceId}</p>
               </div>
-              <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                アクティブ
+              <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">
+                稼働中
               </span>
             </div>
 
-            <div class="space-y-2 text-sm">
+            <div class="space-y-1 text-xs">
               <div class="flex justify-between">
                 <span class="text-gray-600">最終実行:</span>
                 <span class="font-medium">\${lastCrawl}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">累計処理数:</span>
+                <span class="text-gray-600">累計:</span>
                 <span class="font-medium">\${stat.totalProcessed.toLocaleString()}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">最新バッチ取得:</span>
+                <span class="text-gray-600">最新取得:</span>
                 <span class="font-medium">\${stat.lastBatch.totalFetched}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">新規:</span>
-                <span class="font-medium text-green-600">\${stat.lastBatch.newPets}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">更新:</span>
-                <span class="font-medium text-blue-600">\${stat.lastBatch.updatedPets}</span>
+                <span class="text-gray-600">新規/更新:</span>
+                <span class="font-medium">
+                  <span class="text-green-600">\${stat.lastBatch.newPets}</span> /
+                  <span class="text-blue-600">\${stat.lastBatch.updatedPets}</span>
+                </span>
               </div>
               \${stat.lastBatch.errors.length > 0 ? \`
-                <div class="mt-2 p-2 bg-red-50 rounded text-red-700 text-xs">
+                <div class="mt-1 p-1 bg-red-50 rounded text-red-700">
                   エラー: \${stat.lastBatch.errors.length}件
                 </div>
               \` : ''}
@@ -618,6 +658,131 @@ dashboardUiRoute.get('/', (c) => {
           }
         }
       });
+    }
+
+    // クローラー実行履歴
+    function renderCrawlerHistory(data) {
+      const container = document.getElementById('crawlerHistory');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">実行履歴データがありません</p>';
+        return;
+      }
+
+      // 日付でグループ化
+      const groupedByDate = {};
+      data.forEach(item => {
+        if (!groupedByDate[item.date]) {
+          groupedByDate[item.date] = [];
+        }
+        groupedByDate[item.date].push(item);
+      });
+
+      const html = Object.keys(groupedByDate).map(date => {
+        const items = groupedByDate[date];
+        const totalCount = items.reduce((sum, item) => sum + item.count, 0);
+
+        return \`
+          <div class="border border-gray-200 rounded p-2 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-gray-700">\${date}</span>
+              <span class="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
+                \${totalCount.toLocaleString()} 件
+              </span>
+            </div>
+            <div class="grid grid-cols-1 gap-1">
+              \${items.map(item => \`
+                <div class="flex items-center justify-between bg-gray-50 rounded px-2 py-1">
+                  <div class="flex items-center gap-1">
+                    <span class="text-sm">\${item.type === 'dog' ? '🐕' : '🐈'}</span>
+                    <span class="text-xs text-gray-600">\${item.sourceId}</span>
+                  </div>
+                  <span class="text-xs font-semibold text-gray-900">\${item.count.toLocaleString()}</span>
+                </div>
+              \`).join('')}
+            </div>
+          </div>
+        \`;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    // ワークフロー実行履歴
+    function renderWorkflowHistory(data) {
+      const container = document.getElementById('workflowHistory');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = \`
+          <div class="bg-gray-50 rounded-lg p-6 text-center">
+            <p class="text-gray-500 mb-2">ワークフロー実行履歴がありません</p>
+            <p class="text-xs text-gray-400">sync_statusテーブルにデータが記録されると表示されます</p>
+          </div>
+        \`;
+        return;
+      }
+
+      const html = data.map(item => {
+        const startedAt = item.startedAt ? new Date(item.startedAt).toLocaleString('ja-JP') : '-';
+        const completedAt = item.completedAt ? new Date(item.completedAt).toLocaleString('ja-JP') : '-';
+        const createdAt = new Date(item.createdAt).toLocaleString('ja-JP');
+
+        // ステータスに応じた色とラベル
+        let statusBadge = '';
+        switch (item.status) {
+          case 'completed':
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">完了</span>';
+            break;
+          case 'running':
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">実行中</span>';
+            break;
+          case 'failed':
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">失敗</span>';
+            break;
+          case 'pending':
+            statusBadge = '<span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">待機中</span>';
+            break;
+          default:
+            statusBadge = \`<span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">\${item.status}</span>\`;
+        }
+
+        return \`
+          <div class="border border-gray-200 rounded p-2 hover:bg-gray-50 transition-colors">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h4 class="text-sm font-semibold text-gray-900">\${item.syncType}</h4>
+                <p class="text-xs text-gray-500">\${createdAt}</p>
+              </div>
+              \${statusBadge}
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              <div>
+                <p class="text-xs text-gray-500">総数</p>
+                <p class="font-semibold">\${item.totalRecords.toLocaleString()}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">処理済</p>
+                <p class="font-semibold text-green-600">\${item.processedRecords.toLocaleString()}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">失敗</p>
+                <p class="font-semibold text-red-600">\${item.failedRecords.toLocaleString()}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">進捗</p>
+                <p class="font-semibold">\${item.totalRecords > 0 ? Math.round((item.processedRecords / item.totalRecords) * 100) : 0}%</p>
+              </div>
+            </div>
+            \${item.startedAt ? \`
+              <div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                \${startedAt} 〜 \${completedAt}
+              </div>
+            \` : ''}
+          </div>
+        \`;
+      }).join('');
+
+      container.innerHTML = html;
     }
 
     // リフレッシュボタン

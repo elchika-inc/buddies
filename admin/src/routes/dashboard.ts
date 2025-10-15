@@ -137,6 +137,80 @@ dashboardRoute.get('/pets-timeline', async (c) => {
 })
 
 /**
+ * クローラー実行履歴（タイムライン）
+ */
+dashboardRoute.get('/crawler-history', async (c) => {
+  try {
+    const days = parseInt(c.req.query('days') || '30')
+    const db = c.env.DB
+
+    // sourceId別・日別の新規登録数を集計
+    const history = await db.prepare(`
+      SELECT
+        sourceId,
+        type,
+        DATE(createdAt) as date,
+        COUNT(*) as count
+      FROM pets
+      WHERE createdAt >= DATE('now', '-${days} days')
+      GROUP BY sourceId, type, DATE(createdAt)
+      ORDER BY date DESC, sourceId ASC, type ASC
+    `).all()
+
+    return c.json({
+      success: true,
+      data: history.results
+    })
+  } catch (error) {
+    console.error('Error fetching crawler history:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to fetch crawler history',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
+ * ワークフロー実行履歴
+ */
+dashboardRoute.get('/workflow-history', async (c) => {
+  try {
+    const db = c.env.DB
+
+    // sync_statusテーブルから実行履歴を取得
+    const history = await db.prepare(`
+      SELECT
+        id,
+        syncType,
+        status,
+        totalRecords,
+        processedRecords,
+        failedRecords,
+        metadata,
+        startedAt,
+        completedAt,
+        createdAt
+      FROM sync_status
+      ORDER BY createdAt DESC
+      LIMIT 100
+    `).all()
+
+    return c.json({
+      success: true,
+      data: history.results
+    })
+  } catch (error) {
+    console.error('Error fetching workflow history:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to fetch workflow history',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
+
+/**
  * クローラー統計
  */
 dashboardRoute.get('/crawler-stats', async (c) => {
