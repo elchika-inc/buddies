@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { TAP } from '@/constants/gesture'
 
 export interface DragState {
   isDragging: boolean
@@ -65,8 +66,8 @@ export function useDragGesture({ onDragEnd, onTap, disabled = false }: DragGestu
       const duration = Date.now() - dragStartRef.current.time
       const distance = Math.hypot(dragState.offset.x, dragState.offset.y)
 
-      // シンプルな判定: 5px以下 & 200ms以下ならタップ
-      if (distance < 5 && duration < 200 && onTap) {
+      // シンプルな判定: TAP.MAX_DISTANCE以下 & TAP.MAX_DURATION以下ならタップ
+      if (distance < TAP.MAX_DISTANCE && duration < TAP.MAX_DURATION && onTap) {
         onTap()
       } else {
         onDragEnd(dragState.offset)

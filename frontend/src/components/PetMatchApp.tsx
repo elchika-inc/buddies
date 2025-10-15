@@ -5,8 +5,6 @@ import { SwipeFooter } from './SwipeFooter'
 import { MatchHeader } from './MatchHeader'
 import { LocationModal, Location } from './LocationModal'
 import { PetDetailModal } from './PetDetailModal'
-import { KeyboardHelpModal } from './KeyboardHelpModal'
-import { KeyboardHint } from './KeyboardHint'
 import { usePetSwipe } from '@/hooks/usePetSwipe'
 import { usePetData } from '@/hooks/usePetData'
 import { useModals } from '@/hooks/useModals'
@@ -14,12 +12,12 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { useKeyboardSwipe } from '@/hooks/useKeyboardSwipe'
 import { useState, useCallback } from 'react'
 import { getPetType } from '@/config/petConfig'
+import { LAYOUT } from '@/constants/layout'
 
 export function PetMatchApp() {
   const petType = getPetType()
 
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([])
-  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
 
   // カスタムフックで状態管理を分離（地域フィルタを渡す）
   const { pets, isLoading, reset: resetPets } = usePetData(selectedLocations)
@@ -87,7 +85,6 @@ export function PetMatchApp() {
   useKeyboardSwipe({
     onSwipe: triggerButtonSwipe,
     onDetail: currentPet ? () => openPetDetailModal(currentPet) : undefined,
-    onHelp: () => setShowKeyboardHelp((prev) => !prev),
     disabled: !currentPet || detailModalOpen || locationModalOpen,
   })
 
@@ -124,9 +121,9 @@ export function PetMatchApp() {
         <div
           className="flex justify-center relative touch-none"
           style={{
-            height: 'calc(100vh - 320px)',
-            minHeight: '320px',
-            maxHeight: '70vh',
+            height: `calc(100vh - ${LAYOUT.TOTAL_FIXED_HEIGHT}px)`,
+            minHeight: `${LAYOUT.CARD_MIN_HEIGHT}px`,
+            maxHeight: `${LAYOUT.CARD_MAX_HEIGHT_VH}vh`,
           }}
         >
           {/* プリロード用の非表示カード（画像を事前読み込み） */}
@@ -204,10 +201,6 @@ export function PetMatchApp() {
       {selectedPet && (
         <PetDetailModal pet={selectedPet} isOpen={detailModalOpen} onClose={closePetDetailModal} />
       )}
-
-      <KeyboardHelpModal isOpen={showKeyboardHelp} onClose={() => setShowKeyboardHelp(false)} />
-
-      <KeyboardHint />
     </div>
   )
 }

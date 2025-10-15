@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { FrontendPet } from '@/types/pet'
 import { SWIPE_CONFIG } from '@/config/swipe'
+import { SWIPE } from '@/constants/gesture'
 
 /** スワイプ方向の定義 */
 export type SwipeDirection = 'like' | 'pass' | 'superLike'
@@ -191,11 +192,6 @@ export function usePetSwipe(pets: FrontendPet[], petType: 'dog' | 'cat') {
  * ドラッグ量からスワイプ方向を判定
  */
 export function useSwipeGesture() {
-  /** 左右スワイプの判定閾値（ピクセル） */
-  const SWIPE_THRESHOLD = 100
-  /** スーパーライクの判定閾値（ピクセル） */
-  const SUPER_LIKE_THRESHOLD = 100
-
   /**
    * ドラッグ位置からスワイプ方向を判定
    * @param x X軸方向の移動量
@@ -204,17 +200,17 @@ export function useSwipeGesture() {
    */
   const getSwipeDirection = useCallback((x: number, y: number): SwipeDirection | null => {
     // 上スワイプ（スーパーライク）
-    if (y < -SUPER_LIKE_THRESHOLD) {
+    if (y < -SWIPE.SUPER_LIKE_THRESHOLD) {
       return 'superLike'
     }
 
     // 右スワイプ（ライク）
-    if (x > SWIPE_THRESHOLD) {
+    if (x > SWIPE.HORIZONTAL_THRESHOLD) {
       return 'like'
     }
 
     // 左スワイプ（パス）
-    if (x < -SWIPE_THRESHOLD) {
+    if (x < -SWIPE.HORIZONTAL_THRESHOLD) {
       return 'pass'
     }
 
@@ -238,11 +234,11 @@ export function useSwipeGesture() {
     } => {
       return {
         // 右スワイプ：移動量に比例して不透明に
-        like: Math.max(0, Math.min(1, x / SWIPE_THRESHOLD)),
+        like: Math.max(0, Math.min(1, x / SWIPE.HORIZONTAL_THRESHOLD)),
         // 左スワイプ：移動量に比例して不透明に
-        pass: Math.max(0, Math.min(1, -x / SWIPE_THRESHOLD)),
+        pass: Math.max(0, Math.min(1, -x / SWIPE.HORIZONTAL_THRESHOLD)),
         // 上スワイプ：移動量に比例して不透明に
-        superLike: Math.max(0, Math.min(1, -y / SUPER_LIKE_THRESHOLD)),
+        superLike: Math.max(0, Math.min(1, -y / SWIPE.SUPER_LIKE_THRESHOLD)),
       }
     },
     []
@@ -251,8 +247,8 @@ export function useSwipeGesture() {
   return {
     getSwipeDirection,
     getIndicatorOpacity,
-    SWIPE_THRESHOLD,
-    SUPER_LIKE_THRESHOLD,
+    SWIPE_THRESHOLD: SWIPE.HORIZONTAL_THRESHOLD,
+    SUPER_LIKE_THRESHOLD: SWIPE.SUPER_LIKE_THRESHOLD,
   }
 }
 

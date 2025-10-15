@@ -1,4 +1,5 @@
 import { SwipeDirection } from '@/hooks/usePetSwipe'
+import { INDICATOR } from '@/constants/gesture'
 
 interface SwipeIndicatorProps {
   dragOffset: { x: number; y: number }
@@ -39,7 +40,7 @@ export function SwipeIndicator({
       indicatorStyle.superLike.opacity
     )
 
-    if (maxOpacity > 0.3) {
+    if (maxOpacity > INDICATOR.MIN_OPACITY) {
       // 閾値以上の場合のみ表示
       if (indicatorStyle.like.opacity === maxOpacity) {
         activeIndicator = 'like'

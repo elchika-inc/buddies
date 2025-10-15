@@ -3,16 +3,7 @@
  */
 
 // 住所解析
-export { parseLocation, isValidPrefecture as isValidPrefectureAddress } from './addressParser'
-export {
-  safeParseLocation,
-  safeParseBatchLocations,
-  extractPrefecture,
-  extractCity,
-  isValidPrefecture,
-  type ParsedLocation,
-  type ParseError,
-} from './safeAddressParser'
+export { parseLocation, isValidPrefecture } from './addressParser'
 
 // 性別正規化
 export {

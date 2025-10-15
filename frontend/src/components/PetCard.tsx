@@ -53,9 +53,7 @@ export function PetCard({ pet, priority = false, favoriteRating }: PetCardProps)
           src={image.src}
           alt={pet.name}
           fill
-          className={`object-contain transition-opacity duration-500 ${
-            image.isLoading ? 'opacity-0' : 'opacity-100'
-          }`}
+          className="object-contain"
           sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 60vw, 500px"
           loading={priority ? 'eager' : 'lazy'}
           priority={priority}

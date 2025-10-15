@@ -1,10 +1,12 @@
 import { SwipeDirection } from '@/hooks/usePetSwipe'
+import { ROTATION, SWIPE } from '@/constants/gesture'
+import { Z_INDEX } from '@/constants/layout'
 
 /**
  * スワイプアニメーション設定
  */
 export const SWIPE_ANIMATION = {
-  duration: 300, // ミリ秒
+  duration: SWIPE.ANIMATION_DURATION,
   ease: 'ease-out',
 } as const
 
@@ -24,7 +26,7 @@ export function getExitTransform(direction: SwipeDirection): string {
  * ドラッグ中のトランスフォーム値を計算
  */
 export function getDragTransform(offsetX: number, offsetY: number): string {
-  const rotation = offsetX * 0.1 // X方向の移動量に応じて回転
+  const rotation = offsetX * ROTATION.ROTATION_FACTOR // X方向の移動量に応じて回転
   return `translate(${offsetX}px, ${offsetY}px) rotate(${rotation}deg)`
 }
 
@@ -55,6 +57,6 @@ export function getCardStyle({
         ? 'none'
         : `transform ${SWIPE_ANIMATION.duration}ms ${SWIPE_ANIMATION.ease}`,
     position: 'absolute',
-    zIndex: isTopCard ? 10 : 1,
+    zIndex: isTopCard ? Z_INDEX.CARD_TOP : Z_INDEX.CARD_BACKGROUND,
   }
 }
