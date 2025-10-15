@@ -212,3 +212,142 @@ dashboardRoute.get('/crawler-stats', async (c) => {
     }, 500)
   }
 })
+
+/**
+ * 画像統計（R2バケット情報含む）
+ */
+dashboardRoute.get('/image-stats', async (c) => {
+  try {
+    const db = drizzle(c.env.DB)
+
+    // 総ペット数
+    const [totalPetsResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(pets)
+    const totalPets = totalPetsResult?.count || 0
+
+    // imageUrlがある件数
+    const [withImageUrlResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.imageUrl} IS NOT NULL AND ${pets.imageUrl} != ''`)
+    const withImageUrl = withImageUrlResult?.count || 0
+
+    // JPEG画像がある件数
+    const [hasJpegResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.hasJpeg} = 1`)
+    const hasJpeg = hasJpegResult?.count || 0
+
+    // WebP画像がある件数
+    const [hasWebpResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.hasWebp} = 1`)
+    const hasWebp = hasWebpResult?.count || 0
+
+    // スクリーンショット統計（詳細）
+    // 未処理: imageUrlがあるがscreenshotRequestedAt=NULL
+    const [screenshotNotStartedResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.imageUrl} IS NOT NULL AND ${pets.imageUrl} != '' AND ${pets.screenshotRequestedAt} IS NULL`)
+    const screenshotNotStarted = screenshotNotStartedResult?.count || 0
+
+    // リクエスト済み（処理中）
+    const [screenshotPendingResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.screenshotRequestedAt} IS NOT NULL AND ${pets.screenshotCompletedAt} IS NULL`)
+    const screenshotPending = screenshotPendingResult?.count || 0
+
+    // 完了（全体）
+    const [screenshotCompletedResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.screenshotCompletedAt} IS NOT NULL`)
+    const screenshotCompleted = screenshotCompletedResult?.count || 0
+
+    // 成功: 完了してhasJpeg=1
+    const [screenshotSuccessResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.screenshotCompletedAt} IS NOT NULL AND ${pets.hasJpeg} = 1`)
+    const screenshotSuccess = screenshotSuccessResult?.count || 0
+
+    // 失敗: 完了してhasJpeg=0
+    const [screenshotFailedResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.screenshotCompletedAt} IS NOT NULL AND ${pets.hasJpeg} = 0`)
+    const screenshotFailed = screenshotFailedResult?.count || 0
+
+    // 画像変換（WebP）統計（詳細）
+    // 変換対象: hasJpeg=1
+    const conversionTarget = hasJpeg
+
+    // 変換完了: hasJpeg=1 AND hasWebp=1
+    const conversionCompleted = hasWebp
+
+    // 変換待ち: hasJpeg=1 AND hasWebp=0
+    const [conversionPendingResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(pets)
+      .where(sql`${pets.hasJpeg} = 1 AND ${pets.hasWebp} = 0`)
+    const conversionPending = conversionPendingResult?.count || 0
+
+    // WebP変換率（%）
+    const webpConversionRate = hasJpeg > 0 ? Math.round((hasWebp / hasJpeg) * 100) : 0
+
+    // R2バケット統計
+    let r2Stats = {
+      objectCount: 0,
+      totalSize: 0,
+      error: null as string | null
+    }
+
+    try {
+      const bucket = c.env.IMAGES_BUCKET
+
+      // R2のオブジェクトをリストアップ（最大1000件まで）
+      const listed = await bucket.list({ limit: 1000 })
+      r2Stats.objectCount = listed.objects.length
+
+      // 合計サイズを計算
+      r2Stats.totalSize = listed.objects.reduce((sum, obj) => sum + obj.size, 0)
+
+      // truncatedがtrueの場合、さらにオブジェクトがあることを示す
+      if (listed.truncated) {
+        r2Stats.error = 'More than 1000 objects exist (showing first 1000)'
+      }
+    } catch (error) {
+      console.error('Error fetching R2 stats:', error)
+      r2Stats.error = error instanceof Error ? error.message : 'Unknown error'
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        totalPets,
+        withImageUrl,
+        hasJpeg,
+        hasWebp,
+        webpConversionRate,
+        // スクリーンショット統計（詳細）
+        screenshot: {
+          notStarted: screenshotNotStarted,
+          pending: screenshotPending,
+          completed: screenshotCompleted,
+          success: screenshotSuccess,
+          failed: screenshotFailed,
+          successRate: screenshotCompleted > 0 ? Math.round((screenshotSuccess / screenshotCompleted) * 100) : 0
+        },
+        // 画像変換統計（詳細）
+        conversion: {
+          target: conversionTarget,
+          completed: conversionCompleted,
+          pending: conversionPending,
+          rate: webpConversionRate
+        },
+        r2: r2Stats
+      }
+    })
+  } catch (error) {
+    console.error('Error fetching image stats:', error)
+    return c.json({
+      success: false,
+      error: 'Failed to fetch image stats',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500)
+  }
+})
