@@ -19,7 +19,7 @@ workflow.post('/start', async (c) => {
     }
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     const workflowId = await service.startWorkflow(syncType, metadata || {})
 
@@ -54,7 +54,7 @@ workflow.put('/:id/complete', async (c) => {
     const stats = (await c.req.json()) as WorkflowStats
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     await service.completeWorkflow(id, stats)
 
@@ -88,7 +88,7 @@ workflow.put('/:id/fail', async (c) => {
     const { errorMessage } = (await c.req.json()) as { errorMessage: string }
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     await service.failWorkflow(id, errorMessage || 'Workflow failed')
 
@@ -116,7 +116,7 @@ workflow.get('/history', async (c) => {
     const limit = parseInt(c.req.query('limit') || '10', 10)
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     const history = await service.getWorkflowHistory(limit)
 
@@ -153,7 +153,7 @@ workflow.get('/:id', async (c) => {
     }
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     const record = await service.getWorkflowById(id)
 
@@ -187,7 +187,7 @@ workflow.get('/stats/:syncType', async (c) => {
     const syncType = c.req.param('syncType')
 
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     const stats = await service.getStatsBySyncType(syncType)
 
@@ -213,7 +213,7 @@ workflow.get('/stats/:syncType', async (c) => {
 workflow.get('/running/list', async (c) => {
   try {
     const db = drizzle(c.env.DB)
-    const service = new WorkflowHistoryService(db)
+    const service = new WorkflowHistoryService(db.$client)
 
     const runningWorkflows = await service.getRunningWorkflows()
 

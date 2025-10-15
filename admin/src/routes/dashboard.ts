@@ -342,7 +342,11 @@ dashboardRoute.post('/trigger-screenshot', async (c) => {
       body: JSON.stringify({ limit }),
     })
 
-    const data = await response.json()
+    const data = (await response.json()) as {
+      success?: boolean
+      message?: string
+      data?: unknown
+    }
 
     if (!response.ok) {
       throw new Error(data.message || 'Failed to trigger screenshot')
@@ -350,7 +354,7 @@ dashboardRoute.post('/trigger-screenshot', async (c) => {
 
     return c.json({
       success: true,
-      data,
+      data: data.data || data,
     })
   } catch (error) {
     console.error('Error triggering screenshot:', error)

@@ -101,7 +101,7 @@ export class WorkflowHistoryService {
         // JSON解析失敗時は空オブジェクトを使用
       }
     }
-    metadata.errorMessage = errorMessage
+    metadata['errorMessage'] = errorMessage
 
     await this.db
       .prepare(
