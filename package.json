@@ -106,6 +106,11 @@
     "images:status": "tsx scripts/ts/check-image-status.ts",
     "images:screenshot": "tsx scripts/ts/trigger-screenshot.ts",
     "images:convert": "tsx scripts/ts/trigger-conversion.ts",
+    "images:local": "tsx scripts/ts/convert-local-images.ts",
+    "images:local:dogs": "tsx scripts/ts/convert-local-images.ts --type=dogs",
+    "images:local:cats": "tsx scripts/ts/convert-local-images.ts --type=cats",
+    "images:local:parallel": "concurrently --names 'DOGS,CATS' --prefix-colors 'blue,yellow' 'npm:images:local:dogs' 'npm:images:local:cats'",
+    "images:pipeline": "npm run db:generate-placeholders && npm run images:local",
     "lp:screenshots": "npm run -w @buddies/lp screenshots"
   },
   "devDependencies": {

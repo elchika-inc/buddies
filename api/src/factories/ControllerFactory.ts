@@ -19,7 +19,7 @@ export class ControllerFactory {
    * ImageControllerのインスタンスを生成
    */
   static createImageController(c: Context<{ Bindings: Env }>): ImageController {
-    return new ImageController(c.env.IMAGES_BUCKET, c.env.DB)
+    return new ImageController(c.env.IMAGES_BUCKET, c.env.DB, c.env)
   }
 }
 

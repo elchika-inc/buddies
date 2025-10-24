@@ -1,4 +1,6 @@
 import type { ImageFile, PetType } from './ImageManager'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * ローカルR2アップローダー
@@ -17,7 +19,7 @@ export class R2LocalUploader {
   }
 
   /**
-   * 画像をR2にアップロード
+   * 画像をR2にアップロード（Cloudflare標準のR2 API経由）
    */
   async uploadImage(
     petId: string,
@@ -26,33 +28,23 @@ export class R2LocalUploader {
     format: 'screenshot' | 'original' | 'optimized' = 'original'
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      // 画像をBase64に変換
-      const base64Image = imageFile.buffer.toString('base64')
+      // アップロードエンドポイント（既存のエンドポイントを使用）
+      const endpoint = `${this.apiBaseUrl}/api/images/upload/${petId}`
 
-      // アップロードエンドポイントに送信
-      const endpoint = `${this.apiBaseUrl}/api/admin/images/upload`
+      // FormDataを構築
+      const formData = new FormData()
+
+      // BlobとしてFormDataに追加
+      const blob = new Blob([imageFile.buffer], { type: imageFile.mimeType })
+      formData.append('image', blob, imageFile.filename)
+      formData.append('type', format)
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-API-Key': this.apiKey,
-          'X-Admin-Secret': this.apiKey,
         },
-        body: JSON.stringify({
-          uploads: [
-            {
-              petId,
-              petType,
-              format,
-              imageData: base64Image,
-              metadata: {
-                source: 'seed-script',
-                originalFilename: imageFile.filename,
-              },
-            },
-          ],
-        }),
+        body: formData,
       })
 
       if (!response.ok) {
@@ -118,13 +110,78 @@ export class R2LocalUploader {
    */
   async checkApiServer(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/health`, {
-        method: 'GET',
+      const response = await fetch(`${this.apiBaseUrl}/api/pets`, {
+        method: 'HEAD',
+        headers: {
+          'X-API-Key': this.apiKey,
+        },
         signal: AbortSignal.timeout(3000), // 3秒タイムアウト
       })
       return response.ok
     } catch (error) {
       return false
+    }
+  }
+
+  /**
+   * 変換済み画像をR2にアップロード
+   * .wrangler/state/r2/buddies-images/ から読み込んでアップロード
+   */
+  async uploadConvertedImages(
+    petId: string,
+    petType: PetType,
+    imageId?: string // dog-01, cat-01 などのファイル名用ID
+  ): Promise<{ success: boolean; error?: string }> {
+    // imageIdが指定されていればそれを使用、なければpetIdを使用
+    const dirName = imageId || petId
+    const baseDir = path.join('.wrangler/state/r2/buddies-images/pets', `${petType}s`, dirName)
+
+    try {
+      // original.jpg をアップロード
+      const jpegPath = path.join(baseDir, 'original.jpg')
+      if (fs.existsSync(jpegPath)) {
+        const jpegBuffer = fs.readFileSync(jpegPath)
+        const jpegFile: ImageFile = {
+          filename: 'original.jpg',
+          buffer: jpegBuffer,
+        }
+        const jpegResult = await this.uploadImage(petId, petType, jpegFile, 'original')
+        if (!jpegResult.success) {
+          return { success: false, error: `JPEG upload failed: ${jpegResult.error}` }
+        }
+      }
+
+      // optimized.webp をアップロード
+      const webpPath = path.join(baseDir, 'optimized.webp')
+      if (fs.existsSync(webpPath)) {
+        const webpBuffer = fs.readFileSync(webpPath)
+        const webpFile: ImageFile = {
+          filename: 'optimized.webp',
+          buffer: webpBuffer,
+        }
+        const webpResult = await this.uploadImage(petId, petType, webpFile, 'optimized')
+        if (!webpResult.success) {
+          return { success: false, error: `WebP upload failed: ${webpResult.error}` }
+        }
+      }
+
+      // screenshot.png をアップロード（オプション）
+      const screenshotPath = path.join(baseDir, 'screenshot.png')
+      if (fs.existsSync(screenshotPath)) {
+        const screenshotBuffer = fs.readFileSync(screenshotPath)
+        const screenshotFile: ImageFile = {
+          filename: 'screenshot.png',
+          buffer: screenshotBuffer,
+        }
+        await this.uploadImage(petId, petType, screenshotFile, 'screenshot')
+      }
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
     }
   }
 }

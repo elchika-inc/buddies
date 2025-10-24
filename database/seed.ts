@@ -16,6 +16,7 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { pets, apiKeys } from './schema/schema'
+import { eq } from 'drizzle-orm'
 import * as crypto from 'crypto'
 import minimist from 'minimist'
 import { exec } from 'child_process'
@@ -43,8 +44,8 @@ const args = minimist(process.argv.slice(2), {
   },
 })
 
-// SQLiteデータベースファイルのパス
-const DB_PATH = './api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite'
+// SQLiteデータベースファイルのパス（APIサーバーと同じパスを使用）
+const DB_PATH = './.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite'
 
 // glob パターンを解決
 import glob from 'glob'
@@ -63,6 +64,11 @@ function generateId(): string {
   return crypto.randomUUID()
 }
 
+// 固定IDを生成（開発環境用）
+function generateFixedId(type: 'dog' | 'cat', index: number): string {
+  return `${type}-${(index + 1).toString().padStart(2, '0')}`
+}
+
 function generateApiKey(): string {
   return crypto.randomBytes(32).toString('hex')
 }
@@ -77,6 +83,21 @@ async function generatePlaceholders(dogCount: number, catCount: number): Promise
   } catch (error) {
     console.error('❌ プレースホルダー画像の生成に失敗しました:', error)
     throw error
+  }
+}
+
+/**
+ * ローカル画像をWebPに変換
+ */
+async function convertImagesToWebP(): Promise<void> {
+  console.log('🔄  画像をWebP形式に変換中...')
+  try {
+    // npm run images:local を実行
+    await execAsync('npm run images:local')
+    console.log('  ✅ WebP変換が完了しました')
+  } catch (error) {
+    console.error('❌ WebP変換に失敗しました:', error)
+    // 失敗してもseedは続行
   }
 }
 
@@ -116,6 +137,9 @@ async function seed() {
       if (dogsToGenerate > 0 || catsToGenerate > 0) {
         await generatePlaceholders(dogsToGenerate, catsToGenerate)
       }
+
+      // 画像をWebP形式に変換（ローカルR2に保存）
+      await convertImagesToWebP()
     }
 
     // 既存のデータをクリア（clearモードの場合）
@@ -135,41 +159,40 @@ async function seed() {
 
     const dogData = generator.generateMultiple('dog', dogCount)
     const catData = generator.generateMultiple('cat', catCount)
+
+    // ローカル環境用に固定IDを割り当て（画像ディレクトリと一致させる）
+    dogData.forEach((dog, index) => {
+      dog.id = generateFixedId('dog', index)
+    })
+    catData.forEach((cat, index) => {
+      cat.id = generateFixedId('cat', index)
+    })
+
     const allPets = [...dogData, ...catData]
 
     console.log(`  ✅ ${allPets.length}匹のペットデータを生成しました`)
     console.log('')
 
     // 画像の準備
-    let shouldUploadImages = false
+    let hasConvertedImages = false
     const imageManager = new ImageManager()
-    const uploader = new R2LocalUploader()
 
     if (!skipImages) {
-      // APIサーバーが起動しているかチェック
-      console.log('🔍 APIサーバーをチェック中...')
-      const isApiRunning = await uploader.checkApiServer()
+      // 画像統計を表示
+      imageManager.printStats()
 
-      if (!isApiRunning) {
-        console.warn('⚠️  APIサーバーが起動していません。')
-        console.warn('    画像のアップロードには API サーバーが必要です。')
-        console.warn('    別のターミナルで `npm run dev:api` を実行してください。')
+      const hasSourceImages = imageManager.hasImages('dog') || imageManager.hasImages('cat')
+      if (!hasSourceImages) {
+        console.warn('⚠️  画像が見つかりません。')
+        console.warn('    プレースホルダー画像を生成するには:')
+        console.warn('      npm run db:generate-placeholders -- --dogs=5 --cats=5')
         console.warn('')
         console.warn('    データのみ保存します（画像なし）...')
       } else {
-        console.log('  ✅ APIサーバーが起動しています')
-
-        // 画像統計を表示
-        imageManager.printStats()
-
-        shouldUploadImages = imageManager.hasImages('dog') || imageManager.hasImages('cat')
-        if (!shouldUploadImages) {
-          console.warn('⚠️  画像が見つかりません。')
-          console.warn('    プレースホルダー画像を生成するには:')
-          console.warn('      npm run db:generate-placeholders -- --dogs=5 --cats=5')
-          console.warn('')
-          console.warn('    データのみ保存します（画像なし）...')
-        }
+        // WebP変換を既に実行したか確認
+        // (generatePlaceholderImages が true の場合は既に変換済み)
+        hasConvertedImages = generatePlaceholderImages
+        console.log(`  ✅ 画像準備完了 (WebP変換: ${hasConvertedImages ? '済み' : '未実施'})`)
       }
       console.log('')
     }
@@ -180,63 +203,76 @@ async function seed() {
     console.log(`  ✅ ${insertedPets.length}匹のペットを保存しました`)
     console.log('')
 
-    // 画像をアップロード
-    if (shouldUploadImages) {
-      console.log('📤 画像をローカルR2にアップロード中...')
+    // 画像処理とデータベース更新
+    if (!skipImages && (hasConvertedImages || imageManager.hasImages('dog') || imageManager.hasImages('cat'))) {
+      const uploader = new R2LocalUploader()
 
-      let uploadSuccess = 0
-      let uploadFailed = 0
+      // APIサーバーが起動しているかチェック
+      console.log('🔍 APIサーバーをチェック中...')
+      const isApiRunning = await uploader.checkApiServer()
 
-      for (let i = 0; i < insertedPets.length; i++) {
-        const pet = insertedPets[i]
-        if (!pet) continue
+      if (!isApiRunning) {
+        console.warn('⚠️  APIサーバーが起動していません。')
+        console.warn('    画像のアップロードには API サーバーが必要です。')
+        console.warn('    別のターミナルで `npm run dev:api` を実行してください。')
+        console.warn('')
+        if (hasConvertedImages) {
+          console.warn('    データベースフラグのみ更新します...')
+        }
+      } else {
+        console.log('  ✅ APIサーバーが起動しています')
+        console.log(`📤 ${hasConvertedImages ? '変換済み画像を' : '画像を'}アップロード中...`)
 
-        const petType = pet.type as 'dog' | 'cat'
-        const imageFile = imageManager.getImageByIndex(petType, i)
+        let uploadSuccess = 0
+        let uploadFailed = 0
 
-        if (imageFile) {
-          const result = await uploader.uploadImage(pet.id, petType, imageFile, 'original')
+        for (let i = 0; i < insertedPets.length; i++) {
+          const pet = insertedPets[i]
+          if (!pet) continue
+
+          const petType = pet.type as 'dog' | 'cat'
+
+          const result = hasConvertedImages
+            ? await uploader.uploadConvertedImages(pet.id, petType, pet.id)
+            : await (async () => {
+                const imageFile = imageManager.getImageByIndex(petType, i)
+                if (!imageFile) return { success: false, error: 'Image file not found' }
+                return await uploader.uploadImage(pet.id, petType, imageFile, 'original')
+              })()
 
           if (result.success) {
             uploadSuccess++
-            console.log(`  ✅ [${i + 1}/${insertedPets.length}] ${pet.name} (${pet.type})`)
+            console.log(`  ✅ ${pet.name} (${pet.type})${hasConvertedImages ? ' - JPEG & WebP アップロード完了' : ''}`)
           } else {
             uploadFailed++
-            console.error(`  ❌ [${i + 1}/${insertedPets.length}] ${pet.name}: ${result.error}`)
+            console.error(`  ❌ ${pet.name}: ${result.error}`)
           }
         }
 
-        // 進捗表示のため少し待つ
-        if (i % 5 === 0) {
-          await new Promise((resolve) => setTimeout(resolve, 100))
+        console.log('')
+        console.log(`  ✅ アップロード成功: ${uploadSuccess}${hasConvertedImages ? '匹' : '枚'}`)
+        if (uploadFailed > 0) {
+          console.log(`  ❌ アップロード失敗: ${uploadFailed}${hasConvertedImages ? '匹' : '枚'}`)
         }
-      }
-
-      console.log('')
-      console.log(`  ✅ アップロード成功: ${uploadSuccess}枚`)
-      if (uploadFailed > 0) {
-        console.log(`  ❌ アップロード失敗: ${uploadFailed}枚`)
-      }
-      console.log('')
-
-      // データベースの画像フラグを更新
-      if (uploadSuccess > 0) {
-        console.log('🔄 画像フラグを更新中...')
-        for (const pet of insertedPets) {
-          if (!pet) continue
-          await db
-            .update(pets)
-            .set({
-              hasJpeg: 1,
-              hasWebp: 0,
-              imageUrl: `http://localhost:9789/api/images/${pet.type}/${pet.id}.jpg`,
-              updatedAt: new Date().toISOString(),
-            })
-            .where({ id: pet.id })
-        }
-        console.log('  ✅ 更新完了')
         console.log('')
       }
+
+      // データベースの画像フラグを更新
+      console.log('🔄 画像フラグを更新中...')
+      for (const pet of insertedPets) {
+        if (!pet) continue
+        await db
+          .update(pets)
+          .set({
+            hasJpeg: 1,
+            hasWebp: hasConvertedImages ? 1 : 0,
+            imageUrl: `http://localhost:9789/api/images/${pet.type}/${pet.id}.jpg`,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(pets.id, pet.id))
+      }
+      console.log(`  ✅ 更新完了${hasConvertedImages ? ' (JPEG & WebP 両方利用可能)' : ''}`)
+      console.log('')
     }
 
     // APIキーの作成（初回のみ）
@@ -270,13 +306,21 @@ async function seed() {
     console.log(`  - ペット総数: ${insertedPets.length}匹`)
     console.log(`    - 犬: ${dogCount}匹`)
     console.log(`    - 猫: ${catCount}匹`)
-    if (shouldUploadImages) {
-      console.log(`  - 画像アップロード: 完了`)
+    if (hasConvertedImages) {
+      console.log(`  - 画像形式: JPEG & WebP 両方利用可能`)
+      console.log(`    - 保存先: .wrangler/state/r2/buddies-images/`)
+    } else if (!skipImages) {
+      console.log(`  - 画像形式: JPEG のみ`)
     }
     console.log('')
     console.log('🚀 次のステップ:')
     console.log('  1. API サーバーを起動（未起動の場合）: npm run dev:api')
     console.log('  2. ブラウザで確認: http://localhost:9789/api/pets')
+    if (!hasConvertedImages && !skipImages) {
+      console.log('')
+      console.log('💡 ヒント: WebP画像を生成するには:')
+      console.log('    npm run images:local')
+    }
     console.log('')
   } catch (error) {
     console.error('❌ Seeding failed:', error)

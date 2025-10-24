@@ -13,7 +13,8 @@ import type { D1Database, R2Bucket } from '@cloudflare/workers-types'
 export class ImageController {
   constructor(
     private bucket?: R2Bucket,
-    private db?: D1Database
+    private db?: D1Database,
+    private env?: Env
   ) {}
 
   async uploadImage(c: Context<{ Bindings: Env }>) {
@@ -658,18 +659,20 @@ export class ImageController {
       }
 
       // ファイル名から拡張子を除去してpetIdとして使用
-      // 例: pet-home_pethome_123456.jpg -> pet-home_pethome_123456
+      // 例: pet-home_pethome_123456.jpg -> pet-home_pethome_123456 または dog-01 -> dog-01
       const petId = filename.replace(/\.(jpg|jpeg|png|webp)$/, '')
       const fileMatch = filename.match(/\.(jpg|jpeg|png|webp)$/)
       const requestedFormat = fileMatch ? fileMatch[1] : format
+
+      // ファイル拡張子によって適切なファイルを取得
+      const isWebP = requestedFormat === 'webp'
+      const isPng = requestedFormat === 'png'
 
       // R2から画像を取得
       if (!this.bucket) {
         throw new ServiceUnavailableError('Image storage not available')
       }
 
-      // ファイル拡張子によって適切なファイルを取得
-      const isWebP = requestedFormat === 'webp'
       let imageKey = R2PathBuilder.petImagePath(
         petType as 'dog' | 'cat',
         petId,
@@ -701,7 +704,7 @@ export class ImageController {
           'Cache-Control': 'public, max-age=604800', // 7日間キャッシュ
           ETag: object.etag || '',
           'Last-Modified': object.uploaded?.toISOString() || new Date().toISOString(),
-          'X-Served-By': 'Buddies-API',
+          'X-Served-By': 'Buddies-API-R2',
         },
       })
     } catch (error) {

@@ -32,9 +32,10 @@ export function PetMatchApp() {
   } = useModals()
   const { favorites, removeFavorite, updateFavoriteRating, getFavoriteRating } =
     useFavorites(petType)
-  const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
-    'like' | 'pass' | 'superLike' | null
-  >(null)
+  const [buttonSwipeInstruction, setButtonSwipeInstruction] = useState<{
+    direction: 'like' | 'pass' | 'superLike'
+    petId: string
+  } | null>(null)
 
   const {
     currentPet,
@@ -75,11 +76,15 @@ export function PetMatchApp() {
     currentIndex >= 0 ? pets.slice(currentIndex + 2, currentIndex + 5).filter(Boolean) : []
 
   // ボタンスワイプのトリガー
-  const triggerButtonSwipe = (direction: 'like' | 'pass' | 'superLike') => {
-    setButtonSwipeDirection(direction)
-    setTimeout(() => setButtonSwipeDirection(null), 100)
-    handleSwipe(direction)
-  }
+  const triggerButtonSwipe = useCallback(
+    (direction: 'like' | 'pass' | 'superLike') => {
+      if (!currentPet) return
+      setButtonSwipeInstruction({ direction, petId: currentPet.id })
+      // 次のtickでリセット
+      setTimeout(() => setButtonSwipeInstruction(null), 0)
+    },
+    [currentPet]
+  )
 
   // キーボード操作の設定
   useKeyboardSwipe({
@@ -158,7 +163,11 @@ export function PetMatchApp() {
               pet={currentPet}
               onSwipe={handleSwipe}
               isTopCard={true}
-              buttonSwipeDirection={buttonSwipeDirection}
+              buttonSwipeDirection={
+                buttonSwipeInstruction && buttonSwipeInstruction.petId === currentPet.id
+                  ? buttonSwipeInstruction.direction
+                  : null
+              }
               onTap={() => currentPet && openPetDetailModal(currentPet)}
               cardIndex={0}
               favoriteRating={currentPetRating}

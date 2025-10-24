@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { PetCard } from './PetCard'
 import { SwipeIndicator } from './SwipeIndicator'
 import { FrontendPet } from '@/types/pet'
@@ -11,6 +11,7 @@ type PetSwipeCardProps = {
   pet: FrontendPet
   onSwipe: (direction: SwipeDirection) => void
   isTopCard?: boolean
+  /** ボタンやキーボードによるスワイプ指示（petIdで特定のカードを識別） */
   buttonSwipeDirection?: SwipeDirection | null
   onTap?: () => void
   cardIndex?: number
@@ -38,6 +39,12 @@ export function PetSwipeCard({
     direction: null,
   })
 
+  // onSwipeコールバックの最新値を保持
+  const onSwipeRef = useRef(onSwipe)
+  useEffect(() => {
+    onSwipeRef.current = onSwipe
+  }, [onSwipe])
+
   const { getSwipeDirection, getIndicatorOpacity } = useSwipeGesture()
 
   // ドラッグ終了時の処理
@@ -47,12 +54,12 @@ export function PetSwipeCard({
       if (direction) {
         setExitState({ isExiting: true, direction })
         setTimeout(() => {
-          onSwipe(direction)
+          onSwipeRef.current(direction)
           setExitState({ isExiting: false, direction: null })
         }, SWIPE_ANIMATION.duration)
       }
     },
-    [getSwipeDirection, onSwipe]
+    [getSwipeDirection]
   )
 
   // ドラッグジェスチャーフックを使用
@@ -68,16 +75,16 @@ export function PetSwipeCard({
     setExitState({ isExiting: false, direction: null })
   }, [pet.id, reset])
 
-  // ボタンスワイプの処理
+  // ボタン/キーボードによるスワイプ指示を処理
   useEffect(() => {
     if (buttonSwipeDirection && isTopCard) {
       setExitState({ isExiting: true, direction: buttonSwipeDirection })
       setTimeout(() => {
-        onSwipe(buttonSwipeDirection)
+        onSwipeRef.current(buttonSwipeDirection)
         setExitState({ isExiting: false, direction: null })
       }, SWIPE_ANIMATION.duration)
     }
-  }, [buttonSwipeDirection, isTopCard, onSwipe])
+  }, [buttonSwipeDirection, isTopCard])
 
   // カードのスタイル生成
   const cardStyle = getCardStyle({

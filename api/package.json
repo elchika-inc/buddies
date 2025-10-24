@@ -7,7 +7,7 @@
   "author": "elchika-inc",
   "license": "ISC",
   "scripts": {
-    "dev": "wrangler dev --local",
+    "dev": "wrangler dev --local --persist-to ../.wrangler/state",
     "build": "wrangler build --env production",
     "deploy": "wrangler deploy --env production",
     "deploy:prod": "wrangler deploy --env production",
