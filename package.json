@@ -87,6 +87,7 @@
     "db:reset": "rm -f api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite && npm run db:push",
     "db:seed": "tsx database/seed.ts",
     "db:generate-placeholders": "tsx database/generate-placeholders.ts",
+    "db:sync-json-from-images": "tsx database/sync-json-from-images.ts",
     "tail:api": "npm run -w @buddies/api tail",
     "tail:crawler": "npm run -w @buddies/crawler tail",
     "tail:dispatcher": "npm run -w @buddies/dispatcher tail",

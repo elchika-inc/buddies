@@ -227,4 +227,89 @@ export class PetDataGenerator {
 
     return pets
   }
+
+  /**
+   * boolean値を数値に変換
+   */
+  private toBinaryNumber(value: boolean | number | undefined, defaultValue: number = 0): number {
+    if (value === undefined) return defaultValue
+    if (typeof value === 'boolean') return value ? 1 : 0
+    return value
+  }
+
+  /**
+   * 部分的なペットデータを完全なデータに補完
+   * JSONから読み込んだデータの不足フィールドをfaker.jsで生成
+   */
+  completePartialData(partial: Partial<GeneratedPetData> & { id: string; name: string; type: PetType }): GeneratedPetData {
+    // ベースとなる完全なデータを生成
+    const base = partial.type === 'dog' ? this.generateDog() : this.generateCat()
+
+    // JSONから読み込んだ値で上書き（undefined以外）
+    const gender = (partial.gender ?? base.gender) as 'male' | 'female'
+    const isNeutered = this.toBinaryNumber(partial.isNeutered, base.isNeutered)
+    const isVaccinated = this.toBinaryNumber(partial.isVaccinated, base.isVaccinated)
+
+    // 医療情報が提供されていない場合は自動生成
+    const medicalInfo = partial.medicalInfo ??
+      `ワクチン接種${isVaccinated ? '済み' : '未実施'}、${isNeutered ? (gender === 'male' ? '去勢手術済み' : '避妊手術済み') : '未実施'}${
+        partial.type === 'cat' ? `、FIV/FeLV${this.randomBoolean() ? '陰性' : '検査済み'}` : ''
+      }`
+
+    // 場所情報の補完
+    const prefecture = partial.prefecture ?? base.prefecture
+    const city = partial.city ?? base.city
+    const location = partial.location ?? `${prefecture}${city}`
+
+    const completed: GeneratedPetData = {
+      // 必須フィールド（JSONから）
+      id: partial.id,
+      name: partial.name,
+      type: partial.type,
+
+      // オプションフィールド（JSONがあればそれを使用、なければfaker.js）
+      breed: partial.breed ?? base.breed,
+      age: partial.age ?? base.age,
+      gender,
+      prefecture,
+      city,
+      location,
+      description: partial.description ?? base.description,
+      personality: partial.personality ?? base.personality,
+      medicalInfo,
+      careRequirements: partial.careRequirements ?? base.careRequirements,
+      goodWith: partial.goodWith ?? base.goodWith,
+      healthNotes: partial.healthNotes ?? base.healthNotes,
+      color: partial.color ?? base.color,
+      weight: partial.weight ?? base.weight,
+      size: partial.size ?? base.size,
+      coatLength: partial.coatLength ?? base.coatLength,
+      isNeutered,
+      isVaccinated,
+      vaccinationStatus: partial.vaccinationStatus ?? (isVaccinated ? '完了' : '未実施'),
+      socialLevel: partial.socialLevel ?? base.socialLevel,
+      goodWithKids: this.toBinaryNumber(partial.goodWithKids, base.goodWithKids),
+      goodWithDogs: this.toBinaryNumber(partial.goodWithDogs, base.goodWithDogs),
+      goodWithCats: this.toBinaryNumber(partial.goodWithCats, base.goodWithCats),
+      specialNeeds: this.toBinaryNumber(partial.specialNeeds, base.specialNeeds),
+      adoptionFee: partial.adoptionFee ?? base.adoptionFee,
+      status: partial.status ?? 'available',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    // 犬固有のフィールド
+    if (partial.type === 'dog') {
+      completed.exerciseLevel = partial.exerciseLevel ?? base.exerciseLevel
+      completed.trainingLevel = partial.trainingLevel ?? base.trainingLevel
+    }
+
+    // 猫固有のフィールド
+    if (partial.type === 'cat') {
+      completed.isFivFelvTested = this.toBinaryNumber(partial.isFivFelvTested, base.isFivFelvTested)
+      completed.indoorOutdoor = partial.indoorOutdoor ?? base.indoorOutdoor
+    }
+
+    return completed
+  }
 }

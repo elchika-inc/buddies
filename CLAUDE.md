@@ -126,9 +126,87 @@ npm run db:studio
 # ローカルD1データベースリセット
 npm run db:reset
 
-# サンプルデータ投入
+# サンプルデータ投入（JSON優先、不足分はfaker.jsで自動生成）
 npm run db:seed
+
+# JSONから指定数のペットデータを投入
+npm run db:seed -- --dogs=10 --cats=10
+
+# 全削除してシード
+npm run db:seed -- --clear
 ```
+
+#### JSONファイルでペットデータを管理
+
+データベースseedは**JSON優先**で動作します。`database/fixtures/pets/`にJSONファイルがあれば優先的に使用し、不足している場合のみfaker.jsでランダムデータを生成します。
+
+##### ディレクトリ構造
+
+```
+database/fixtures/
+├── pets/
+│   ├── dogs/
+│   │   ├── dog-01.json
+│   │   ├── dog-02.json
+│   │   └── ...
+│   ├── cats/
+│   │   ├── cat-01.json
+│   │   ├── cat-02.json
+│   │   └── ...
+│   └── README.md
+└── images/
+    ├── dogs/
+    │   ├── dog-01.jpg  # JSONのidと対応
+    │   └── ...
+    └── cats/
+        ├── cat-01.jpg
+        └── ...
+```
+
+##### JSONスキーマ
+
+**必須フィールド:**
+
+- `id`: ペットID（画像ファイル名と対応）
+- `name`: ペット名
+- `type`: "dog" または "cat"
+
+**オプションフィールド:**
+その他のフィールドは全てオプション。未指定の場合はfaker.jsで自動生成されます。
+
+##### 使用例
+
+```bash
+# 1. 画像ファイルを配置
+# database/fixtures/images/dogs/dog-01.jpg など
+
+# 2. 画像ファイル名からJSONファイルを自動生成
+npm run db:sync-json-from-images
+
+# 3. 生成されたJSONファイルを編集（必要に応じて）
+# database/fixtures/pets/dogs/dog-01.json など
+# 最小限のフィールド（id, name, type）のみ生成されます
+
+# 4. データベースに投入
+npm run db:seed
+
+# JSONが3匹分だけで、10匹必要な場合は残り7匹をfaker.jsで生成
+npm run db:seed -- --dogs=10 --cats=10
+```
+
+##### 画像からJSONを自動生成
+
+`database/fixtures/images/` にある画像ファイルから、対応するJSONファイルを自動生成できます。
+
+```bash
+# 不足しているJSONファイルのみ生成
+npm run db:sync-json-from-images
+
+# 既存のJSONファイルも上書き
+npm run db:sync-json-from-images -- --overwrite
+```
+
+詳細は `database/fixtures/pets/README.md` を参照してください。
 
 ### デプロイ
 

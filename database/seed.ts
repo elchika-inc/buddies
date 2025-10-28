@@ -3,14 +3,14 @@
  * Database Seeder for Buddies
  *
  * このスクリプトはローカル開発環境のデータベースにテストデータを投入します。
+ * JSON優先: database/fixtures/pets/ にJSONファイルがあればそれを使用
+ * JSONがない場合: faker.jsでランダムデータを自動生成
  *
  * 使用方法:
- *   npm run db:seed                                 # デフォルト（犬5匹、猫5匹）
+ *   npm run db:seed                                 # JSONまたはデフォルト（犬5匹、猫5匹）
  *   npm run db:seed -- --dogs=10 --cats=15          # 件数指定
  *   npm run db:seed -- --clear                      # 全削除してシード
- *   npm run db:seed -- --append --dogs=5            # 既存データ保持で追加
  *   npm run db:seed -- --skip-images                # 画像なしでデータのみ
- *   npm run db:seed -- --generate-placeholders      # プレースホルダー画像を自動生成
  */
 
 import { drizzle } from 'drizzle-orm/better-sqlite3'
@@ -24,6 +24,7 @@ import { promisify } from 'util'
 import { PetDataGenerator } from './generators/PetDataGenerator'
 import { ImageManager } from './utils/ImageManager'
 import { R2LocalUploader } from './utils/R2LocalUploader'
+import { JsonPetLoader } from './utils/JsonPetLoader'
 
 const execAsync = promisify(exec)
 
@@ -33,11 +34,9 @@ const args = minimist(process.argv.slice(2), {
     dogs: 5,
     cats: 5,
     clear: false,
-    append: false,
     'skip-images': false,
-    'generate-placeholders': false,
   },
-  boolean: ['clear', 'append', 'skip-images', 'generate-placeholders'],
+  boolean: ['clear', 'skip-images'],
   alias: {
     d: 'dogs',
     c: 'cats',
@@ -64,26 +63,8 @@ function generateId(): string {
   return crypto.randomUUID()
 }
 
-// 固定IDを生成（開発環境用）
-function generateFixedId(type: 'dog' | 'cat', index: number): string {
-  return `${type}-${(index + 1).toString().padStart(2, '0')}`
-}
-
 function generateApiKey(): string {
   return crypto.randomBytes(32).toString('hex')
-}
-
-/**
- * プレースホルダー画像を自動生成
- */
-async function generatePlaceholders(dogCount: number, catCount: number): Promise<void> {
-  console.log('🖼️  プレースホルダー画像を生成中...')
-  try {
-    await execAsync(`tsx database/generate-placeholders.ts --dogs=${dogCount} --cats=${catCount}`)
-  } catch (error) {
-    console.error('❌ プレースホルダー画像の生成に失敗しました:', error)
-    throw error
-  }
 }
 
 /**
@@ -108,9 +89,7 @@ async function seed() {
   const dogCount = parseInt(args.dogs as string, 10)
   const catCount = parseInt(args.cats as string, 10)
   const shouldClear = args.clear
-  const shouldAppend = args.append
   const skipImages = args['skip-images']
-  const generatePlaceholderImages = args['generate-placeholders']
 
   console.log('🌱 Seeding database...')
   console.log('')
@@ -118,59 +97,64 @@ async function seed() {
   console.log(`  - 犬: ${dogCount}匹`)
   console.log(`  - 猫: ${catCount}匹`)
   console.log(`  - クリアモード: ${shouldClear ? 'はい' : 'いいえ'}`)
-  console.log(`  - 追加モード: ${shouldAppend ? 'はい' : 'いいえ'}`)
   console.log(`  - 画像スキップ: ${skipImages ? 'はい' : 'いいえ'}`)
-  console.log(`  - プレースホルダー生成: ${generatePlaceholderImages ? 'はい' : 'いいえ'}`)
   console.log('')
 
   try {
-    // プレースホルダー画像を生成（必要な場合）
-    if (generatePlaceholderImages && !skipImages) {
-      // 画像が足りない場合のみ生成
-      const imageManager = new ImageManager()
-      const existingDogImages = imageManager.getImageCount('dog')
-      const existingCatImages = imageManager.getImageCount('cat')
-
-      const dogsToGenerate = Math.max(0, Math.min(dogCount, 10) - existingDogImages)
-      const catsToGenerate = Math.max(0, Math.min(catCount, 10) - existingCatImages)
-
-      if (dogsToGenerate > 0 || catsToGenerate > 0) {
-        await generatePlaceholders(dogsToGenerate, catsToGenerate)
-      }
-
-      // 画像をWebP形式に変換（ローカルR2に保存）
-      await convertImagesToWebP()
-    }
-
     // 既存のデータをクリア（clearモードの場合）
-    if (shouldClear || !shouldAppend) {
+    if (shouldClear) {
       console.log('🧹 既存データをクリア中...')
       await db.delete(pets)
-      if (!shouldAppend) {
-        await db.delete(apiKeys)
-      }
+      await db.delete(apiKeys)
       console.log('  ✅ クリア完了')
       console.log('')
     }
 
-    // ペットデータ生成
+    // JSONローダーを初期化
+    const jsonLoader = new JsonPetLoader()
     const generator = new PetDataGenerator()
-    console.log('🐾 ペットデータを生成中...')
 
-    const dogData = generator.generateMultiple('dog', dogCount)
-    const catData = generator.generateMultiple('cat', catCount)
+    console.log('🐾 ペットデータを準備中...')
+    console.log('')
 
-    // ローカル環境用に固定IDを割り当て（画像ディレクトリと一致させる）
-    dogData.forEach((dog, index) => {
-      dog.id = generateFixedId('dog', index)
-    })
-    catData.forEach((cat, index) => {
-      cat.id = generateFixedId('cat', index)
-    })
+    // JSONファイルの状況を表示
+    jsonLoader.printStats()
+
+    // 犬のデータを取得（JSON優先、不足分はfaker.js）
+    console.log('🐕 犬のデータを読み込み中...')
+    let dogData = await jsonLoader.loadPets('dog')
+
+    if (dogData.length < dogCount) {
+      const additionalCount = dogCount - dogData.length
+      console.log(`  📝 追加で${additionalCount}匹をfaker.jsで生成`)
+      const additionalDogs = generator.generateMultiple('dog', additionalCount)
+      dogData = [...dogData, ...additionalDogs]
+    } else if (dogData.length > dogCount) {
+      console.log(`  ✂️  ${dogData.length}匹から${dogCount}匹に制限`)
+      dogData = dogData.slice(0, dogCount)
+    }
+    console.log(`  ✅ 犬: ${dogData.length}匹`)
+    console.log('')
+
+    // 猫のデータを取得（JSON優先、不足分はfaker.js）
+    console.log('🐈 猫のデータを読み込み中...')
+    let catData = await jsonLoader.loadPets('cat')
+
+    if (catData.length < catCount) {
+      const additionalCount = catCount - catData.length
+      console.log(`  📝 追加で${additionalCount}匹をfaker.jsで生成`)
+      const additionalCats = generator.generateMultiple('cat', additionalCount)
+      catData = [...catData, ...additionalCats]
+    } else if (catData.length > catCount) {
+      console.log(`  ✂️  ${catData.length}匹から${catCount}匹に制限`)
+      catData = catData.slice(0, catCount)
+    }
+    console.log(`  ✅ 猫: ${catData.length}匹`)
+    console.log('')
 
     const allPets = [...dogData, ...catData]
 
-    console.log(`  ✅ ${allPets.length}匹のペットデータを生成しました`)
+    console.log(`✨ 合計 ${allPets.length}匹のペットデータを準備しました`)
     console.log('')
 
     // 画像の準備
@@ -189,10 +173,10 @@ async function seed() {
         console.warn('')
         console.warn('    データのみ保存します（画像なし）...')
       } else {
-        // WebP変換を既に実行したか確認
-        // (generatePlaceholderImages が true の場合は既に変換済み)
-        hasConvertedImages = generatePlaceholderImages
-        console.log(`  ✅ 画像準備完了 (WebP変換: ${hasConvertedImages ? '済み' : '未実施'})`)
+        // WebP変換を実行
+        await convertImagesToWebP()
+        hasConvertedImages = true
+        console.log(`  ✅ 画像準備完了 (WebP変換済み)`)
       }
       console.log('')
     }
@@ -276,7 +260,7 @@ async function seed() {
     }
 
     // APIキーの作成（初回のみ）
-    if (!shouldAppend) {
+    if (shouldClear) {
       console.log('🔑 APIキーを作成中...')
       const apiKeyData = [
         {
@@ -304,8 +288,8 @@ async function seed() {
     console.log('')
     console.log('📊 サマリー:')
     console.log(`  - ペット総数: ${insertedPets.length}匹`)
-    console.log(`    - 犬: ${dogCount}匹`)
-    console.log(`    - 猫: ${catCount}匹`)
+    console.log(`    - 犬: ${dogData.length}匹 (JSON: ${Math.min(await jsonLoader.countJsonFiles('dog'), dogCount)}匹, faker: ${Math.max(0, dogData.length - await jsonLoader.countJsonFiles('dog'))}匹)`)
+    console.log(`    - 猫: ${catData.length}匹 (JSON: ${Math.min(await jsonLoader.countJsonFiles('cat'), catCount)}匹, faker: ${Math.max(0, catData.length - await jsonLoader.countJsonFiles('cat'))}匹)`)
     if (hasConvertedImages) {
       console.log(`  - 画像形式: JPEG & WebP 両方利用可能`)
       console.log(`    - 保存先: .wrangler/state/r2/buddies-images/`)
@@ -321,6 +305,10 @@ async function seed() {
       console.log('💡 ヒント: WebP画像を生成するには:')
       console.log('    npm run images:local')
     }
+    console.log('')
+    console.log('📝 JSONファイルでデータを管理:')
+    console.log('    database/fixtures/pets/ にJSONファイルを配置')
+    console.log('    サンプルファイル: database/fixtures/pets/dogs/dog-01.json')
     console.log('')
   } catch (error) {
     console.error('❌ Seeding failed:', error)
