@@ -13,7 +13,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import minimist from 'minimist'
-import { faker } from '@faker-js/faker/locale/ja'
 
 // コマンドライン引数のパース
 const args = minimist(process.argv.slice(2), {
@@ -26,11 +25,33 @@ const args = minimist(process.argv.slice(2), {
 const IMAGES_DIR = 'database/fixtures/images'
 const PETS_DIR = 'database/fixtures/pets'
 
+// カタカナの名前リスト（犬用）
+const DOG_NAMES = [
+  'ポチ', 'タロウ', 'ハチ', 'マル', 'モモ', 'サクラ', 'ハナ', 'ココ', 'チョコ', 'ラッキー',
+  'レオ', 'ソラ', 'コタロウ', 'リン', 'ミルク', 'クッキー', 'マロン', 'コロン', 'ベル', 'ルル',
+  'チビ', 'コムギ', 'キナコ', 'アズキ', 'ムギ', 'ゴン', 'ゲン', 'ケン', 'ブン', 'ラン',
+  'ハル', 'ナツ', 'アキ', 'フユ', 'ユキ', 'ホシ', 'ツキ', 'ヒカル', 'ノア', 'ライ',
+  'テン', 'カイ', 'ダイ', 'ソウ', 'レイ', 'シュウ', 'ジン', 'ユウ', 'リク', 'カケル'
+]
+
+// カタカナの名前リスト（猫用）
+const CAT_NAMES = [
+  'タマ', 'ミケ', 'クロ', 'シロ', 'トラ', 'チビ', 'ミー', 'ニャー', 'ソラ', 'モモ',
+  'ハナ', 'サクラ', 'ユキ', 'ココ', 'ルル', 'レオ', 'リン', 'メイ', 'ルナ', 'マル',
+  'チャチャ', 'ムギ', 'キナコ', 'マロン', 'モカ', 'ラテ', 'ミルク', 'クリーム', 'バニラ', 'ショコラ',
+  'ハッピー', 'ラッキー', 'チョビ', 'コタロウ', 'ベル', 'ミント', 'ピーチ', 'メロン', 'レモン', 'ミカン',
+  'ナナ', 'ヒメ', 'プリン', 'ゴマ', 'ノア', 'ライ', 'カイ', 'リク', 'ソウ', 'ハル'
+]
+
 interface ImageFile {
   id: string
   filename: string
   type: 'dog' | 'cat'
 }
+
+// 使用済み名前を追跡
+let usedDogNames = new Set<string>()
+let usedCatNames = new Set<string>()
 
 /**
  * 画像ファイルを走査してリストを取得
@@ -75,12 +96,78 @@ function jsonExists(id: string, type: 'dog' | 'cat'): boolean {
 }
 
 /**
+ * 既存のJSONファイルから使用済みの名前を読み込む
+ */
+function loadExistingNames(): void {
+  // 犬の名前を読み込み
+  const dogsDir = path.join(PETS_DIR, 'dogs')
+  if (fs.existsSync(dogsDir)) {
+    const files = fs.readdirSync(dogsDir).filter(f => f.endsWith('.json'))
+    files.forEach(file => {
+      try {
+        const content = fs.readFileSync(path.join(dogsDir, file), 'utf-8')
+        const data = JSON.parse(content)
+        if (data.name) {
+          usedDogNames.add(data.name)
+        }
+      } catch (error) {
+        // JSON読み込みエラーは無視
+      }
+    })
+  }
+
+  // 猫の名前を読み込み
+  const catsDir = path.join(PETS_DIR, 'cats')
+  if (fs.existsSync(catsDir)) {
+    const files = fs.readdirSync(catsDir).filter(f => f.endsWith('.json'))
+    files.forEach(file => {
+      try {
+        const content = fs.readFileSync(path.join(catsDir, file), 'utf-8')
+        const data = JSON.parse(content)
+        if (data.name) {
+          usedCatNames.add(data.name)
+        }
+      } catch (error) {
+        // JSON読み込みエラーは無視
+      }
+    })
+  }
+}
+
+/**
+ * 重複しない名前を取得
+ */
+function getUniqueName(type: 'dog' | 'cat'): string {
+  const nameList = type === 'dog' ? DOG_NAMES : CAT_NAMES
+  const usedNames = type === 'dog' ? usedDogNames : usedCatNames
+
+  // 未使用の名前を探す
+  for (const name of nameList) {
+    if (!usedNames.has(name)) {
+      usedNames.add(name)
+      return name
+    }
+  }
+
+  // 全ての名前が使用済みの場合、番号を付けて生成
+  let counter = 1
+  while (true) {
+    const name = `${nameList[0]}${counter}`
+    if (!usedNames.has(name)) {
+      usedNames.add(name)
+      return name
+    }
+    counter++
+  }
+}
+
+/**
  * 最小限のJSONデータを生成
  */
 function generateMinimalJson(id: string, type: 'dog' | 'cat') {
   return {
     id,
-    name: faker.person.firstName(),
+    name: getUniqueName(type),
     type,
   }
 }
@@ -115,6 +202,15 @@ async function main() {
   console.log('📋 設定:')
   console.log(`  - 上書きモード: ${shouldOverwrite ? 'はい' : 'いいえ'}`)
   console.log('')
+
+  // 既存の名前を読み込み
+  if (!shouldOverwrite) {
+    loadExistingNames()
+    console.log('📖 既存のJSONファイルから名前を読み込みました')
+    console.log(`  - 犬: ${usedDogNames.size}個の名前`)
+    console.log(`  - 猫: ${usedCatNames.size}個の名前`)
+    console.log('')
+  }
 
   // 画像ファイルを走査
   console.log('📸 画像ファイルを走査中...')
