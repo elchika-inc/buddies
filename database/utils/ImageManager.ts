@@ -81,6 +81,36 @@ export class ImageManager {
   }
 
   /**
+   * IDに基づいて画像を取得（JSONデータと画像ファイルを対応させる）
+   * @param type ペットのタイプ
+   * @param id ペットのID（例: "dog-01"）
+   * @returns 対応する画像ファイル、見つからない場合はランダムな画像
+   */
+  getImageById(type: PetType, id: string): ImageFile | null {
+    const images = this.getImages(type)
+    if (images.length === 0) {
+      return null
+    }
+
+    // idから拡張子を除いたベース名を取得（例: "dog-01" → "dog-01"）
+    const idBase = id.replace(/\.(jpg|jpeg|png)$/i, '')
+
+    // 完全一致を探す
+    const exactMatch = images.find(img => {
+      const imgBase = path.basename(img.filename, path.extname(img.filename))
+      return imgBase === idBase
+    })
+
+    if (exactMatch) {
+      return exactMatch
+    }
+
+    // 見つからない場合はランダムな画像を返す（フォールバック）
+    console.warn(`⚠️  ID "${id}" に対応する画像が見つかりません。ランダムな画像を使用します。`)
+    return this.getRandomImage(type)
+  }
+
+  /**
    * 画像が存在するかチェック
    */
   hasImages(type: PetType): boolean {

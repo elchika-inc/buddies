@@ -8,6 +8,11 @@ import { RateLimitService } from '../services/RateLimitService'
  * データベース内のAPIキーによる認証を行う
  */
 export async function apiAuth(c: Context<HonoEnv>, next: Next) {
+  // DISABLE_AUTH環境変数がtrueの場合は全て認証スキップ
+  if (c.env?.DISABLE_AUTH === 'true' || c.env?.DISABLE_AUTH === true) {
+    return next()
+  }
+
   // ヘルスチェックエンドポイントと内部APIは認証不要
   const publicPaths = [
     '/',
@@ -18,6 +23,7 @@ export async function apiAuth(c: Context<HonoEnv>, next: Next) {
     '/api/images/status/update',
     '/api/pets/update-image-flags',
     '/api/images/sync-flags',
+    '/api/images/upload',
     '/api/conversion/screenshot',
   ]
 

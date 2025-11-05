@@ -87,7 +87,7 @@ export async function dropAllTables(): Promise<void> {
  * ローカルD1のSQLiteファイルパスを取得
  */
 export function getLocalD1Path(): string {
-  return path.join(API_DIR, '.wrangler/state/v3/d1/miniflare-D1DatabaseObject')
+  return path.join(process.cwd(), '.wrangler/state/v3/d1/miniflare-D1DatabaseObject')
 }
 
 /**
@@ -98,13 +98,15 @@ export function deleteLocalD1Files(): void {
   if (fs.existsSync(d1Path)) {
     fs.rmSync(d1Path, { recursive: true, force: true })
   }
+  // drizzle-kit pushがデータベースファイルを作成できるように、ディレクトリを再作成
+  fs.mkdirSync(d1Path, { recursive: true })
 }
 
 /**
  * Wranglerキャッシュをクリア
  */
 export function clearWranglerCache(): void {
-  const statePath = path.join(API_DIR, '.wrangler/state')
+  const statePath = path.join(process.cwd(), '.wrangler/state')
   if (fs.existsSync(statePath)) {
     fs.rmSync(statePath, { recursive: true, force: true })
   }

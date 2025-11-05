@@ -110,10 +110,10 @@ export class R2LocalUploader {
    */
   async checkApiServer(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/pets`, {
-        method: 'HEAD',
+      const response = await fetch(`${this.apiBaseUrl}/`, {
+        method: 'GET',
         headers: {
-          'X-API-Key': this.apiKey,
+          'Accept': 'application/json',
         },
         signal: AbortSignal.timeout(3000), // 3秒タイムアウト
       })

@@ -168,8 +168,9 @@ async function seed() {
       const hasSourceImages = imageManager.hasImages('dog') || imageManager.hasImages('cat')
       if (!hasSourceImages) {
         console.warn('⚠️  画像が見つかりません。')
-        console.warn('    プレースホルダー画像を生成するには:')
-        console.warn('      npm run db:generate-placeholders -- --dogs=5 --cats=5')
+        console.warn('    database/fixtures/images/ に画像ファイルを配置してください:')
+        console.warn('      - database/fixtures/images/dogs/')
+        console.warn('      - database/fixtures/images/cats/')
         console.warn('')
         console.warn('    データのみ保存します（画像なし）...')
       } else {
@@ -189,6 +190,7 @@ async function seed() {
 
     // 画像処理とデータベース更新
     if (!skipImages && (hasConvertedImages || imageManager.hasImages('dog') || imageManager.hasImages('cat'))) {
+      // APIサーバー経由で画像をアップロード（変換済みかどうかに関わらず）
       const uploader = new R2LocalUploader()
 
       // APIサーバーが起動しているかチェック
@@ -200,45 +202,77 @@ async function seed() {
         console.warn('    画像のアップロードには API サーバーが必要です。')
         console.warn('    別のターミナルで `npm run dev:api` を実行してください。')
         console.warn('')
-        if (hasConvertedImages) {
-          console.warn('    データベースフラグのみ更新します...')
-        }
       } else {
         console.log('  ✅ APIサーバーが起動しています')
-        console.log(`📤 ${hasConvertedImages ? '変換済み画像を' : '画像を'}アップロード中...`)
 
-        let uploadSuccess = 0
-        let uploadFailed = 0
+        if (hasConvertedImages) {
+          // 変換済み画像をR2にアップロード
+          console.log('📤 変換済み画像をR2にアップロード中...')
 
-        for (let i = 0; i < insertedPets.length; i++) {
-          const pet = insertedPets[i]
-          if (!pet) continue
+          let uploadSuccess = 0
+          let uploadFailed = 0
 
-          const petType = pet.type as 'dog' | 'cat'
+          for (let i = 0; i < insertedPets.length; i++) {
+            const pet = insertedPets[i]
+            if (!pet) continue
 
-          const result = hasConvertedImages
-            ? await uploader.uploadConvertedImages(pet.id, petType, pet.id)
-            : await (async () => {
-                const imageFile = imageManager.getImageByIndex(petType, i)
-                if (!imageFile) return { success: false, error: 'Image file not found' }
-                return await uploader.uploadImage(pet.id, petType, imageFile, 'original')
-              })()
+            const petType = pet.type as 'dog' | 'cat'
+            // 変換済み画像をアップロード（dog-01, cat-01 などのIDを使用）
+            const result = await uploader.uploadConvertedImages(pet.id, petType, pet.id)
 
-          if (result.success) {
-            uploadSuccess++
-            console.log(`  ✅ ${pet.name} (${pet.type})${hasConvertedImages ? ' - JPEG & WebP アップロード完了' : ''}`)
-          } else {
-            uploadFailed++
-            console.error(`  ❌ ${pet.name}: ${result.error}`)
+            if (result.success) {
+              uploadSuccess++
+              console.log(`  ✅ ${pet.name} (${pet.type})`)
+            } else {
+              uploadFailed++
+              console.error(`  ❌ ${pet.name}: ${result.error}`)
+            }
           }
-        }
 
-        console.log('')
-        console.log(`  ✅ アップロード成功: ${uploadSuccess}${hasConvertedImages ? '匹' : '枚'}`)
-        if (uploadFailed > 0) {
-          console.log(`  ❌ アップロード失敗: ${uploadFailed}${hasConvertedImages ? '匹' : '枚'}`)
+          console.log('')
+          console.log(`  ✅ アップロード成功: ${uploadSuccess}匹`)
+          if (uploadFailed > 0) {
+            console.log(`  ❌ アップロード失敗: ${uploadFailed}匹`)
+          }
+          console.log('')
+        } else {
+          // 未変換の画像をアップロード
+          console.log('📤 オリジナル画像をアップロード中...')
+
+          let uploadSuccess = 0
+          let uploadFailed = 0
+
+          for (let i = 0; i < insertedPets.length; i++) {
+            const pet = insertedPets[i]
+            if (!pet) continue
+
+            const petType = pet.type as 'dog' | 'cat'
+            // IDベースで対応する画像を取得（JSONデータと画像ファイルの対応を保つ）
+            const imageFile = imageManager.getImageById(petType, pet.id)
+            if (!imageFile) {
+              uploadFailed++
+              console.error(`  ❌ ${pet.name}: Image file not found`)
+              continue
+            }
+
+            const result = await uploader.uploadImage(pet.id, petType, imageFile, 'original')
+
+            if (result.success) {
+              uploadSuccess++
+              console.log(`  ✅ ${pet.name} (${pet.type})`)
+            } else {
+              uploadFailed++
+              console.error(`  ❌ ${pet.name}: ${result.error}`)
+            }
+          }
+
+          console.log('')
+          console.log(`  ✅ アップロード成功: ${uploadSuccess}枚`)
+          if (uploadFailed > 0) {
+            console.log(`  ❌ アップロード失敗: ${uploadFailed}枚`)
+          }
+          console.log('')
         }
-        console.log('')
       }
 
       // データベースの画像フラグを更新

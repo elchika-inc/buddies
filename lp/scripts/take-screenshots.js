@@ -1,6 +1,7 @@
 const { chromium } = require('@playwright/test');
 const path = require('path');
 const fs = require('fs');
+const { spawn, execSync } = require('child_process');
 
 // スクリーンショット対象URL
 const USE_LOCAL = process.env.USE_LOCAL === 'true';
@@ -10,6 +11,9 @@ const URLS = USE_LOCAL
 
 // スマホサイズ（iPhone X/12/13相当）
 const MOBILE_VIEWPORT = { width: 375, height: 812 };
+
+// サーバー起動待機時間（ミリ秒）
+const SERVER_STARTUP_WAIT = 15000;
 
 /**
  * PWAインストールプロンプトを閉じる
@@ -154,6 +158,56 @@ async function captureFavorites(page, outputDir) {
 }
 
 /**
+ * ポート3004のプロセスを停止
+ */
+function killPort3004() {
+  try {
+    console.log('   🔌 ポート3004のプロセスを停止中...');
+    execSync('lsof -ti:3004 | xargs kill -9 2>/dev/null || true', { stdio: 'ignore' });
+    // プロセス終了を確実にするため少し待機
+    execSync('sleep 2');
+    console.log('   ✅ ポート3004を解放しました\n');
+  } catch (e) {
+    // ポートが使われていなければスキップ
+    console.log('   ℹ️  ポート3004は使用されていませんでした\n');
+  }
+}
+
+/**
+ * フロントエンドサーバーを起動
+ */
+async function startFrontendServer(petType) {
+  return new Promise((resolve, reject) => {
+    console.log(`   🚀 ${petType.toUpperCase()} 用サーバーを起動中...`);
+
+    const frontendDir = path.join(__dirname, '../../frontend');
+    const env = {
+      ...process.env,
+      NEXT_PUBLIC_PET_TYPE: petType
+    };
+
+    const serverProcess = spawn('npm', ['run', 'dev'], {
+      cwd: frontendDir,
+      env,
+      detached: false,
+      stdio: 'ignore'
+    });
+
+    serverProcess.on('error', (error) => {
+      console.error(`   ❌ サーバー起動エラー: ${error.message}`);
+      reject(error);
+    });
+
+    // サーバー起動を待機
+    console.log(`   ⏳ サーバー起動を待機中（${SERVER_STARTUP_WAIT / 1000}秒）...`);
+    setTimeout(() => {
+      console.log(`   ✅ ${petType.toUpperCase()} 用サーバー起動完了\n`);
+      resolve(serverProcess);
+    }, SERVER_STARTUP_WAIT);
+  });
+}
+
+/**
  * ペットタイプ（犬/猫）のスクリーンショットを取得
  */
 async function captureForPetType(browser, petType, url) {
@@ -177,7 +231,7 @@ async function captureForPetType(browser, petType, url) {
 
   try {
     // ページアクセス＆初期化
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
 
     // PWAプロンプトを無効化
     await page.evaluate(() => {
@@ -187,7 +241,20 @@ async function captureForPetType(browser, petType, url) {
       });
     });
 
-    await page.waitForTimeout(2000);
+    // ペットカードが表示されるまで待機（最大30秒）
+    console.log('   ⏳ ペットデータの読み込みを待機中...');
+    try {
+      await page.waitForSelector('button[name*="いいね"], button:has-text("いいね")', {
+        timeout: 30000,
+        state: 'visible'
+      });
+      console.log('   ✅ ペットデータ読み込み完了');
+    } catch (e) {
+      console.log('   ⚠️  タイムアウト: ペットデータの読み込みに時間がかかっています');
+    }
+
+    // データが読み込まれるまでさらに待機
+    await page.waitForTimeout(3000);
     await closePWAPrompt(page);
     await removeModals(page);
 
@@ -203,16 +270,71 @@ async function captureForPetType(browser, petType, url) {
 }
 
 /**
+ * ローカル環境でのスクリーンショット取得（サーバー起動・停止を含む）
+ */
+async function takeLocalScreenshots(browser) {
+  const petTypes = ['dog', 'cat'];
+
+  for (const petType of petTypes) {
+    let serverProcess = null;
+
+    try {
+      // 既存のサーバーを停止
+      killPort3004();
+
+      // ペットタイプに応じたサーバーを起動
+      serverProcess = await startFrontendServer(petType);
+
+      // スクリーンショット取得
+      await captureForPetType(browser, petType, URLS[petType]);
+
+    } finally {
+      // サーバーを停止
+      if (serverProcess) {
+        console.log(`   🛑 ${petType.toUpperCase()} 用サーバーを停止中...`);
+        serverProcess.kill('SIGTERM');
+        // 確実に停止するため、少し待機してから強制終了
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          serverProcess.kill('SIGKILL');
+        } catch (e) {
+          // 既に停止している場合はスキップ
+        }
+        console.log(`   ✅ ${petType.toUpperCase()} 用サーバー停止完了\n`);
+      }
+      killPort3004();
+    }
+  }
+}
+
+/**
+ * リモート環境でのスクリーンショット取得
+ */
+async function takeRemoteScreenshots(browser) {
+  for (const [petType, url] of Object.entries(URLS)) {
+    await captureForPetType(browser, petType, url);
+  }
+}
+
+/**
  * メイン処理
  */
 async function takeScreenshots() {
   console.log('🚀 スクリーンショット取得開始...\n');
 
+  if (USE_LOCAL) {
+    console.log('📍 ローカル環境モード: サーバーを自動起動・停止します\n');
+  } else {
+    console.log('📍 リモート環境モード: 本番サイトからスクリーンショットを取得します\n');
+  }
+
   const browser = await chromium.launch({ headless: true });
 
   try {
-    for (const [petType, url] of Object.entries(URLS)) {
-      await captureForPetType(browser, petType, url);
+    if (USE_LOCAL) {
+      await takeLocalScreenshots(browser);
+    } else {
+      await takeRemoteScreenshots(browser);
     }
   } finally {
     await browser.close();

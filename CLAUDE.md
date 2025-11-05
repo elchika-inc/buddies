@@ -48,7 +48,7 @@ Buddiesは保護犬・保護猫とユーザーをマッチングするWebアプ�
 ### セットアップ手順
 
 ```bash
-# 1. 全ワークスペースの依存関係をインストール＆データベース初期化
+# 1. 全ワークスペースの依存関係をインストール＆データベース初期化＆サーバー起動
 npm run setup:first-time
 
 # または、段階的に実行する場合：
@@ -56,19 +56,34 @@ npm run setup:first-time
 # 1-1. 依存関係のインストール
 npm install
 
-# 1-2. データベース＆サンプルデータの準備
+# 1-2. データベース＆サンプルデータの準備＆サーバー起動（すべて自動）
 npm run setup
 
-# 2. 開発サーバー起動
-npm run start
+# サーバーが既に起動している場合は、手動でデータリフレッシュ
+npm run dev:refresh
 ```
 
-**`setup:first-time`の実行内容:**
+**セットアップスクリプトの種類:**
 
-1. `npm install` - 全ワークスペースの依存関係をインストール
-2. `db:reset` - ローカルD1データベースをリセット
-3. `db:generate-placeholders` - プレースホルダー画像を生成（犬5枚、猫5枚）
-4. `db:seed` - サンプルデータを投入（犬10匹、猫10匹）
+- **`setup`** - 完全な初期化とサーバー起動（推奨）0. 既存プロセスの自動クリーンアップ（ポート競合を防止）
+  1. `db:reset` - データベースをリセット
+  2. APIサーバーをバックグラウンドで起動
+  3. APIサーバーの起動完了を待機（ヘルスチェック）
+  4. `db:seed` - `database/fixtures/`のJSONと画像を優先してデータ投入（画像アップロード含む）
+  5. フロントエンドサーバーを起動
+
+- **`setup:first-time`** - 初回セットアップ（すべて自動）
+  1. `npm install` - 依存関係のインストール
+  2. `setup` - データベース初期化＆サーバー起動
+
+- **`start`** または **`dev`** - サーバー起動のみ（データベース操作なし）
+  - フロントエンドとAPIサーバーを起動
+
+**重要な注意事項:**
+
+- セットアップスクリプトは既存のプロセスを自動的にクリーンアップします
+- すべてのツールは `.wrangler/state/` の統一されたデータベースを使用します
+- ポート競合が発生した場合は `setup` が自動的に解決します
 
 ### データリフレッシュ（開発中）
 
@@ -116,6 +131,11 @@ npm run type-check
 
 ### データベース操作
 
+**データベースファイルの場所:**
+
+- 開発環境: `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
+- すべてのツール（drizzle-kit、seed、APIサーバー）が同じデータベースを使用
+
 ```bash
 # スキーマをD1にプッシュ
 npm run db:push
@@ -138,7 +158,13 @@ npm run db:seed -- --clear
 
 #### JSONファイルでペットデータを管理
 
-データベースseedは**JSON優先**で動作します。`database/fixtures/pets/`にJSONファイルがあれば優先的に使用し、不足している場合のみfaker.jsでランダムデータを生成します。
+データベースseedは**JSON優先・画像対応付き**で動作します：
+
+1. **JSON優先**: `database/fixtures/pets/`のJSONファイルを最優先で使用
+2. **画像自動対応**: JSONの`id`と同名の画像ファイルを自動的に紐付け
+3. **フォールバック**: 不足分はfaker.jsで自動生成、画像がない場合はランダムな画像を使用
+
+**重要**: JSONの`id`と画像ファイル名を一致させることで、確実に対応するデータが使用されます。
 
 ##### ディレクトリ構造
 
@@ -176,6 +202,19 @@ database/fixtures/
 
 ##### 使用例
 
+**既存の画像とJSONを使う場合（推奨）:**
+
+```bash
+# JSONと画像が既に配置されている場合は、そのまま使用
+npm run setup
+
+# 画像: database/fixtures/images/dogs/dog-01.png
+# JSON: database/fixtures/pets/dogs/dog-01.json (id: "dog-01")
+# → 自動的に対応付けされます
+```
+
+**画像から新規にデータを作成する場合:**
+
 ```bash
 # 1. 画像ファイルを配置
 # database/fixtures/images/dogs/dog-01.jpg など
@@ -205,6 +244,20 @@ npm run db:sync-json-from-images
 # 既存のJSONファイルも上書き
 npm run db:sync-json-from-images -- --overwrite
 ```
+
+##### プレースホルダー画像の生成
+
+画像がない場合のみ、ダミー画像をダウンロードできます（Lorem Picsum使用）。
+
+```bash
+# 既存画像があればスキップ（推奨）
+npm run db:generate-placeholders -- --dogs=5 --cats=5
+
+# 既存画像を上書き
+npm run db:generate-placeholders -- --dogs=5 --cats=5 --force
+```
+
+**重要:** 既存の画像がある場合は自動的にスキップされます。既存の画像を優先して使用してください。
 
 詳細は `database/fixtures/pets/README.md` を参照してください。
 
